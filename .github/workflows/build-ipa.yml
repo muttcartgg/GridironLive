@@ -1,1 +1,48 @@
 
+name: Build IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install XcodeGen
+        run: brew install xcodegen
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Build app (unsigned)
+        working-directory: ios
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project GridironLive.xcodeproj \
+            -scheme GridironLive \
+            -configuration Release \
+            -sdk iphoneos \
+            -destination 'generic/platform=iOS' \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tail -n 60
+
+      - name: Package IPA
+        run: |
+          APP=ios/build/Build/Products/Release-iphoneos/GridironLive.app
+          test -f "$APP/web/index.html" || { echo "web/index.html missing from app bundle"; exit 1; }
+          mkdir -p dist/Payload
+          cp -R "$APP" dist/Payload/
+          cd dist && zip -qry GridironLive.ipa Payload && ls -lh GridironLive.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GridironLive-ipa
+          path: dist/GridironLive.ipa
+          if-no-files-found: error
