@@ -5,9 +5,10 @@ An original 2D pixel-art college football game for iPhone. The game is written i
 ## Repository layout
 
 ```
-src/index.html                 Game source (everything: data, UI, engine, renderer)
-web/index.html                 Built game, with the pixel font inlined. This is what ships in the app.
-tools/build_web.py             Builds src/ into web/ (inlines the font)
+src/index.html                 Page shell: HUD markup + CSS
+src/js/01-util.js … 09-main.js Game code: storage/saves, league data, season, hub UI, engine, input, audio/HUD, renderers, loop
+web/index.html                 Built game (all JS + font inlined). This is what ships in the app.
+tools/build_web.py             Builds src/ into web/
 tools/fonts/                   Silkscreen pixel font (SIL Open Font License)
 ios/project.yml                XcodeGen spec for the iOS app
 ios/GridironLive/*.swift       Native shell: window, WKWebView, save bridge
@@ -20,7 +21,7 @@ ios/GridironLive/Assets.xcassets  App icon
 ```
 ┌──────────────────────────── iOS app (Swift) ────────────────────────────┐
 │ SceneDelegate → GameViewController → WKWebView(file://…/web/index.html) │
-│ Save bridge: UserDefaults  ⇄  window.__NATIVE_SAVE__ / messageHandlers  │
+│ Save bridge: UserDefaults (gl.kv.*) ⇄ window.__NATIVE_KV__ / kv handler │
 └──────────────────────────────────────────────────────────────────────────┘
 ┌──────────────────────────── Game (JavaScript) ──────────────────────────┐
 │ 1 Utilities + Store (native bridge, falls back to localStorage)         │
@@ -120,3 +121,42 @@ Everything on the field is drawn into a low-resolution canvas, at about 3.5 art 
 - Playing defense yourself, as an option
 - Exporting and importing the league as JSON, to share custom team packs
 - Haptics through a native bridge, and a Game Center leaderboard
+
+## Version 3 additions
+
+- **Saves.** There are 3 slots (`gl3.slot1..3`) plus a `gl3.meta` summary. The game autosaves at every snap through `snapshot()` → `LG.live`, so a game can be resumed mid-play. Save codes are base64 JSON with a `GL3:` prefix. v1 saves migrate into slot 1.
+- **Ratings.** Ratings are position-specific (`PATTR`): QB Arm/Accuracy/Speed/Stamina; RB, WR and TE Speed/Strength/Catching/Stamina; defense Tackling/Strength/Speed/Stamina, plus Ball skills for DBs; the kicker has Leg/Accuracy. Strength vs. Tackling decides stiff-arms. Accuracy sets the radius of the throw-error circle.
+- **Postseason.** Conference title games come first. The 12-team playoff takes the 4 conference champions plus the 8 highest-ranked teams, seeded by ranking, with byes for seeds 1–4 and first-round games on campus. Bowls go to other teams with 6+ wins.
+- **Offseason pipeline.** The stages are: recap (awards, AD review) → departures (graduation, early declarations, pro draft, outgoing portal) → coaching carousel → transfer portal (costs NIL) → recruiting board (interest, official visits) → Signing Day → camp (progression, new schedule).
+- **Opponent drives.** These are told as a play-by-play ticker (`driveLines`). Your defenders earn tackle, sack and INT credit plus XP.
+- **Team packs.** `applyTeamPack()` handles names, colors, prestige, stadiums, conference names, cross-conference rivals and trophies, and rosters (`rosterFromPack`). `REAL_PACK` is the built-in real-programs option.
+
+## Version 4: all of Division I
+
+- `src/js/02b-ncaa.js` holds all 265 FBS and FCS programs in their 2026 conferences: name, mascot, abbreviation, colors, and a strength rating from 1.0 to 5.0 that sets roster quality and prestige. It also lists the real rivalries.
+- **Schedule (`buildSchedule`).** Rivalry games go in the last week. Each conference gets a circulant graph so every team plays the same number of conference games (9 for the SEC, Big Ten and Big 12; 8 for most others). Non-conference games fill each team up to 12, mostly against its own division with some FBS-vs-FCS games. Then greedy edge colouring assigns weeks across a 13- or 14-week season with byes.
+- **Postseason, by week offset after the regular season (`L.R`).** Offset 0: conference title games, plus the FCS first round. Offset 1: CFP first round, all bowls, the Celebration Bowl (MEAC vs SWAC champions) and the FCS second round. Offsets 2–4: quarterfinals, semifinals, and both national championships.
+- **Saves.** Saves are compressed with lz-string, about 0.4 MB per slot. The in-game autosave writes only a small `gl3.live<slot>` record, so snapping the ball stays instant.
+
+## Version 5: gameplay, defense and broadcast
+
+- **Two-sided engine (`05-engine.js`).** The offense always attacks +x in engine coordinates. `S.poss` says who has the ball (`home` is you). `offT()/defT()` give the teams; each player carries `team` and `user`. When the opponent has the ball you can play defense (setting: ask, play or sim); the AI offense calls plays by scheme (`aiPickPlay`), reads coverage with a progression (`aiQB`), and runs with a vision search (`aiRunner`). AI 4th-down, punts, field goals and PATs are in `aiFourth/aiSpecial/aiPAT`.
+- **Playbook (`05b-playbook.js`).** Formations, 30+ routes, 50 plays and the six defensive calls. Team schemes (Option, Air Raid, Power, Pro, Spread) shape play calling and simulated stats.
+- **Run game.** At the snap, blockers get assignments by global greedy matching (`assignRunBlocks`). Engaged defenders slow sharply and are turned sideways to open lanes; they are never pushed backwards. Linebackers fit the gap before pursuing. Pursuit uses intercept angles.
+- **Passing.** Error grows with distance, pressure, moving and weather, and is mostly lateral. Receivers track the ball early and keep working after routes end. Zone defenders read threats in their area; man defenders trail with a shrinking cushion.
+- **Clock.** The game clock runs during plays (`CLK.play`) and between plays after in-bounds tackles (`CLK.pre`, capped per snap). It stops on incompletions, out of bounds, scores, changes of possession and penalties, and briefly on first downs inside two minutes of each half. The AI uses its timeouts when trailing late.
+- **Ratings.** Attributes stay 1–5 internally; the UI shows 40–99 overalls (`ovr99`, `tOvr99`).
+- **Rankings (`updateRankings`).** An opponent-adjusted power rating (margins capped at 24, a preseason prior that fades over about three games) plus a résumé score where win quality depends on the opponent and bad losses cost more.
+- **Broadcast (`08b-broadcast.js`).** Crews, captions and `speechSynthesis` voice, studio shows, ticker (other games are pre-simulated at kickoff and `finishWeek` uses those results), lower thirds, win probability, decibel meter, custom stadium sounds, replay recorder and playback, and the social feed. Series records are tracked from games played in the dynasty.
+- **Scene (`08c-scene.js`).** Sideline people, chain crew, crowd themes and density, turf wear and snow, time of day, fireworks, field storming and celebration poses.
+- **iOS.** `GameViewController` disables WebKit text interaction and long-press recognizers so holding a finger mid-play never brings up the magnifier or callout.
+
+## Version 5.1
+
+- Commentators removed. `08b-broadcast.js` is now a graphics package: result cards (`BC.card`), situation graphics (`BC.presnap` → `#sit`), drive tracker (`S.drive`), linescore (`S.line`), kickoff intro and end-of-quarter cards (`#qcard`), and a graphics-only pregame/halftime show.
+- Polls have inertia: last week's position adds `(30 − index) × 0.11` to a team's score, and a loss costs `(0.35 + (1 − opponent quality) × 1.5)`, 40% less when it's within a touchdown. A loss to a good team is now a dip of a few spots.
+
+## Version 6
+
+- `src/js/10-features.js` holds the v6 systems: sliders (`SL`), haptics (`haptic` → `webkit.messageHandlers.haptic`, handled natively in `GameViewController`), wind (`S.wind`), coin toss, icing, in-game injuries (`S.injured`, depth reordered by `applyInjuredDepth`), motion (`S.motion`), hot routes, play-by-play (`S.pbp`), drives (`S.drive` → `S.drives`), box score, player grades, uniforms (`uniColors`), body builds (`BUILD`), photo mode, Quick Play (a temporary league with `L.quick`, never saved), save backups (`gl3.bak<slot>`, at most every 10 minutes) and accessibility.
+- Broadcast polish lives in `08b-broadcast.js` (flag card, scoring drives, turnover chip, game lines, ticker headlines and upset alerts, temperature and attendance) and `08c-scene.js` (on-field graphics, pylons, ball trail, flashbulbs, final graphic and title celebrations).

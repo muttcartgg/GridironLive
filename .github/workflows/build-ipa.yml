@@ -1,10 +1,15 @@
-
 name: Build IPA
 
+# Builds an unsigned GridironLive.ipa on a GitHub macOS runner, then publishes it as a
+# GitHub Release named "latest" so you can download the .ipa directly (even from your phone).
+# Sideloading tools (Sideloadly, AltStore, etc.) sign it with your Apple ID when they install it.
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: [main, master]
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -12,17 +17,29 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Find the iOS project
+        run: |
+          P=$(find . -name project.yml -not -path "*/.git/*" | head -n 1)
+          if [ -z "$P" ]; then
+            echo "Could not find ios/project.yml anywhere in the repo. Upload the ios folder from the zip."
+            echo "Files in the repo:"; find . -maxdepth 3 -not -path "./.git*" | head -n 60
+            exit 1
+          fi
+          IOS_DIR=$(dirname "$P")
+          echo "Found the iOS project in $IOS_DIR"
+          test -f "$IOS_DIR/../web/index.html" || { echo "Missing web/index.html next to the ios folder. Upload the web folder from the zip."; exit 1; }
+          echo "IOS_DIR=$IOS_DIR" >> "$GITHUB_ENV"
+
       - name: Install XcodeGen
         run: brew install xcodegen
 
       - name: Generate Xcode project
-        working-directory: ios
-        run: xcodegen generate
+        run: cd "$IOS_DIR" && xcodegen generate
 
       - name: Build app (unsigned)
-        working-directory: ios
         run: |
           set -o pipefail
+          cd "$IOS_DIR"
           xcodebuild \
             -project GridironLive.xcodeproj \
             -scheme GridironLive \
@@ -35,7 +52,7 @@ jobs:
 
       - name: Package IPA
         run: |
-          APP=ios/build/Build/Products/Release-iphoneos/GridironLive.app
+          APP="$IOS_DIR/build/Build/Products/Release-iphoneos/GridironLive.app"
           test -f "$APP/web/index.html" || { echo "web/index.html missing from app bundle"; exit 1; }
           mkdir -p dist/Payload
           cp -R "$APP" dist/Payload/
@@ -46,3 +63,13 @@ jobs:
           name: GridironLive-ipa
           path: dist/GridironLive.ipa
           if-no-files-found: error
+
+      - name: Publish the IPA as the "latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest dist/GridironLive.ipa \
+            --title "Gridiron Live (latest build)" \
+            --notes "Built from ${GITHUB_SHA::7}. Download GridironLive.ipa below and install it with Sideloadly or AltStore." \
+            --latest

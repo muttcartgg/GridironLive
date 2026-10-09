@@ -1,0 +1,5 @@
+ios/build/
+ios/*.xcodeproj/
+ios/GridironLive/Info.plist
+dist/
+.DS_Store
