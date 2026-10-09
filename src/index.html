@@ -283,6 +283,8 @@ input[type=color]{width:56px;height:44px;border:1px solid var(--line);border-rad
 #snapBar{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);display:flex;align-items:center;gap:8px;z-index:9;background:rgba(8,11,17,.9);border:1px solid var(--line);border-radius:16px;padding:8px;box-shadow:0 12px 30px rgba(0,0,0,.5)}
 #snapName{font:800 14px/1 var(--disp);font-style:var(--dstyle);text-transform:uppercase;padding:0 8px;white-space:nowrap}
 #snapBar .btn{padding:12px 26px;font-size:18px}
+#snapBar{max-width:calc(100% - 20px)}#snapBar #snapGo{flex:none}
+@media (max-width:540px){#snapName{display:none}#snapBar .btn.sm{padding:10px 12px;font-size:13px}#snapBar #snapGo{padding:14px 30px;font-size:20px}}
 #actBar{position:absolute;right:max(12px,env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 14px);display:grid;grid-template-columns:repeat(2,auto);gap:7px;z-index:6}
 #actBar button{min-width:76px;padding:12px 10px;border-radius:14px;background:rgba(8,11,17,.82);border:1px solid rgba(255,255,255,.18);font:800 12px/1 var(--disp);letter-spacing:.04em;touch-action:none}
 #actBar button:active{background:var(--team);color:var(--btn-ink)}
@@ -471,7 +473,7 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
   <div id="banner"><div class="strip"><span></span><em hidden></em></div></div>
   <div id="hint" hidden></div>
 
-  <div id="snapBar" hidden><span id="snapName"></span><button class="btn ghost sm" id="snapBack">Change</button><button class="btn ghost sm" id="snapFlip">Flip</button><button class="btn ghost sm" id="snapMotion">Motion</button><button class="btn" id="snapGo">Snap</button></div>
+  <div id="snapBar" hidden><span id="snapName"></span><button class="btn ghost sm" id="snapBack">Change</button><button class="btn ghost sm" id="snapFlip">Flip</button><button class="btn" id="snapGo">Snap</button></div>
   <div id="actBar" hidden></div>
   <div id="hotBar" hidden></div>
   <div id="photoBar" hidden><label for="phZoom">Zoom</label><input type="range" id="phZoom" min="0.5" max="2.2" step="0.05" value="1"><select id="phFilter" aria-label="Filter"><option value="none">No filter</option><option value="film">Film</option><option value="bw">Black &amp; white</option><option value="vivid">Vivid</option><option value="night">Night</option></select><button class="btn sm" id="phDone">Done</button><span class="note">Drag to move the camera</span></div>

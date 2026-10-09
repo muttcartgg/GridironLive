@@ -251,7 +251,6 @@ function gameOfWeek(){
 }
 
 /* wiring for buttons that live in the page shell */
-$('#snapMotion').onclick=()=>{ac();startMotion()};
 $('#pmBox').onclick=()=>{ac();pausePanel('box')};$('#pmPbp').onclick=()=>{ac();pausePanel('pbp')};$('#pmDrv').onclick=()=>{ac();pausePanel('drv')};
 $('#pmPhoto').onclick=()=>{ac();$('#pauseInfo').hidden=true;enterPhoto()};
 /* menu tap feedback */
