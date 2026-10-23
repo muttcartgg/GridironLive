@@ -176,7 +176,7 @@ function showCall(){
   let body='';
   if(CALL_TAB==='special')body=specials.map(([k,t,s])=>`<button class="play ${k.startsWith('fake')?'warn':'alt'}" data-sp="${k}"><b>${t}</b><small>${s}</small></button>`).join('');
   else body=PLAYBOOK.filter(p=>p.cat===CALL_TAB&&!(S.conv&&p.hail)).map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b>${esc(p.name)}</b><small>${esc(p.form)}</small></button>`).join('');
-  row.innerHTML=`<div class="pbtabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}${S.lastPc&&!S.conv&&S.down<4?`<button class="coach nh" data-nh="1">No huddle · ${esc(S.lastPc.name)}</button>`:''}<button class="coach" data-coach="1">Coach's pick</button></div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div>`;
+  row.innerHTML=`<div class="pbtabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}${S.lastPc&&!S.conv&&S.down<4?`<button class="coach nh" data-nh="1">No huddle · ${esc(S.lastPc.name)}</button>`:''}<button class="coach" data-coach="1">Coach's pick</button></div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div>${CALL_TAB!=='special'?'<div class="pbmore">Swipe up for more plays</div>':''}`;
   row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;showCall()});
   const nh=row.querySelector('[data-nh]');if(nh)nh.onclick=()=>{ac();S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},420)};
   row.querySelector('[data-coach]').onclick=()=>{ac();const p=aiPickPlay(S.home,sitInfo());pickPlay(p)};

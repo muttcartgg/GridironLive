@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 1)
+
+- Realistic win probability: a point-spread model that uses the score, time left, field position, down and distance, timeouts, team strength and home field.
+- The playbook fits on screen and scrolls with a finger in portrait and landscape.
+- Deeper ratings: every player now has 14 ratings (speed, agility, strength, awareness, throw power, throw accuracy, catching, route running, ball carrying, blocking, tackling, coverage, block shedding, stamina) plus height and weight. Rosters are deeper (51 players, up to 60). Existing saves are converted automatically.
+- Groundwork for the next parts: an event system for on-field effects, a settings registry, separate style sheets, and automated test scripts in tools/qa.
+
 ## Version 6.1
 
 - Opponent stats are tracked for simulated drives too, so halftime and post-game numbers are complete for both teams.

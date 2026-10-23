@@ -454,6 +454,16 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
    40-dynasty.css  dynasty screens: recruiting, portal, NIL, awards, bowls, program history
    50-import.css   roster/logo import and team data screens */
 
+/* Play-call sheet: the playbook always fits on screen and scrolls with a finger (iPhone portrait and landscape) */
+#call{max-height:100%;max-height:100dvh}
+#callRow{width:100%;max-width:980px;min-height:0}
+.pbgrid{max-height:min(52vh,430px);max-height:min(52dvh,430px);overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-y;overscroll-behavior:contain;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom,0px));scroll-padding-bottom:12px;
+  -webkit-mask-image:linear-gradient(180deg,#000 calc(100% - 26px),transparent);mask-image:linear-gradient(180deg,#000 calc(100% - 26px),transparent)}
+.pbgrid .pcard,.pbgrid .play{touch-action:pan-y}
+.pbmore{font:800 10.5px/1 var(--body);letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:center;margin-top:-2px}
+@media (max-height:480px){.pbgrid{max-height:calc(100vh - 128px);max-height:calc(100dvh - 128px)}#call{padding-top:6px}}
+
 </style>
 </head>
 <body>
@@ -2073,7 +2083,7 @@ function hubOffseason(){
     return `${prog}<div class="card"><div class="setrow"><div class="h2">Recruiting board</div><div class="pills"><span class="pill gold">${left} points left</span><span class="pill">${visits}/3 official visits</span></div></div>
     <p class="note">Offer scholarships with recruiting points (two per star, minus one). Interest is each recruit's chance of signing with you on Signing Day; an official visit adds 20%. Prestige, fan approval and titles raise interest.</p>
     <div class="setrow"><span class="note">Boost your budget with NIL: ${money(150)} per point (${o.nilBoost}/5 used)</span><button class="btn sm ghost" id="nilBoost" ${LG.nil<150||o.nilBoost>=5?'disabled':''}>+1 point</button></div>
-    <div class="list">${o.recruits.map((r,i)=>`<div class="rrow ${r.offered?'sel':''}"><span class="num">${r.pos}</span><span class="meta"><b>${esc(fullName(r))} ${starStr(r.stars)}</b><small>${esc(r.home)} · ${PATTR[r.pos].map(k=>attrShort(r.pos,k)+' '+r[k]).join(' · ')}</small><span style="display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:11px;color:var(--mute)"><span>Interest</span>${meterHTML(r.interest+(r.visit?20:0))}<b>${Math.min(99,r.interest+(r.visit?20:0))}%</b></span></span>
+    <div class="list">${o.recruits.map((r,i)=>`<div class="rrow ${r.offered?'sel':''}"><span class="num">${r.pos}</span><span class="meta"><b>${esc(fullName(r))} ${starStr(r.stars)}</b><small>${esc(r.home)} · ${PATTR[r.pos].map(k=>attrShort(r.pos,k)+' '+a99(r[k])).join(' · ')}</small><span style="display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:11px;color:var(--mute)"><span>Interest</span>${meterHTML(r.interest+(r.visit?20:0))}<b>${Math.min(99,r.interest+(r.visit?20:0))}%</b></span></span>
       <span class="btns" style="flex-direction:column;gap:6px"><button class="btn sm ${r.offered?'ghost':''}" id="rof-${i}">${r.offered?'Withdraw':'Offer · '+recruitCost(r)}</button>${r.offered?`<button class="btn sm ghost" id="rvi-${i}" ${!r.visit&&visits>=3?'disabled':''}>${r.visit?'Cancel visit':'Official visit'}</button>`:''}</span></div>`).join('')}</div>
     <button class="btn wide" id="offNext">Go to Signing Day</button></div>`;
   }
@@ -2318,7 +2328,7 @@ function showCall(){
   let body='';
   if(CALL_TAB==='special')body=specials.map(([k,t,s])=>`<button class="play ${k.startsWith('fake')?'warn':'alt'}" data-sp="${k}"><b>${t}</b><small>${s}</small></button>`).join('');
   else body=PLAYBOOK.filter(p=>p.cat===CALL_TAB&&!(S.conv&&p.hail)).map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b>${esc(p.name)}</b><small>${esc(p.form)}</small></button>`).join('');
-  row.innerHTML=`<div class="pbtabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}${S.lastPc&&!S.conv&&S.down<4?`<button class="coach nh" data-nh="1">No huddle · ${esc(S.lastPc.name)}</button>`:''}<button class="coach" data-coach="1">Coach's pick</button></div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div>`;
+  row.innerHTML=`<div class="pbtabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}${S.lastPc&&!S.conv&&S.down<4?`<button class="coach nh" data-nh="1">No huddle · ${esc(S.lastPc.name)}</button>`:''}<button class="coach" data-coach="1">Coach's pick</button></div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div>${CALL_TAB!=='special'?'<div class="pbmore">Swipe up for more plays</div>':''}`;
   row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;showCall()});
   const nh=row.querySelector('[data-nh]');if(nh)nh.onclick=()=>{ac();S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},420)};
   row.querySelector('[data-coach]').onclick=()=>{ac();const p=aiPickPlay(S.home,sitInfo());pickPlay(p)};
