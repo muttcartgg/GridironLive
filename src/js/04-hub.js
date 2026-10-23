@@ -14,7 +14,8 @@ function hideAll(){['#hub','#setup','#post','#modal','#card','#pausem','#call','
 function openModal(html,wide){$('#modalBody').className='panel'+(wide?' wide':'');$('#modalBody').innerHTML=html;$('#modal').hidden=false;$('#modal').scrollTop=0}
 const closeModal=()=>{$('#modal').hidden=true};
 const on=(id,f)=>{const e=document.getElementById(id);if(e)e.onclick=f};
-const winProb=(a,b,homeEdge)=>1/(1+Math.exp(-((teamOvr(a)-teamOvr(b))*2.2+(homeEdge||0)*.3)));
+/* pregame odds for team a (homeEdge: 1 home, 0 neutral, -1 road) from the point-spread model in 05w-winprob.js */
+const winProb=(a,b,homeEdge)=>winProbPre(a,b,homeEdge||0);
 
 /* ---------- save slots ---------- */
 function showSlots(){
@@ -261,7 +262,7 @@ function hubTeam(){
   return `<div class="card"><div class="setrow"><div class="h2">Roster · ${u.roster.length}/${ROSTER_CAP} scholarships</div><span class="pill">${LG.credits} CC</span></div>
     <p class="note">Tap a player to upgrade ratings with coaching credits, set the depth chart, redshirt, or name captains. ${inj.length?`<b style="color:var(--hot)">${inj.length} unavailable this week.</b>`:''}</p>
     <div class="chips" id="rosChips">${['All',...POS_ORDER].map(p=>`<button class="chipbtn" data-v="${p}" aria-pressed="${ROSTER_FILTER===p}">${p}</button>`).join('')}</div></div>
-  ${pos.map(ps=>`<div class="card"><div class="eyebrow">${POS_NAME[ps]} · ${STARTERS[ps]} starting</div><div>${depth(u,ps).map((p,i)=>`<button class="rrow" id="pl-${p.id}"><span class="num">${p.num}</span><span class="meta"><b>${esc(fullName(p))} <small>${yrStr(p)}${i<STARTERS[ps]&&p.inj<=0&&!p.redshirt?' · Starter':''}${LG.captains.includes(p.id)?' · C':''}</small> ${p.inj>0?`<span class="tag hot">${esc(p.injWhy||'Injured')} · ${p.inj} wk</span>`:''}${p.redshirt?'<span class="tag blue">Redshirt</span>':''}</b><span class="attrs">${PATTR[p.pos].map(k=>`<span>${attrShort(p.pos,k)} ${`<span class="ovr">${tOvr99(p[k])}</span>`}</span>`).join('')}</span><span style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px;align-items:center;font-size:10.5px;color:var(--mute)"><span>COND</span>${meterHTML(p.cond)}<span>XP</span>${meterHTML(p.xp,'var(--los)')}</span></span>${ovrTag(p)}</button>`).join('')}</div></div>`).join('')}`;
+  ${pos.map(ps=>`<div class="card"><div class="eyebrow">${POS_NAME[ps]} · ${STARTERS[ps]} starting</div><div>${depth(u,ps).map((p,i)=>`<button class="rrow" id="pl-${p.id}"><span class="num">${p.num}</span><span class="meta"><b>${esc(fullName(p))} <small>${yrStr(p)}${i<STARTERS[ps]&&p.inj<=0&&!p.redshirt?' · Starter':''}${LG.captains.includes(p.id)?' · C':''}</small> ${p.inj>0?`<span class="tag hot">${esc(p.injWhy||'Injured')} · ${p.inj} wk</span>`:''}${p.redshirt?'<span class="tag blue">Redshirt</span>':''}</b><span class="attrs">${PATTR[p.pos].map(k=>`<span>${attrShort(p.pos,k)} ${`<span class="ovr">${a99(p[k])}</span>`}</span>`).join('')}</span><span style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px;align-items:center;font-size:10.5px;color:var(--mute)"><span>COND</span>${meterHTML(p.cond)}<span>XP</span>${meterHTML(p.xp,'var(--los)')}</span></span>${ovrTag(p)}</button>`).join('')}</div></div>`).join('')}`;
 }
 function hubProgram(){
   const c=LG.coach,u=T(LG.user),f=LG.fac;
@@ -315,6 +316,24 @@ function hubLeague(){
   <div class="card"><div class="h2">Team pack</div><p class="note">Rename and recolor the whole league at once, or paste real rosters. Export the current list, edit it, then import it back. Teams are matched by their order in the list.</p>
     <div class="btns"><button class="btn ghost" id="packExport">Export team pack</button><button class="btn ghost" id="packImport">Import team pack</button></div></div>`;
 }
+/* v7 settings registry: any module can add a setting or a button to the Settings tab without editing hubSettings.
+   SETTINGS_EXTRA.push({card:'Realism',key:'penalties',label:'Penalties',opts:[['normal','Normal'],['low','Fewer'],['off','Off']],def:'normal'})
+     → stored in LG.settings[key]; numbers and the strings '1'/'0' are converted back (opts values 1/0 become true/false when bool:true)
+   SETTINGS_EXTRA.push({card:'Rosters & data',button:'Import rosters (JSON)',id:'impRosters',note:'optional help text',onClick:()=>openRosterImport(LG)})
+   Entries render in the order pushed, grouped into cards by `card`, just above the Program card. */
+const SETTINGS_EXTRA=[];
+function settingsExtraHTML(){
+  const s=LG.settings,cards=[];const by={};
+  for(const e of SETTINGS_EXTRA){if(e.when&&!e.when())continue;if(!by[e.card]){by[e.card]=[];cards.push(e.card)}by[e.card].push(e)}
+  const seg=(id,opts,val)=>`<div class="seg" id="${id}">${opts.map(([v,l])=>`<button data-v="${v}" aria-pressed="${String(v)===String(val)}">${l}</button>`).join('')}</div>`;
+  return cards.map(c=>`<div class="card"><div class="h2">${esc(c)}</div>${by[c].map(e=>e.button?`<div class="setrow"><span class="eyebrow">${esc(e.label||'')}</span><button class="btn sm ghost" id="sx-${e.id}">${esc(e.button)}</button></div>${e.note?`<p class="note">${e.note}</p>`:''}`:`<div class="setrow"><span class="eyebrow">${esc(e.label)}</span>${seg('sx-'+e.key,e.opts,(()=>{const v=s[e.key]==null?e.def:s[e.key];return e.bool?(v?1:0):v})())}</div>${e.note?`<p class="note">${e.note}</p>`:''}`).join('')}</div>`).join('');
+}
+function bindSettingsExtra(seg){
+  for(const e of SETTINGS_EXTRA){
+    if(e.button){on('sx-'+e.id,()=>{try{e.onClick()}catch(err){console.error(err);toast('Something went wrong')}});continue}
+    seg('sx-'+e.key,v=>{const o=e.opts.find(([x])=>String(x)===v);let val=o?o[0]:v;if(e.bool)val=String(val)==='1';LG.settings[e.key]=val;if(e.after)e.after(val)});
+  }
+}
 function hubSettings(){
   const s=LG.settings;const seg=(id,opts,val)=>`<div class="seg" id="${id}">${opts.map(([v,l])=>`<button data-v="${v}" aria-pressed="${v==val}">${l}</button>`).join('')}</div>`;
   return `<div class="card"><div class="h2">Game settings</div>
@@ -361,7 +380,7 @@ function hubSettings(){
     <div class="setrow"><span class="eyebrow">Camera shake</span>${seg('setShk',[[1,'On'],[0,'Off']],s.shake===false?0:1)}</div></div>
   <div class="card"><div class="h2">Stadium sounds</div><p class="note">Pick a sound for each moment, or upload your own clip (MP3/M4A/WAV under 600 KB).</p>
     ${AUD_EVENTS.map(([k,l])=>`<div class="setrow"><span class="eyebrow">${l}</span><span style="display:flex;gap:6px;align-items:center"><select id="aud-${k}">${AUD_SOUNDS.map(([v,n])=>`<option value="${v}" ${((s.audioMap||{})[k]||'default')===v?'selected':''}>${n}</option>`).join('')}</select><label class="btn sm ghost" style="cursor:pointer">Upload<input type="file" accept="audio/*" id="audf-${k}" hidden></label></span></div>`).join('')}
-  </div><div class="card"><div class="h2">Program</div>
+  </div>${settingsExtraHTML()}<div class="card"><div class="h2">Program</div>
     <div class="setrow"><span class="eyebrow">Your program</span><button class="btn sm ghost" id="edit-${LG.user}">Edit name &amp; colors</button></div></div>
   <div class="card"><div class="h2">Saves</div><p class="note">Slot ${SLOT} · autosaves after every snap and every menu action.</p>
     <div class="field-row"><label for="dynRename">Dynasty name</label><input type="text" id="dynRename" maxlength="28" value="${esc(LG.name)}"></div>
@@ -393,6 +412,7 @@ function bindHub(){
   for(const k of ['acc','run','cov','tkl','inj'])seg('sl-'+k,v=>{LG.settings.sl=LG.settings.sl||{};LG.settings.sl[k]=+v});S2('setRp','replay');S2('setLow','lower',B);S2('setWP','wp',B);S2('setDB','db',B);S2('setBug','bugPos');S2('setBS','bugSize');S2('setBA','hudAlpha',v=>+v);S2('setCr','crowd');S2('setSt','studentTheme');S2('setSide','sideline',B);S2('setPy','pyro',B);S2('setStar','stars',B);S2('setRt','routes',B);S2('setStk','stickUI',B);S2('setTurf','specialTurf',B);S2('setShk','shake',B);
   for(const [k] of (typeof AUD_EVENTS!=='undefined'?AUD_EVENTS:[])){const sel=document.getElementById('aud-'+k);if(sel)sel.onchange=()=>{LG.settings.audioMap=LG.settings.audioMap||{};LG.settings.audioMap[k]=sel.value;saveNow();ac();BC.sound(k)};
     const f=document.getElementById('audf-'+k);if(f)f.onchange=()=>{const file=f.files[0];if(!file)return;if(file.size>600000){toast('That clip is too big (600 KB max)');return}const rd=new FileReader();rd.onload=()=>{try{KV.set('gl.aud.'+k,rd.result);LG.settings.audioMap=LG.settings.audioMap||{};LG.settings.audioMap[k]='custom';saveNow();toast('Sound saved');rerender()}catch(e){toast('Could not store that clip')}};rd.readAsDataURL(file)}}
+  bindSettingsExtra(seg);
   seg('focusSeg',v=>LG.focus=v);seg('regSeg',v=>LG.regime=v);
   for(const k of ['stadium','training','rehab'])on('fac-'+k,()=>{const c=LG.fac[k]*6;if(LG.credits>=c&&LG.fac[k]<5){LG.credits-=c;LG.fac[k]++;saveNow();rerender();toast('Upgraded')}});
   for(const k of ['oc','dc'])LG.pool[k].forEach((s,i)=>on(`hire-${k}-${i}`,()=>{if(LG.credits<staffCost(s))return;LG.credits-=staffCost(s);const old=LG.staff[k];LG.staff[k]=s;LG.pool[k][i]=old;saveNow();rerender();toast(`${s.name} hired`)}));
@@ -413,7 +433,7 @@ function openPlayer(id){
     const s=p.ss,isCap=LG.captains.includes(p.id),startIdx=depth(u,p.pos).indexOf(p);
     openModal(`<div class="eyebrow">${POS_NAME[p.pos]} · #${p.num} · ${yrStr(p)} · ${esc(p.home)}</div><div class="h2" style="font-size:26px">${esc(fullName(p))}</div>
     <div class="setrow"><span>Overall ${ovrTag(p)}</span>${p.inj>0?`<span class="tag hot">${esc(p.injWhy)} · out ${p.inj} wk</span>`:''}</div>
-    ${PATTR[p.pos].map(k=>{const c=p[k]+1;return `<div class="setrow"><span>${attrName(p.pos,k)} ${`<span class="ovr">${tOvr99(p[k])}</span>`}</span>${p[k]<5?`<button class="btn sm" id="up-${k}" ${LG.credits<c?'disabled':''}>+1 · ${c} CC</button>`:'<span class="tag gold">Max</span>'}</div>`}).join('')}
+    ${PATTR[p.pos].map(k=>{const c=Math.ceil(p[k])+1;return `<div class="setrow"><span>${attrName(p.pos,k)} ${`<span class="ovr">${a99(p[k])}</span>`}</span>${p[k]<4.95?`<button class="btn sm" id="up-${k}" ${LG.credits<c?'disabled':''}>+${a99(Math.min(5,p[k]+.5))-a99(p[k])} · ${c} CC</button>`:'<span class="tag gold">Max</span>'}</div>`}).join('')}
     <div class="kv"><span>Condition</span><b>${Math.round(p.cond)}%</b></div>${meterHTML(p.cond)}<div class="kv"><span>XP to next upgrade</span><b>${Math.round(p.xp)}/100</b></div>${meterHTML(p.xp,'var(--los)')}
     <div class="kv"><span>Season</span><b>${esc(statLine(p))}</b></div>
     <div class="btns">${startIdx>0?`<button class="btn sm ghost" id="mkStart">Move to top of depth chart</button>`:''}
@@ -421,7 +441,7 @@ function openPlayer(id){
       <button class="btn sm ghost" id="capTog">${isCap?'Remove captain':'Name captain'}</button></div>
     <p class="note">Redshirted players sit out but keep a year of eligibility if they play four games or fewer. Captains steady the locker room after losses.</p>
     <button class="btn light wide" id="closeP">Done</button>`);
-    PATTR[p.pos].forEach(k=>on('up-'+k,()=>{const c=p[k]+1;if(LG.credits>=c&&p[k]<5){LG.credits-=c;p[k]++;saveNow();render()}}));
+    PATTR[p.pos].forEach(k=>on('up-'+k,()=>{const c=Math.ceil(p[k])+1;if(LG.credits>=c&&p[k]<4.95){LG.credits-=c;p[k]=r1(p[k]+.5);invalidate();saveNow();render()}}));
     on('mkStart',()=>{u.dco=u.dco||{};const ids=depth(u,p.pos).map(x=>x.id).filter(x=>x!==p.id);u.dco[p.pos]=[p.id,...ids];saveNow();render()});
     on('rsTog',()=>{p.redshirt=!p.redshirt;saveNow();render()});
     on('capTog',()=>{if(isCap)LG.captains=LG.captains.filter(x=>x!==p.id);else{LG.captains.push(p.id);if(LG.captains.length>2)LG.captains.shift()}saveNow();render()});
@@ -501,7 +521,7 @@ function hubOffseason(){
   }
   if(o.stage==='portal'){
     return `${prog}<div class="card"><div class="setrow"><div class="h2">Transfer portal</div><span class="pill gold">${money(LG.nil)} NIL available</span></div><p class="note">Sign experienced players using your NIL collective. Transfers keep their class year. Roster: ${u.roster.length}/${ROSTER_CAP}.</p>
-    <div class="list">${o.portal.map((p,i)=>`<button class="rrow ${p.signed?'sel':''}" id="tp-${i}"><span class="num">${p.pos}</span><span class="meta"><b>${esc(fullName(p))} <small>${yrStr(p)} · from ${esc(T(p.from).city)}</small></b><span class="attrs">${PATTR[p.pos].map(k=>`<span>${attrShort(p.pos,k)} ${`<span class="ovr">${tOvr99(p[k])}</span>`}</span>`).join('')}</span></span><span class="pill">${p.signed?'Signed':money(portalCost(p))}</span></button>`).join('')}</div>
+    <div class="list">${o.portal.map((p,i)=>`<button class="rrow ${p.signed?'sel':''}" id="tp-${i}"><span class="num">${p.pos}</span><span class="meta"><b>${esc(fullName(p))} <small>${yrStr(p)} · from ${esc(T(p.from).city)}</small></b><span class="attrs">${PATTR[p.pos].map(k=>`<span>${attrShort(p.pos,k)} ${`<span class="ovr">${a99(p[k])}</span>`}</span>`).join('')}</span></span><span class="pill">${p.signed?'Signed':money(portalCost(p))}</span></button>`).join('')}</div>
     <button class="btn wide" id="offNext">Continue to recruiting</button></div>`;
   }
   if(o.stage==='recruit'){

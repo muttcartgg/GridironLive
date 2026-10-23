@@ -15,26 +15,53 @@ const CFP_QF=['Sunrise Bowl','Golden Coast Bowl','Twin Rivers Bowl','Starlight B
 const CFP_SF=['Summit Bowl','Bluewater Bowl'];
 
 const POS_ORDER=['QB','RB','WR','TE','OL','DL','LB','CB','S','K'];
-const POS_NAME={QB:'Quarterbacks',RB:'Running backs',WR:'Wide receivers',TE:'Tight ends',OL:'Offensive line',DL:'Defensive line',LB:'Linebackers',CB:'Cornerbacks',S:'Safeties',K:'Kicker'};
-const POS_COUNTS={QB:3,RB:3,WR:5,TE:2,OL:7,DL:6,LB:4,CB:4,S:3,K:1};
+const POS_NAME={QB:'Quarterbacks',RB:'Running backs',WR:'Wide receivers',TE:'Tight ends',OL:'Offensive line',DL:'Defensive line',LB:'Linebackers',CB:'Cornerbacks',S:'Safeties',K:'Kickers & punters'};
+/* v7 roster model: deeper rosters (51 base, 60 max) so real depth charts fit */
+const POS_COUNTS={QB:3,RB:4,WR:6,TE:3,OL:10,DL:8,LB:6,CB:5,S:4,K:2};
 const STARTERS={QB:1,RB:1,WR:3,TE:1,OL:5,DL:4,LB:2,CB:3,S:2,K:1};
-const ROSTER_CAP=46;
-const NUMS={QB:[1,19],RB:[20,39],WR:[1,19],TE:[80,89],OL:[50,79],DL:[90,99],LB:[40,59],CB:[20,39],S:[20,49],K:[1,49]};
-const PATTR={QB:['thr','acc','spd','end'],RB:['spd','str','cat','end'],WR:['cat','spd','str','end'],TE:['cat','str','spd','end'],OL:['str','end','spd'],DL:['tkl','str','spd','end'],LB:['tkl','str','spd','end'],CB:['spd','tkl','cat','end'],S:['spd','tkl','cat','end'],K:['thr','acc']};
-const ANAME={spd:'Speed',str:'Strength',cat:'Catching',thr:'Arm',acc:'Accuracy',tkl:'Tackling',end:'Stamina'};
-const ASHORT={spd:'SPD',str:'STR',cat:'CTH',thr:'ARM',acc:'ACC',tkl:'TKL',end:'STA'};
-const attrName=(pos,k)=>pos==='K'&&k==='thr'?'Leg':(pos==='CB'||pos==='S')&&k==='cat'?'Ball skills':ANAME[k];
-const attrShort=(pos,k)=>pos==='K'&&k==='thr'?'LEG':(pos==='CB'||pos==='S')&&k==='cat'?'BSK':ASHORT[k];
-const W8={QB:{thr:.4,acc:.35,spd:.1,end:.15},RB:{spd:.45,str:.25,cat:.1,end:.2},WR:{cat:.4,spd:.4,str:.1,end:.1},TE:{cat:.35,str:.35,spd:.2,end:.1},OL:{str:.6,end:.25,spd:.15},DL:{tkl:.3,str:.35,spd:.2,end:.15},LB:{tkl:.4,str:.2,spd:.3,end:.1},CB:{spd:.45,tkl:.2,cat:.2,end:.15},S:{spd:.35,tkl:.35,cat:.15,end:.15},K:{thr:.55,acc:.45}};
-const BIAS={QB:{thr:.5,acc:.3},RB:{spd:.4,str:.2},WR:{spd:.4,cat:.3},TE:{str:.2},OL:{str:.6,spd:-.9},DL:{str:.4,spd:-.4},LB:{tkl:.3},CB:{spd:.5},S:{spd:.3,tkl:.2},K:{}};
+const ROSTER_CAP=60;
+const NUMS={QB:[1,19],RB:[1,39],WR:[1,19],TE:[80,89],OL:[50,79],DL:[90,99],LB:[1,59],CB:[1,39],S:[1,49],K:[1,49]};
+/* ---------- v7 ratings ----------
+   Every player has 14 attributes on a continuous 1.0–5.0 scale (one decimal). Code everywhere reads them directly
+   (p.spd, p.awr, ...). The UI shows any attribute on the familiar 25–99 scale with a99(v) and overalls with ovr99(p).
+   spd Speed · agi Agility (acceleration, cuts) · str Strength · awr Awareness (reads, vision, football IQ)
+   thr Throw power (kick power for K) · acc Throw accuracy (kick accuracy for K) · cat Catching (ball skills for DBs)
+   rte Route running · car Ball carrying (security, elusiveness, breaking tackles) · blk Blocking
+   tkl Tackling · cov Coverage (man and zone) · shd Block shedding / pass rush · end Stamina */
+const ATTR_KEYS=['spd','agi','str','awr','thr','acc','cat','rte','car','blk','tkl','cov','shd','end'];
+const PATTR={QB:['thr','acc','awr','spd','agi','end'],RB:['spd','agi','car','str','cat','awr'],WR:['spd','cat','rte','agi','awr','str'],TE:['cat','blk','str','rte','spd','awr'],OL:['blk','str','awr','agi','end'],DL:['shd','str','tkl','spd','agi','awr'],LB:['tkl','awr','shd','cov','spd','str'],CB:['cov','spd','agi','cat','awr','tkl'],S:['cov','tkl','spd','awr','cat','agi'],K:['thr','acc']};
+const ANAME={spd:'Speed',agi:'Agility',str:'Strength',awr:'Awareness',thr:'Throw power',acc:'Throw accuracy',cat:'Catching',rte:'Route running',car:'Ball carrying',blk:'Blocking',tkl:'Tackling',cov:'Coverage',shd:'Block shedding',end:'Stamina'};
+const ASHORT={spd:'SPD',agi:'AGI',str:'STR',awr:'AWR',thr:'THP',acc:'THA',cat:'CTH',rte:'RTE',car:'CAR',blk:'BLK',tkl:'TAK',cov:'COV',shd:'BSH',end:'STA'};
+const attrName=(pos,k)=>pos==='K'&&k==='thr'?'Kick power':pos==='K'&&k==='acc'?'Kick accuracy':(pos==='CB'||pos==='S')&&k==='cat'?'Ball skills':pos==='DL'&&k==='shd'?'Pass rush':ANAME[k];
+const attrShort=(pos,k)=>pos==='K'&&k==='thr'?'KPW':pos==='K'&&k==='acc'?'KAC':(pos==='CB'||pos==='S')&&k==='cat'?'BSK':pos==='DL'&&k==='shd'?'PRS':ASHORT[k];
+/* overall = weighted core attributes (weights sum to 1) */
+const W8={QB:{thr:.25,acc:.35,awr:.25,spd:.05,agi:.05,end:.05},RB:{spd:.25,agi:.2,car:.2,str:.15,cat:.1,awr:.05,end:.05},WR:{spd:.25,cat:.25,rte:.25,agi:.1,awr:.05,str:.05,end:.05},TE:{cat:.2,blk:.25,str:.15,rte:.15,spd:.1,awr:.1,end:.05},OL:{blk:.45,str:.3,awr:.15,agi:.05,end:.05},DL:{shd:.35,str:.25,tkl:.15,spd:.1,agi:.05,awr:.05,end:.05},LB:{tkl:.3,awr:.2,shd:.15,cov:.15,spd:.1,str:.05,end:.05},CB:{cov:.33,spd:.27,agi:.12,cat:.1,awr:.1,tkl:.05,end:.03},S:{cov:.25,tkl:.2,spd:.2,awr:.2,cat:.1,agi:.05},K:{thr:.55,acc:.45}};
+/* generation offsets from the team quality baseline: strengths up, off-position skills down */
+const BIAS={QB:{thr:.5,acc:.3,awr:.2,tkl:-1.8,shd:-1.8,cov:-1.6,blk:-1.4,str:-.5,car:-.6,rte:-1.2},RB:{spd:.4,agi:.4,car:.3,str:.2,thr:-1.8,acc:-1.8,tkl:-1.2,cov:-1.2,shd:-1.4,blk:-.6,rte:-.4},WR:{spd:.4,cat:.3,rte:.3,agi:.3,thr:-1.8,acc:-1.8,tkl:-1.4,cov:-1,shd:-1.6,blk:-.8,str:-.3},TE:{blk:.1,str:.2,thr:-1.8,acc:-1.8,tkl:-1.2,cov:-1.4,shd:-1.2,agi:-.4,spd:-.3},OL:{str:.6,blk:.6,spd:-.9,agi:-.7,cat:-1.6,rte:-2,thr:-2,acc:-2,car:-1.6,cov:-2,tkl:-1,shd:-.6},DL:{str:.4,shd:.5,spd:-.4,agi:-.2,cat:-1.5,rte:-2,thr:-2,acc:-2,car:-1.5,cov:-1.5,blk:-.6},LB:{tkl:.3,awr:.1,shd:.1,thr:-2,acc:-2,rte:-1.6,car:-1.2,blk:-.8,cat:-.6},CB:{spd:.5,cov:.4,agi:.4,thr:-2,acc:-2,rte:-.8,car:-1,blk:-1.4,shd:-1.4,str:-.4},S:{spd:.3,tkl:.2,cov:.2,thr:-2,acc:-2,rte:-1.2,car:-1.2,blk:-1.2,shd:-1},K:{thr:.3,acc:.3,spd:-1,agi:-1,str:-1.2,cat:-1.5,rte:-2,car:-2,blk:-2,tkl:-1.8,cov:-2,shd:-2}};
+/* typical size by position: [height inches, sd, weight lbs, sd] */
+const SIZE={QB:[75,1.6,218,12],RB:[70.5,1.6,207,13],WR:[73,2.2,192,14],TE:[76.5,1.2,247,12],OL:[77,1.2,312,15],DL:[75.5,1.6,284,24],LB:[73.5,1.3,232,11],CB:[71.5,1.6,185,9],S:[72.5,1.4,200,9],K:[72.5,2,198,14]};
 const YR=['FR','SO','JR','SR'];
-const ATTR_KEYS=['spd','str','cat','thr','acc','tkl','end'];
+const r1=v=>Math.round(clamp(v,1,5)*10)/10;
+/* attribute value (1–5) on the 25–99 scale the UI shows */
+const a99=v=>clamp(Math.round(25+Math.pow(clamp((v-1)/4,0,1),.85)*74),25,99);
+const gauss=()=>{let u=0;for(let i=0;i<6;i++)u+=Math.random();return u-3};
+function sizeFor(p){const s=SIZE[p.pos]||SIZE.WR;p.ht=Math.round(s[0]+gauss()*s[1]);p.wt=Math.round(s[2]+gauss()*s[3]+(p.str-3)*6);return p}
+/* fill in any missing v7 attributes from the older 7-attribute model (saves from v6 and team packs) */
+function upgradeAttrs(p){
+  if(!p||!p.pos)return p;const g=k=>typeof p[k]==='number'?p[k]:3,n=()=>R(-.5,.5),pos=p.pos;
+  const d={agi:g('spd')+n(),awr:2.2+((p.yr||2)-1)*.35+(ovr0(p)-3)*.5+n(),rte:['WR','TE','RB'].includes(pos)?(g('cat')+g('spd'))/2+n():1.4+n(),car:['RB','WR','QB','TE'].includes(pos)?(g('str')+g('spd'))/2+n():1.6+n(),
+    blk:pos==='OL'?g('str')+n():pos==='TE'?g('str')-.2+n():pos==='RB'?g('str')-.8+n():1.6+n(),cov:pos==='CB'||pos==='S'?(g('spd')+g('cat'))/2+.2+n():pos==='LB'?(g('spd')+g('tkl'))/2-.3+n():1.4+n(),
+    shd:pos==='DL'?(g('str')+g('tkl'))/2+.2+n():pos==='LB'?(g('str')+g('tkl'))/2-.2+n():1.6+n()};
+  for(const k of ATTR_KEYS){if(typeof p[k]!=='number')p[k]=d[k]!=null?d[k]:2;p[k]=r1(p[k])}
+  if(!p.ht||!p.wt)sizeFor(p);return p;
+}
+const ovr0=p=>{const w={QB:{thr:.4,acc:.35,spd:.1,end:.15},RB:{spd:.45,str:.25,cat:.1,end:.2},WR:{cat:.4,spd:.4,str:.1,end:.1},TE:{cat:.35,str:.35,spd:.2,end:.1},OL:{str:.6,end:.25,spd:.15},DL:{tkl:.3,str:.35,spd:.2,end:.15},LB:{tkl:.4,str:.2,spd:.3,end:.1},CB:{spd:.45,tkl:.2,cat:.2,end:.15},S:{spd:.35,tkl:.35,cat:.15,end:.15},K:{thr:.55,acc:.45}}[p.pos]||{};let s=0;for(const k in w)s+=(typeof p[k]==='number'?p[k]:3)*w[k];return s};
 const newSS=()=>({gp:0,pa:0,pc:0,py:0,ptd:0,int:0,ra:0,ry:0,rtd:0,rec:0,recy:0,rectd:0,tkl:0,sck:0,dint:0,fgm:0,fga:0});
 
 function genPlayer(pos,q,yr){
   const b=BIAS[pos]||{};const p={id:uid(),first:pick(FIRST),last:pick(LAST),pos,yr:yr||rint(1,4),num:0,tone:rint(0,3),cond:100,inj:0,injWhy:'',xp:rint(0,40),ss:newSS(),rs:false,redshirt:false,home:pick(PLACES)};
-  for(const k of ATTR_KEYS)p[k]=clamp(Math.round(q+(b[k]||0)+R(-1.2,1.2)),1,5);
-  return p;
+  for(const k of ATTR_KEYS)p[k]=r1(q+(b[k]||0)+R(-1.2,1.2)+(k==='awr'?(p.yr-2.5)*.25:0));
+  return sizeFor(p);
 }
 function assignNumbers(team){
   const used=new Set(team.roster.filter(p=>p.num).map(p=>p.num));
@@ -117,6 +144,14 @@ const confOf=(t,L)=>((L||LG).confs[t.conf]||{});
 function migrate(L){
   if(!L||!L.teams)return null;
   if(L.version===VERSION)return L;
+  if(L.version===3){
+    /* v6 → v7: 14 continuous ratings, sizes, deeper rosters */
+    const up=p=>{upgradeAttrs(p);return p};
+    for(const t of L.teams){t.roster.forEach(up);for(const pos of POS_ORDER){let have=t.roster.filter(p=>p.pos===pos).length;while(have<POS_COUNTS[pos]&&t.roster.length<ROSTER_CAP){t.roster.push(genPlayer(pos,qOf(t)-.6,rint(1,2)));have++}}assignNumbers(t)}
+    if(L.off)['portal','recruits'].forEach(k=>{if(Array.isArray(L.off[k]))L.off[k].forEach(up)});
+    L.version=VERSION;invalidate();(L.news||(L.news=[])).unshift({t:'Gridiron Live 7: every player now has 14 detailed ratings, and depth charts are deeper.'});
+    return L;
+  }
   if(L.version!==1)return null;
   for(const t of L.teams){
     for(const p of t.roster){p.str=p.str||clamp(Math.round((p.spd+p.end)/2+R(-1,1)),1,5);p.acc=p.acc||clamp(Math.round(p.thr+R(-1,1)),1,5);p.tkl=p.tkl||clamp(Math.round(p.cat+R(-1,1)),1,5);
@@ -126,7 +161,7 @@ function migrate(L){
   }
   const fresh=genLeague(L.name);
   Object.assign(fresh,{teams:L.teams,user:L.user,credits:L.credits||8,season:L.season,history:(L.history||[]).map(h=>({...h})),settings:{...fresh.settings,...(L.settings||{}),style:'modern'}});
-  for(const t of fresh.teams){t.rival=null}
+  for(const t of fresh.teams){t.rival=null;t.roster.forEach(upgradeAttrs)}
   for(let c=0;c<4;c+=2){const A=fresh.teams.filter(t=>t.conf===c),B=fresh.teams.filter(t=>t.conf===c+1);A.forEach((x,j)=>setRival(x,B[j],'The '+pick(TROPHY_A)+' '+pick(TROPHY_B)))}
   fresh.coach.name='Coach';fresh.coach.schools=[fresh.user];
   finishLeague(fresh);

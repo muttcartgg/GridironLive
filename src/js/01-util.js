@@ -1,7 +1,7 @@
 /* =========================================================
    01 · Utilities, storage, save slots
    ========================================================= */
-const VERSION=3;
+const VERSION=4;
 const $=s=>document.querySelector(s);
 const R=(a,b)=>a+Math.random()*(b-a), rint=(a,b)=>Math.floor(R(a,b+1)), clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const pick=a=>a[Math.floor(Math.random()*a.length)], hyp=Math.hypot, lerp=(a,b,t)=>a+(b-a)*t;

@@ -255,7 +255,7 @@ function genEvent(L){const u=L.teams[L.user];const pool=POS_ORDER.flatMap(pos=>s
 
 /* ---------- user game bookkeeping: credits, morale, XP, injuries, records ---------- */
 const REGIMES={light:{x:.75,c:-4,i:.6,label:'Light'},normal:{x:1,c:0,i:1,label:'Normal'},hard:{x:1.35,c:5,i:1.5,label:'Hard'}};
-function addXP(p,x,list){p.xp+=x;let n=0;while(p.xp>=100&&n<4){n++;p.xp-=100;const ks=PATTR[p.pos].filter(k=>p[k]<5);if(!ks.length){p.xp=0;break}ks.sort((a,b)=>p[a]-p[b]);const k=Math.random()<.6?ks[0]:pick(ks);p[k]++;list&&list.push({id:p.id,name:fullName(p),pos:p.pos,attr:attrName(p.pos,k),to:p[k]})}}
+function addXP(p,x,list){p.xp+=x;let n=0;while(p.xp>=100&&n<4){n++;p.xp-=100;const ks=PATTR[p.pos].filter(k=>p[k]<5);if(!ks.length){p.xp=0;break}ks.sort((a,b)=>p[a]-p[b]);const k=Math.random()<.6?ks[0]:pick(ks);p[k]=r1(p[k]+R(.25,.45));list&&list.push({id:p.id,name:fullName(p),pos:p.pos,attr:attrName(p.pos,k),to:a99(p[k])})}}
 const gameXP=s=>s?Math.min(80,s.py/8+s.ptd*12+s.ry/5+s.rtd*12+s.recy/5+s.rectd*12+s.rec*2):0;
 function processUserGame(L,g,info){
   const u=L.teams[L.user],opp=L.teams[g.h===L.user?g.a:g.h],home=g.h===L.user&&!g.neutral,wi=L.week;
@@ -349,7 +349,7 @@ function recruitInterest(L,stars){const u=L.teams[L.user];return clamp(Math.roun
 function buildRecruits(L){
   const u=L.teams[L.user];const need=POS_ORDER.flatMap(p=>Array(POS_COUNTS[p]).fill(p));
   const spot=hasTrait('oc','Talent Spotter');
-  L.off.recruits=Array.from({length:22},()=>{const pos=pick(need);const st=clamp(Math.round(R(1,3.4)+u.prestige*.35),1,5);const p=genPlayer(pos,st+.3,1);if(spot){const k=PATTR[pos][0];p[k]=Math.min(5,p[k]+1)}return {...p,stars:st,interest:recruitInterest(L,st),offered:false,visit:false}}).sort((a,b)=>b.stars-a.stars);
+  L.off.recruits=Array.from({length:22},()=>{const pos=pick(need);const st=clamp(Math.round(R(1,3.4)+u.prestige*.35),1,5);const p=genPlayer(pos,st+.3,1);if(spot){const k=PATTR[pos][0];p[k]=r1(p[k]+.6)}return {...p,stars:st,interest:recruitInterest(L,st),offered:false,visit:false}}).sort((a,b)=>b.stars-a.stars);
   const ph=L.history[L.history.length-1]||{};
   L.off.rp=10+u.prestige*2+(ph.madePO?3:0)+(ph.champ?3:0)+(L.heisman&&L.heisman.team===L.user?2:0);L.off.nilBoost=0;
 }
@@ -372,7 +372,7 @@ function startNewSeason(L){
       if(p.isNew){delete p.isNew;continue}
       if(p.redshirt&&p.ss.gp<=4&&!p.rs){p.rs=true}else p.yr=Math.min(4,p.yr+1);
       p.redshirt=false;
-      const ch=[0,.35,.25,.15,.08][p.yr-1]||.08;for(const k of PATTR[p.pos])if(Math.random()<ch)p[k]=Math.min(5,p[k]+1);
+      const ch=[0,.35,.25,.15,.08][p.yr-1]||.08;for(const k of PATTR[p.pos])if(Math.random()<ch*1.6)p[k]=r1(p[k]+R(.15,.5));
       p.cond=100;p.inj=0;p.injWhy='';
     }
     for(const pos of POS_ORDER){let have=t.roster.filter(p=>p.pos===pos).length;while(have<POS_COUNTS[pos]){t.roster.push(genPlayer(pos,t.id===L.user?qOf(t)-.9:qOf(t)-.3,1));have++}}

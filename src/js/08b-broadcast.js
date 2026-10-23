@@ -197,11 +197,7 @@ const BC={
 };
 const ordQ=q=>['1ST','2ND','3RD','4TH'][q-1]||'OT';
 function scoreEvents(hs,as){const ev=[];const split=(n,h)=>{let left=n;while(left>0){const p=left>=7&&(left-7)%3!==1&&Math.random()<.7?7:left>=3?3:left;if(left-p===1||left-p===2&&p===7){ev.push({t:Math.random(),h,p:left});left=0;break}ev.push({t:Math.random(),h,p});left-=p}};split(hs,true);split(as,false);return ev.sort((a,b)=>a.t-b.t)}
-function winProbLive(){
-  if(!S.home)return .5;const tl=Math.max(.02,1-progress());const m=S.score[0]-S.score[1];
-  const ep=S.ot?0:((S.los-10)/100*5.5-1)*(uOff()?1:-1);const edge=(teamOvr(S.home)-teamOvr(S.away))*7*tl+(S.userHome?2.5*tl:S.neutral?0:-2.5*tl);
-  const z=(m+ep+edge)/(13*Math.sqrt(tl)+.8);return clamp(1/(1+Math.exp(-1.7*z)),.01,.99);
-}
+function winProbLive(){return winProbState()}
 function hometown(p){if(p.home)return p.home;const pl=(typeof PLACES!=='undefined'&&PLACES.length)?PLACES[(p.id*31)%PLACES.length]:'Hometown';const st=['TX','FL','GA','CA','OH','AL','LA','PA','NC','MI','TN','VA','SC','MS','NJ','AZ','MD','IL'];return `${pl}, ${st[(p.id*17)%st.length]}`}
 function recruitStars(p){return p.stars||clamp(Math.round((ovr99(p)-55)/9),2,5)}
 function seriesKey(a,b){return a.id<b.id?a.id+'-'+b.id:b.id+'-'+a.id}

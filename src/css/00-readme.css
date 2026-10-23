@@ -1,0 +1,6 @@
+/* src/css: extra stylesheets inlined at the end of the main <style> block by tools/build_web.py, in file-name order.
+   10-ui.css       menus, hub, broadcast graphics, design tokens
+   20-field.css    anything the on-field renderer needs outside the canvas
+   30-game.css     in-game controls: play calling, snap bar, action buttons, kicking, pre-snap tools
+   40-dynasty.css  dynasty screens: recruiting, portal, NIL, awards, bowls, program history
+   50-import.css   roster/logo import and team data screens */
