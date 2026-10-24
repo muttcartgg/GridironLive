@@ -9,6 +9,14 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 7): movement, blocking and tackling
+
+- Real momentum: acceleration from agility and weight, top speed from speed; sharp cuts cost speed, reversals plant first. Your ball carrier is a little more responsive than the CPU's.
+- Fatigue builds with sprinting, contact and snaps (stamina sets the rate) and recovers between plays; tired starting backs, receivers and defensive linemen sit for a play or two while the next man up plays.
+- Blocking battles resolve over time: pass rushers use bull rushes, swims, rips, speed rushes and spins based on their ratings; free blockers double-team the best rusher; run blockers climb to linebackers.
+- Tackling depends on angle, closing speed, weight and ratings: arm tackles miss more, broken tackles make the runner stumble, gang tackles finish, and big backs fall forward. New tackles-for-loss and broken-tackle stats.
+- Fixed an overtime bug that could run the end-of-game code repeatedly.
+
 ## Version 7 (part 6): rankings overhaul
 
 - AP Top 25 that moves like real voters: wins hold or move you up (more for ranked and road wins), losses drop you by how bad they were (a loss to an unranked team costs about 12 spots; a close loss to a top-10 team about 3), teams with fewer losses generally rank higher, unbeaten Group of 5 teams usually sit behind one-loss Power 4 contenders, and head-to-head always counts. Preseason poll from prestige, roster and last year's final poll. Same logic for the FCS Top 25.
