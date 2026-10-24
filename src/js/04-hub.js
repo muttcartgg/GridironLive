@@ -2,7 +2,8 @@
    04 · Hub UI: save slots, team picker, dynasty hub, offseason
    ========================================================= */
 let TAB='home',SETUP=null,ROSTER_FILTER='All';
-const badge=(t,cls='')=>`<span class="badge ${cls}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${esc(t.abbr)}</span>`;
+/* team badge: the generated shield, or the imported logo on a light shield once it loads (02c-packs.js) */
+const badge=(t,cls='')=>{const u=typeof teamLogoURL==='function'?teamLogoURL(t):'';return `<span class="badge ${cls}${u?' hl':''}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"><span class="ab">${esc(t.abbr)}</span>`:esc(t.abbr)}</span>`};
 const recStr=t=>`${t.rec.w}–${t.rec.l}`;
 const tcell=(t,label)=>`<div class="tname" data-team="${t.id}" style="cursor:pointer">${badge(t,'sm')}<span>${esc(label||rankTag(t.id)+t.city)}</span></div>`;
 function applyTeamTheme(t){const r=document.documentElement.style;r.setProperty('--team',t.c1);r.setProperty('--team2',t.c2);r.setProperty('--btn-ink',inkOn(t.c1))}
@@ -52,7 +53,7 @@ function showSlots(){
 /* ---------- new dynasty: team picker ---------- */
 function showSetup(slot){
   hideAll();S.phase='menu';
-  SETUP={L:genNCAALeague(),slot,coach:'',name:'',diff:1,conf:'all',div:'FBS',sort:'prestige',q:'',league:'ncaa'};
+  SETUP={L:genNCAALeague(),slot,coach:'',name:'',diff:1,conf:'all',div:'FBS',sort:'prestige',q:'',league:'ncaa'};if(typeof packAutoApply==='function')packAutoApply(SETUP.L);
   renderSetup();$('#setup').hidden=false;$('#setup .scroll').scrollTop=0;
 }
 function renderSetup(){
@@ -70,7 +71,7 @@ function renderSetup(){
       <div class="field-row"><label for="dynName">Dynasty name</label><input type="text" id="dynName" maxlength="28" placeholder="My Dynasty" value="${esc(st.name)}"></div></div>
       <div class="setrow"><span class="eyebrow">Difficulty</span><div class="seg" id="setDiff">${[[0,'Rookie'],[1,'Varsity'],[2,'All-American'],[3,'Heisman']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${v===st.diff}">${l}</button>`).join('')}</div></div></div>
     <div class="card"><div class="setrow"><span class="eyebrow">League</span><div class="seg" id="leagueSeg">${[['ncaa','All FBS & FCS'],['original','Original schools'],['pack','Load a team pack']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.league===v}">${l}</button>`).join('')}</div></div>
-      <p class="note">${st.league==='ncaa'?`All ${L.teams.length} Division I programs: ${L.teams.filter(t=>t.div==='FBS').length} FBS and ${L.teams.filter(isFCS).length} FCS, in their ${L.confs.length} conferences for 2026, with team colors, real rivalries and strength based on recent results. Badges use abbreviations, not official logos. Players are generated; paste real rosters any time with a team pack.`:st.league==='pack'?'Your team pack is loaded.':'Thirty-two original schools you can rename and recolor.'}</p></div>
+      <p class="note">${st.league==='ncaa'?`All ${L.teams.length} Division I programs: ${L.teams.filter(t=>t.div==='FBS').length} FBS and ${L.teams.filter(isFCS).length} FCS, in their ${L.confs.length} conferences for 2026, with team colors, real rivalries and strength based on recent results. Badges use abbreviations, not official logos. ${st.L.pack?`Rosters from ${esc(st.L.pack.name)}.`:'Players are generated; import real rosters any time.'}`:st.league==='pack'?'Your team pack is loaded.':'Thirty-two original schools you can rename and recolor.'}</p>${typeof packSetupHTML==='function'?packSetupHTML(st):''}</div>
     <div class="card">
       ${L.teams.some(isFCS)?`<div class="chips" id="divChips">${[['FBS','FBS'],['FCS','FCS'],['all','All Division I']].map(([v,l])=>`<button class="chipbtn" data-v="${v}" aria-pressed="${st.div===v}">${l}</button>`).join('')}</div>`:''}
       <div class="field-row"><label for="confSel">Conference</label><select id="confSel"><option value="all">All conferences</option>${L.confs.map((c,i)=>[c,i]).filter(([c])=>st.div==='all'||c.div===st.div).map(([c,i])=>`<option value="${i}" ${String(i)===st.conf?'selected':''}>${esc(c.name)} (${L.teams.filter(t=>t.conf===i).length})</option>`).join('')}</select></div>
@@ -83,14 +84,14 @@ function renderSetup(){
   document.querySelectorAll('#setDiff button').forEach(b=>b.onclick=()=>{st.diff=+b.dataset.v;renderSetupKeep()});
   document.querySelectorAll('#leagueSeg button').forEach(b=>b.onclick=()=>{const v=b.dataset.v;
     if(v==='original'){st.L=genLeague();st.league=v;st.conf='all';st.div='all';renderSetupKeep()}
-    else if(v==='ncaa'){st.L=genNCAALeague();st.league=v;st.conf='all';st.div='FBS';renderSetupKeep()}
+    else if(v==='ncaa'){st.L=genNCAALeague();if(typeof packAutoApply==='function')packAutoApply(st.L);st.league=v;st.conf='all';st.div='FBS';renderSetupKeep()}
     else openPackImport(st.L,()=>{st.league='pack';renderSetupKeep()},true)});
   document.querySelectorAll('#divChips button').forEach(b=>b.onclick=()=>{st.div=b.dataset.v;st.conf='all';renderSetupKeep()});
   const cs=$('#confSel');if(cs)cs.onchange=()=>{st.conf=cs.value;renderSetupKeep()};
   document.querySelectorAll('#sortSeg button').forEach(b=>b.onclick=()=>{st.sort=b.dataset.v;renderSetupKeep()});
   $('#teamQ').oninput=e=>{st.q=e.target.value;renderSetupKeep();const i=$('#teamQ');i.focus();i.setSelectionRange(i.value.length,i.value.length)};
   document.querySelectorAll('.tp').forEach(b=>b.onclick=()=>openTeamDetail(+b.id.slice(3)));
-  on('customProg',openCustomProgram);
+  on('customProg',openCustomProgram);if(typeof packSetupBind==='function')packSetupBind(st);
 }
 function renderSetupKeep(){const y=$('#setup .scroll').scrollTop;renderSetup();$('#setup .scroll').scrollTop=y}
 function openTeamDetail(id){
@@ -562,14 +563,7 @@ function bindOffseason(){
 }
 function stripPortal(p){const q={...p};delete q.from;delete q.signed;q.num=0;q.ss=newSS();q.cond=100;q.inj=0;return q}
 
-function openPackImport(L,done,regen){
-  openModal(`<div class="eyebrow">Team pack</div><div class="h2">Import a team pack</div>
-    <p class="note">Paste a team pack. It can rename all 32 schools, set colors, prestige, stadiums and conference names, and include real rosters. Format: {"conferences":[names in order],"teams":[{"school","mascot","abbr","primary":"#hex","secondary":"#hex","prestige":1-5,"stadium","roster":[{"name","pos","num","yr","ovr"}]}]}. Teams keep their conferences; they are matched by their order in the list.</p>
-    <textarea id="packIn" placeholder='{"teams":[...]}'></textarea><p class="note" id="packErr"></p>
-    <div class="btns"><button class="btn light" id="packGo">Apply</button><button class="btn ghost" id="packX">Cancel</button></div>`);
-  on('packX',closeModal);
-  on('packGo',()=>{try{applyTeamPack(L,JSON.parse($('#packIn').value),{regen:regen||L.phase==='regular'&&L.week===0});closeModal();done&&done()}catch(e){$('#packErr').textContent='That doesn’t look like a team pack. Check the brackets, commas and quotes.'}});
-}
+/* openPackImport lives in 02c-packs.js */
 
 /* ---------- v5: social feed, team pages ---------- */
 function hubFeed(){

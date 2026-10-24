@@ -1,0 +1,14 @@
+/* 50 · roster & logo packs (02c-packs.js): import modal, logo badges, scorebug logos */
+.ri-file{position:relative;cursor:pointer}
+.ri-prev{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
+.ri-prev .kpis small{font-size:.6em;color:var(--mute);margin-left:2px}
+.ri-opt{display:flex;align-items:center;gap:10px;min-height:40px;font:600 14px/1.2 var(--body)}
+.ri-opt input{width:22px;height:22px;accent-color:var(--team,#F2C230);flex:none}
+.badge.hl{position:relative}
+.badge.hl img{position:absolute;left:12%;top:8%;width:76%;height:66%;object-fit:contain;opacity:0;transition:opacity .2s}
+.badge.hl.ok{background:linear-gradient(160deg,#fff,#e6eaf0 70%)}
+.badge.hl.ok img{opacity:1}
+.badge.hl.ok .ab{visibility:hidden}
+.tm.haslg .chip{display:none}
+.tm .lg{width:26px;height:26px;object-fit:contain;flex:none;margin-left:8px;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+@media (max-width:420px){.tm .lg{width:20px;height:20px;margin-left:6px}}

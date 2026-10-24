@@ -439,7 +439,7 @@ def main():
             if pos == 'OL':
                 score = .55 * (yr - 2.5) + .45 * wz + .15 * hz
             elif pos == 'K':
-                score = .4 * (yr - 2.5) - .3
+                score = -1.1 + .25 * (yr - 1)
             else:
                 score = -1.0 + .22 * (yr - 1)
             if pos in ('DL', 'LB', 'TE'):
@@ -490,7 +490,7 @@ def main():
         sel = select60(ps)
         raw = team_ovr([floatp(p) for p in sel])
         # production-based team quality nudges the target a little; strength (real recent results) anchors it
-        target = target0 + clamp((raw - target0 - mdev) * .25, -.08, .08)
+        target = target0 - .035 + clamp((raw - target0 - mdev) * .25, -.08, .08)
         for it in range(8):
             for p in ps:
                 p['_o'] = ovr(floatp(p))
@@ -500,8 +500,9 @@ def main():
             if abs(d) < .004:
                 break
             for p in ps:
+                f = (1.15 if it < 4 else 1.0) * (.5 if p['pos'] == 'K' else 1)
                 for k in ATTR:
-                    p['a'][k] += d * (1.15 if it < 4 else 1.0)
+                    p['a'][k] += d * f
         # round, floors, final overall
         for p in ps:
             p['ar'] = {k: r1(v) for k, v in p['a'].items()}
@@ -513,7 +514,7 @@ def main():
                     for k in W8[p['pos']]:
                         p['ar'][k] = r1(p['ar'][k] + .1)
             base = o99(ovr(dict(p['ar'], pos=p['pos'])))
-            bonus = clamp(p['score'] - 1.0, 0, 2) if base >= 93 else 0
+            bonus = clamp(p['score'] - 1.0, 0, 2) * (.6 if p['pos'] in ('DL', 'LB', 'CB', 'S') else .4 if p['pos'] == 'K' else 1) if base >= 93 else 0
             if fl:
                 bonus = max(bonus, fl - base)
             p['ovr'] = int(clamp(round(base + bonus), 40, 99))

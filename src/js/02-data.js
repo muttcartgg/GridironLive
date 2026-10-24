@@ -169,28 +169,4 @@ function migrate(L){
   return fresh;
 }
 
-/* ---------- team packs ---------- */
-function applyTeamPack(L,pack,opts){
-  const list=Array.isArray(pack)?pack:pack&&pack.teams;if(!Array.isArray(list)||!list.length)throw new Error('not a pack');
-  if(!Array.isArray(pack)&&Array.isArray(pack.conferences))pack.conferences.forEach((n,i)=>{if(L.confs[i])L.confs[i].name=String(n).slice(0,22)});
-  const hex=/^#[0-9a-f]{6}$/i;
-  list.slice(0,L.teams.length).forEach((e,i)=>{const t=L.teams[i];if(!t||!e)return;
-    if(e.school)t.city=String(e.school).slice(0,24);if(e.mascot)t.name=String(e.mascot).slice(0,18);if(e.abbr)t.abbr=String(e.abbr).toUpperCase().slice(0,5);
-    if(hex.test(e.primary||''))t.c1=e.primary;if(hex.test(e.secondary||''))t.c2=e.secondary;if(e.stadium)t.stadium=String(e.stadium).slice(0,34);
-    const pr=parseInt(e.prestige);if(pr>=1&&pr<=5&&pr!==t.prestige){t.prestige=pr;t.q=1.1+pr*.62;
-      if(opts&&opts.regen&&t.id!==L.user){t.roster=[];for(const pos of POS_ORDER)for(let k=0;k<POS_COUNTS[pos];k++)t.roster.push(genPlayer(pos,qOf(t)));assignNumbers(t)}}
-    if(Array.isArray(e.roster)&&e.roster.length)t.roster=rosterFromPack(e.roster,t);
-    t.dco=null;});
-  invalidate();if(L.phase==='regular'&&L.week===0){resetRecords(L);buildSchedule(L)}updateRankings(L);
-}
-/* Roster entries: {name, pos, num?, yr? ('FR'..'SR' or 1-4), ovr? (1-5 stars), spd?, str?, cat?, thr?, acc?, tkl?, end?}
-   Missing ratings are generated around the player's overall; open spots are filled with walk-ons. */
-function rosterFromPack(list,t){
-  const out=[];const posMap={OT:'OL',OG:'OL',IOL:'OL',C:'OL',G:'OL',T:'OL',DE:'DL',DT:'DL',EDGE:'DL',NT:'DL',OLB:'LB',ILB:'LB',MLB:'LB',DB:'CB',FS:'S',SS:'S',SAF:'S',PK:'K',P:'K',HB:'RB',FB:'RB',ATH:'WR'};
-  for(const e of list.slice(0,ROSTER_CAP)){if(!e||!e.name)continue;let pos=String(e.pos||'').toUpperCase();pos=POS_ORDER.includes(pos)?pos:posMap[pos];if(!pos)continue;
-    const q=parseFloat(e.ovr);const p=genPlayer(pos,q>=1&&q<=5?q:qOf(t));const nm=String(e.name).trim().split(/\s+/);p.first=nm.shift().slice(0,16);p.last=(nm.join(' ')||'').slice(0,20);
-    const yr=typeof e.yr==='string'?['FR','SO','JR','SR'].indexOf(e.yr.toUpperCase().replace(/^RS\s*/,''))+1:parseInt(e.yr);if(yr>=1&&yr<=4)p.yr=yr;if(/^RS/i.test(String(e.yr||'')))p.rs=true;
-    const n=parseInt(e.num);if(n>=0&&n<=99)p.num=n;for(const k of ATTR_KEYS){const v=parseInt(e[k]);if(v>=1&&v<=5)p[k]=v}out.push(p)}
-  for(const pos of POS_ORDER){let have=out.filter(p=>p.pos===pos).length;while(have<POS_COUNTS[pos]){out.push(genPlayer(pos,qOf(t)-.5));have++}}
-  assignNumbers({roster:out});return out;
-}
+/* team packs (applyTeamPack, rosterFromPack) live in 02c-packs.js */
