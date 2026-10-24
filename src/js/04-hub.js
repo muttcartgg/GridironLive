@@ -192,21 +192,40 @@ function hubSchedule(){
 }
 let RANK_DIV=null;
 let RANK_MODE='top',RES_WEEK=null,RES_FILTER='all';
+/* résumé hint against one poll: record vs that poll's Top 25 and the best win */
+function rankHint(id,list,pre){
+  const pos={};list.slice(0,25).forEach((x,i)=>pos[x]=i+1);const pw=LG.power||{};let w=0,l=0,best=null;
+  for(const wk of LG.weeks)for(const g of wk.games){if(g.hs==null||(g.h!==id&&g.a!==id))continue;const o=g.h===id?g.a:g.h,won=winner(g)===id;
+    if(pos[o]){if(won)w++;else l++}
+    if(won&&(best==null||(pos[o]||99)<(pos[best]||99)||((pos[o]||99)===(pos[best]||99)&&(pw[o]||0)>(pw[best]||0))))best=o}
+  const bw=best==null?'':`beat ${pos[best]?'#'+pos[best]+' ':''}${esc(T(best).abbr)}`;
+  return w+l?`${w}–${l} vs ${pre}Top 25${bw?' · '+bw:''}`:bw?bw[0].toUpperCase()+bw.slice(1):(T(id).rec.l?'No wins yet':'');
+}
 function hubRankings(){
-  const u=T(LG.user),hasF=LG.teams.some(isFCS);const div=RANK_DIV||u.div;const list=(div==='FCS'?LG.rankF:LG.rank)||[];
-  const toggle=hasF?`<div class="chips" id="rankDiv">${['FBS','FCS'].map(d=>`<button class="chipbtn" data-v="${d}" aria-pressed="${div===d}">${d}</button>`).join('')}</div>`:'';
-  const modes=`<div class="seg" id="rankMode">${[['top','Top 25'],['all','All teams'],['res','Results']].map(([k,l])=>`<button data-v="${k}" aria-pressed="${RANK_MODE===k}">${l}</button>`).join('')}</div>`;
+  const u=T(LG.user),hasF=LG.teams.some(isFCS),cfp=RANK_MODE==='cfp',pdiv=RANK_DIV||u.div,div=cfp?'FBS':pdiv;const list=(div==='FCS'?LG.rankF:LG.rank)||[];
+  const toggle=hasF&&!cfp?`<div class="chips" id="rankDiv">${['FBS','FCS'].map(d=>`<button class="chipbtn" data-v="${d}" aria-pressed="${div===d}">${d}</button>`).join('')}</div>`:'';
+  const modes=`<div class="seg" id="rankMode">${[['top',pdiv==='FCS'?'FCS Top 25':'AP Top 25'],['cfp','CFP'],['all','All teams'],['res','Results']].map(([k,l])=>`<button data-v="${k}" aria-pressed="${RANK_MODE===k}">${l}</button>`).join('')}</div>`;
   const ri=id=>(LG.rinfo||{})[id]||{};
   const bestTxt=id=>{const r=ri(id);if(r.best==null)return '—';const o=T(r.best),rk=rankOf(r.best);return `${rk?'#'+rk+' ':''}${esc(o.abbr)} (+${r.bestM})`};
   const worstTxt=id=>{const r=ri(id);if(r.worst==null)return '—';const o=T(r.worst),rk=rankOf(r.worst);return `${rk?'#'+rk+' ':''}${esc(o.abbr)} (${r.worstM})`};
-  const row=(id,i,full)=>{const t=T(id),r=ri(id);return `<tr class="${id===LG.user?'me':''}"><td class="n">${i+1}${i<25?rankMove(id,i,div):''}</td><td>${tcell(t,teamName(t))}</td><td class="n">${recStr(t)}</td><td class="n">${r.vr?r.vr[0]+'–'+r.vr[1]:'—'}</td><td class="note hide-s">${bestTxt(id)}</td>${full?`<td class="note hide-s">${worstTxt(id)}</td>`:''}<td class="n">${r.sos||'—'}</td><td class="n">${r.pow!=null?(r.pow>0?'+':'')+r.pow:'—'}</td></tr>`};
+  const pw=r=>r.pow!=null?(r.pow>0?'+':'')+r.pow:'—';
+  const row=(id,i,full)=>{const t=T(id),r=ri(id);return `<tr class="${id===LG.user?'me':''}"><td class="n">${i+1}${i<25?rankMove(id,i,div):''}</td><td>${tcell(t,teamName(t))}</td><td class="n">${recStr(t)}</td><td class="n">${r.vr?r.vr[0]+'–'+r.vr[1]:'—'}</td><td class="note hide-s">${bestTxt(id)}</td>${full?`<td class="note hide-s">${worstTxt(id)}</td>`:''}<td class="n">${r.sos||'—'}</td><td class="n">${pw(r)}</td></tr>`};
   const head=full=>`<thead><tr><th class="n">#</th><th>Team</th><th class="n">Rec</th><th class="n">vs Top 25</th><th class="hide-s">Best win</th>${full?'<th class="hide-s">Worst loss</th>':''}<th class="n">SOS</th><th class="n">Power</th></tr></thead>`;
+  /* AP / CFP Top 25: rank with movement, team with a résumé hint, record (SOS and power on wider screens) */
+  const pollTab=(lst,prevL,pre)=>`<div class="tw"><table class="rtab"><thead><tr><th class="n">#</th><th>Team</th><th class="n">Rec</th><th class="n hide-s">SOS</th><th class="n hide-s">Power</th></tr></thead><tbody>${lst.slice(0,25).map((id,i)=>{const t=T(id),r=ri(id),h=rankHint(id,lst,pre),sd=pre&&LG.cfp?LG.cfp.seeds.indexOf(id)+1:0;
+    return `<tr class="${id===LG.user?'me':''}"><td class="n">${i+1}${rankMove(id,i,div,prevL)}</td><td>${tcell(t,t.city)}${h||sd?`<div class="rhint">${sd?`<span class="tag ${sd<=4?'gold':'blue'}">Seed ${sd}</span> `:''}${h}</div>`:''}</td><td class="n">${recStr(t)}</td><td class="n hide-s">${r.sos||'—'}</td><td class="n hide-s">${pw(r)}</td></tr>`}).join('')}</tbody></table></div>`;
+  const last=LG.week>0&&LG.weeks[LG.week-1]?LG.weeks[LG.week-1].label:'';
   let body='';
   if(RANK_MODE==='top'){
     const others=list.slice(25,35).map(id=>`${esc(T(id).city)} ${recStr(T(id))}`).join(' · ');
-    body=`<div class="card"><div class="setrow"><div class="h2">${pollName(LG,div)}</div>${toggle}</div><div class="tw"><table class="rtab">${head(false)}<tbody>${list.slice(0,25).map((id,i)=>row(id,i,false)).join('')}</tbody></table></div>
+    body=`<div class="card"><div class="setrow"><div><div class="eyebrow">${LG.week===0&&LG.phase==='regular'?'Before Week 1':'After '+esc(last)}</div><div class="h2">${pollName(LG,div)}</div></div>${toggle}</div>${pollTab(list,null,'')}
       ${others?`<p class="note"><b>Others receiving votes:</b> ${others}</p>`:''}
-      <p class="note">Résumé-based: who you beat (opponent strength), how you lost, margin (capped), strength of schedule and last week's poll. Ranked teams that win can't fall more than two spots, and head-to-head results break near-ties. SOS is a rank; Power is points better than an average team.</p></div>`;
+      <p class="note">Voted like the media poll: each week starts from last week's ballot. A win holds a team's spot or moves it up (more for ranked, top-10 and road wins), a loss drops it by how good the opponent was and the margin, and a bye holds. A ranked team that wins falls at most two spots, and a team that beat a team with the same or a worse record is always ranked ahead of it. SOS is a rank; Power is points better than an average team.</p></div>`;
+  }else if(cfp){
+    const c=ensureCFP(LG),fin=LG.week>LG.R||LG.phase==='offseason';
+    body=!c.length?`<div class="card"><div class="eyebrow">College Football Playoff</div><div class="h2">CFP rankings</div><p class="note">${LG.phase==='offseason'?'No CFP rankings were kept for this season.':`Not released yet — first rankings after Week ${cfpFrom(LG)}. Until then the playoff projection uses the AP Top 25.`}</p></div>`
+      :`<div class="card"><div class="eyebrow">${fin?'Final rankings · selection day':'Selection committee · after '+esc(last)}</div><div class="h2">CFP Top 25</div>${pollTab(c,LG.cfpPrev||[],'CFP ')}
+      <p class="note">The committee ranks résumés, not reputations, and starts fresh every week: record, strength of schedule, wins over CFP-ranked teams, bad losses, head-to-head and common opponents${fin?', plus conference titles':''}. Its final rankings pick and seed the 12-team playoff.</p></div>`;
   }else if(RANK_MODE==='all'){
     body=`<div class="card"><div class="setrow"><div class="h2">All ${div} teams · ${list.length}</div>${toggle}</div><div class="tw"><table class="rtab">${head(true)}<tbody>${list.map((id,i)=>row(id,i,true)).join('')}</tbody></table></div></div>`;
   }else{
@@ -224,9 +243,15 @@ function hubRankings(){
 }
 /* ---------- College Football Playoff bracket (live, or projected from today's rankings) ---------- */
 function projectCFP(L){
-  const conf=[];L.confs.forEach((c,i)=>{if(c.div==='FBS'&&!c.ind){const st=confStandings(L,i);if(st[0])conf.push(st[0].id)}});
-  const champs=conf.sort((a,b)=>L.rank.indexOf(a)-L.rank.indexOf(b)).slice(0,5);const field=champs.slice();for(const id of L.rank){if(field.length>=12)break;if(!field.includes(id))field.push(id)}
-  return {seeds:field.sort((a,b)=>L.rank.indexOf(a)-L.rank.indexOf(b)),champs,projected:true,r1:[],qf:[],sf:[],final:null};
+  const champs=[];L.confs.forEach((c,i)=>{if(c.div==='FBS'&&!c.ind){const st=confStandings(L,i);if(st[0])champs.push(st[0].id)}});
+  const src=ensureCFP(L).length?'cfp':'ap',s=cfpSelect(L,selOrder(L),champs);
+  return {seeds:s.seeds,champs,auto:s.auto,src,projected:true,r1:[],qf:[],sf:[],final:null};
+}
+/* projected field plus the first teams out, ranked by the order the projection uses (CFP once released, else AP) */
+function cfpBubble(L,c){
+  if(L.week<L.R-6||L.phase!=='regular')return '';const ord=selOrder(L),pos={};ord.forEach((id,i)=>pos[id]=i+1);const out=ord.filter(id=>!c.seeds.includes(id)).slice(0,6);
+  const row=(id,sd)=>`<div class="lrow"><span class="l">${badge(T(id),'sm')} ${pos[id]<=25?'#'+pos[id]+' ':''}${esc(T(id).city)}</span><small class="note">${sd?'Seed '+sd+' · ':''}${recStr(T(id))}</small></div>`;
+  return `<div class="inout"><div class="col"><div class="eyebrow" style="color:var(--ok)">In (projected)</div>${c.seeds.map((id,i)=>row(id,i+1)).join('')}</div><div class="col"><div class="eyebrow" style="color:var(--warn)">First teams out</div>${out.map(id=>row(id)).join('')}</div></div>`;
 }
 function hubPlayoff(){
   const u=T(LG.user);
@@ -245,10 +270,10 @@ function hubPlayoff(){
   const fin=c.final?game(c.final,null,null,'National Championship'):game(null,W(c.sf[0]),W(c.sf[1]),'National Championship');
   const champ=LG.champ!=null&&LG.cfp?T(LG.champ):null;
   const bw=LG.weeks[LG.R+1]?LG.weeks[LG.R+1].games.filter(g=>g.bowl):[];
-  return `<div class="card cfp"><div class="setrow"><div><div class="eyebrow">${c.projected?'Projected · if the season ended today':LG.season+' College Football Playoff'}</div><div class="h2">College Football Playoff</div></div>${champ?`<div class="champ" style="--c1:${champ.c1}">${badge(champ,'lg')}<div><small>National champion</small><b>${esc(champ.city)}</b></div></div>`:''}</div>
+  return `<div class="card cfp"><div class="setrow"><div><div class="eyebrow">${c.projected?(c.src==='cfp'?'Projected · from this week’s CFP rankings':'Projected · from the AP Top 25 (CFP rankings start after Week '+cfpFrom(LG)+')'):LG.season+' College Football Playoff'}</div><div class="h2">College Football Playoff</div></div>${champ?`<div class="champ" style="--c1:${champ.c1}">${badge(champ,'lg')}<div><small>National champion</small><b>${esc(champ.city)}</b></div></div>`:''}</div>
     <div class="bracket2"><div class="bcol"><div class="bhead">First round</div><div class="bms">${r1.join('')}</div></div><div class="bcol"><div class="bhead">Quarterfinals</div><div class="bms">${qf.join('')}</div></div><div class="bcol"><div class="bhead">Semifinals</div><div class="bms">${sf.join('')}</div></div><div class="bcol fin"><div class="bhead">Championship</div><div class="bms">${fin}</div></div></div>
-    <p class="note">Twelve teams: the five highest-ranked conference champions (★) and the seven highest-ranked teams left, seeded by ranking. Seeds 1–4 get a bye; first-round games are on campus. Swipe sideways to see the whole bracket.</p></div>
-    ${c.projected?`<div class="card"><div class="h2">Bubble watch</div>${playoffBubble(LG)||'<p class="note">Bubble watch starts in November.</p>'}</div>`:''}
+    <p class="note">Twelve teams picked from the final CFP rankings: ${p4Set(LG).size>=LG.confs.filter(x=>x.div==='FBS'&&!x.ind).length?'every conference champion gets an automatic bid':'each Power 4 champion and the highest-ranked Group of 5 champion get automatic bids, Notre Dame is in if ranked in the top 12,'} and the highest-ranked teams left fill the field (★ conference champion). Straight seeding by ranking: seeds 1–4 get byes and seeds 5–8 host first-round games on campus. Swipe sideways to see the whole bracket.</p></div>
+    ${c.projected?`<div class="card"><div class="h2">Bubble watch</div>${cfpBubble(LG,c)||'<p class="note">Bubble watch starts in November.</p>'}</div>`:''}
     ${bw.length?`<div class="card"><div class="h2">Bowl season · ${bw.length} games</div><div class="res-grid">${bw.map(g=>{const H=T(g.h),A=T(g.a),done=g.hs!=null;return `<div class="res-g"><div class="rt ${done&&g.as>g.hs?'w':''}" data-team="${A.id}">${badge(A,'sm')}<span>${esc(A.city)}</span><b>${done?g.as:''}</b></div><div class="rt ${done&&g.hs>g.as?'w':''}" data-team="${H.id}">${badge(H,'sm')}<span>${esc(H.city)}</span><b>${done?g.hs:''}</b></div><small class="note">${esc(g.tag)}</small></div>`}).join('')}</div></div>`:''}
     ${LG.fcsp?fcsBracket():''}`;
 }

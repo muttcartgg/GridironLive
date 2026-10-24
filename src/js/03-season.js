@@ -99,31 +99,137 @@ function recordGame(L,g){
 }
 const winner=g=>g.hs>g.as?g.h:g.a, loser=g=>g.hs>g.as?g.a:g.h;
 
-/* ---------- polls (FBS and FCS ranked separately) ---------- */
-function updateRankings(L){
-  const winp=t=>{const g=t.rec.w+t.rec.l;return g?t.rec.w/g:.5};
-  const opps={};L.teams.forEach(t=>opps[t.id]=[]);
-  for(const w of L.weeks)for(const g of w.games)if(g.hs!=null){opps[g.h].push(g.a);opps[g.a].push(g.h)}
-  const sos=t=>{const o=opps[t.id];return o.length?o.reduce((s,id)=>{const ot=L.teams[id];return s+winp(ot)*(ot.div!==t.div&&ot.div==='FCS'?.4:1)},0)/o.length:.5};
-  /* resume + analytics: an opponent-adjusted power rating (margin capped, preseason prior fades after ~3 games)
-     plus a resume score where who you beat matters, bad losses hurt more, and big wins move you without overranking */
-  const G={};L.teams.forEach(t=>G[t.id]=[]);for(const w of L.weeks)for(const g of w.games)if(g.hs!=null){G[g.h].push({o:g.a,m:g.hs-g.as});G[g.a].push({o:g.h,m:g.as-g.hs})}
-  const prior=t=>(qOf(t)-3)*7+(isFCS(t)?-12:0)+(teamOvr(t)-3)*3;let r={};L.teams.forEach(t=>r[t.id]=prior(t));
+/* ---------- rankings ----------
+   AP Top 25 (FBS and FCS polled separately), voted like the media poll: a preseason poll from program prestige, roster
+   strength and last season's final poll; then each week voters start from last week's ballot and move teams by result
+   (a win holds or climbs, more for ranked, top-10 and road wins; a loss drops a team by opponent and margin; byes hold),
+   re-read résumés a little more as the season goes (record tiers: fewer losses first unless the quality gap is large),
+   and keep two hard rules: a ranked team that won or was idle falls at most two spots, and a team that beat a team with
+   the same or a worse record is ranked ahead of it.
+   CFP committee rankings (FBS, L.cfpRank): from the week closest to early November through conference championship
+   weekend, résumé-first and redone every week (little inertia). */
+const P4_NAMES=['SEC','Big Ten','Big 12','ACC'];
+function p4Set(L){const fbs=L.confs.map((c,i)=>i).filter(i=>L.confs[i].div==='FBS'&&!L.confs[i].ind);let s=fbs.filter(i=>P4_NAMES.includes(L.confs[i].name));
+  if(s.length<4){const avg=i=>{const ts=L.teams.filter(t=>t.conf===i);return ts.length?sum(ts.map(qOf))/ts.length:0};s=fbs.length>5?fbs.slice().sort((a,b)=>avg(b)-avg(a)).slice(0,4):fbs}
+  return new Set(s)}
+const isND=(L,t)=>!isFCS(t)&&isInd(L,t)&&(t.abbr==='ND'||t.city==='Notre Dame');
+const cfpFrom=L=>clamp(Math.min(10,(L.R||13)-3),2,10);   /* first CFP rankings come out after this regular-season week (week 10, early November) */
+const rkQ=x=>1/(1+Math.exp(-(x-2)/6));
+function rankCtx(L){
+  const G={};for(const t of L.teams)G[t.id]=[];
+  L.weeks.forEach((w,wi)=>{for(const g of w.games)if(g.hs!=null){const n=g.neutral?0:1;G[g.h].push({o:g.a,m:g.hs-g.as,loc:n,wi});G[g.a].push({o:g.h,m:g.as-g.hs,loc:-n,wi})}});
+  /* opponent-adjusted power rating (margin capped at 24, the preseason prior fades over ~3 games) */
+  const prior=t=>(qOf(t)-3)*7+(isFCS(t)?-12:0)+(teamOvr(t)-3)*3;let r={};for(const t of L.teams)r[t.id]=prior(t);
   for(let it=0;it<12;it++){const n={};for(const t of L.teams){const gs=G[t.id];let s=0;for(const g of gs)s+=clamp(g.m,-24,24)+r[g.o];n[t.id]=(s+3*prior(t))/(gs.length+3)}r=n}
-  const Qv=x=>1/(1+Math.exp(-(x-2)/6));L.power=r;
-  const sc={};for(const t of L.teams){let res=0;for(const g of G[t.id]){const o=L.teams[g.o];const q=Qv(r[g.o])*(isFCS(o)&&!isFCS(t)?.3:1);
-      if(g.m>0)res+=.55+1.5*q+Math.min(g.m,21)/70;else{const close=g.m>-8;res-=(.35+(1-q)*1.5)*(close?.6:1)+(close?0:Math.min(-g.m,28)/120)}}
-    /* poll inertia: last week's ranking carries over, so a loss to a good team is a dip, not a collapse */
-    const pl=isFCS(t)?(L.rankF||[]):(L.rank||[]),pi=pl.indexOf(t.id),inert=pi>=0&&pi<30?(30-pi)*.11:0;
-    sc[t.id]=res+r[t.id]*.16+(t.cc?1:0)+inert+Math.random()*.001;void winp;void sos}
-  let ids=L.teams.map(t=>t.id).sort((a,b)=>sc[b]-sc[a]);
-  ids=pollAdjust(L,ids,sc,G,r,Qv);
-  L.rank=ids.filter(id=>!isFCS(L.teams[id]));L.rankF=ids.filter(id=>isFCS(L.teams[id]));
+  return {G,r,P:p4Set(L)};
 }
+/* merit: record first (each loss costs a tier; a Group of 5 team starts nearly a tier back), then wins over
+   teams ranked in the reference order (top 10 / top 25 / 26-50), road wins over ranked teams, bad losses, a close loss to a
+   top-10 team, strength of schedule and a little "eye test" power */
+const MERIT_AP={loss:3.2,sos:.08,pow:.06,g5:2.8},MERIT_CFP={loss:3.6,sos:.1,pow:.05,g5:3};
+function meritScore(L,C,t,pos,w){const gs=C.G[t.id],fcs=isFCS(t),qw=[];let s=-w.loss*t.rec.l+.3*t.rec.w,so=0;
+  for(const g of gs){const o=L.teams[g.o],ofcs=isFCS(o),rk=pos[g.o]||999;so+=C.r[g.o];
+    if(g.m>0){if(ofcs===fcs)qw.push((rk<=10?1.6:rk<=25?1:rk<=50?.4:0)+(g.loc<0&&rk<=25?.25:0));else if(fcs)qw.push(1.5)}
+    else if(ofcs&&!fcs)s-=3;else if(ofcs===fcs){if(rk>50)s-=1.5;else if(rk<=10&&g.m>-8)s+=.6}}
+  qw.sort((a,b)=>b-a).forEach((v,i)=>s+=v*.8**i);   /* each extra quality win counts a little less */
+  if(gs.length)s+=w.sos*so/gs.length;
+  if(w.g5&&!fcs&&!C.P.has(t.conf)&&!isND(L,t))s-=w.g5;
+  return s+w.pow*C.r[t.id]}
+const h2hNet=(C,a,b)=>{let n=0;for(const g of C.G[a])if(g.o===b)n+=g.m>0?1:-1;return n};
+const h2hOver=(L,C,a,b)=>L.teams[a].rec.l<=L.teams[b].rec.l&&h2hNet(C,a,b)>0;   /* a must rank ahead of b */
+/* Final order from a value order (best first). Head-to-head is a hard rule: a team that beat a team with the same or a worse
+   record (every meeting counts, a split counts as none) is placed ahead of it; claims inside a cycle (A beat B, B beat C,
+   C beat A) can't all be honoured and are left out. hard[id]: a ranked team that won or was idle is placed by last week's
+   spot + 2. soft[id]: a team that must wait for teams that beat it waits at most until then, and after that they are moved
+   up next to it (so a loser and the team that beat it meet in the middle). fix: ids placed first, in order. */
+function orderPoll(L,C,list,hard,soft,fix){
+  fix=fix||[];const done=new Set(fix),all=list.filter(id=>!done.has(id)),inG=(id,i)=>i<60||hard[id]!=null;
+  const rest=all.filter(inG),tail=all.filter((id,i)=>!inG(id,i)),n=rest.length,pre=rest.map(()=>[]);
+  for(let i=0;i<n;i++)for(let j=0;j<n;j++)if(i!==j&&h2hOver(L,C,rest[j],rest[i]))pre[i].push(j);
+  const D=rest.map(()=>new Uint8Array(n));pre.forEach((ps,i)=>ps.forEach(j=>D[j][i]=1));
+  for(let k=0;k<n;k++)for(let i=0;i<n;i++)if(D[i][k])for(let j=0;j<n;j++)if(D[k][j])D[i][j]=1;
+  for(let i=0;i<n;i++)pre[i]=pre[i].filter(j=>!D[i][j]);   /* j beat i, but i also reaches j: a cycle */
+  /* a capped team's spot also caps the teams that beat it (they must stay ahead of it) */
+  const hd=rest.map(id=>hard[id]!=null?hard[id]:null),q=hd.map((h,i)=>i).filter(i=>hd[i]!=null);
+  while(q.length){const i=q.shift();for(const j of pre[i])if(hd[j]==null||hd[j]>hd[i]-1){hd[j]=Math.max(0,hd[i]-1);q.push(j)}}
+  const placed=new Uint8Array(n),out=fix.slice(),open=i=>pre[i].every(j=>placed[j]);
+  const lead=i=>{for(let g=0;g<n;g++){const u=pre[i].filter(j=>!placed[j]);if(!u.length)return i;i=Math.min(...u)}return i};
+  const find=f=>{for(let i=0;i<n;i++)if(!placed[i]&&f(rest[i],i))return i;return -1};
+  for(let c=0;c<n;c++){const pos=out.length;
+    let k=find((id,i)=>hd[i]!=null&&hd[i]<=pos);if(k<0)k=find(id=>soft[id]!=null&&soft[id]<=pos);
+    k=k>=0?lead(k):find((id,i)=>open(i));if(k<0)k=lead(find(()=>true));
+    placed[k]=1;out.push(rest[k])}
+  /* repair cascades: a capped team placed too late moves back up, never past a team with a head-to-head claim over it */
+  const ix={};rest.forEach((id,i)=>ix[id]=i);
+  for(const id of rest.filter(id=>hard[id]!=null).sort((a,b)=>hard[a]-hard[b])){const ni=out.indexOf(id),cap=Math.max(fix.length,hard[id]);if(ni<=cap)continue;
+    let to=cap;for(let k=ni-1;k>=cap;k--)if(pre[ix[id]].includes(ix[out[k]])){to=k+1;break}
+    if(to<ni){out.splice(ni,1);out.splice(to,0,id)}}
+  return out.concat(tail)}
+/* how far one result moves a team on a voter's ballot, in poll spots (p = last week's spot, 0-based; rk = last week's rank) */
+function apDelta(L,C,t,g,rk,p){
+  const o=L.teams[g.o],m=g.m,cross=isFCS(o)!==isFCS(t),or=cross?null:rk(g.o);
+  if(m>0){if(cross)return isFCS(t)?3+3*rkQ(C.r[g.o]):.15;
+    let d;if(or&&or<=10)d=(4.5+(11-or)*.35)*(g.loc<0?1.2:1);else if(or)d=(2.5+(26-or)*.1)*(g.loc<0?1.2:1);else d=.45+Math.min(m,28)/60+(g.loc<0?.15:0)-(m<=3?.9:0);
+    return d>0?d*clamp(((p+1)/14)**1.1,.15,1.3):d}   /* teams near the top have less room to climb */
+  if(cross)return isFCS(t)?-.3-Math.min(-m,42)/120:-22;
+  let d;if(or&&or<=10)d=.8+or*.1+Math.max(0,Math.min(-m,35)-7)*.12;else if(or)d=4+(or-10)*.15+Math.min(-m,28)*.08;else d=7.5+Math.min(-m,28)*.12;
+  return -d*(g.loc>0?1.1:g.loc<0?.92:1)*(1+.2*Math.max(0,t.rec.l-1))}   /* a second or third loss costs more */
+function apPoll(L,C,div,wk){
+  const ids=L.teams.filter(t=>(t.div||'FBS')===div).map(t=>t.id);if(!ids.length)return [];
+  const prev=((div==='FCS'?L.rankF:L.rank)||[]).filter(id=>L.teams[id]&&(L.teams[id].div||'FBS')===div);
+  if(wk<0){const pp={};prev.slice(0,25).forEach((id,i)=>pp[id]=(25-i)/25);const sc={};
+    for(const id of ids){const t=L.teams[id];sc[id]=t.prestige*.9+qOf(t)*.6+teamOvr(t)*2.2+(pp[id]||0)*2+Math.random()*.3}
+    return ids.sort((a,b)=>sc[b]-sc[a])}
+  const pos={};prev.forEach((id,i)=>pos[id]=i+1);const rk=id=>pos[id]<=25?pos[id]:null;
+  const M={};for(const id of ids)M[id]=meritScore(L,C,L.teams[id],pos,MERIT_AP);
+  const byM=ids.slice().sort((a,b)=>M[b]-M[a]),mp={};byM.forEach((id,i)=>mp[id]=i);
+  const seen=new Set(prev.slice(0,35)),base=prev.slice(0,35).concat(byM.filter(id=>!seen.has(id)));
+  /* each voter starts from last week's ballot, moves teams by result and re-reads résumés a little more as the season goes */
+  const V=p=>25-p,alpha=clamp(.1+(wk+1)*.025,.1,.4),val={},lost={};
+  base.forEach((id,p)=>{const g=C.G[id].find(x=>x.wi===wk);let d=0;if(g){d=apDelta(L,C,L.teams[id],g,rk,p);if(g.m<0)lost[id]=1}
+    val[id]=V(p)+d+(p<35?clamp(alpha*(V(mp[id])-V(p)),-1.25,4):.55*(V(mp[id])-V(p)))});
+  const list=base.slice().sort((a,b)=>val[b]-val[a]),soft={},hard={};list.forEach((id,i)=>soft[id]=i+6);
+  for(let pi=0;pi<25&&pi<prev.length;pi++)if(!lost[prev[pi]])hard[prev[pi]]=pi+2;   /* a ranked team that won or was idle falls at most two spots */
+  /* final poll: the national champion is No. 1 and the runner-up No. 2 */
+  const fin=div==='FCS'?L.fcsp&&L.fcsp.final:L.cfp&&L.cfp.final;
+  return orderPoll(L,C,list,hard,soft,wk===L.R+4&&fin&&fin.hs!=null?[winner(fin),loser(fin)]:[]);
+}
+function cfpPoll(L,C,wk){
+  const ids=L.teams.filter(t=>!isFCS(t)).map(t=>t.id),fin=wk>=L.R,pp={};(L.cfpRank||[]).slice(0,25).forEach((id,i)=>pp[id]=i);
+  const score=ref=>{const pos={};ref.forEach((id,i)=>pos[id]=i+1);const sc={};for(const id of ids){const t=L.teams[id];let s=meritScore(L,C,t,pos,MERIT_CFP);
+      if(fin&&t.cc)s+=C.P.has(t.conf)?1:.5;              /* conference titles count in the final rankings */
+      if(pp[id]!=null)s+=(25-pp[id])*.012;sc[id]=s}return sc};
+  /* first read against this week's AP order, then again against the committee's own order (wins over CFP-ranked teams) */
+  let sc=score(L.rank||[]),order=ids.slice().sort((a,b)=>sc[b]-sc[a]);sc=score(order);order=ids.slice().sort((a,b)=>sc[b]-sc[a]);
+  /* common opponents: neighbours with the same record, close résumés and no head-to-head */
+  for(let i=0;i<Math.min(40,order.length-1);i++){const a=order[i],b=order[i+1];if(L.teams[a].rec.l!==L.teams[b].rec.l||sc[a]-sc[b]>.6||h2hNet(C,a,b))continue;
+    const ra={};for(const g of C.G[a])ra[g.o]=(ra[g.o]||0)+Math.sign(g.m)*10+clamp(g.m,-21,21)/3;let d=0,n=0;
+    for(const g of C.G[b])if(ra[g.o]!=null){d+=Math.sign(g.m)*10+clamp(g.m,-21,21)/3-ra[g.o];n++}
+    if(n&&d>4){order[i]=b;order[i+1]=a;i++}}
+  const soft={};order.forEach((id,i)=>soft[id]=i+6);return orderPoll(L,C,order,{},soft);
+}
+/* résumé card for every team (vs the AP poll): strength-of-schedule rank, best win, worst loss, record vs ranked, power */
+function resumeCard(L,C){
+  const rk={};L.rank.forEach((id,i)=>rk[id]=i+1);(L.rankF||[]).forEach((id,i)=>rk[id]=i+1);
+  const sos={};for(const t of L.teams){const gs=C.G[t.id];sos[t.id]=gs.length?gs.reduce((s,g)=>s+C.r[g.o],0)/gs.length:(qOf(t)-3)*7}
+  const sosRank={};for(const div of ['FBS','FCS'])L.teams.filter(t=>(t.div||'FBS')===div).map(t=>t.id).sort((a,b)=>sos[b]-sos[a]).forEach((id,i)=>sosRank[id]=i+1);
+  L.rinfo={};
+  for(const t of L.teams){let best=null,worst=null;const vr=[0,0];for(const g of C.G[t.id]){const orank=rk[g.o];if(g.m>0){if(!best||C.r[g.o]>C.r[best.o])best=g}else if(!worst||C.r[g.o]<C.r[worst.o])worst=g;if(orank&&orank<=25&&L.teams[g.o].div===t.div)vr[g.m>0?0:1]++}
+    L.rinfo[t.id]={sos:sosRank[t.id],best:best?best.o:null,bestM:best?best.m:0,worst:worst?worst.o:null,worstM:worst?worst.m:0,vr,pow:+C.r[t.id].toFixed(1)}}
+}
+function updateRankings(L){
+  const C=rankCtx(L);L.power=C.r;const W=L.weeks[L.week],wk=W&&W.games.some(g=>g.hs!=null)?L.week:-1,pre=wk<0&&!L.weeks.some(w=>w.games.some(g=>g.hs!=null));
+  if(wk>=0||pre){L.rank=apPoll(L,C,'FBS',wk);L.rankF=apPoll(L,C,'FCS',wk)}   /* a mid-week re-run (roster import) keeps the polls */
+  if(pre){L.cfpRank=[];L.cfpPrev=[]}
+  else if(wk+1>=cfpFrom(L)&&wk<=L.R){L.cfpPrev=(L.cfpRank||[]).slice(0,25);L.cfpRank=cfpPoll(L,C,wk)}
+  resumeCard(L,C);
+}
+/* CFP rankings for an old save that reached November before they existed */
+function ensureCFP(L){if(!L.cfpRank)L.cfpRank=[];if(!L.cfpRank.length&&L.phase==='regular'&&L.week>=cfpFrom(L)){L.cfpRank=cfpPoll(L,rankCtx(L),Math.min(L.week-1,L.R));L.cfpPrev=[]}return L.cfpRank}
 const rankList=(L,t)=>isFCS(t)?(L.rankF||[]):L.rank;
 const rankOf=id=>{const t=LG.teams[id];const i=rankList(LG,t).indexOf(id);return i>=0&&i<25?i+1:null};
 const rankTag=id=>{const r=rankOf(id);return r?`#${r} `:''};
-const pollName=(L,div)=>div==='FCS'?(L.phase==='offseason'?'FCS final poll':'FCS poll'):L.phase==='offseason'?'Final poll':L.week===0?'Preseason poll':L.week>=L.R-5?'CFP rankings':'Media poll';
+const pollName=(L,div)=>{const n=div==='FCS'?'FCS Top 25':'AP Top 25';return L.phase==='offseason'||L.week>L.R+4?'Final '+n:L.week===0?'Preseason '+n:n};
 function h2h(L,a,b){for(const w of L.weeks)for(const g of w.games)if(g.hs!=null&&!g.post&&((g.h===a&&g.a===b)||(g.h===b&&g.a===a)))return winner(g)===a?-1:1;return 0}
 function confStandings(L,c){
   const ri=id=>{const t=L.teams[id];const i=rankList(L,t).indexOf(id);return i<0?999:i};
@@ -131,6 +237,18 @@ function confStandings(L,c){
 }
 
 /* ---------- postseason: title games, 12-team CFP, bowls, 24-team FCS playoff, Celebration Bowl ---------- */
+/* 12-team CFP field (2026 format) from the final CFP rankings (the AP poll if they don't exist): each Power 4 champion and the
+   highest-ranked Group of 5 champion get automatic bids, Notre Dame is in if it's ranked in the top 12, and the highest-ranked
+   teams left fill the field. Straight seeding by ranking: seeds 1-4 get byes, seeds 5-8 host first-round games. */
+const selOrder=L=>((L.cfpRank&&L.cfpRank.length?L.cfpRank:L.rank)||[]).filter(id=>!isFCS(L.teams[id]));
+function cfpSelect(L,order,champs){
+  const P=p4Set(L),pos={};order.forEach((id,i)=>pos[id]=i);const at=id=>pos[id]!=null?pos[id]:999;
+  champs=champs.filter(id=>!isFCS(L.teams[id])).sort((a,b)=>at(a)-at(b));
+  const p4=champs.filter(id=>P.has(L.teams[id].conf)),auto=p4.concat(champs.filter(id=>!P.has(L.teams[id].conf)).slice(0,Math.max(0,5-p4.length)));
+  const field=auto.slice(),nd=order.find(id=>isND(L,L.teams[id]));if(nd!=null&&at(nd)<12&&!field.includes(nd))field.push(nd);
+  for(const id of order){if(field.length>=12)break;if(!field.includes(id))field.push(id)}
+  return {seeds:field.sort((a,b)=>at(a)-at(b)),auto};
+}
 function postGame(h,a,extra){return Object.assign({h,a,hs:null,as:null,post:true,neutral:true,wx:'Clear',slot:'Primetime'},extra)}
 const WIN=g=>g&&g.hs!=null?winner(g):null;
 function buildPost(L){
@@ -149,10 +267,8 @@ function buildPost(L){
     L.weeks[L.week]={label:WEEK_NAMES[0],kind:'post0',games};
   }
   if(k===1){
-    const champs=L.teams.filter(t=>!isFCS(t)&&t.cc).map(t=>t.id).sort((a,b)=>L.rank.indexOf(a)-L.rank.indexOf(b));
-    const field=champs.slice(0,5);for(const id of L.rank){if(field.length>=12)break;if(!field.includes(id))field.push(id)}
-    const seeds=field.sort((a,b)=>L.rank.indexOf(a)-L.rank.indexOf(b));
-    L.cfp={seeds,r1:[],qf:[],sf:[],final:null};for(const id of seeds)L.teams[id].playoffApps++;
+    const sel=cfpSelect(L,selOrder(L),L.teams.filter(t=>!isFCS(t)&&t.cc).map(t=>t.id)),seeds=sel.seeds;
+    L.cfp={seeds,auto:sel.auto,r1:[],qf:[],sf:[],final:null};for(const id of seeds)L.teams[id].playoffApps++;
     for(let j=0;j<4;j++){const g=postGame(seeds[4+j],seeds[11-j],{cfp:true,neutral:false,tag:`CFP First Round · #${5+j} vs #${12-j}`,wx:weatherFor(13)});L.cfp.r1.push(g);games.push(g)}
     const elig=L.rank.filter(id=>!seeds.includes(id)&&L.teams[id].rec.w>=6),names=shuffle(BOWLS.slice());
     for(let j=0;j+1<elig.length&&j/2<names.length;j+=2)games.push(postGame(elig[j],elig[j+1],{bowl:true,tag:names[j/2]}));
@@ -386,34 +502,4 @@ function startNewSeason(L){
   refreshStaffPool(L);resetRecords(L);buildSchedule(L);updateRankings(L);
   L.news.unshift({t:`Fall camp is done. ${camp.length} rating upgrades from spring practice and camp.`,good:true});
   return camp;
-}
-
-/* Poll adjustments that make the order read like a real poll:
-   1) a ranked team that wins does not fall more than two spots,
-   2) head-to-head: a team directly behind someone it beat (with no worse record) moves ahead,
-   3) a resume card for every team (strength of schedule rank, best win, worst loss, record vs ranked). */
-function pollAdjust(L,ids,sc,G,r,Qv){
-  const lastRes={};for(const t of L.teams){const gs=G[t.id];lastRes[t.id]=gs.length?gs[gs.length-1].m>0:null}
-  for(const div of ['FBS','FCS']){
-    let list=ids.filter(id=>(L.teams[id].div||'FBS')===div);const prev=div==='FCS'?(L.rankF||[]):(L.rank||[]);
-    if(prev.length&&L.week>0){
-      for(let pi=0;pi<25&&pi<prev.length;pi++){const id=prev[pi];if(lastRes[id]!==true)continue;const ni=list.indexOf(id);const cap=pi+2;
-        if(ni>cap){list.splice(ni,1);list.splice(cap,0,id)}}
-    }
-    /* head-to-head: a team that beat a team with the same or a worse record is ranked ahead of it, however far apart
-       they were (the old pass only swapped neighbours, so a winner 5 spots back never caught up) */
-    for(let pass=0;pass<6;pass++){let moved=false;
-      for(let wi=1;wi<Math.min(50,list.length);wi++){const w=list[wi],tw=L.teams[w];
-        for(let li=0;li<wi;li++){const l=list[li];if(tw.rec.l<=L.teams[l].rec.l&&h2h(L,w,l)===-1){list.splice(wi,1);list.splice(li,0,w);moved=true;break}}}
-      if(!moved)break}
-    let k=0;ids=ids.map(id=>(L.teams[id].div||'FBS')===div?list[k++]:id);
-  }
-  /* resume card */
-  const rk={};for(const div of ['FBS','FCS']){ids.filter(id=>(L.teams[id].div||'FBS')===div).forEach((id,i)=>rk[id]=i+1)}
-  const sos={};for(const t of L.teams){const gs=G[t.id];sos[t.id]=gs.length?gs.reduce((s,g)=>s+r[g.o],0)/gs.length:(qOf(t)-3)*7}
-  const sosRank={};for(const div of ['FBS','FCS']){L.teams.filter(t=>(t.div||'FBS')===div).map(t=>t.id).sort((a,b)=>sos[b]-sos[a]).forEach((id,i)=>sosRank[id]=i+1)}
-  L.rinfo={};
-  for(const t of L.teams){let best=null,worst=null,vr=[0,0];for(const g of G[t.id]){const orank=rk[g.o];if(g.m>0){if(!best||r[g.o]>r[best.o])best=g}else{if(!worst||r[g.o]<r[worst.o])worst=g}if(orank&&orank<=25&&L.teams[g.o].div===t.div){if(g.m>0)vr[0]++;else vr[1]++}}
-    L.rinfo[t.id]={sos:sosRank[t.id],best:best?best.o:null,bestM:best?best.m:0,worst:worst?worst.o:null,worstM:worst?worst.m:0,vr,pow:+r[t.id].toFixed(1)}}
-  return ids;
 }

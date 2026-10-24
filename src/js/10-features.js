@@ -226,8 +226,8 @@ function applyAccess(){const r=document.documentElement;r.classList.toggle('bigt
 function openCol(nd){const cb=LG&&LG.settings.cb;return nd>3?(cb?'#4EA3FF':'#3BD98A'):nd>1.6?(cb?'#F5F5F5':'#F2B33D'):(cb?'#FF9F1C':'#FF4D5E')}
 
 /* rankings movement, national leaders, trophy case, game of the week */
-function rankMove(id,i,div){
-  const prev=div==='FCS'?LG.prevRankF:LG.prevRank;if(!prev||!LG.week)return '';
+function rankMove(id,i,div,prevL){
+  const prev=prevL||(div==='FCS'?LG.prevRankF:LG.prevRank);if(!prev||!prev.length||!LG.week)return '';
   const p=prev.indexOf(id);if(p<0||p>=25)return '<span class="mv new">NEW</span>';
   const d=p-i;return d>0?`<span class="mv up">▲${d}</span>`:d<0?`<span class="mv dn">▼${-d}</span>`:'<span class="mv">–</span>';
 }
