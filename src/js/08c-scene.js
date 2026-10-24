@@ -43,6 +43,7 @@ function fig(c,x,y,s,o){
   if(o.pom&&arm==='up'){c.fillStyle=o.pom;for(const sx of [-1,1]){c.beginPath();c.arc(x+sx*h*.3,yy-h*1.14,h*.09,0,7);c.fill()}}
   c.fillStyle=o.head||'#C68A5A';c.beginPath();c.arc(x,yy-h*.92,h*.1,0,7);c.fill();
   if(o.hat){c.fillStyle=o.hat;c.fillRect(x-h*.12,yy-h*1.04,h*.24,h*.06)}
+  if(o.headset){c.strokeStyle='#0d0f12';c.lineWidth=Math.max(1,h*.035);c.beginPath();c.arc(x,yy-h*.93,h*.12,Math.PI*1.05,Math.PI*1.95);c.moveTo(x-h*.11,yy-h*.9);c.lineTo(x-h*.02,yy-h*.86);c.stroke();c.fillStyle='#0d0f12';c.fillRect(x-h*.15,yy-h*.97,h*.06,h*.08)}
   c.restore();
 }
 let SCENE={chainA:null,chainB:null,mascotX:105,pushT:0,pushN:0,coach:{},fw:[]};
@@ -53,12 +54,13 @@ function sceneEvent(k,d){
   if(k==='big'){const who=d.team===S.home?'home':'away';SCENE.coach[who]={kind:'cheer',t:1.4}}
 }
 function drawSideline(c,s,now,front){
-  if(!S.home||LG.settings.sideline===false)return;const host=hostT(),vis=host===S.home?S.away:S.home,dt=1/60;
+  if(!S.home)return;if(!front&&typeof drawBench==='function')drawBench(c,s,false);
+  if(LG.settings.sideline===false){if(front&&typeof drawBench==='function')drawBench(c,s,true);return}const host=hostT(),vis=host===S.home?S.away:S.home,dt=1/60;
   const yTop=-2.6,yBot=FW+2.6;
   if(!front){
     /* coach on the far sideline (visitors) */
     const cv=SCENE.coach.away;const ca=cv&&cv.t>0?cv:null;if(ca)ca.t-=dt;
-    const vx=70+(ca&&ca.kind==='pace'?Math.sin(now/400)*2:0);fig(c,X(vx),Y(yTop),s,{body:'#1b1e24',legs:'#777',hat:S.away.c1,arms:ca?(ca.kind==='cheer'?'up':'slam'):'side',t:ca?ca.t%0.5-.25:0});
+    const vx=70+(ca&&ca.kind==='pace'?Math.sin(now/400)*2:0);fig(c,X(vx),Y(yTop),s,{body:'#1b1e24',legs:'#777',hat:S.away.c1,headset:true,arms:ca?(ca.kind==='cheer'?'up':'slam'):'side',t:ca?ca.t%0.5-.25:0});
     /* cheerleaders by the end zones on the far sideline */
     const hype=typeof BC!=='undefined'?BC.noise():.3;
     if(LG.settings.cheer!==false)for(let i=0;i<6;i++){const x=(i<3?14+i*2.2:99+(i-3)*2.2),b=Math.max(0,Math.sin(now/(150-hype*40)+i))*s*(.25+hype*.5);fig(c,X(x),Y(yTop-.6),s,{body:host.c1,legs:'#f1f1f1',head:TONES[i%4],arms:Math.sin(now/300+i)>-.2?'up':'side',pom:host.c2==='#FFFFFF'?'#ffffff':host.c2,bounce:b,scale:.85})}
@@ -69,9 +71,10 @@ function drawSideline(c,s,now,front){
     const ya=Y(yBot-1.2),xa=X(SCENE.chainA),xb=X(SCENE.chainB);c.save();c.strokeStyle='rgba(30,30,30,.8)';c.lineWidth=1.5;c.beginPath();c.moveTo(xa,ya-s*1.6);c.lineTo(xb,ya-s*1.6);c.stroke();
     for(const px of [xa,xb]){c.strokeStyle='#E8E8E8';c.lineWidth=2;c.beginPath();c.moveTo(px,ya);c.lineTo(px,ya-s*2.2);c.stroke();c.fillStyle='#FF6A13';c.fillRect(px-s*.3,ya-s*2.6,s*.6,s*.5);fig(c,px+s*.4,ya+s*.3,s,{body:'#111',legs:'#111',hat:'#fff',scale:.75})}
     const dm=X(S.los);c.fillStyle='#FF6A13';c.fillRect(dm-s*.45,ya-s*3,s*.9,s*.8);c.fillStyle='#111';c.font=`900 ${Math.max(8,s*.7)}px -apple-system,system-ui,sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(String(S.down),dm,ya-s*2.6);c.restore()}
-  /* home head coach + mascot on the near sideline */
+  /* home bench, head coach + mascot on the near sideline */
+  if(typeof drawBench==='function')drawBench(c,s,true);
   const ch=SCENE.coach.home;const cm=ch&&ch.t>0?ch:null;if(cm)cm.t-=dt;
-  fig(c,X(50+(S.q>=4&&Math.abs(S.score[0]-S.score[1])<=8?Math.sin(now/500)*2.5:0)),Y(yBot+.8),s,{body:'#1b1e24',legs:'#888',hat:S.home.c1,arms:cm?(cm.kind==='cheer'?'up':'slam'):'side',t:cm?cm.t%0.5-.25:0,scale:1.05});
+  fig(c,X(50+(S.q>=4&&Math.abs(S.score[0]-S.score[1])<=8?Math.sin(now/500)*2.5:0)),Y(yBot+.8),s,{body:'#1b1e24',legs:'#888',hat:S.home.c1,headset:true,arms:cm?(cm.kind==='cheer'?'up':'slam'):'side',t:cm?cm.t%0.5-.25:0,scale:1.05});
   if(LG.settings.mascot!==false){SCENE.mascotX+=Math.sin(now/2600)*.02;let b=0,arms='side';
     if(SCENE.pushT>0){SCENE.pushT-=dt;b=-Math.abs(Math.sin(now/120))*s*.5;arms='up'}
     const mx=X(SCENE.mascotX),my=Y(yBot+.4);fig(c,mx,my,s,{body:host.c1,legs:host.c2,head:host.c2,arms,bounce:-b,scale:1.25});
@@ -123,7 +126,7 @@ function drawBallTrail(c,s){
 }
 /* camera flashes in the stands at night on big moments */
 function drawFlashbulbs(c){
-  if(!isNight()||typeof BC==='undefined'||BC.noise()<.6)return;const standBot=Y(-6);if(standBot<=0)return;
+  if(!isNight()||typeof BC==='undefined'||BC.noise()<.6||(typeof stadHi==='function'&&!stadHi()))return;const standBot=Y(-6);if(standBot<=0)return;
   const n=Math.round((BC.noise()-.6)*40);c.save();c.fillStyle='#fff';for(let i=0;i<n;i++){if(Math.random()<.7)continue;const x=Math.random()*W,y=Math.random()*standBot*.9;c.globalAlpha=R(.4,1);c.beginPath();c.arc(x,y,R(1,2.4),0,7);c.fill()}c.restore();
 }
 
