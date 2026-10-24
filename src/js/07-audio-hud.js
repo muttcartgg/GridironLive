@@ -81,6 +81,8 @@ function ddText(){if(S.conv)return '2-pt try';const g=S.firstDownX>=110;return `
 function fmtClock(s){s=Math.max(0,Math.ceil(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 const qName=q=>q>4?'OT':['1ST','2ND','3RD','4TH'][q-1];
 /* team mark for broadcast graphics: imported logo when there is one, else a monogram chip in team colors */
+/* a team color that reads on dark glass (black or navy primaries fall back to the secondary color) */
+const tvCol=t=>{const c=t.c1||'#59636f';if(lum(c)>=.07)return c;return t.c2&&lum(t.c2)>lum(c)+.1?t.c2:'#8D99A9'};
 function monoOf(t){const w=String(t.city||t.abbr||'?').replace(/[^A-Za-z&\s]/g,' ').split(/\s+/).filter(x=>x&&!/^(of|the|at)$/i.test(x));return (w.length>1?w[0][0]+w[1][0]:(w[0]||t.abbr||'?').slice(0,1)).toUpperCase()}
 function tvLogo(t,cls){const u=typeof teamLogoURL==='function'?teamLogoURL(t,true):'';return `<span class="tvl ${cls||''}${u?' hl':''}" style="--c:${t.c1};--c2:${t.c2||'#fff'};--k:${inkOn(t.c1)}"><i>${esc(monoOf(t))}</i>${u?`<img src="${esc(u)}" alt="" decoding="async" referrerpolicy="no-referrer" onerror="this.remove()">`:''}</span>`}
 function hud(){
