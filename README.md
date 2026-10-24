@@ -9,6 +9,15 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 8): score bug, broadcast graphics and sound
+
+- New TV-style score bug: logos (imported) or team-colored monograms, ranks, records, timeout pips, possession football, quarter, game clock and play clock; scores slide in with a sweep; the down-and-distance strip turns red in the red zone.
+- Big-moment graphics in team colors: touchdown, pick six, two-point, safety, interception, fumble, turnover on downs, field goal good/no good; first down, red zone, 3rd/4th down and turnover chips; two-minute, end-of-quarter, halftime and final cards with linescores.
+- Less clutter: smaller player cards that hide after a few seconds, a decibel meter only when it's loud, and short tips that fade.
+- Win probability bar with both team colors, a game-long history line and swing callouts; shown at key moments (or always, or off) and in the pause menu.
+- Pregame and halftime shows and the final card rebuilt as a TV package (tale of the tape, keys to the game, top performers).
+- Sound: crowd that swells on third down and big plays, a stadium horn after touchdowns, a sharper whistle, bass thumps on big hits, and a drumline cadence during breaks. New athletic font (Barlow Condensed, OFL).
+
 ## Version 7 (part 7): movement, blocking and tackling
 
 - Real momentum: acceleration from agility and weight, top speed from speed; sharp cuts cost speed, reversals plant first. Your ball carrier is a little more responsive than the CPU's.
