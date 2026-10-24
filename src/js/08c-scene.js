@@ -5,7 +5,7 @@
 const hostT=()=>S.neutral?S.home:(S.userHome?S.home:S.away);
 const isNight=()=>S.slot==='Primetime'||(S.slot==='Afternoon'&&progress()>.66);
 const SPECIAL_TURF={BOIS:['#1d4fb0','#1a46a0'],EWU:['#b3262d','#9e2127'],CCU:['#1b8f8c','#177d7a'],UCA:['#6d6f76','#4f2d7f']};
-function turfColors(night){const t=hostT(),sp=LG.settings.specialTurf!==false&&SPECIAL_TURF[t.abbr];if(sp)return night?[shade(sp[0],-.15),shade(sp[1],-.15)]:sp;return night?['#2a7131','#24652b']:['#2f7c36','#29702f']}
+function turfColors(night){const t=hostT(),sp=LG.settings.specialTurf!==false&&SPECIAL_TURF[t.abbr];if(sp)return night?[shade(sp[0],-.15),shade(sp[1],-.15)]:sp;return night?['#2c7432','#25652c']:['#3a8a3d','#2e7633']}
 function crowdTheme(){const t=LG.settings.studentTheme||'auto';if(t!=='auto')return t;const g=S.game;if(!g)return 'none';if(g.rival)return 'stripe';if(S.slot==='Primetime')return (hostT().id%2)?'black':'white';return 'none'}
 function crowdEmpty(){
   const dens=LG.settings.crowd==='low'?.25:0;let e=dens;if(!S.home||S.ot)return e;
@@ -25,11 +25,10 @@ function animCelebrate(dt){
   else c.z=0;
 }
 
-/* turf wear: scuffed patches where plays end, fading paint, snow building up */
+/* turf wear: scuffed patches where plays end (general wear between the hashes and snow cover live in 08f) */
 function drawWear(c,s){
   if(!S.wear||!S.wear.length)return;const snow=S.wx==='Snow',mud=S.wx==='Rain';
   c.save();for(const [ax,y] of S.wear){const x=uOff()?ax:120-ax,px=X(x),py=Y(y);if(px<-40||px>W+40)continue;c.fillStyle=snow?'rgba(60,80,60,.22)':mud?'rgba(70,48,24,.32)':'rgba(92,72,40,.2)';c.beginPath();c.ellipse(px,py,s*1.5,s*1.5*VY*.8,0,0,7);c.fill()}c.restore();
-  if(snow){const a=Math.min(.38,progress()*.45);c.fillStyle=`rgba(240,244,250,${a})`;c.fillRect(X(0),Y(0),X(120)-X(0),Y(FW)-Y(0))}
 }
 /* little sideline people: drawn behind players (top sideline) or in front (bottom) */
 function fig(c,x,y,s,o){
@@ -82,9 +81,8 @@ function drawStick(c){
   if(!stick||stick.key||stick.ox==null||LG.settings.stickUI===false)return;
   c.save();c.globalAlpha=.32;c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();c.arc(stick.ox,stick.oy,70,0,7);c.stroke();c.globalAlpha=.55;c.fillStyle='#fff';c.beginPath();c.arc(stick.x,stick.y,22,0,7);c.fill();c.restore();
 }
-/* sky tint as an afternoon game rolls into dusk and night; fireworks over the stands */
+/* fireworks over the stands, flashbulbs, field storming (the dusk/night grade lives in 08f drawGrade) */
 function drawSky(c,now){
-  if(S.slot==='Afternoon'){const p=progress();if(p>.35&&p<.8){const a=Math.sin((p-.35)/.45*Math.PI)*.16;c.fillStyle=`rgba(255,140,60,${a})`;c.fillRect(0,0,W,H)}}
   if(SCENE.fw.length){c.save();c.globalCompositeOperation='lighter';for(const f of SCENE.fw){f.t+=1/60;f.x+=f.vx/60;f.y+=f.vy/60;f.vy+=30/60;const a=clamp(1-f.t/f.life,0,1);c.fillStyle=f.c;c.globalAlpha=a;c.beginPath();c.arc(f.x,f.y,2.2,0,7);c.fill()}c.restore();SCENE.fw=SCENE.fw.filter(f=>f.t<f.life)}
   drawFlashbulbs(c);
   if(S.stormT>0)drawStormers(c,now);
@@ -115,8 +113,10 @@ function drawFieldGfx(c,s,now){
       else if(xr<=S.los&&S.phase==='presnap'){c.save();c.fillStyle='rgba(59,217,138,.9)';c.font=`800 ${Math.max(9,s*.55)}px -apple-system,system-ui,sans-serif`;c.textAlign='center';c.fillText(`IN FG RANGE · ${fgDist()} YD`,X(S.los),bot-s*.4);c.restore()}}}
 }
 function drawPylons(c,s){
-  const pyl=(x,y)=>{const px=X(x),py=Y(y);if(px<-20||px>W+20)return;c.fillStyle='#FF6A13';c.fillRect(px-s*.18,py-s*.75,s*.36,s*.75);c.fillStyle='rgba(255,255,255,.6)';c.fillRect(px-s*.18,py-s*.75,s*.36,s*.1)};
-  for(const x of [0,10,110,120])for(const y of [0,FW])pyl(x,y);
+  const w=Math.max(2,s*.17),h=Math.max(5,s*.72);
+  for(const x of [0,10,110,120])for(const y of [0,FW]){const px=X(x),py=Y(y);if(px<-20||px>W+20)continue;
+    c.fillStyle='rgba(0,0,0,.28)';c.fillRect(px-w*.6,py-w*.2,w*2.4,w*.45);c.fillStyle='#FF6A13';c.fillRect(px-w,py-h,w*2,h);
+    c.fillStyle='#C2470C';c.fillRect(px+w*.35,py-h,w*.65,h);c.fillStyle='rgba(255,255,255,.8)';c.fillRect(px-w,py-h,w*2,Math.max(1,h*.09));c.fillStyle='rgba(255,255,255,.35)';c.fillRect(px-w,py-h*.55,w*1.35,h*.12)}
 }
 function drawBallTrail(c,s){
   const n=10;for(let k=1;k<=n;k++){const t=Math.max(0,ball.t/ball.T-k*.025);const x=lerp(ball.fx,ball.tx,t),y=lerp(ball.fy,ball.ty,t),z=4*ball.h*t*(1-t);c.fillStyle=`rgba(255,255,255,${.22*(1-k/n)})`;c.beginPath();c.arc(X(x),Y(y)-z*s*.9-s*1.6,Math.max(1,s*.12*(1-k/n)),0,7);c.fill()}
