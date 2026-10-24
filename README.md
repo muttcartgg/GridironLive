@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 2)
+
+- Real 2026 rosters and logos as a separate file you import (it is not built into the app): every FBS and FCS program, about 28,000 players with numbers, positions, class, height, weight and hometowns, rated from their real 2025–26 stats. Logos are links that load when you're online; offline, the game's own badges show.
+- Settings → Rosters & data → Import rosters & logos: pick the JSON file from Files (or paste it), check the preview, then apply it to your current dynasty and/or save it for new dynasties. You can also import your own custom players and export your roster as JSON. See docs/PACKS.md.
+- Imported logos appear on team badges and the score bug (turn them off in Settings).
+- Fixed: a win could be saved as a loss (score flipped) in neutral-site games such as conference title games, bowls and the playoff.
+
 ## Version 7 (part 1)
 
 - Realistic win probability: a point-spread model that uses the score, time left, field position, down and distance, timeouts, team strength and home field.
