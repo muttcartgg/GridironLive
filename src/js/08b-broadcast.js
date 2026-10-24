@@ -184,7 +184,7 @@ const BC={
   quarterCard(q){
     if(LG.settings.gfx===false)return;const st=S.stats,os=S.ostats,half=q===3;
     this.showQ(`${this.cardHead(half?'Halftime':`End of ${ordQ(q-1).toLowerCase()} quarter`,esc(hostT().stadium||hostT().city))}${this.linescore()}<div class="qstats">${this.statRow('Total yards',st.passYds+st.rushYds,os.passYds+os.rushYds)}${this.statRow('Win prob',Math.round(winProbLive()*100),100-Math.round(winProbLive()*100),v=>v+'%')}</div>`,'',3400);
-    drumline(true);
+    drumline(true);this.wpShow(4.5);
   },
   twoMin(){
     if(LG.settings.gfx===false)return;const tos=n=>[0,1,2].map(i=>`<i class="${i<n?'':'u'}"></i>`).join('');
