@@ -30,29 +30,48 @@ function drawWeather(c){
 }
 
 /* ---------- camera: critically damped follow (SmoothDamp) on x, y and zoom ----------
-   presnap frames the LOS a little behind center; pass plays lead toward the target / ball in the air;
-   runs follow the carrier with look-ahead; deep balls and open-field runs widen, the goal line tightens.
+   presnap frames the LOS a little behind center; runs follow the carrier with look-ahead; open-field runs widen, the goal line tightens.
+   Pass plays FRAME a box instead: the QB (or the ball in the air) plus what is downfield of him: the deepest route runner during the
+   drop, the aim point and the receiver under it while aiming, the landing spot and the intended receiver while the ball is up.
+   The zoom backs out only as far as that box needs (the narrow portrait view backs out much further), relative to the user's
+   zoom setting and never past a legibility floor; the pan keeps the QB / ball inside its margin and leans downfield.
    Modern style may look a few yards past the end lines and above the far sideline (end-zone stands). */
 function camDamp(k,tgt,st,dt){const v=k+'v',o=2/st,x=o*dt,e=1/(1+x+.48*x*x+.235*x*x*x),ch=cam[k]-tgt,tmp=((cam[v]||0)+o*ch)*dt;cam[v]=((cam[v]||0)-o*tmp)*e;cam[k]=tgt+(ch+tmp)*e}
+const CAM_M={l:4,r:7,t:4.5,b:3};   // framing margins in yards: behind the QB, beyond the target, far side (sprites stand up into it), near side
+const camPad=()=>[Math.max(0,50-topY),58];   // px the overlays cover when framing: scorebug strip on top, hint bar + ticker at the bottom
+const camBox=(b,x,y)=>{if(x<b[0])b[0]=x;if(x>b[1])b[1]=x;if(y<b[2])b[2]=y;if(y>b[3])b[3]=y;return b};
+/* cam.z that fits box b=[x0,x1,y0,y1] plus margins on this screen at the user's zoom; floor about 6 px per yard */
+function camFit(b){const s0=sc*((LG&&LG.settings&&LG.settings.zoom)||1),pd=camPad();
+  return Math.max(Math.min(W/(s0*(b[1]-b[0]+CAM_M.l+CAM_M.r)),Math.max(60,H-topY-pd[0]-pd[1])/(s0*VY*(b[3]-b[2]+CAM_M.t+CAM_M.b))),6.2/s0)}
+/* camera centre on one axis so [c0,c1] fits a view of size v with margins m0/m1 (bias 0..1 leans toward c1's side being roomier);
+   when it cannot fit (zoom still easing out, or at the floor) keep the anchor a inside its margin. Continuous in v. */
+function camPan(c0,c1,a,v,m0,m1,bias){const lo=c1+m1-v/2,hi=c0-m0+v/2;if(lo<=hi)return lo+(hi-lo)*bias;const w=c1>c0?clamp((a-c0)/(c1-c0),0,1):0;return hi+(lo-hi)*w}
 function updateCam(dt){
   dt=Math.min(dt,.05);const retro=LG&&LG.settings.style==='retro';
-  let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,bx=S.los,by=S.ballY;
+  let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
   if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1}
   if((S.phase==='live'||S.phase==='dead'||S.phase==='replay')&&ball){z=1;st=.42;const h=(play&&play.carrier)||Q;
-    if(ball.state==='air'){const far=hyp(ball.tx-ball.fx,ball.ty-ball.fy);fx=lerp(ball.x,ball.tx,.55);fy=lerp(ball.y,ball.ty,.45);z=far>30?.8:far>18?.88:.95;st=.36;bx=ball.x;by=ball.y}
-    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);fx=lerp(Q.x,aim.x,.55);fy=lerp(Q.y,aim.y,.35);z=d>30?.82:d>18?.9:.97;st=.5;bx=Q.x;by=Q.y}
+    if(ball.state==='air'){const far=hyp(ball.tx-ball.fx,ball.ty-ball.fy),r=play&&play.intended;bx=ball.x;by=ball.y;z=clamp(1.04-.008*far,.8,.95);st=.36;zst=.5;
+      box=camBox([bx,bx,by,by],ball.tx,ball.ty);if(r&&r.side==='o')camBox(box,r.x,r.y);
+      zbox=camBox(box.slice(),lerp(ball.fx,ball.tx,.2),lerp(ball.fy,ball.ty,.2))}   // hold most of the release framing through the flight
+    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);bx=Q.x;by=Q.y;z=clamp(1.03-.007*d,.82,.97);st=.4;zst=.45;
+      box=camBox([bx,bx,by,by],aim.x,aim.y);const [n,nd]=nearest(OFF,aim.x,aim.y,o=>eligible(o)&&!o.blocker);if(n&&nd<8)camBox(box,n.x,n.y)}
     else if(h){bx=h.x;by=h.y;
-      if(play&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){let t=null,far=Q.x;for(const o of OFF)if(eligible(o)&&o.x>far){far=o.x;t=o}fx=lerp(Q.x,far,.42);fy=lerp(Q.y,t?t.y:Q.y,.2);z=far-Q.x>22?.86:.95;st=.55}
+      if(play&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){let t=null,far=-1e9;
+        for(const o of OFF)if(eligible(o)&&!o.blocker){const lx=o.x+clamp((o.vx||0)*.6,0,5);if(lx>far){far=lx;t=o}}
+        far=t?clamp(far,Q.x,Q.x+maxRange()):Q.x+12;z=clamp(1.07-.009*(far-Q.x),.86,.95);st=.5;zst=.6;box=camBox([bx,bx,by,by],far,t?t.y:by)}
       else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.97:1;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.9;st=.32}}
     const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.07}
-  if(retro)z=1;
-  camDamp('z',z,.8,dt);
+  if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box));
+  camDamp('z',z,zst,dt);
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY),ext=retro?0:7;
-  let tx=fx+vw*.1;const mn=-6-ext+vw/2,mx=126+ext-vw/2;tx=mn>mx?60:clamp(tx,mn,mx);
-  const ty=vh>=FW+10?(retro?CEN-3:CEN-3.6):clamp(fy,(retro?-8:-11)+vh/2,FW+3-vh/2);
+  const pd=box?camPad().map(v=>v/(s*VY)):[0,0];   // overlay pads in world yards (framing only)
+  let tx=fx+vw*.1;if(box){tx=camPan(box[0],box[1],bx,vw,CAM_M.l,CAM_M.r,.62);fy=camPan(box[2],box[3],by,vh,CAM_M.t+pd[0],CAM_M.b+pd[1],.5)}
+  const mn=-6-ext+vw/2,mx=126+ext-vw/2;tx=mn>mx?60:clamp(tx,mn,mx);
+  const ylo=(retro?-8:-11)+vh/2,yhi=FW+3+pd[1]-vh/2,ymid=retro?CEN-3:CEN-3.6,ty=clamp(fy,Math.min(ylo,ymid),Math.max(yhi,ymid));   // whole width in view: hold mid
   camDamp('x',tx,st,dt);camDamp('y',ty,st*1.2,dt);
-  /* keep the ball (or its carrier) on screen even when the spring lags */
-  const hw=vw/2-Math.min(vw*.2,3);if(bx<cam.x-hw){cam.x=bx+hw;cam.xv=Math.min(cam.xv||0,0)}else if(bx>cam.x+hw){cam.x=bx-hw;cam.xv=Math.max(cam.xv||0,0)}
+  /* keep the ball (or its carrier) on screen even when the spring lags; between plays (presnap) glide back to the new LOS instead */
+  const hw=S.phase==='presnap'?1e9:vw/2-Math.min(vw*.2,3);if(bx<cam.x-hw){cam.x=bx+hw;cam.xv=Math.min(cam.xv||0,0)}else if(bx>cam.x+hw){cam.x=bx-hw;cam.xv=Math.max(cam.xv||0,0)}
   if(vh<FW+10){const hh=vh/2-1.5;if(by<cam.y-hh){cam.y=by+hh;cam.yv=Math.min(cam.yv||0,0)}else if(by>cam.y+hh){cam.y=by-hh;cam.yv=Math.max(cam.yv||0,0)}}
   S.shake=Math.max(0,S.shake-dt*1.6);
 }

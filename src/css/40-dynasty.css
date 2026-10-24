@@ -1,3 +1,18 @@
 /* rankings: résumé hint under the team name in the AP / CFP Top 25 (lines up with the name, past the 26px badge) */
 .rtab .rhint{margin:3px 0 0 34px;font:600 11.5px/1.3 var(--body);color:var(--mute);white-space:normal;min-width:150px}
 .rtab .rhint .tag{padding:2px 6px;font-size:10px;margin-right:2px}
+/* rankings: AP / CFP Top 25 metrics table. Scrolls sideways with a finger (the hub scrolls up and down around it);
+   rank + team stay pinned on the left, opaque so the scrolled columns slide under them */
+.mtw{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;overscroll-behavior-x:contain;scrollbar-width:thin}
+.mtab{width:max-content;min-width:100%}
+.mtab td,.mtab th{white-space:nowrap}
+.mtab .mrk,.mtab .mtm{position:sticky;z-index:1;background:var(--panel)}
+.mtab .mrk{left:0;width:44px;min-width:44px;max-width:44px;box-sizing:border-box;padding-left:2px;padding-right:4px;text-align:center;font-weight:800}
+.mtab .mtm{left:44px;box-shadow:10px 0 8px -10px rgba(0,0,0,.85)}
+.mtab td.mrk .mv{display:block;margin:2px 0 0;font-size:10px}
+.mtab tr.me td.mrk,.mtab tr.me td.mtm{background-image:linear-gradient(color-mix(in srgb,var(--team) 16%,transparent),color-mix(in srgb,var(--team) 16%,transparent))}
+.mtab .tname .mab{display:none}
+.mtab td b{font-weight:800}
+.mtab .tag{padding:2px 7px;font-size:10.5px}
+.mswipe{display:none;margin:-4px 0 -6px}
+@media (max-width:620px){.mtab .tname .mab{display:inline}.mtab .tname .mct{display:none}.mswipe{display:block}.mtab td{font-size:13px}}

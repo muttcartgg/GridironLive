@@ -211,16 +211,32 @@ function hubRankings(){
   const pw=r=>r.pow!=null?(r.pow>0?'+':'')+r.pow:'—';
   const row=(id,i,full)=>{const t=T(id),r=ri(id);return `<tr class="${id===LG.user?'me':''}"><td class="n">${i+1}${i<25?rankMove(id,i,div):''}</td><td>${tcell(t,teamName(t))}</td><td class="n">${recStr(t)}</td><td class="n">${r.vr?r.vr[0]+'–'+r.vr[1]:'—'}</td><td class="note hide-s">${bestTxt(id)}</td>${full?`<td class="note hide-s">${worstTxt(id)}</td>`:''}<td class="n">${r.sos||'—'}</td><td class="n">${pw(r)}</td></tr>`};
   const head=full=>`<thead><tr><th class="n">#</th><th>Team</th><th class="n">Rec</th><th class="n">vs Top 25</th><th class="hide-s">Best win</th>${full?'<th class="hide-s">Worst loss</th>':''}<th class="n">SOS</th><th class="n">Power</th></tr></thead>`;
-  /* AP / CFP Top 25: rank with movement, team with a résumé hint, record (SOS and power on wider screens) */
-  const pollTab=(lst,prevL,pre)=>`<div class="tw"><table class="rtab"><thead><tr><th class="n">#</th><th>Team</th><th class="n">Rec</th><th class="n hide-s">SOS</th><th class="n hide-s">Power</th></tr></thead><tbody>${lst.slice(0,25).map((id,i)=>{const t=T(id),r=ri(id),h=rankHint(id,lst,pre),sd=pre&&LG.cfp?LG.cfp.seeds.indexOf(id)+1:0;
-    return `<tr class="${id===LG.user?'me':''}"><td class="n">${i+1}${rankMove(id,i,div,prevL)}</td><td>${tcell(t,t.city)}${h||sd?`<div class="rhint">${sd?`<span class="tag ${sd<=4?'gold':'blue'}">Seed ${sd}</span> `:''}${h}</div>`:''}</td><td class="n">${recStr(t)}</td><td class="n hide-s">${r.sos||'—'}</td><td class="n hide-s">${pw(r)}</td></tr>`}).join('')}</tbody></table></div>`;
+  /* AP / CFP Top 25 metrics: rank (+movement) and team stay pinned while the résumé columns scroll sideways on a phone.
+     SOS rank, best win, worst loss and power come from L.rinfo; one pass over the season's games adds the scores, the record
+     against this poll's own Top 25, and an opponent-quality pick when rinfo has none yet. */
+  const pollTab=(lst,prevL,pre)=>{
+    const top=lst.slice(0,25),pos={},M={},pwr=LG.power||{},seeds=pre&&LG.cfp&&LG.cfp.seeds||[],cfpV=seeds.length>0;
+    top.forEach((id,i)=>{pos[id]=i+1;M[id]={v:[0,0],b:null,w:null}});
+    const qual=o=>pwr[o]!=null?+pwr[o]:ri(o).pow!=null?ri(o).pow:-(pos[o]||99);
+    for(const wk of LG.weeks)for(const g of wk.games){if(g.hs==null)continue;
+      for(const [id,o,f,a] of [[g.h,g.a,g.hs,g.as],[g.a,g.h,g.as,g.hs]]){const m=M[id];if(!m)continue;const r=ri(id),x={o,f,a};
+        if(f>a){if(pos[o])m.v[0]++;if(r.best!=null?o===r.best&&(!m.b||f-a===r.bestM):!m.b||qual(o)>qual(m.b.o))m.b=x}
+        else{if(pos[o])m.v[1]++;if(r.worst!=null?o===r.worst&&(!m.w||f-a===r.worstM):!m.w||qual(o)<qual(m.w.o))m.w=x}}}
+    const opp=x=>`<b>${pos[x.o]?'#'+pos[x.o]+' ':''}${esc(T(x.o).abbr)}</b> ${x.f}–${x.a}`,pg=(n,gp)=>gp?(n/gp).toFixed(1):'—';
+    const rows=top.map((id,i)=>{const t=T(id),r=ri(id),m=M[id],gp=t.rec.w+t.rec.l,sd=seeds.indexOf(id)+1,pv=r.pow!=null?r.pow:pwr[id]!=null?+(+pwr[id]).toFixed(1):null;
+      return `<tr class="${id===LG.user?'me':''}"><td class="n mrk">${i+1}${rankMove(id,i,div,prevL)}</td><td class="mtm"><div class="tname" data-team="${t.id}" style="cursor:pointer" title="${esc(teamName(t))}">${badge(t,'sm')}<span class="mab">${esc(t.abbr)}</span><span class="mct">${esc(t.city)}</span></div></td>`
+        +(cfpV?`<td class="n">${sd?`<span class="tag ${sd<=4?'gold':'blue'}">${sd}</span>`:''}</td>`:'')
+        +`<td class="n">${recStr(t)}</td><td class="n">${isInd(LG,t)?'—':t.rec.cw+'–'+t.rec.cl}</td><td class="n">${r.sos||'—'}</td><td>${m.b?opp(m.b):'—'}</td><td>${m.w?opp(m.w):'—'}</td>`
+        +`<td class="n">${gp?m.v[0]+'–'+m.v[1]:'—'}</td><td class="n">${pv!=null?(pv>0?'+':'')+(+pv).toFixed(1):'—'}</td><td class="n">${pg(t.rec.pf,gp)}</td><td class="n">${pg(t.rec.pa,gp)}</td></tr>`}).join('');
+    return `<p class="note mswipe">Swipe the table sideways for conference record, SOS, best win, worst loss, power and scoring.</p><div class="tw mtw"><table class="rtab mtab"><thead><tr><th class="n mrk">#</th><th class="mtm">Team</th>${cfpV?'<th class="n">Seed</th>':''}<th class="n">Rec</th><th class="n">Conf</th><th class="n">SOS</th><th>Best win</th><th>Worst loss</th><th class="n">vs Top 25</th><th class="n">Power</th><th class="n">PF/G</th><th class="n">PA/G</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  };
   const last=LG.week>0&&LG.weeks[LG.week-1]?LG.weeks[LG.week-1].label:'';
   let body='';
   if(RANK_MODE==='top'){
     const others=list.slice(25,35).map(id=>`${esc(T(id).city)} ${recStr(T(id))}`).join(' · ');
     body=`<div class="card"><div class="setrow"><div><div class="eyebrow">${LG.week===0&&LG.phase==='regular'?'Before Week 1':'After '+esc(last)}</div><div class="h2">${pollName(LG,div)}</div></div>${toggle}</div>${pollTab(list,null,'')}
       ${others?`<p class="note"><b>Others receiving votes:</b> ${others}</p>`:''}
-      <p class="note">Voted like the media poll: each week starts from last week's ballot. A win holds a team's spot or moves it up (more for ranked, top-10 and road wins), a loss drops it by how good the opponent was and the margin, and a bye holds. A ranked team that wins falls at most two spots, and a team that beat a team with the same or a worse record is always ranked ahead of it. SOS is a rank; Power is points better than an average team.</p></div>`;
+      <p class="note">Voted like the media poll: each week starts from last week's ballot. A win holds a team's spot or moves it up (more for ranked, top-10 and road wins), a loss drops it by how good the opponent was and the margin, and a bye holds. A ranked team that wins falls at most two spots, and a team that beat a team with the same or a worse record is always ranked ahead of it. SOS is a rank; Power is points better than an average team; PF/G and PA/G are points scored and allowed per game.</p></div>`;
   }else if(cfp){
     const c=ensureCFP(LG),fin=LG.week>LG.R||LG.phase==='offseason';
     body=!c.length?`<div class="card"><div class="eyebrow">College Football Playoff</div><div class="h2">CFP rankings</div><p class="note">${LG.phase==='offseason'?'No CFP rankings were kept for this season.':`Not released yet — first rankings after Week ${cfpFrom(LG)}. Until then the playoff projection uses the AP Top 25.`}</p></div>`
