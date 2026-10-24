@@ -409,7 +409,7 @@ function defAI(d,dt){
   if(ball.state==='air'&&!ball.pitch){const rem=ball.T-ball.t,dd=hyp(ball.tx-d.x,ball.ty-d.y),rt=d.role==='DL'?99:d.role==='LB'?.4:.25+(1-S.aiSkill)*.15;if(play.t-play.ballT0>rt&&dd/d.spd<rem+.7){tx=ball.tx;ty=ball.ty}}
   if(tx===undefined){
     let pursue=runner;
-    if(play.type==='run'&&!play.fleaHold)pursue=play.t>({DL:0,LB:.5,CB:.85,S:.65})[d.role]||(d.cov&&d.cov.type==='rush');
+    if(play.type==='run'&&!play.fleaHold)pursue=play.t>({DL:0,LB:.5,CB:.9,S:.75})[d.role]||(d.cov&&d.cov.type==='rush');
     if(play.scramble&&play.t-play.scrT<.35&&d.role!=='DL')pursue=false;
     if(pursue&&c&&play.type==='run'&&d.role!=='DL'&&c.x<L+.3&&!(d.cov&&d.cov.type==='rush')){tx=L+2.4;ty=lerp(c.y,play.gapY,.6)}
     else if(pursue&&c){
@@ -417,11 +417,13 @@ function defAI(d,dt){
       if(runner&&n<2.2&&n>1.05&&d.lungeCD<=0&&!eng&&d!==S.ctrl){d.lunge=.28;d.lungeCD=1.5;d.lx=c.x+c.vx*.26;d.ly=c.y+c.vy*.26}
     }else{
       const cv=d.cov||{type:'rush'};
-      if(cv.type==='rush'){const t=c||Q;tx=t.x;ty=t.y}
+      if(cv.type==='rush'){const t=c||Q;tx=t.x;ty=t.y;
+        /* a free rusher closing on the pocket QB dives to wrap him up (the sack check honours the longer lunge reach) */
+        if(t===Q&&play.type==='pass'&&!play.thrown&&!play.scramble&&d.lungeCD<=0&&d!==S.ctrl){const n=hyp(Q.x-d.x,Q.y-d.y);if(n<2&&n>1){d.lunge=.28;d.lungeCD=1.5;d.lx=Q.x+Q.vx*.2;d.ly=Q.y+Q.vy*.2;return}}}
       else if((play.pa||play.fleaHold)&&play.t<.65&&(d.role==='LB'||d.role==='S')){tx=L+1.5;ty=d.y}
       else if(cv.type==='man'){const a=cv.tgt;if(a.blocker&&!a.route){tx=L+5;ty=lerp(d.y,a.y,.5)}else{const cush=Math.max(.35,(d.role==='CB'?1.5:1.1)-play.t*.8);tx=a.x+a.vx*.35+cush;ty=a.y+a.vy*.35+(a.y<CEN?.45:-.45)}}
       else [tx,ty]=zoneAI(d,cv);
-      return steer(d,tx,ty,spd,dt,8+1.2*d.pl.cov);
+      return steer(d,tx,ty,spd,dt,9.5+1.2*d.pl.cov);
     }
   }
   steer(d,tx,ty,spd,dt);
@@ -744,7 +746,8 @@ function otNext(who){
     const live=()=>{S.poss='away';if(S.otRound>=3){S.conv=true;S.los=107;S.ballY=CEN;S.down=1;S.firstDownX=110}else{S.los=85;S.ballY=CEN;S.down=1;S.firstDownX=95;S.conv=false}toPresnap()};
     if(mode==='sim')return oppOT();if(mode==='play')return live();
     return showOpt(`<b>${esc(S.away.abbr)} overtime possession</b>`,[{t:'Play defense',s:'Control a defender',f:live},{t:'Sim it',s:'See the result',cls:'alt',f:oppOT}]);}
-  const done=S.score[0]!==S.score[1];setTimeout(()=>{if(done)gameOver();else{S.otRound++;startOT()}},900);
+  /* wait out of the 'dead' phase so the result is not re-applied every frame while the timer runs */
+  S.phase='wait';const done=S.score[0]!==S.score[1];setTimeout(()=>{if(done)gameOver();else{S.otRound++;startOT()}},900);
 }
 function oppRating(){return clamp(.5+(offOvr(S.away)-defOvr(S.home))*.22+(S.diffMul-1)*2-(LG.staff.dc.r-3)*.03-(hasTrait('dc','Run Stopper')?.04:0)-(focus('film')?.04:0),.1,.92)}
 function oppOT(){
@@ -867,7 +870,7 @@ function showActs(){
 /* ---------- post-game ---------- */
 const ncaaRating=s=>s.att?((8.4*s.passYds)+(330*s.passTD)+(100*s.comp)-(200*s.int))/s.att:0;
 function gameOver(){
-  S.phase='over';hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);
+  if(S.phase==='over')return;S.phase='over';hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);
   if(typeof BC!=='undefined')BC.stop();
   const g=S.game,[us,them]=S.score,won=us>them,s=S.stats,os=S.ostats||newGameStats(),rate=ncaaRating(s),u=S.home,opp=S.away;
   const storm=won&&S.userHome&&rankOf(opp.id)&&rankOf(opp.id)<=10&&(!rankOf(u.id)||rankOf(u.id)>rankOf(opp.id)+5);

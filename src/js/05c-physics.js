@@ -19,8 +19,8 @@
    ========================================================= */
 const PHY={a0:8,aAgi:2.6,lat0:10,latAgi:2.6,brk0:15,brkAgi:2.4,kc0:.6,kcAgi:.085,vturn:1.2,user:1.3,
   fd:.045,snap:.05,huddle:.9,huddleK:.015,bench:.7,benchK:.07,subAt:.45,backAt:.3,
-  pk:.2,pDrift:.07,pLuck:.12,q0:.1,qk:.13,rk:.24,rDrift:.07,
-  pen:.055,bHead:.05,bSide:.1,bBehind:.2,gang:.22,fum:.0035};
+  pk:.2,pDrift:.07,pLuck:.12,q0:.13,qk:.13,rk:.24,rDrift:.07,
+  pen:.055,bHead:.05,bSide:.1,bBehind:.2,gang:.3,open:.1,fum:.016};
 const ANIM_T={block:1,swim:.4,rip:.4,spin:.45,tackle:.5,tackled:.6,juke:.36,truck:.55,stiff:.5,hurdle:.5,getup:.6};
 function setAnim(p,a,t){p.anim=a;p.animT=t!=null?t:ANIM_T[a]||.5}
 
@@ -236,7 +236,10 @@ function tackleCheck(c){
       if(Math.random()<hp){d.stun=1;evaded(c,d,'hurdle');continue}c.fallen=true;return tackled(c,d)}
     if((pl.jukeT>0||pl.spinT>0)&&d.evadeId!==pl.moveId&&!arm){d.evadeId=pl.moveId;const k=pl.spinT>0?'spin':'juke';if(Math.random()<evadeP(c,d,k)){evaded(c,d,k);continue}}
     let gang=false;for(const o of DEF){if(o!==d&&o.stun<=0&&!o.engaged&&hyp(o.x-c.x,o.y-c.y)<1.4){gang=true;break}}
-    let q=breakP(c,d)+(arm?.1:0);if(gang)q*=PHY.gang;q=clamp(q,.02,.7);
+    let q=breakP(c,d)+(arm?.1:0);if(gang)q*=PHY.gang;
+    /* open field: a lone DB with nobody else near the ball has the hardest tackle in football */
+    else if((d.role==='S'||d.role==='CB')&&!arm){let near=false;for(const o of DEF){if(o!==d&&o.stun<=0&&hyp(o.x-c.x,o.y-c.y)<3.5){near=true;break}}if(!near)q+=PHY.open}
+    q=clamp(q,.02,.7);
     if(Math.random()<q){brokenTackle(c,d,arm);continue}
     return tackled(c,d);
   }
@@ -262,7 +265,7 @@ function tackled(c,d){
   const fp=clamp((pc-pd)/700+R(-.25,.25),-1.2,TK.behind?1.4:2.2);
   pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=fp/.4;
   if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
-  const fumP=PHY.fum+(big?.028:0)+.0022*(3-c.pl.car)+(help?.003:0)+(S.wx==='Rain'||S.wx==='Snow'?.004:0);
+  const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
   if(Math.random()<fumP&&spotOf(c)+pl.fp<110){pl.fumbler=c;pl.forcer=d;return endPlay('fum')}
   endPlay('tackle');
 }
