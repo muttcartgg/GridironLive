@@ -76,7 +76,24 @@ const PLAYBOOK=[
 ];
 PLAYBOOK.forEach((p,i)=>p.id=i);
 const playByName=n=>PLAYBOOK.find(p=>p.name===n);
-const DEF_CALLS=[['man','Cover 1','Man coverage, one deep safety'],['cover2','Cover 2','Two deep halves, corners sit in the flats'],['cover3','Cover 3','Three deep thirds, four underneath'],['cover4','Quarters','Four deep, take away the long ball'],['blitz','Blitz','Send the linebackers'],['prevent','Prevent','Everyone deep; give up the short stuff']];
+/* defensive calls (05d assignCoverage / alignDefense). shell = safeties shown pre-snap ('1' single-high, '2' two-high;
+   05d sometimes disguises it and rotates at the snap), press = corners may press. 'blitz' is Cover 0 (old saves keep it). */
+const COVS={
+  blitz:{n:'Cover 0',d:'All-out man blitz, no deep help',shell:'1',press:1},
+  man:{n:'Cover 1',d:'Man under, one deep safety, a robber',shell:'1',press:1},
+  spy:{n:'Cover 1 Spy',d:'Man, one deep, a linebacker shadows the QB',shell:'1',press:1},
+  '2man':{n:'2-Man',d:'Trail man under two deep halves',shell:'2',press:1},
+  cover2:{n:'Cover 2',d:'Two deep halves, corners squat the flats',shell:'2'},
+  tampa2:{n:'Tampa 2',d:'Cover 2, the Mike runs the deep middle',shell:'2'},
+  cover3:{n:'Cover 3',d:'Three deep thirds, four underneath',shell:'1'},
+  cover4:{n:'Quarters',d:'Four deep, pattern-match the verticals',shell:'2'},
+  cover6:{n:'Cover 6',d:'Quarters to the field, Cover 2 to the boundary',shell:'2'},
+  firezone:{n:'Fire Zone',d:'Five-man pressure, three deep, three under',shell:'1'},
+  agap:{n:'A-Gap Mug',d:'Linebackers in the A gaps, Cover 1 behind',shell:'1',press:1},
+  cblitz:{n:'Nickel Blitz',d:'Slot corner off the edge, Cover 1 behind',shell:'1',press:1},
+  prevent:{n:'Prevent',d:'Everyone deep; give up the short stuff',shell:'2'}
+};
+const DEF_CALLS=Object.entries(COVS).map(([k,c])=>[k,c.n,c.d]);
 
 /* team schemes (real where known) shape AI play-calling and simulated stats */
 const SCHEME_OVR={ARMY:'Option',NAVY:'Option',AF:'Option',KENN:'Option',TTU:'Air Raid',WSU:'Air Raid',UNT:'Air Raid',ORST:'Power',WIS:'Power',IOWA:'Pro',STAN:'Pro',MICH:'Power',ALA:'Pro',UGA:'Pro',OSU:'Spread',ORE:'Spread',MISS:'Air Raid',UTAH:'Power',KSU:'Power',NDSU:'Power',SDST:'Power',MTST:'Option',BYU:'Pro',IU:'Spread',TEX:'Spread',LSU:'Pro',TAMU:'Spread',ND:'Pro',MIA:'Spread',COLO:'Spread',CLEM:'Spread',PSU:'Pro',USC:'Air Raid',OKST:'Air Raid',HOU:'Air Raid',WKU:'Air Raid',UGS:'Option',GASO:'Option',ODU:'Spread',JMU:'Spread'};
@@ -98,9 +115,22 @@ function aiPickPlay(team,sit){
     pool.push([p,w])}
   let r=Math.random()*sum(pool.map(x=>x[1]));for(const [p,w] of pool){if((r-=w)<=0)return p}return pool[0][0];
 }
+/* situational CPU coverage: 2-man / quarters on 3rd & long, Cover 0 near the goal line, pressure on short yardage,
+   deep zones late with a lead, a spy vs a mobile QB; each team leans man or zone (stable per team) */
 function aiPickCoverage(team,sit){
-  const sc=schemeOf(team);const opts=[['man',3],['cover2',2],['cover3',3],['cover4',2],['blitz',sit&&sit.toGo<=3?3:1.6],['prevent',sit&&sit.prevent?6:0]];
-  let r=Math.random()*sum(opts.map(o=>o[1]));for(const [k,w] of opts){if((r-=w)<=0)return k}return 'cover3';
+  sit=sit||{};const tg=sit.toGo!=null?sit.toGo:10,dn=sit.down||1,oi=offIdx(),lead=S.score[1-oi]-S.score[oi],late=S.q>=4&&S.clock<S.qlen*.3&&!S.ot;
+  if(team.manLean==null)team.manLean=Math.random();const ml=team.manLean;
+  const w={blitz:.6,man:2+ml*2,spy:0,'2man':.8+ml,cover2:1.6,tampa2:1,cover3:3-ml,cover4:1.4,cover6:1.1,firezone:1.2,agap:.6,cblitz:.7,prevent:0};
+  if(dn>=3&&tg>=7){w['2man']+=3;w.cover4+=2.5;w.cover6+=1;w.firezone+=.8;w.blitz*=.4;w.cover2*=.7}
+  else if(dn===2&&tg>=8){w.cover4+=1;w['2man']+=.8}
+  if(tg<=3){w.blitz+=1.2;w.agap+=1.4;w.man+=1.2;w.cblitz+=.6;w.cover4*=.5}
+  if(S.los>=100){w.blitz+=3;w.man+=1.5;w.agap+=.8;w.cover4*=.4;w.cover2*=.5;w.tampa2*=.3}
+  else if(S.los>=88){w.man+=1;w.cover2+=.6;w.firezone+=.6}
+  if(late&&lead>0&&lead<=16){w.prevent=S.clock<S.qlen*.12?4:0;w.cover4+=2;w.cover3+=1.5;w.cover2+=1;w.blitz=0;w.agap*=.2;w.cblitz*=.2;w.firezone*=.4}
+  if(late&&lead<0){w.blitz+=1;w.agap+=.8;w.cblitz+=.8;w.firezone+=.8}
+  if(sit.lastPlay){w.prevent=10;w.blitz=0}
+  if(Q&&Q.pl.spd>=3.7)w.spy=1.2+(Q.pl.spd-3.7)*2;
+  let r=Math.random()*sum(Object.values(w));for(const k in w){if((r-=w[k])<=0)return k}return 'cover3';
 }
 
 /* tiny play diagram for the playbook grid */
