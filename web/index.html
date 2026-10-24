@@ -638,6 +638,21 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 /* rankings: résumé hint under the team name in the AP / CFP Top 25 (lines up with the name, past the 26px badge) */
 .rtab .rhint{margin:3px 0 0 34px;font:600 11.5px/1.3 var(--body);color:var(--mute);white-space:normal;min-width:150px}
 .rtab .rhint .tag{padding:2px 6px;font-size:10px;margin-right:2px}
+/* rankings: AP / CFP Top 25 metrics table. Scrolls sideways with a finger (the hub scrolls up and down around it);
+   rank + team stay pinned on the left, opaque so the scrolled columns slide under them */
+.mtw{overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y;overscroll-behavior-x:contain;scrollbar-width:thin}
+.mtab{width:max-content;min-width:100%}
+.mtab td,.mtab th{white-space:nowrap}
+.mtab .mrk,.mtab .mtm{position:sticky;z-index:1;background:var(--panel)}
+.mtab .mrk{left:0;width:44px;min-width:44px;max-width:44px;box-sizing:border-box;padding-left:2px;padding-right:4px;text-align:center;font-weight:800}
+.mtab .mtm{left:44px;box-shadow:10px 0 8px -10px rgba(0,0,0,.85)}
+.mtab td.mrk .mv{display:block;margin:2px 0 0;font-size:10px}
+.mtab tr.me td.mrk,.mtab tr.me td.mtm{background-image:linear-gradient(color-mix(in srgb,var(--team) 16%,transparent),color-mix(in srgb,var(--team) 16%,transparent))}
+.mtab .tname .mab{display:none}
+.mtab td b{font-weight:800}
+.mtab .tag{padding:2px 7px;font-size:10.5px}
+.mswipe{display:none;margin:-4px 0 -6px}
+@media (max-width:620px){.mtab .tname .mab{display:inline}.mtab .tname .mct{display:none}.mswipe{display:block}.mtab td{font-size:13px}}
 
 /* 50 · roster & logo packs (02c-packs.js): import modal, logo badges, scorebug logos */
 .ri-file{position:relative;cursor:pointer}
@@ -2249,16 +2264,32 @@ function hubRankings(){
   const pw=r=>r.pow!=null?(r.pow>0?'+':'')+r.pow:'—';
   const row=(id,i,full)=>{const t=T(id),r=ri(id);return `<tr class="${id===LG.user?'me':''}"><td class="n">${i+1}${i<25?rankMove(id,i,div):''}</td><td>${tcell(t,teamName(t))}</td><td class="n">${recStr(t)}</td><td class="n">${r.vr?r.vr[0]+'–'+r.vr[1]:'—'}</td><td class="note hide-s">${bestTxt(id)}</td>${full?`<td class="note hide-s">${worstTxt(id)}</td>`:''}<td class="n">${r.sos||'—'}</td><td class="n">${pw(r)}</td></tr>`};
   const head=full=>`<thead><tr><th class="n">#</th><th>Team</th><th class="n">Rec</th><th class="n">vs Top 25</th><th class="hide-s">Best win</th>${full?'<th class="hide-s">Worst loss</th>':''}<th class="n">SOS</th><th class="n">Power</th></tr></thead>`;
-  /* AP / CFP Top 25: rank with movement, team with a résumé hint, record (SOS and power on wider screens) */
-  const pollTab=(lst,prevL,pre)=>`<div class="tw"><table class="rtab"><thead><tr><th class="n">#</th><th>Team</th><th class="n">Rec</th><th class="n hide-s">SOS</th><th class="n hide-s">Power</th></tr></thead><tbody>${lst.slice(0,25).map((id,i)=>{const t=T(id),r=ri(id),h=rankHint(id,lst,pre),sd=pre&&LG.cfp?LG.cfp.seeds.indexOf(id)+1:0;
-    return `<tr class="${id===LG.user?'me':''}"><td class="n">${i+1}${rankMove(id,i,div,prevL)}</td><td>${tcell(t,t.city)}${h||sd?`<div class="rhint">${sd?`<span class="tag ${sd<=4?'gold':'blue'}">Seed ${sd}</span> `:''}${h}</div>`:''}</td><td class="n">${recStr(t)}</td><td class="n hide-s">${r.sos||'—'}</td><td class="n hide-s">${pw(r)}</td></tr>`}).join('')}</tbody></table></div>`;
+  /* AP / CFP Top 25 metrics: rank (+movement) and team stay pinned while the résumé columns scroll sideways on a phone.
+     SOS rank, best win, worst loss and power come from L.rinfo; one pass over the season's games adds the scores, the record
+     against this poll's own Top 25, and an opponent-quality pick when rinfo has none yet. */
+  const pollTab=(lst,prevL,pre)=>{
+    const top=lst.slice(0,25),pos={},M={},pwr=LG.power||{},seeds=pre&&LG.cfp&&LG.cfp.seeds||[],cfpV=seeds.length>0;
+    top.forEach((id,i)=>{pos[id]=i+1;M[id]={v:[0,0],b:null,w:null}});
+    const qual=o=>pwr[o]!=null?+pwr[o]:ri(o).pow!=null?ri(o).pow:-(pos[o]||99);
+    for(const wk of LG.weeks)for(const g of wk.games){if(g.hs==null)continue;
+      for(const [id,o,f,a] of [[g.h,g.a,g.hs,g.as],[g.a,g.h,g.as,g.hs]]){const m=M[id];if(!m)continue;const r=ri(id),x={o,f,a};
+        if(f>a){if(pos[o])m.v[0]++;if(r.best!=null?o===r.best&&(!m.b||f-a===r.bestM):!m.b||qual(o)>qual(m.b.o))m.b=x}
+        else{if(pos[o])m.v[1]++;if(r.worst!=null?o===r.worst&&(!m.w||f-a===r.worstM):!m.w||qual(o)<qual(m.w.o))m.w=x}}}
+    const opp=x=>`<b>${pos[x.o]?'#'+pos[x.o]+' ':''}${esc(T(x.o).abbr)}</b> ${x.f}–${x.a}`,pg=(n,gp)=>gp?(n/gp).toFixed(1):'—';
+    const rows=top.map((id,i)=>{const t=T(id),r=ri(id),m=M[id],gp=t.rec.w+t.rec.l,sd=seeds.indexOf(id)+1,pv=r.pow!=null?r.pow:pwr[id]!=null?+(+pwr[id]).toFixed(1):null;
+      return `<tr class="${id===LG.user?'me':''}"><td class="n mrk">${i+1}${rankMove(id,i,div,prevL)}</td><td class="mtm"><div class="tname" data-team="${t.id}" style="cursor:pointer" title="${esc(teamName(t))}">${badge(t,'sm')}<span class="mab">${esc(t.abbr)}</span><span class="mct">${esc(t.city)}</span></div></td>`
+        +(cfpV?`<td class="n">${sd?`<span class="tag ${sd<=4?'gold':'blue'}">${sd}</span>`:''}</td>`:'')
+        +`<td class="n">${recStr(t)}</td><td class="n">${isInd(LG,t)?'—':t.rec.cw+'–'+t.rec.cl}</td><td class="n">${r.sos||'—'}</td><td>${m.b?opp(m.b):'—'}</td><td>${m.w?opp(m.w):'—'}</td>`
+        +`<td class="n">${gp?m.v[0]+'–'+m.v[1]:'—'}</td><td class="n">${pv!=null?(pv>0?'+':'')+(+pv).toFixed(1):'—'}</td><td class="n">${pg(t.rec.pf,gp)}</td><td class="n">${pg(t.rec.pa,gp)}</td></tr>`}).join('');
+    return `<p class="note mswipe">Swipe the table sideways for conference record, SOS, best win, worst loss, power and scoring.</p><div class="tw mtw"><table class="rtab mtab"><thead><tr><th class="n mrk">#</th><th class="mtm">Team</th>${cfpV?'<th class="n">Seed</th>':''}<th class="n">Rec</th><th class="n">Conf</th><th class="n">SOS</th><th>Best win</th><th>Worst loss</th><th class="n">vs Top 25</th><th class="n">Power</th><th class="n">PF/G</th><th class="n">PA/G</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  };
   const last=LG.week>0&&LG.weeks[LG.week-1]?LG.weeks[LG.week-1].label:'';
   let body='';
   if(RANK_MODE==='top'){
     const others=list.slice(25,35).map(id=>`${esc(T(id).city)} ${recStr(T(id))}`).join(' · ');
     body=`<div class="card"><div class="setrow"><div><div class="eyebrow">${LG.week===0&&LG.phase==='regular'?'Before Week 1':'After '+esc(last)}</div><div class="h2">${pollName(LG,div)}</div></div>${toggle}</div>${pollTab(list,null,'')}
       ${others?`<p class="note"><b>Others receiving votes:</b> ${others}</p>`:''}
-      <p class="note">Voted like the media poll: each week starts from last week's ballot. A win holds a team's spot or moves it up (more for ranked, top-10 and road wins), a loss drops it by how good the opponent was and the margin, and a bye holds. A ranked team that wins falls at most two spots, and a team that beat a team with the same or a worse record is always ranked ahead of it. SOS is a rank; Power is points better than an average team.</p></div>`;
+      <p class="note">Voted like the media poll: each week starts from last week's ballot. A win holds a team's spot or moves it up (more for ranked, top-10 and road wins), a loss drops it by how good the opponent was and the margin, and a bye holds. A ranked team that wins falls at most two spots, and a team that beat a team with the same or a worse record is always ranked ahead of it. SOS is a rank; Power is points better than an average team; PF/G and PA/G are points scored and allowed per game.</p></div>`;
   }else if(cfp){
     const c=ensureCFP(LG),fin=LG.week>LG.R||LG.phase==='offseason';
     body=!c.length?`<div class="card"><div class="eyebrow">College Football Playoff</div><div class="h2">CFP rankings</div><p class="note">${LG.phase==='offseason'?'No CFP rankings were kept for this season.':`Not released yet — first rankings after Week ${cfpFrom(LG)}. Until then the playoff projection uses the AP Top 25.`}</p></div>`
@@ -4250,29 +4281,48 @@ function drawWeather(c){
 }
 
 /* ---------- camera: critically damped follow (SmoothDamp) on x, y and zoom ----------
-   presnap frames the LOS a little behind center; pass plays lead toward the target / ball in the air;
-   runs follow the carrier with look-ahead; deep balls and open-field runs widen, the goal line tightens.
+   presnap frames the LOS a little behind center; runs follow the carrier with look-ahead; open-field runs widen, the goal line tightens.
+   Pass plays FRAME a box instead: the QB (or the ball in the air) plus what is downfield of him: the deepest route runner during the
+   drop, the aim point and the receiver under it while aiming, the landing spot and the intended receiver while the ball is up.
+   The zoom backs out only as far as that box needs (the narrow portrait view backs out much further), relative to the user's
+   zoom setting and never past a legibility floor; the pan keeps the QB / ball inside its margin and leans downfield.
    Modern style may look a few yards past the end lines and above the far sideline (end-zone stands). */
 function camDamp(k,tgt,st,dt){const v=k+'v',o=2/st,x=o*dt,e=1/(1+x+.48*x*x+.235*x*x*x),ch=cam[k]-tgt,tmp=((cam[v]||0)+o*ch)*dt;cam[v]=((cam[v]||0)-o*tmp)*e;cam[k]=tgt+(ch+tmp)*e}
+const CAM_M={l:4,r:7,t:4.5,b:3};   // framing margins in yards: behind the QB, beyond the target, far side (sprites stand up into it), near side
+const camPad=()=>[Math.max(0,50-topY),58];   // px the overlays cover when framing: scorebug strip on top, hint bar + ticker at the bottom
+const camBox=(b,x,y)=>{if(x<b[0])b[0]=x;if(x>b[1])b[1]=x;if(y<b[2])b[2]=y;if(y>b[3])b[3]=y;return b};
+/* cam.z that fits box b=[x0,x1,y0,y1] plus margins on this screen at the user's zoom; floor about 6 px per yard */
+function camFit(b){const s0=sc*((LG&&LG.settings&&LG.settings.zoom)||1),pd=camPad();
+  return Math.max(Math.min(W/(s0*(b[1]-b[0]+CAM_M.l+CAM_M.r)),Math.max(60,H-topY-pd[0]-pd[1])/(s0*VY*(b[3]-b[2]+CAM_M.t+CAM_M.b))),6.2/s0)}
+/* camera centre on one axis so [c0,c1] fits a view of size v with margins m0/m1 (bias 0..1 leans toward c1's side being roomier);
+   when it cannot fit (zoom still easing out, or at the floor) keep the anchor a inside its margin. Continuous in v. */
+function camPan(c0,c1,a,v,m0,m1,bias){const lo=c1+m1-v/2,hi=c0-m0+v/2;if(lo<=hi)return lo+(hi-lo)*bias;const w=c1>c0?clamp((a-c0)/(c1-c0),0,1):0;return hi+(lo-hi)*w}
 function updateCam(dt){
   dt=Math.min(dt,.05);const retro=LG&&LG.settings.style==='retro';
-  let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,bx=S.los,by=S.ballY;
+  let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
   if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1}
   if((S.phase==='live'||S.phase==='dead'||S.phase==='replay')&&ball){z=1;st=.42;const h=(play&&play.carrier)||Q;
-    if(ball.state==='air'){const far=hyp(ball.tx-ball.fx,ball.ty-ball.fy);fx=lerp(ball.x,ball.tx,.55);fy=lerp(ball.y,ball.ty,.45);z=far>30?.8:far>18?.88:.95;st=.36;bx=ball.x;by=ball.y}
-    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);fx=lerp(Q.x,aim.x,.55);fy=lerp(Q.y,aim.y,.35);z=d>30?.82:d>18?.9:.97;st=.5;bx=Q.x;by=Q.y}
+    if(ball.state==='air'){const far=hyp(ball.tx-ball.fx,ball.ty-ball.fy),r=play&&play.intended;bx=ball.x;by=ball.y;z=clamp(1.04-.008*far,.8,.95);st=.36;zst=.5;
+      box=camBox([bx,bx,by,by],ball.tx,ball.ty);if(r&&r.side==='o')camBox(box,r.x,r.y);
+      zbox=camBox(box.slice(),lerp(ball.fx,ball.tx,.2),lerp(ball.fy,ball.ty,.2))}   // hold most of the release framing through the flight
+    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);bx=Q.x;by=Q.y;z=clamp(1.03-.007*d,.82,.97);st=.4;zst=.45;
+      box=camBox([bx,bx,by,by],aim.x,aim.y);const [n,nd]=nearest(OFF,aim.x,aim.y,o=>eligible(o)&&!o.blocker);if(n&&nd<8)camBox(box,n.x,n.y)}
     else if(h){bx=h.x;by=h.y;
-      if(play&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){let t=null,far=Q.x;for(const o of OFF)if(eligible(o)&&o.x>far){far=o.x;t=o}fx=lerp(Q.x,far,.42);fy=lerp(Q.y,t?t.y:Q.y,.2);z=far-Q.x>22?.86:.95;st=.55}
+      if(play&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){let t=null,far=-1e9;
+        for(const o of OFF)if(eligible(o)&&!o.blocker){const lx=o.x+clamp((o.vx||0)*.6,0,5);if(lx>far){far=lx;t=o}}
+        far=t?clamp(far,Q.x,Q.x+maxRange()):Q.x+12;z=clamp(1.07-.009*(far-Q.x),.86,.95);st=.5;zst=.6;box=camBox([bx,bx,by,by],far,t?t.y:by)}
       else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.97:1;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.9;st=.32}}
     const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.07}
-  if(retro)z=1;
-  camDamp('z',z,.8,dt);
+  if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box));
+  camDamp('z',z,zst,dt);
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY),ext=retro?0:7;
-  let tx=fx+vw*.1;const mn=-6-ext+vw/2,mx=126+ext-vw/2;tx=mn>mx?60:clamp(tx,mn,mx);
-  const ty=vh>=FW+10?(retro?CEN-3:CEN-3.6):clamp(fy,(retro?-8:-11)+vh/2,FW+3-vh/2);
+  const pd=box?camPad().map(v=>v/(s*VY)):[0,0];   // overlay pads in world yards (framing only)
+  let tx=fx+vw*.1;if(box){tx=camPan(box[0],box[1],bx,vw,CAM_M.l,CAM_M.r,.62);fy=camPan(box[2],box[3],by,vh,CAM_M.t+pd[0],CAM_M.b+pd[1],.5)}
+  const mn=-6-ext+vw/2,mx=126+ext-vw/2;tx=mn>mx?60:clamp(tx,mn,mx);
+  const ylo=(retro?-8:-11)+vh/2,yhi=FW+3+pd[1]-vh/2,ymid=retro?CEN-3:CEN-3.6,ty=clamp(fy,Math.min(ylo,ymid),Math.max(yhi,ymid));   // whole width in view: hold mid
   camDamp('x',tx,st,dt);camDamp('y',ty,st*1.2,dt);
-  /* keep the ball (or its carrier) on screen even when the spring lags */
-  const hw=vw/2-Math.min(vw*.2,3);if(bx<cam.x-hw){cam.x=bx+hw;cam.xv=Math.min(cam.xv||0,0)}else if(bx>cam.x+hw){cam.x=bx-hw;cam.xv=Math.max(cam.xv||0,0)}
+  /* keep the ball (or its carrier) on screen even when the spring lags; between plays (presnap) glide back to the new LOS instead */
+  const hw=S.phase==='presnap'?1e9:vw/2-Math.min(vw*.2,3);if(bx<cam.x-hw){cam.x=bx+hw;cam.xv=Math.min(cam.xv||0,0)}else if(bx>cam.x+hw){cam.x=bx-hw;cam.xv=Math.max(cam.xv||0,0)}
   if(vh<FW+10){const hh=vh/2-1.5;if(by<cam.y-hh){cam.y=by+hh;cam.yv=Math.min(cam.yv||0,0)}else if(by>cam.y+hh){cam.y=by-hh;cam.yv=Math.max(cam.yv||0,0)}}
   S.shake=Math.max(0,S.shake-dt*1.6);
 }

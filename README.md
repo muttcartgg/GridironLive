@@ -11,6 +11,9 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 
 ## Version 7 (part 8): score bug, broadcast graphics and sound
 
+- Passing camera: on pass plays the camera keeps your QB and his target in view together (the deepest receiver during the dropback, your aim point while aiming, the landing spot in the air), zooming out only as far as needed, in portrait and landscape.
+- Rankings: the AP and CFP Top 25 now have a stats table you can swipe sideways — record, conference record, strength-of-schedule rank, best win, worst loss, record vs Top 25, power rating, and points for/against per game.
+
 - New TV-style score bug: logos (imported) or team-colored monograms, ranks, records, timeout pips, possession football, quarter, game clock and play clock; scores slide in with a sweep; the down-and-distance strip turns red in the red zone.
 - Big-moment graphics in team colors: touchdown, pick six, two-point, safety, interception, fumble, turnover on downs, field goal good/no good; first down, red zone, 3rd/4th down and turnover chips; two-minute, end-of-quarter, halftime and final cards with linescores.
 - Less clutter: smaller player cards that hide after a few seconds, a decibel meter only when it's loud, and short tips that fade.
