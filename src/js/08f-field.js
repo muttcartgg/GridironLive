@@ -95,7 +95,7 @@ function bakeLight(g,st,wk,Wc,Hc){
   if(wk!=='dry')op('saturation','#808080',wk==='wet'?.28:.38);
   if(wk==='wet')op('multiply','#b4bec4');else if(wk==='snow')op('multiply','#dfe4ea');
   if(st==='late')op('multiply','#fff0da');
-  if(st==='sunset'){op('multiply','#ffd3a8');g.globalCompositeOperation='source-over';const gr=g.createLinearGradient(0,fy(-6),0,fy(20));gr.addColorStop(0,'rgba(30,14,40,.42)');gr.addColorStop(.7,'rgba(30,14,40,.26)');gr.addColorStop(1,'rgba(30,14,40,0)');g.fillStyle=gr;g.fillRect(0,0,Wc,fy(20))}
+  if(st==='sunset'){op('multiply','#ffe2c4');g.globalCompositeOperation='source-over';const gr=g.createLinearGradient(0,fy(-6),0,fy(20));gr.addColorStop(0,'rgba(30,14,40,.42)');gr.addColorStop(.7,'rgba(30,14,40,.26)');gr.addColorStop(1,'rgba(30,14,40,0)');g.fillStyle=gr;g.fillRect(0,0,Wc,fy(20))}
   if(st==='night'){op('multiply','#6f7b96');g.globalCompositeOperation='lighter';glow([[22,-9,44,.17],[98,-9,44,.17],[22,FW+9,44,.17],[98,FW+9,44,.17],[60,CEN,50,.09]],'255,244,222')}
   if(wk==='wet'){g.globalCompositeOperation='screen';glow([[30,7,13,.13],[90,7,13,.13],[60,FW-11,15,.11],[18,FW-6,10,.1],[102,FW-6,10,.1]],'205,220,240',2.6)}
   g.globalCompositeOperation='source-over';g.globalAlpha=1;
@@ -168,7 +168,7 @@ function drawGrade(c){
 }
 function buildGrade(st,wk){
   const n=FLD.grade||document.createElement('canvas'),Z=192;n.width=n.height=Z;const g=n.getContext('2d');g.clearRect(0,0,Z,Z);
-  const tint={day:'',late:'rgba(255,196,130,.05)',sunset:'rgba(255,128,48,.12)',night:'rgba(24,40,96,.12)'}[st];if(tint){g.fillStyle=tint;g.fillRect(0,0,Z,Z)}
+  const tint={day:'',late:'rgba(255,196,130,.05)',sunset:'rgba(255,128,48,.09)',night:'rgba(24,40,96,.12)'}[st];if(tint){g.fillStyle=tint;g.fillRect(0,0,Z,Z)}
   if(wk==='wet'){g.fillStyle='rgba(20,30,45,.12)';g.fillRect(0,0,Z,Z)}
   if(wk!=='dry'){const fg=g.createLinearGradient(0,0,0,Z),fc=wk==='snow'?'228,232,240':'150,160,176';fg.addColorStop(0,`rgba(${fc},.34)`);fg.addColorStop(.45,`rgba(${fc},.08)`);fg.addColorStop(1,`rgba(${fc},0)`);g.fillStyle=fg;g.fillRect(0,0,Z,Z)}
   if(st==='sunset'){const sg=g.createRadialGradient(Z*.88,0,0,Z*.88,0,Z*.8);sg.addColorStop(0,'rgba(255,170,90,.24)');sg.addColorStop(1,'rgba(255,170,90,0)');g.fillStyle=sg;g.fillRect(0,0,Z,Z)}
