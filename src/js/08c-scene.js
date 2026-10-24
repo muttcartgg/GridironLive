@@ -133,8 +133,7 @@ function drawFlashbulbs(c){
 function covName(){return {man:'Cover 1',cover2:'Cover 2',cover3:'Cover 3',cover4:'Quarters',blitz:'Blitz',prevent:'Prevent'}[S.cov]||'zone'}
 /* final score graphic, then championship celebrations */
 function finalGraphic(won,pog,g){
-  STORMERS=[];S.stormT=Math.max(S.stormT||0,3.2);const el=$('#qcard');el.innerHTML=`<div class="eyebrow fin">FINAL${S.ot?' · '+(S.otRound>1?S.otRound:'')+'OT':''}${g.tag?' · '+esc(g.tag):''}</div>${BC.linescore()}${pog?`<div class="pog"><span class="tag gold">Player of the game</span> <b>${esc(fullName(pog))}</b> <small class="note">${pog.pos} · ${esc(S.home.abbr)}</small></div>`:''}`;
-  el.classList.remove('on');void el.offsetWidth;el.classList.add('on');setTimeout(()=>el.classList.remove('on'),2900);
+  STORMERS=[];S.stormT=Math.max(S.stormT||0,3.2);BC.finalCard(won,pog,g);
   const title=won&&g.post&&/Championship|Bowl|Semifinal|National/.test(g.tag||'');
   if(title){banner(/National|Final/.test(g.tag)?'National champions':`${g.tag} champions`,S.home.c1,S.home.city);fireworks(12);for(let i=0;i<4;i++)setTimeout(()=>spawnConfetti(cam.x+R(-8,8),cam.y+R(-6,6)),i*350);sfx('fight')}
 }
