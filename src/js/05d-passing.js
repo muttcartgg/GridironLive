@@ -19,7 +19,7 @@
    block adds to the rush, a spy shadows a mobile QB. Disguise: the shell shown pre-snap can differ (rotation at
    the snap). Play-action: LBs/safeties bite (step up) by awr, opening windows behind them.
    ========================================================= */
-const PASS={prR:2.6,dive:1.05,drop:.05,pbu:.24,popUp:.24};
+const PASS={prR:2.6,dive:1.05,drop:.06,pbu:.24,popUp:.24};
 
 /* ---------- QB: platform, pressure, accuracy, flight ---------- */
 function qbTick(dt){const v=hyp(Q.vx,Q.vy);Q.setT=v<1.8?(Q.setT||0)+dt:Math.max(0,(Q.setT||0)-dt*3)}
@@ -31,7 +31,7 @@ function aimError(d,bullet,lob){
   const e=(.3+d*.0074*(6.3-qb.pl.acc))*(1+pressure()*.9)*plat*(1+strain*.6)*(bullet?1.15:lob?.92:1)*wx;
   return e*(qb.user?(focus('passing')?.8:1)/SL('acc'):1.1-S.aiSkill*.2);
 }
-function flightT(d,bullet,lob,thr){let T=(.22+d*.031)*(1.1-.035*thr);if(bullet)T*=.72;else if(lob)T=T*1.28+.08;const mr=maxRange();if(d>mr*.8)T*=1+(d/mr-.8)*.8;return Math.max(.28,T)}
+function flightT(d,bullet,lob,thr){let T=(.2+d*.028+d*d*.00028)*(1.1-.035*thr);if(bullet)T*=.72;else if(lob)T=T*1.28+.08;const mr=maxRange();if(d>mr*.8)T*=1+(d/mr-.8)*.8;return Math.max(.28,T)}
 function throwBall(tx,ty,bullet,intended,lob){
   const qb=Q,pl=play,mr=maxRange();let d=hyp(tx-qb.x,ty-qb.y);bullet=!!bullet;lob=!bullet&&!!(lob!=null?lob:qb.user&&S.lob);
   if(d>mr){tx=qb.x+(tx-qb.x)*mr/d;ty=qb.y+(ty-qb.y)*mr/d;d=mr}
@@ -67,19 +67,19 @@ function passWindow(r){
 }
 function aiQB(dt){
   const pl=play;if(pl.thrown||pl.scramble||pl.carrier!==Q||pl.fleaHold)return;
-  const sk=S.aiSkill,awr=Q.pl.awr,readStart=(pl.screen?.75:pl.pa?1.35:1.05)+(pl.flea?1.2:0)+(pl.screen?0:pl.hold||(pl.hold=R(.1,.9)));
+  const sk=S.aiSkill,awr=Q.pl.awr,readStart=(pl.screen?.75:pl.pa?1.35:1.05)+(pl.flea?1.2:0)+(pl.screen?0:pl.hold||(pl.hold=R(.2,1.1)));
   if(pl.t<readStart||pl.t<pl.nextRead)return;pl.nextRead=pl.t+.2;
   const pr=pressure(),noise=(1.15-.17*awr)*(1.2-sk*.4);
   let best=null,bs=-1e9,bo=0;
   for(const r of OFF){if(!eligible(r)||r.blocker||r.fallen||r.jamT>0)continue;
     const [w,px]=passWindow(r),depth=px-S.los;
-    let s=w*1.1+Math.min(Math.max(depth,0),24)*.2+(px>=S.firstDownX?1.3:0)-(depth<1&&!pl.screen?1.2:0)-(depth<-1?1:0)+R(-1,1)*noise;
+    let s=w*1.1+Math.min(Math.max(depth,0),20)*.15-Math.max(0,depth-15)*.1+(px>=S.firstDownX?1.3:0)-(depth<1&&!pl.screen?1.2:0)-(depth<-1?1:0)+R(-1,1)*noise;
     if(pl.screen&&r.key===pl.screen)s+=pl.t<1.6?6:-2;
     if(S.down>=3&&px<S.firstDownX&&!pl.screen)s-=1.1;
-    if(s>bs){bs=s;best=r;bo=w+R(-.6,.6)*noise}}
-  const need=3.3-(pl.t-readStart)*.75-pr*1.4;
+    if(s>bs){bs=s;best=r;bo=w+R(-.6,.6)*noise-Math.max(0,depth-15)*.05}}
+  const need=3.6-(pl.t-readStart)*.75-pr*.9;
   if(best&&(bo>=need||pl.t>4.2)){if(bo<.6&&pl.t>3.4&&Math.random()<.5){throwAway();return}aiThrow(best);return}
-  if(pr>.35&&pl.t>2.1){if(Q.pl.spd>=3.6&&Math.random()<.4){pl.scramble=true;pl.scrT=pl.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}return}if(Math.random()<.3){throwAway();return}}
+  if(pr>.5&&pl.t>2.1){if(Q.pl.spd>=3.6&&Math.random()<.3){pl.scramble=true;pl.scrT=pl.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}return}if(Math.random()<.18){throwAway();return}}
   if(pl.t>5)throwAway();
 }
 
@@ -111,7 +111,7 @@ function tipBall(by){
 function tipLand(){
   const pl=play,bx=ball.tx,by=ball.ty;let best=null,bs=1e9;
   for(const p of P){if(p.stun>0||p.fallen||p===ball.tipBy||p===Q||p.side==='o'&&!eligible(p))continue;const k=hyp(p.x-bx,p.y-by);if(k>reachOf(p)+.4)continue;if(k<bs){bs=k;best=p}}
-  if(best&&by>=0&&by<=FW&&bx<=120&&Math.random()<clamp(.5+.08*(best.pl.cat-3)-bs*.3,.1,.8)){
+  if(best&&by>=0&&by<=FW&&bx<=120&&Math.random()<clamp(.4+.08*(best.pl.cat-3)-bs*.3,.08,.7)){
     if(best.side==='d')return pickOff(best,'tip');
     return completeTo(best,bx,by,false);
   }
@@ -126,8 +126,8 @@ function breakup(d,msg,pop){
 function completeTo(rec,cx,cy,contested,dive){
   const pl=play;ball.state='held';pl.carrier=rec;pl.caught=true;rec.route=null;if(!S.conv){tstat().comp++;ps(Q).pc++;ps(rec).rec++}
   pl.rec=logPass('C');
-  OFF.forEach(o=>{if(o!==rec&&o!==Q){o.blocker=true;o.tgt=null}});
-  rec.x=cx;rec.y=cy;pl.catchX=rec.x;setAnim(rec,dive?'dive':'catch');{const k=dive?.35:contested?.55:.72;rec.vx*=k;rec.vy*=k}
+  OFF.forEach(o=>{if(o===rec||o===Q)return;if(o.role==='OL'||hyp(o.x-cx,o.y-cy)<9){o.blocker=true;o.tgt=null}else{o.route=null;o.cont=null}});
+  rec.x=cx;rec.y=cy;pl.catchX=rec.x;setAnim(rec,dive?'dive':'catch');{const k=dive?.35:contested?.5:.62;rec.vx*=k;rec.vy*=k;pl.slowT=Math.max(pl.slowT,.3)}
   if(contested){toast('Contested catch!');slowMo(.3)}
   if(rec.user)hint('Drag to steer · JUKE / SPIN / TRUCK buttons');showActs();
   fx('catch',{p:rec,contested:!!contested});
@@ -142,15 +142,15 @@ function resolveCatch(){
   for(const o of OFF){if(!eligible(o)||o.blocker||o.fallen||o.stun>0)continue;const k=hyp(o.x-tx,o.y-ty);if(k<dr){dr=k;rec=o}}
   for(const d of DEF){if(d.stun>0||d.fallen)continue;const k=hyp(d.x-tx,d.y-ty);if(k<dd){dd=k;df=d}}
   const userSwat=!!df&&df===S.ctrl&&pl.swat>0,rR=rec?reachOf(rec):0,dR=df?reachOf(df)*.9+(userSwat?.4:0):0;
-  pl.sep=rec?nearest(DEF,rec.x,rec.y,d=>d.stun<=0&&!d.fallen)[1]:null;pl.cover=df;
+  pl.sep=rec?nearest(DEF,rec.x,rec.y,d=>d.stun<=0&&!d.fallen)[1]:null;pl.cover=df;pl.arr=[dr,dd];
   if(out||!rec||dr>rR+PASS.dive){
-    if(df&&!out&&dd<dR){if(Math.random()<clamp(.3+.1*(df.pl.cat-3)+(userSwat?.15:0),.1,.65))return pickOff(df,'norec');return breakup(df,'Pass defended',.2)}
+    if(df&&!out&&dd<dR){if(Math.random()<clamp(.12+.07*(df.pl.cat-3)+(userSwat?.15:0),.1,.65))return pickOff(df,'norec');return breakup(df,'Pass defended',.2)}
     logPass('X');return endPlay('inc',out?'Sails out of bounds':ball.err<-.6?'Underthrown':ball.err>.6?'Overthrown':'Off target');
   }
   const dive=dr>rR;
   /* a defender who gets there first plays the ball: undercut on short balls, high-point on lobs */
   if(df&&dd<dR&&dd<dr-.6){
-    const pI=clamp(.15+.08*(df.pl.cat-3)+.04*(df.pl.cov-3)+(ball.err<-.5?.1:0)+(ball.lob?.05:0)-(ball.bullet?.06:0)+(userSwat?.15:0),.05,.55);
+    const pI=clamp(.07+.06*(df.pl.cat-3)+.04*(df.pl.cov-3)+(ball.err<-.5?.1:0)+(ball.lob?.05:0)-(ball.bullet?.05:0)+(userSwat?.15:0),.04,.4);
     if(Math.random()<pI)return pickOff(df,'first');return breakup(df,userSwat?'Swatted away!':'Broken up',.3);
   }
   const contested=!!df&&dd<dR+.45&&pl.sep<1.7;pl.contested=contested;
@@ -234,7 +234,7 @@ function coverageSnap(){
 function routeBreak(p){
   p.brkT=play.t;
   for(const d of DEF){const cv=d.cov;if(!cv||cv.type!=='man'||cv.tgt!==p||d.stun>0)continue;
-    const lag=clamp(.24+.09*(p.pl.rte-d.pl.cov)-.03*(d.pl.agi-3)+R(-.06,.08),.05,.5)*(cv.trail?.8:1);if(lag>d.lagT){d.lagT=lag;d.lvx=d.vx;d.lvy=d.vy}}
+    const lag=clamp(.3+.09*(p.pl.rte-d.pl.cov)-.03*(d.pl.agi-3)+R(-.06,.08),.05,.5)*(cv.trail?.8:1);if(lag>d.lagT){d.lagT=lag;d.lvx=d.vx;d.lvy=d.vy}}
 }
 function covTarget(d,cv,dt){
   const L=S.los,pl=play;
@@ -246,7 +246,7 @@ function covTarget(d,cv,dt){
     if(d.lagT>0){d.lagT-=dt;return [d.x+d.lvx*.5,d.y+d.lvy*.5,1,6]}
     const look=.3+.06*(d.pl.cov-3),inside=a.y<CEN?1:-1,lev=cv.tight?.35:cv.trail?.6:.45;
     const cush=cv.trail?-.8:Math.max(.25,(d.role==='CB'?1.6:1.1)-pl.t*.7);
-    return [a.x+a.vx*look+cush,a.y+a.vy*look+inside*lev,1,9+1.3*d.pl.cov];
+    return [a.x+a.vx*look+cush,a.y+a.vy*look+inside*lev,1,7+1.2*d.pl.cov];
   }
   return zoneAI(d,cv);
 }
@@ -257,5 +257,8 @@ function zoneAI(d,cv){
     const k=hyp((px-zx)*(cv.deep?.6:1),(py-zy)*(cv.deep?.8:1));if(k>cv.r)continue;const s=k-(cv.deep?depth*.35:0);if(s<ts){ts=s;thr=o}}
   if(thr){if(cv.deep)return [Math.max(zx-3,thr.x+thr.vx*.4+1.6+.5*(3.5-d.pl.spd)),lerp(zy,thr.y,.8),1,9+d.pl.cov];
     return [clamp(thr.x+thr.vx*.3-.8,L+1.5,zx+3.5),lerp(zy,thr.y+thr.vy*.3,.8),1,9+d.pl.cov]}
+  /* nothing in an underneath zone: sink under the nearest vertical through it (cloud corner, hook carrying a seam) */
+  if(!cv.deep){let v=null,vd=1e9;for(const o of OFF){if(!eligible(o)||o.blocker||o.x-L<=cv.hand)continue;const k=Math.abs(o.y-zy);if(k<cv.r*.8&&k<vd){vd=k;v=o}}
+    if(v)return [Math.min(v.x-2,L+cv.hand+4),lerp(zy,v.y,.6),1,9+d.pl.cov]}
   return [zx,lerp(zy,Q?Q.y:CEN,cv.deep?.1:.25),cv.deep?1:.85,9];
 }

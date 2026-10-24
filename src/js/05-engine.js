@@ -389,7 +389,7 @@ function defAI(d,dt){
   if(ball.state==='air'&&!ball.pitch){const rem=ball.T-ball.t,dd=hyp(ball.tx-d.x,ball.ty-d.y),since=ball.tip?ball.t:play.t-play.ballT0,zone=d.cov&&d.cov.type==='zone';
     /* zone eyes see the throw; a man defender with his back to the QB plays the receiver until he looks up */
     const rt=ball.tip?(dd<6?.1:99):d.role==='DL'||d.cov&&d.cov.type==='rush'?99:zone?.16+(3.5-d.pl.awr)*.05+(d.user?0:(1-S.aiSkill)*.1):Math.max(.3+(3.5-d.pl.awr)*.05,ball.T*.45);
-    if(since>rt&&!play.throwAway){if(dd/d.spd<rem+.7){tx=ball.tx;ty=ball.ty}else if(!ball.tip&&d.role!=='DL'){tx=ball.tx+Math.min(4,dd*.25);ty=ball.ty}}}
+    if(since>rt&&!play.throwAway){if(dd/d.spd<rem+.7){tx=ball.tx;ty=ball.ty;const a=!zone&&d.cov&&d.cov.tgt;if(a&&a===play.intended&&!ball.tip){tx=lerp(a.x,tx,.6);ty=lerp(a.y,ty,.6)}}else if(!ball.tip&&d.role!=='DL'){tx=ball.tx+Math.min(4,dd*.25);ty=ball.ty}}}
   if(tx===undefined){
     let pursue=runner;
     if(play.type==='run'&&!play.fleaHold)pursue=play.t>({DL:0,LB:.5,CB:.9,S:.75})[d.role]||(d.cov&&d.cov.type==='rush');
@@ -491,7 +491,7 @@ function simulate(dt){
     if(p.side==='d')p.face=p.vx>2.8?1:p.vx<-.3||Math.abs(p.vx)<2.8?-1:p.face;else p.face=p.vx<-2.8?-1:1;}
   /* collisions: blockers give way, defenders are not shoved backwards */
   const hold=pl.carrier;
-  for(let i=0;i<P.length;i++){const a=P[i];if(a===hold||a.fallen)continue;for(let j=i+1;j<P.length;j++){const c=P[j];if(c===hold||c.fallen)continue;const ddx=c.x-a.x,ddy=c.y-a.y,d=hyp(ddx,ddy);if(d<.95&&d>1e-4){const o=(.95-d);let wa=.5,wc=.5;if(a.side!==c.side){if(a.side==='d'){wa=.2;wc=.8}else{wa=.8;wc=.2}}a.x-=ddx/d*o*wa;a.y-=ddy/d*o*wa;c.x+=ddx/d*o*wc;c.y+=ddy/d*o*wc}}}
+  for(let i=0;i<P.length;i++){const a=P[i];if(a===hold||a.fallen)continue;for(let j=i+1;j<P.length;j++){const c=P[j];if(c===hold||c.fallen)continue;const ddx=c.x-a.x,ddy=c.y-a.y,d=hyp(ddx,ddy);if(d<.95&&d>1e-4){const o=(.95-d);let wa=.5,wc=.5;if(a.side!==c.side&&!(ball.state==='air'&&!ball.pitch)){if(a.side==='d'){wa=.2;wc=.8}else{wa=.8;wc=.2}}a.x-=ddx/d*o*wa;a.y-=ddy/d*o*wa;c.x+=ddx/d*o*wc;c.y+=ddy/d*o*wc}}}
   const c=pl.carrier;
   if(c&&!pl.ended){
     if(runner||(pl.type==='run'&&!pl.handed&&c===Q&&pl.t>.15)){
