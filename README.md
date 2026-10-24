@@ -9,6 +9,15 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 5)
+
+- Stadium: lower and upper decks with aisles and rails, team-colored sections, a club level with suites that light up at night, a press box with the school name, glowing light towers, end-zone stands with the band, and both team benches with players and coaches in headsets.
+- Ribbon boards in team colors scroll the school name, score, down and big-play messages.
+- The crowd reacts to touchdowns, turnovers, sacks and big plays, goes quiet when the visitors score, does the wave, lights up phones at night and stripes the stadium for rivalry and primetime games.
+- Smoother broadcast camera that leads passes and runs; prettier kick view with sky by time of day.
+- Settings → Graphics → Graphics quality (High / Battery saver).
+- Rankings: a team that beat a team with the same or a worse record is always ranked ahead of it.
+
 ## Version 7 (part 4)
 
 - New player models: helmets with stripes, face masks, decals (or the imported logo) and gloss; shoulder pads; jerseys with numbers that face the right way; pants stripes, socks, cleats, gloves, visors and sleeves; body size from each player's real height and weight.
