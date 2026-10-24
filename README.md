@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 6): rankings overhaul
+
+- AP Top 25 that moves like real voters: wins hold or move you up (more for ranked and road wins), losses drop you by how bad they were (a loss to an unranked team costs about 12 spots; a close loss to a top-10 team about 3), teams with fewer losses generally rank higher, unbeaten Group of 5 teams usually sit behind one-loss Power 4 contenders, and head-to-head always counts. Preseason poll from prestige, roster and last year's final poll. Same logic for the FCS Top 25.
+- CFP committee rankings from Week 10 on, rebuilt weekly from résumés (record, schedule strength, wins over ranked teams, bad losses, conference titles).
+- 2026 playoff selection from the final CFP rankings: the four Power 4 champions and the best Group of 5 champion get automatic bids, Notre Dame is in if it is in the top 12, and seeds follow the rankings (top 4 get byes, 5–8 host the first round).
+- Rankings tab: AP / CFP switch with movement arrows, résumé notes and playoff seed tags.
+
 ## Version 7 (part 5)
 
 - Stadium: lower and upper decks with aisles and rails, team-colored sections, a club level with suites that light up at night, a press box with the school name, glowing light towers, end-zone stands with the band, and both team benches with players and coaches in headsets.
