@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 4)
+
+- New player models: helmets with stripes, face masks, decals (or the imported logo) and gloss; shoulder pads; jerseys with numbers that face the right way; pants stripes, socks, cleats, gloves, visors and sleeves; body size from each player's real height and weight.
+- New animations: stances, a speed-scaled running stride, backpedals, QB drops and throws, hands up for catches, ball tucked to the sideline, jukes, spins, trucks, hurdles, dives, blocks, wrap tackles, falls and getting up. Shadows follow the stadium lighting.
+- A better football that spirals, tips with its arc and wobbles on bad throws.
+- A 7-person officiating crew that moves with the play and signals touchdowns, first downs and incompletions, spots the ball and throws yellow flags (Settings → Graphics to hide them).
+
 ## Version 7 (part 3)
 
 - New field: mowed-grass stripes, college markings (block numbers with arrows, hashes and yard ticks, 3-yard line, stars at the 25s), end zones in the home team's colors with the school name (Tennessee's checkerboard and a few striped end zones), a midfield badge (or the imported logo), 2.5D goal posts with wind ribbons, and TV-style line of scrimmage and first-down lines.

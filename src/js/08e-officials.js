@@ -103,3 +103,6 @@ onFx('flag',e=>{if(!OFFI.list||!S.home)return;const fx0=e&&e.x!=null?e.x:ball.x,
   OFFI.flag={x0:b.x+b.face*.3,y0:b.y,x1:clamp(fx0+R(-1.2,1.2),.5,119.5),y1:clamp(fy0+R(-1.5,1.5),.5,FW-.5),t:-.1,T:.62,rot:R(0,6)}});
 onFx('snap',()=>{OFFI.flag=null;OFFI.fd=0});
 onFx('firstDown',()=>{OFFI.fd=performance.now()+1500;OFFI.fdWing=S.ballY>CEN?'HL':'LJ'});
+
+/* settings: referees on/off */
+SETTINGS_EXTRA.push({card:'Graphics',key:'officials',label:'Referees on the field',opts:[[1,'On'],[0,'Off']],bool:true,def:true});
