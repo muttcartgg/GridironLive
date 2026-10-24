@@ -11,7 +11,7 @@ const DIFF=[.93,1,1.05,1.1];
 const CLK={play:2,pre:2,preCap:22};
 const S={phase:'boot',home:null,away:null,game:null,score:[0,0],q:1,qlen:180,clock:180,playClock:25,los:35,ballY:CEN,down:1,firstDownX:45,conv:false,poss:'home',stats:null,ostats:null,pst:{},opst:{},dxp:{},diffMul:1,ot:false,otRound:0,dc:null,to:[3,3],clockRun:false,clockHold:0,preRun:0,wx:'Clear',slot:'Afternoon',ts:1,slowT:0,shake:0,bullet:false,paused:false,flip:1,pc:null,aiPlay:null,defCall:'auto',ctrlKey:'LB0',ctrl:null,dirt:{},wear:[]};
 let P=[],OFF=[],DEF=[],Q=null,RB=null,KP={},play=null,ball={state:'held',x:35,y:CEN,z:0},deadT=0,aim=null,touch=null,stick=null,kick=null,cardNext=null,particles=[],tickTimer=null,aiSnapT=0;
-const newGameStats=()=>({att:0,comp:0,passYds:0,passTD:0,int:0,sacks:0,rushAtt:0,rushYds:0,rushTD:0,yac:0,passes:[],plays:0,firstDowns:0,thirdA:0,thirdC:0,rzA:0,rzTD:0,pen:0,penYds:0,fum:0,bigPlays:0});
+const newGameStats=()=>({att:0,comp:0,passYds:0,passTD:0,int:0,sacks:0,rushAtt:0,rushYds:0,rushTD:0,yac:0,passes:[],plays:0,firstDowns:0,thirdA:0,thirdC:0,rzA:0,rzTD:0,pen:0,penYds:0,fum:0,bigPlays:0,tfl:0,brk:0});
 const focus=k=>!!(LG&&LG.focus===k);
 const uOff=()=>S.poss==='home';
 const offT=()=>uOff()?S.home:S.away, defT=()=>uOff()?S.away:S.home, offIdx=()=>uOff()?0:1;
@@ -22,9 +22,10 @@ const dx=(pl,k,n)=>{const d=S.dxp[pl.id]||(S.dxp[pl.id]={xp:0,tkl:0,sck:0,dint:0
 const credit=(d,k,n,xp)=>{if(d&&d.user){dx(d.pl,k,n);if(xp)dx(d.pl,'xp',xp)}};
 const spotOf=c=>c.x+.45;
 
-/* stamina: linear drain over the game; endurance slows it; conditioning practice slows it more */
+/* stamina: a slow drain over the game (endurance slows it; conditioning practice slows it more) times the
+   in-game fatigue from 05c (sprints, contact and consecutive snaps; rest between plays and on the sideline) */
 const progress=()=>S.ot?1:clamp(((S.q-1)*S.qlen+(S.qlen-S.clock))/(4*S.qlen),0,1);
-const stamina=(pl,user)=>1-(.32-.05*pl.end)*(user&&focus('conditioning')?.7:1)*progress();
+const stamina=(pl,user)=>(1-(.18-.03*pl.end)*(user&&focus('conditioning')?.7:1)*progress())*(1-.1*fatOf(pl));
 const condF=(pl,user)=>user?.88+.12*(pl.cond/100):1;
 const moraleF=user=>user?.97+.06*(LG.morale/100):1;
 function speedOf(role,pl,user){return SPD[role]*(.8+.065*pl.spd)*stamina(pl,user)*condF(pl,user)*moraleF(user)*(user?1:S.diffMul)*(S.wx==='Snow'?.95:S.wx==='Rain'?.98:1)}
@@ -40,7 +41,7 @@ function startUserGame(g,snap){
   S.dc={u:{},a:{}};for(const pos of POS_ORDER){S.dc.u[pos]=depth(u,pos);S.dc.a[pos]=depth(opp,pos)}
   if(snap)Object.assign(S,JSON.parse(JSON.stringify(snap.S)));
   else Object.assign(S,{score:[0,0],q:1,clock:LG.settings.qlen,ot:false,otRound:0,to:[3,3],stats:newGameStats(),ostats:newGameStats(),pst:{},opst:{},dxp:{},clockRun:false,rzActive:false,poss:'home',dirt:{},wear:[],recv2:'away'});
-  if(!snap){S.injured=[];S.pbp=[];S.drives=[];S.drive=null;initWind()}if(!S.wind)initWind();applyInjuredDepth();
+  if(!snap){S.injured=[];S.pbp=[];S.drives=[];S.drive=null;S.fat={};S.snapN=0;initWind()}if(!S.fat){S.fat={};S.snapN=0}if(!S.wind)initWind();applyInjuredDepth();
   if(!S.ostats)S.ostats=newGameStats();if(!S.opst)S.opst={};if(!S.dirt)S.dirt={};if(!S.wear)S.wear=[];
   lastScore=S.score.slice();resetRenderCaches();particles=[];
   document.documentElement.style.setProperty('--opp',opp.c1);
@@ -54,13 +55,13 @@ function resumeGame(simRest){const g=userGameThisWeek();if(!g||!LG.live){LG.live
 function snapshot(pat){
   if(!LG||!S.home)return;
   LG.live={wk:LG.week,opp:S.away.id,score:S.score.slice(),q:S.q,clock:S.clock,ot:S.ot,pat:!!pat,
-    S:{score:S.score,q:S.q,clock:S.clock,los:S.los,ballY:S.ballY,down:S.down,firstDownX:S.firstDownX,conv:S.conv,ot:S.ot,otRound:S.otRound,to:S.to,stats:S.stats,ostats:S.ostats,pst:S.pst,opst:S.opst,dxp:S.dxp,rzActive:S.rzActive,poss:S.poss,clockRun:S.clockRun,recv2:S.recv2,dirt:S.dirt,wear:S.wear.slice(-40),wind:S.wind,injured:S.injured,drives:S.drives,line:S.line,lineLast:S.lineLast}};
+    S:{score:S.score,q:S.q,clock:S.clock,los:S.los,ballY:S.ballY,down:S.down,firstDownX:S.firstDownX,conv:S.conv,ot:S.ot,otRound:S.otRound,to:S.to,stats:S.stats,ostats:S.ostats,pst:S.pst,opst:S.opst,dxp:S.dxp,rzActive:S.rzActive,poss:S.poss,clockRun:S.clockRun,recv2:S.recv2,dirt:S.dirt,wear:S.wear.slice(-40),wind:S.wind,injured:S.injured,drives:S.drives,line:S.line,lineLast:S.lineLast,fat:S.fat,snapN:S.snapN}};
   Saves.saveLive(SLOT,LG);
 }
 
 /* ---------- possessions, kickoffs, quarters ---------- */
-function startDrive(x,why){S.poss='home';if(typeof BC!=='undefined')BC.newDrive();S.los=x;S.ballY=CEN;S.down=1;S.firstDownX=Math.min(110,x+10);S.conv=false;S.rzActive=false;S.clockRun=false;if(why&&typeof BC!=='undefined')BC.say('drive',{why});toPresnap()}
-function startDefDrive(los,why){S.poss='away';if(typeof BC!=='undefined')BC.newDrive();S.los=clamp(los,11,109);S.ballY=CEN;S.down=1;S.firstDownX=Math.min(110,S.los+10);S.conv=false;S.rzActive=false;S.clockRun=false;if(why)toast(why);toPresnap()}
+function startDrive(x,why){S.poss='home';fatRest(2);if(typeof BC!=='undefined')BC.newDrive();S.los=x;S.ballY=CEN;S.down=1;S.firstDownX=Math.min(110,x+10);S.conv=false;S.rzActive=false;S.clockRun=false;if(why&&typeof BC!=='undefined')BC.say('drive',{why});toPresnap()}
+function startDefDrive(los,why){S.poss='away';fatRest(2);if(typeof BC!=='undefined')BC.newDrive();S.los=clamp(los,11,109);S.ballY=CEN;S.down=1;S.firstDownX=Math.min(110,S.los+10);S.conv=false;S.rzActive=false;S.clockRun=false;if(why)toast(why);toPresnap()}
 /* opponent gets the ball; dist = yards from the user's goal line */
 function oppPossession(dist,why){
   S.phase='wait';S.rzActive=false;S.clockRun=false;S.poss='away';hideActs();
@@ -77,12 +78,12 @@ function kickoffTo(side,why){
 /* called whenever a play or possession ends and the clock may have run out */
 function boundary(cont){
   if(S.ot||S.clock>0)return cont();
-  if(S.q===1||S.q===3){toast(`End of the ${qName(S.q).toLowerCase()} quarter`);S.q++;S.clock=S.qlen;S.clockRun=false;if(typeof BC!=='undefined'){BC.quarterCard(S.q);if(S.q===4)BC.fourth()}return cont()}
+  if(S.q===1||S.q===3){toast(`End of the ${qName(S.q).toLowerCase()} quarter`);S.q++;fatRest(3);S.clock=S.qlen;S.clockRun=false;if(typeof BC!=='undefined'){BC.quarterCard(S.q);if(S.q===4)BC.fourth()}return cont()}
   if(S.q===2)return halftime();
   return endRegulation();
 }
 function halftime(){
-  S.phase='wait';S.q=3;S.clock=S.qlen;S.to=[3,3];S.clockRun=false;hideActs();['#call','#opt','#snapBar'].forEach(s=>$(s).hidden=true);
+  S.phase='wait';S.q=3;S.clock=S.qlen;S.to=[3,3];fatRest(30);S.clockRun=false;hideActs();['#call','#opt','#snapBar'].forEach(s=>$(s).hidden=true);
   const go=()=>kickoffTo(S.recv2||'away','Second-half kickoff');
   if(typeof BC!=='undefined'&&LG.settings.halftime!==false)BC.halftime(go);else go();
 }
@@ -104,7 +105,7 @@ function add(side,role,x,y,pl,team,key){
   const p={side,role,key,team,user,x,y,vx:0,vy:0,z:0,pl,num:pl.num,spd:speedOf(role,pl,user),acc:ACC[role],route:null,rpath:null,cont:null,wi:0,stop:false,stun:0,bt:0,immune:false,shed:0,cov:null,homeX:x,homeY:y,blocker:false,face:side==='o'?1:-1,phase:Math.random()*6.28,fallen:false,fallP:0,lunge:0,lungeCD:0,stiff:0,throwT:0,react:0,engaged:false,eng:null,tgt:null,dirt:(S.dirt&&S.dirt[pl.id])||0,ovr:ovr99(pl),settle:0};
   if(!user&&side==='d'&&uOff()&&role!=='DL')p.spd*=Math.sqrt(SL('cov'));
   if(user&&side==='o'&&LG.staff){const oc=LG.staff.oc;if(['WR','TE','RB'].includes(role))p.spd*=1+.01*(oc.r-3)+(oc.trait==='Play Caller'?.03:0)}
-  P.push(p);(side==='o'?OFF:DEF).push(p);return p;
+  phyInit(p);P.push(p);(side==='o'?OFF:DEF).push(p);return p;
 }
 function setRoute(p,name,inD){
   const r=ROUTES[name];if(!r)return;
@@ -114,16 +115,18 @@ function setRoute(p,name,inD){
 }
 function setupFormation(pc,flip){
   const L=S.los,b=S.ballY,ot=offT(),dtm=defT(),o=dcOf(ot),d=dcOf(dtm);P=[];OFF=[];DEF=[];flip=flip||1;
-  const fname=(pc&&pc.form)||'Gun Doubles',form=FORMS[fname],fb=fname==='I-Form';
+  const fname=(pc&&pc.form)||'Gun Doubles',form=FORMS[fname],fb=fname==='I-Form',used=new Set(),F=(l,i,n)=>pickFresh(l,i,n,used)||l[0];
   [-2.2,-1.1,0,1.1,2.2].forEach((dy,i)=>add('o','OL',L-.7,b+dy,o.OL[i]||o.OL[0],ot,'OL'+i));
-  const who={QB:o.QB[0],R:o.RB[0],X:o.WR[0],Z:o.WR[1],H:fb?(o.RB[1]||o.TE[1]||o.WR[2]):o.WR[2],Y:o.TE[0]};
+  /* rotation: a gassed starting RB/WR sits and the next man on the depth chart plays (05c pickFresh) */
+  const rb=F(o.RB,0,1),wx=F(o.WR,0,3),wz=F(o.WR,1,3);
+  const who={QB:o.QB[0],R:rb,X:wx,Z:wz,H:fb?(o.RB.slice(1).find(p=>!used.has(p))||o.TE[1]||o.WR[2]):F(o.WR,2,3),Y:o.TE[0]};
   const role={QB:'QB',R:'RB',X:'WR',Z:'WR',H:fb?'RB':'WR',Y:'TE'};
   KP={};for(const k of ['QB','R','X','H','Y','Z']){const [fx,fy]=form[k];KP[k]=add('o',role[k],L+fx,clamp(b+fy*flip,2.5,FW-2.5),who[k],ot,k)}
   Q=KP.QB;RB=KP.R;
   if(pc&&pc.r)for(const k in pc.r){const p=KP[k];if(!p)continue;const rt=pc.r[k];if(rt==='block'){p.blocker=true;continue}const inD=Math.abs(p.y-b)<.6?-flip:(p.y<b?1:-1);setRoute(p,rt,inD)}
   /* defense: 4 DL, 2 LB, 3 CB, 2 S */
   const cov=uOff()?aiPickCoverage(dtm,sitInfo()):(S.defCall==='auto'?aiPickCoverage(dtm,sitInfo()):S.defCall);S.cov=cov;
-  const D={};[-3.3,-1.1,1.1,3.3].forEach((dy,i)=>D['DL'+i]=add('d','DL',Math.min(119,L+1),b+dy,d.DL[i]||d.DL[0],dtm,'DL'+i));
+  const D={};[-3.3,-1.1,1.1,3.3].forEach((dy,i)=>D['DL'+i]=add('d','DL',Math.min(119,L+1),b+dy,F(d.DL,i,4)||d.DL[0],dtm,'DL'+i));
   D.LB0=add('d','LB',Math.min(119,L+4.6),b-3.8,d.LB[0],dtm,'LB0');D.LB1=add('d','LB',Math.min(119,L+4.6),b+3.8,d.LB[1]||d.LB[0],dtm,'LB1');
   const third=KP.H.role==='WR'?KP.H:KP.Y,press=cov==='man'||cov==='blitz';
   [KP.X,KP.Z,third].forEach((w,i)=>D['CB'+i]=add('d','CB',Math.min(119,L+(press?R(1.6,2.6):R(5.5,7.5))),w.y,d.CB[i]||d.CB[0],dtm,'CB'+i));
@@ -211,7 +214,7 @@ function callSpecial(k){
 function newPlay(pc,o){
   o=o||{};const b=S.ballY;
   return {pc,name:pc.name,type:pc.cat==='run'?'run':'pass',t:0,carrier:Q,thrown:false,scramble:false,handed:false,pa:!!pc.pa,flea:!!pc.flea,fleaHold:false,screen:pc.screen||null,screenGo:false,run:pc.run||null,
-    fake:o.fake||null,jukeT:0,jukeCD:0,jukeDir:1,spinT:0,truckT:0,slowT:0,dive:0,hurdle:0,hurdleOK:false,moveId:0,ended:false,fakes:0,caught:false,catchX:0,gapY:pc.run?clamp(b+pc.run.gap*S.flip,3,FW-3):b,
+    fake:o.fake||null,jukeT:0,jukeCD:0,jukeDir:1,spinT:0,truckT:0,stiffT:0,slowT:0,fp:0,tackler:null,dive:0,hurdle:0,hurdleOK:false,moveId:0,ended:false,fakes:0,caught:false,catchX:0,gapY:pc.run?clamp(b+pc.run.gap*S.flip,3,FW-3):b,
     result:null,ballT0:0,rec:null,contested:false,tipped:new Set(),startDown:S.down,readT:0,nextRead:0,intended:null,swat:0};
 }
 function startPlay(pc,o){
@@ -266,6 +269,7 @@ function switchDefender(target){
 }
 function userTackle(){
   const d=S.ctrl;if(!d||!play||d.stun>0||d.lunge>0||d.lungeCD>0)return;
+  if(d.engaged&&d.engBy){d.lungeCD=.9;if(play.type==='pass'&&!play.caught&&!play.scramble){if(!d.move||d.move==='bull')d.move=d.pl.agi>=d.pl.str?'swim':'rip';d.mDur=Math.max(d.mDur||0,d.mT+.3);d.mAt=d.mT;d.mDone=false}else d.force=true;sfx('cut');return}
   if(ball.state==='air'){const dd=hyp(ball.tx-d.x,ball.ty-d.y);if(dd<3.2){play.swat=.6;d.z=.5;toast('Going for the ball!');return}}
   const c=play.carrier;let tx,ty;
   if(c&&hyp(c.x-d.x,c.y-d.y)<3.4){tx=c.x+c.vx*.25;ty=c.y+c.vy*.25}else{const s=stick&&stick.m>12?stick:null;tx=d.x+(s?s.dx:-1)*2.4;ty=d.y+(s?s.dy:0)*2.4}
@@ -358,7 +362,6 @@ function aiPAT(){
 }
 
 /* ---------- simulation helpers ---------- */
-function steer(p,tx,ty,spd,dt,acc){const ddx=tx-p.x,ddy=ty-p.y,d=hyp(ddx,ddy);let vx=0,vy=0;if(d>.05){const s=spd*Math.min(1,d/1.1);vx=ddx/d*s;vy=ddy/d*s}const k=Math.min(1,(acc||p.acc)*dt);p.vx+=(vx-p.vx)*k;p.vy+=(vy-p.vy)*k}
 const eligible=p=>p.side==='o'&&(p.role==='WR'||p.role==='TE'||p.role==='RB');
 function isRunner(){if(!play||!play.carrier||play.carrier.side!=='o'||play.fleaHold)return false;const c=play.carrier;if(c===Q)return play.scramble||(play.type==='run'&&play.handed);return play.type==='pass'?play.caught:play.handed}
 function nearest(list,x,y,f){let b=null,bd=1e9;for(const o of list){if(f&&!f(o))continue;const d=hyp(o.x-x,o.y-y);if(d<bd){bd=d;b=o}}return [b,bd]}
@@ -370,30 +373,6 @@ function assignRunBlocks(ck){
   for(const [,o,d] of pairs){if(o.tgt||taken.has(d))continue;taken.add(d);o.tgt=d;d.claim=o}
   for(const o of OFF.filter(p=>p.lead)){let best=null,bd=1e9;for(const d of front.concat(back)){if(taken.has(d))continue;const dd=hyp(d.x-S.los,d.y-play.gapY);if(dd<bd){bd=dd;best=d}}if(best){taken.add(best);o.tgt=best;best.claim=o}}
   for(const o of OFF.filter(p=>p.blocker&&!p.tgt&&p.key!==ck&&p.role!=='QB')){let best=null,bd=1e9;for(const d of back.concat(front)){if(taken.has(d))continue;const dd=hyp(d.x-o.x,d.y-o.y);if(dd<bd){bd=dd;best=d}}if(best){taken.add(best);o.tgt=best;best.claim=o}}
-}
-function blockCheck(d,dt){
-  d.engaged=false;if(d.immune||d.stun>0)return false;
-  for(const o of OFF){if(!o.blocker||o===play.carrier||o.stun>0||o.fallen)continue;if(o.role!=='OL'&&o.tgt!==d&&o.key!=='Y')continue;
-    if(hyp(o.x-d.x,o.y-d.y)<1.25){if(o.role==='WR'||o.role==='RB'&&!o.lead){d.shed=d.shed||R(.4,1)}d.engBy=o;d.bt+=dt;if(!d.shed)d.shed=Math.max(.5,(d.role==='DL'?(play.type==='pass'?R(1.3,2.9):R(1.7,3.2)):R(.7,1.5))+(o.pl.str-d.pl.str)*.3+(play.type==='run'?.55:0)+(o.user&&play.type==='run'?.35+(focus('running')?.4:0)+(SL('run')-1)*2:0)-(d.user?0:(S.diffMul-1)*3)+(o.user?0:(S.diffMul-1)*3));
-      if(d.bt>d.shed){d.immune=true;return false}d.engaged=true;o.engaged=true;o.eng=d;
-      /* run blocks turn defenders sideways to open a lane (never driven backwards) */
-      if(play.type==='run'&&!play.handed||play.type==='run'&&play.carrier&&play.carrier.x<S.los+3){const side=Math.sign(d.y-play.gapY)||1;d.y+=side*Math.max(.4,1.5+(o.pl.str-d.pl.str)*.4)*dt}
-      return true}}
-  return false;
-}
-function blockAI(p,dt){
-  const pl=play;
-  if(p.eng&&p.eng.engaged&&!p.eng.immune){const d=p.eng,g=(pl.handed||pl.caught)&&pl.carrier?pl.carrier:pl.type==='run'?{x:S.los,y:pl.gapY}:Q;const ddx=g.x-d.x,ddy=g.y-d.y,n=hyp(ddx,ddy)||1;steer(p,d.x+ddx/n*.95,d.y+ddy/n*.95,p.spd*.9,dt);return}
-  p.eng=null;
-  const passPro=(pl.type==='pass'&&!pl.thrown&&!pl.scramble&&pl.carrier===Q&&!pl.screenGo)||(pl.run&&pl.run.delay&&pl.t<pl.run.delay+.25);
-  if(passPro&&(p.role==='OL'||p.role==='TE'||p.role==='RB')){
-    if(!p.tgt||p.tgt.immune||p.tgt.stun>0)p.tgt=claimFree(p,DEF.filter(d=>d.cov&&d.cov.type==='rush'&&!d.immune&&d.stun<=0));
-    const d=p.tgt;if(d){const ddx=Q.x-d.x,ddy=Q.y-d.y,n=hyp(ddx,ddy)||1;steer(p,d.x+ddx/n,d.y+ddy/n,5.4,dt)}else steer(p,p.homeX-1.4,p.homeY,3,dt);return;
-  }
-  const c=pl.carrier||Q,pre=pl.type==='run'&&!pl.handed;let gx=pre||c.x<S.los?S.los+.5:c.x,gy=pre?pl.gapY:c.y;
-  if(pre&&p.tgt&&Math.sign(p.tgt.y-S.ballY)!==Math.sign(pl.gapY-S.ballY)){const ck=KP[pl.ckey]||Q;gx=ck.x;gy=ck.y}
-  if(!p.tgt||p.tgt.immune||p.tgt.stun>0||(pl.handed||pl.caught)&&(hyp(p.tgt.x-gx,p.tgt.y-gy)>16||p.tgt.x<c.x-3))p.tgt=claimFree(p,DEF.filter(d=>!d.immune&&d.stun<=0&&d.x>Math.min(p.x,c.x)-1&&hyp(d.x-gx,d.y-gy)<(p.lead?10:13)));
-  const d=p.tgt;if(d){const ddx=gx-d.x,ddy=gy-d.y,n=hyp(ddx,ddy)||1;steer(p,d.x+ddx/n*.9,d.y+ddy/n*.9,p.spd*(p.lead?1:.97),dt)}else steer(p,c.x+4,c.y+(p.homeY>c.y?3:-3),p.spd*.8,dt);
 }
 function runRoute(p,dt){
   if(play.scramble){const dirY=Math.sign(Q.vy)||1;steer(p,Math.max(p.x,S.los+3)+1.5,clamp(p.y+dirY*3,2,FW-2),p.spd*.8,dt);return}
@@ -409,7 +388,7 @@ function runRoute(p,dt){
 }
 /* pursuit angle: aim at the point where the defender can actually meet the ball carrier */
 function intercept(d,c,s){const rx=c.x-d.x,ry=c.y-d.y,vx=c.vx,vy=c.vy;s=Math.max(1,s||d.spd);const a=vx*vx+vy*vy-s*s,b=2*(rx*vx+ry*vy),cc=rx*rx+ry*ry;let t=2.5;
-  if(Math.abs(a)<1e-3){if(b<0)t=-cc/b}else{const disc=b*b-4*a*cc;if(disc>=0){const q=Math.sqrt(disc),ts=[(-b-q)/(2*a),(-b+q)/(2*a)].filter(x=>x>0);if(ts.length)t=Math.min(...ts)}}
+  if(Math.abs(a)<1e-3){if(b<0)t=-cc/b}else{const disc=b*b-4*a*cc;if(disc>=0){const q=Math.sqrt(disc),t1=(-b-q)/(2*a),t2=(-b+q)/(2*a),lo=Math.min(t1,t2),hi=Math.max(t1,t2);if(lo>0)t=lo;else if(hi>0)t=hi}}
   t=clamp(t,0,2.5);return [c.x+vx*t,clamp(c.y+vy*t,-1,FW+1)]}
 function zoneAI(d,cv){
   const L=S.los,zx=cv.x,zy=cv.y,R0=cv.deep?11:10;let thr=null,td=1e9;
@@ -418,13 +397,14 @@ function zoneAI(d,cv){
   return [zx,lerp(zy,Q?Q.y:CEN,.12)];
 }
 function defAI(d,dt){
-  d.lungeCD-=dt;
-  if(d.stun>0){d.stun-=dt;steer(d,d.x,d.y,0,dt,4);if(d.stun<=0)d.fallen=false;return}
+  d.lungeCD-=dt;if(d.freeT>0)d.freeT-=dt;
+  if(d.stun>0){d.stun-=dt;steer(d,d.x,d.y,0,dt,4);if(d.fallen&&d.stun<.5&&d.anim!=='getup'&&!play.ended)setAnim(d,'getup');if(d.stun<=0)d.fallen=false;return}
   if(d.lunge>0){d.lunge-=dt;steer(d,d.lx,d.ly,d.spd*1.6,dt,18);if(d.lunge<=0&&!play.ended){d.stun=d.userLunge?.55:.75;d.userLunge=false;d.fallen=true;spawnTurf(d.x,d.y,5)}return}
-  const eng=blockCheck(d,dt);
-  if(d===S.ctrl&&stick&&stick.m>12){const s=d.spd*(eng?(d.role==='DL'?.2:.3):1);steer(d,d.x+stick.dx*3,d.y+stick.dy*3,s,dt,14);return}
-  let spd=d.spd;if(eng)spd*=d.engBy&&(d.engBy.role==='WR'||d.engBy.role==='RB'&&!d.engBy.lead)?.45:d.role==='DL'?.14:.16;
-  if(d.react>0&&play.t<d.react){if(play.fakeY!=null&&d.role!=='DL'&&!eng){steer(d,d.x-.2,play.fakeY,d.spd*.55,dt);return}spd*=.35}
+  /* engaged with a blocker: 05c moves the pair; the user can lean on the rep with the stick */
+  if(blockCheck(d,dt)){if(d===S.ctrl&&stick&&stick.m>12){d.vx+=stick.dx*4*dt;d.vy+=stick.dy*4*dt}return}
+  if(d===S.ctrl&&stick&&stick.m>12){steer(d,d.x+stick.dx*3,d.y+stick.dy*3,d.spd,dt,12.5);return}
+  const eng=false;let spd=d.spd*(d.freeT>0?1.1:1);
+  if(d.react>0&&play.t<d.react){if(play.fakeY!=null&&d.role!=='DL'){steer(d,d.x-.2,play.fakeY,d.spd*.55,dt);return}spd*=.35}
   const L=S.los,c=play.carrier,runner=isRunner();let tx,ty;
   if(ball.state==='air'&&!ball.pitch){const rem=ball.T-ball.t,dd=hyp(ball.tx-d.x,ball.ty-d.y),rt=d.role==='DL'?99:d.role==='LB'?.4:.25+(1-S.aiSkill)*.15;if(play.t-play.ballT0>rt&&dd/d.spd<rem+.7){tx=ball.tx;ty=ball.ty}}
   if(tx===undefined){
@@ -441,32 +421,35 @@ function defAI(d,dt){
       else if((play.pa||play.fleaHold)&&play.t<.65&&(d.role==='LB'||d.role==='S')){tx=L+1.5;ty=d.y}
       else if(cv.type==='man'){const a=cv.tgt;if(a.blocker&&!a.route){tx=L+5;ty=lerp(d.y,a.y,.5)}else{const cush=Math.max(.35,(d.role==='CB'?1.5:1.1)-play.t*.8);tx=a.x+a.vx*.35+cush;ty=a.y+a.vy*.35+(a.y<CEN?.45:-.45)}}
       else [tx,ty]=zoneAI(d,cv);
+      return steer(d,tx,ty,spd,dt,8+1.2*d.pl.cov);
     }
   }
   steer(d,tx,ty,spd,dt);
 }
 
 /* ---------- ball carrier: user joystick control + AI running ---------- */
-function moveMul(){const pl=play;return (pl.jukeT>0?1.12:1)*(pl.spinT>0?.95:1)*(pl.truckT>0?.92:1)*(pl.slowT>0?.78:1)*(pl.dive>0?1.25:1)}
 function controlRunner(c,dt){
   const pl=play,spd=c.spd*moveMul();let dxv=1,dyv=0;
   if(stick&&stick.m>12){dxv=stick.dx;dyv=stick.dy}
   else if(pl.type==='run'&&c.x<S.los+1&&!pl.caught){const gx=S.los+1.5,gy=pl.gapY,n=hyp(gx-c.x,gy-c.y)||1;dxv=(gx-c.x)/n;dyv=(gy-c.y)/n}
-  if(pl.jukeT>0){dyv+=pl.jukeDir*.95;dxv=Math.max(dxv,.55)}
+  if(pl.jukeT>0){dyv+=pl.jukeDir*1.1;dxv=Math.max(dxv,.5)}
   const n=hyp(dxv,dyv)||1;let vx=dxv/n*spd,vy=dyv/n*spd;
   if(pl.dive>0){vy*=.3;vx=Math.max(vx,spd*.9)}
-  const k=Math.min(1,(pl.jukeT>0?24:15)*dt);c.vx+=(vx-c.vx)*k;c.vy+=(vy-c.vy)*k;
+  /* momentum (05c), a little more forgiving than the CPU; a juke is a hard plant-and-go */
+  phyMove(c,vx,vy,dt,pl.jukeT>0?2.6:pl.spinT>0?1.8:PHY.user);
   carrierAnim(c,dt);
 }
 function aiRunner(c,dt){
   const pl=play;let tx,ty;
   if(pl.type==='run'&&!pl.caught&&c.x<S.los+.6){tx=S.los+2;ty=pl.gapY}
-  else{let best=-1e9,bh=0;for(let a=-1.25;a<=1.26;a+=.25){const hx=Math.cos(a),hy=Math.sin(a);let sc=hx*1.5;
+  else{let best=-1e9,bh=0;const rh=c.rh||0;for(let a=-1.25;a<=1.26;a+=.25){const hx=Math.cos(a),hy=Math.sin(a);let sc=hx*1.5+(Math.abs(a-rh)<.2?.35:0);
       for(const d of DEF){if(d.stun>0)continue;const rx=d.x-c.x,ry=d.y-c.y,dist=hyp(rx,ry)||.1;if(dist>9)continue;const proj=(rx*hx+ry*hy)/dist;if(proj<=.15)continue;sc-=proj*proj*(9-dist)/9*(d.engaged?.35:1.7)}
       const ny=c.y+hy*4;if(ny<1.5||ny>FW-1.5)sc-=2;if(sc>best){best=sc;bh=a}}
-    tx=c.x+Math.cos(bh)*5;ty=c.y+Math.sin(bh)*5}
-  steer(c,tx,ty,c.spd*moveMul(),dt,13);
-  if(pl.jukeCD<=0&&pl.dive<=0){const [d,dd]=nearest(DEF,c.x,c.y,o=>o.stun<=0&&o.x>c.x-.3);if(d&&dd<2.3&&Math.random()<dt*1.3*(.35+c.pl.spd*.1)){if(c.pl.str>=4&&Math.random()<.4)doTruck();else if(Math.random()<.3)doSpin();else doJuke(Math.sign(c.y-d.y)||1)}}
+    c.rh=bh;tx=c.x+Math.cos(bh)*5;ty=c.y+Math.sin(bh)*5}
+  if(pl.jukeT>0){ty+=pl.jukeDir*3.5;tx-=1}
+  steer(c,tx,ty,c.spd*moveMul(),dt,pl.jukeT>0?24:10);
+  if(pl.jukeCD<=0&&pl.dive<=0&&pl.hurdle<=0){let d=null,dd=2.5;for(const o of DEF){if(o.stun>0||o.engaged||o.x<c.x-1.5)continue;const k=hyp(o.x-c.x,o.y-c.y);if(k<dd){dd=k;d=o}}
+    if(d&&Math.random()<dt*1.5*(.35+.1*c.pl.car))aiRunMove(c,d)}
   /* option pitch */
   if(pl.pitchMan&&c===Q&&!pl.pitched){const [d,dd]=nearest(DEF,c.x,c.y,o=>o.stun<=0&&!o.engaged);if(d&&dd<3.2)doPitch()}
   carrierAnim(c,dt);
@@ -477,11 +460,6 @@ function carrierAnim(c,dt){
   if(pl.dive>0){pl.dive-=dt;c.z=Math.max(0,Math.sin((1-pl.dive/.38)*Math.PI)*.35);if(pl.dive<=0){c.z=0;c.fallen=true;c.x+=.8;spawnTurf(c.x,c.y,8);endPlay('tackle','Dive')}}
   c.stiff=Math.max(0,c.stiff-dt);
 }
-function doJuke(dir){if(!play||play.jukeCD>0||play.dive>0)return;play.jukeT=.36;play.jukeCD=.75;play.jukeDir=dir;play.moveId++;play.move='juke';spawnTurf(play.carrier.x,play.carrier.y,5);sfx('cut')}
-function doSpin(){if(!play||play.jukeCD>0||play.dive>0)return;play.spinT=.45;play.jukeCD=.95;play.moveId++;play.move='spin';sfx('cut')}
-function doTruck(){if(!play||play.jukeCD>0||play.dive>0)return;play.truckT=.55;play.jukeCD=.9;play.moveId++;play.move='truck';play.carrier.stiff=.5}
-function doHurdle(){const c=play&&play.carrier;if(!c||play.hurdle>0||play.dive>0)return;play.hurdle=.5;play.moveId++;play.hurdleOK=Math.random()<.45+(c.pl.spd-3)*.08+(c.pl.str-3)*.03}
-function doDive(){if(!play||play.dive>0||play.hurdle>0)return;play.dive=.38}
 function doPitch(){const pl=play;if(!pl||pl.pitched||!pl.pitchMan||pl.carrier!==Q)return;pl.pitched=true;const r=pl.pitchMan;ballTo(Q,r.x+r.vx*.3,r.y+r.vy*.3,.3,r);sfx('cut')}
 function ballTo(from,tx,ty,T,to){ball={state:'air',pitch:true,to,fx:from.x,fy:from.y,x:from.x,y:from.y,z:0,tx,ty,t:0,T,h:.35,spin:0};play.carrier=null;play.handed=false}
 
@@ -504,7 +482,7 @@ function qbMove(dt){
 }
 function aiQB(dt){
   const pl=play;if(pl.thrown||pl.scramble||pl.carrier!==Q||pl.fleaHold)return;
-  const sk=S.aiSkill,readStart=(pl.screen?.75:pl.pa?1.4:1.15)+(pl.flea?1.2:0);
+  const sk=S.aiSkill,readStart=(pl.screen?.75:pl.pa?1.4:1.15)+(pl.flea?1.2:0)+(pl.screen?0:pl.hold||(pl.hold=R(.05,.8)));
   if(pl.t<readStart||pl.t<pl.nextRead)return;pl.nextRead=pl.t+.18;
   const pressure=DEF.some(d=>!d.engaged&&d.stun<=0&&hyp(d.x-Q.x,d.y-Q.y)<2.6);
   let best=null,bs=-1e9,bo=0;
@@ -514,7 +492,7 @@ function aiQB(dt){
     if(pl.screen&&r.key===pl.screen)s+=pl.t<1.6?6:-2;
     if(S.down>=3&&px<S.firstDownX&&!pl.screen)s-=1.2;
     if(s>bs){bs=s;best=r;bo=dd}}
-  const need=3.1-(pl.t-readStart)*.7-(pressure?1:0);
+  const need=3.7-(pl.t-readStart)*.8-(pressure?1:0);
   if(best&&(bo>=need||pl.t>4.3)){aiThrow(best);return}
   if(pressure&&pl.t>2.3){if(Q.pl.spd>=4&&Math.random()<.45){pl.scramble=true;pl.scrT=pl.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}return}if(Math.random()<.35){throwAway();return}}
   if(pl.t>5.2)throwAway();
@@ -545,9 +523,9 @@ function logPass(res){if(S.conv)return null;const r={depth:ball.tx-S.los,y:ball.
 
 /* ---------- main simulation step ---------- */
 function simulate(dt){
-  for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,Math.min(1,dt*9));const sp=hyp(p.vx,p.vy);p.phase+=sp*dt*1.85;p.throwT=Math.max(0,p.throwT-dt)}
-  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,4);p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
-  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.jukeCD-=dt;pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
+  for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,Math.min(1,dt*9));const sp=hyp(p.vx,p.vy);p.phase+=sp*dt*1.85;p.throwT=Math.max(0,p.throwT-dt);if(p.animT>0)p.animT-=dt}
+  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,4);p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
+  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.jukeCD-=dt;for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
   if(!S.ot&&!S.conv)S.clock=Math.max(0,S.clock-dt*CLK.play);
   runMech(dt);
   const runner=isRunner(),L=S.los;
@@ -578,7 +556,7 @@ function simulate(dt){
     }else if(c===Q&&pl.type==='pass'&&!pl.thrown){
       for(const d of DEF){if(d.stun>0||d.engaged)continue;if(hyp(d.x-Q.x,d.y-Q.y)<(d.lunge>0?1.3:.95)){
         if(Math.random()<.04+Q.pl.spd*.012-(d.userLunge?.04:0)){d.stun=.7;d.fallen=true;toast('Escaped!')}
-        else{Q.fallen=true;d.fallen=true;S.shake=.35;spawnTurf(Q.x,Q.y,10);credit(d,'sck',1,15);credit(d,'tkl',1,0);dirty(Q);
+        else{Q.fallen=true;d.fallen=true;setAnim(Q,'tackled');setAnim(d,'tackle');S.shake=.35;spawnTurf(Q.x,Q.y,10);credit(d,'sck',1,15);credit(d,'tkl',1,0);dirty(Q);
           if(Math.random()<.06){play.fumbler=Q;return endPlay('fum','Strip sack')}return endPlay('sack')}}}
     }
   }
@@ -615,35 +593,6 @@ function carrierPre(p,dt){
 }
 
 /* ---------- contact: tackles, broken tackles, big hits, fumbles ---------- */
-function tackleCheck(c){
-  const pl=play;
-  for(const d of DEF){
-    if(d.stun>0)continue;const reach=d.lunge>0?(d.userLunge?1.55:1.2):.95;if(hyp(d.x-c.x,d.y-c.y)>=reach)continue;
-    if(d.engaged){if(d.armTried||hyp(d.x-c.x,d.y-c.y)>.8)continue;d.armTried=true;if(Math.random()>.12)continue}
-    if(pl.hurdle>0&&c.z>.25){if(pl.hurdleOK){d.stun=1;d.fallen=true;if(++pl.fakes===1)toast('Hurdle!');continue}else{c.fallen=true;return tackled(c,d)}}
-    if((pl.jukeT>0||pl.spinT>0)&&d.evadeId!==pl.moveId){d.evadeId=pl.moveId;
-      const ok=Math.random()<clamp((pl.spinT>0?.55:.62)+(c.pl.spd-d.pl.spd)*.07+(c.user?0:(S.aiSkill-.5)*.1)-(d.userLunge?.12:0),.3,.9);
-      if(ok){d.stun=.9;d.fallen=true;pl.fakes++;toast(pl.spinT>0?'Spin move!':'Juke!');if(typeof BC!=='undefined')BC.say('juke',{p:c});continue}}
-    const gang=DEF.some(o=>o!==d&&o.stun<=0&&hyp(o.x-c.x,o.y-c.y)<1.35);
-    const behind=d.x<c.x-.25;
-    let ch=.09+(c.pl.str-d.pl.tkl)*.055+(c.role==='RB'?.06:0)+(c.user?.03+(focus('running')?.05:0):0)+(pl.truckT>0?.26:0)+(behind?.07:0)+(c.user?0:(S.aiSkill-.5)*.08)-(d.user?0:(S.diffMul-1)*1.5)-(d.userLunge?.06:0);
-    if(c.user)ch*=2-SL('tkl');if(gang)ch*=.4;ch=clamp(ch,.03,.55);
-    if(Math.random()<ch){d.stun=1;d.fallen=true;c.stiff=.45;pl.slowT=.25;toast(pl.truckT>0?'Trucked him!':'Broken tackle!');S.shake=.22;spawnTurf(d.x,d.y,6);if(typeof BC!=='undefined')BC.say('broken',{p:c});continue}
-    return tackled(c,d);
-  }
-}
-function tackled(c,d){
-  const pl=play;c.fallen=true;d.fallen=true;dirty(c);dirty(d);
-  const closing=hyp(d.vx-c.vx,d.vy-c.vy);const big=closing>9&&Math.random()<(d.pl.tkl>=4||d.pl.str>=4?.6:.25);
-  fx('tackle',{c,d,big});
-  S.shake=.12+d.pl.str*.05+(big?.25:0);spawnTurf(c.x,c.y,big?16:10);credit(d,'tkl',1,big?6:3);haptic(big?'heavy':'medium');injuryCheck(c,d,big);
-  /* falling forward: momentum carries the ball a little further */
-  if(c.vx>2)c.x+=(c.pl.str>=d.pl.tkl?R(.5,1.5):R(.1,.8));
-  if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
-  const fumP=.003+(big?.025:0)+(5-c.pl.str)*.001+(S.wx==='Rain'?.005:0);
-  if(Math.random()<fumP&&spotOf(c)<110){pl.fumbler=c;pl.forcer=d;return endPlay('fum')}
-  endPlay('tackle');
-}
 function dirty(p){if(!p||!p.pl)return;const k=p.pl.id;S.dirt[k]=Math.min(1,(S.dirt[k]||0)+.06+(S.wx==='Rain'||S.wx==='Snow'?.08:0));p.dirt=S.dirt[k]}
 
 /* ---------- catch resolution ---------- */
@@ -676,9 +625,9 @@ function resolveCatch(){
 
 /* ---------- end of play ---------- */
 function endPlay(kind,msg){
-  if(play.ended)return;{const cc=play.carrier;if(kind==='tackle'&&cc&&cc.side==='o'&&isRunner()&&spotOf(cc)>=110)kind='td'}play.ended=true;S.phase='dead';hint('');touch=null;aim=null;stick=null;$('#bulletBtn').hidden=true;hideActs();
+  if(play.ended)return;{const cc=play.carrier;if(kind==='tackle'&&cc&&cc.side==='o'&&isRunner()&&spotOf(cc)+(play.fp||0)>=110)kind='td'}play.ended=true;S.phase='dead';hint('');touch=null;aim=null;stick=null;$('#bulletBtn').hidden=true;hideActs();
   deadT=kind==='td'?2.8:kind==='int'||kind==='fum'?2.1:1.35;
-  const c=play.carrier||Q;let x=kind==='inc'?S.los:kind==='td'?110:spotOf(c);
+  const c=play.carrier||Q;let x=kind==='inc'?S.los:kind==='td'?110:spotOf(c)+(kind==='tackle'?play.fp||0:0);
   if(kind!=='td'&&kind!=='inc'&&kind!=='int')x=Math.min(x,109.9);
   play.result={kind,x,y:clamp(c.y,0,FW),msg};
   const gain=Math.round(x-S.los),uo=uOff(),st=tstat();
@@ -695,7 +644,9 @@ function endPlay(kind,msg){
       if(g>=20)st.bigPlays++;
     }
     if(kind==='sack')st.sacks++;if(kind==='int'){st.int++;ps(Q).int++}
+    if(kind==='tackle'&&gain<0&&c.side==='o'){st.tfl=(st.tfl||0)+1;if(play.tackler)credit(play.tackler,'tfl',1,4)}
   }
+  fatSave();
   logPlay(play.result,gain);
   if(S.wear){S.wear.push([uOff()?play.result.x:120-play.result.x,play.result.y]);if(S.wear.length>80)S.wear.shift()}
   if(typeof BC!=='undefined')BC.play(play.result,gain);
@@ -810,7 +761,7 @@ function oppOT(){
 }
 /* simulated opponent possession, told as a play-by-play ticker */
 function oppDrive(startDist,why){
-  S.phase='drive';S.poss='away';hint('');S.clockRun=false;hideActs();
+  S.phase='drive';S.poss='away';hint('');S.clockRun=false;hideActs();fatRest(6);
   const d=clamp(startDist,1,99),r=oppRating(),close=1-d/100;
   const pTD=.08+.44*r*close+(d<20?.18:0),pFG=.16+.15*close,pTO=.15-.06*r+(hasTrait('dc','Ball Hawk')?.05:0);
   const roll=Math.random();let res=roll<pTD?'TD':roll<pTD+pFG?'FG':roll<pTD+pFG+pTO?'TO':'PUNT';
