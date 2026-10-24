@@ -9,6 +9,11 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 3)
+
+- New field: mowed-grass stripes, college markings (block numbers with arrows, hashes and yard ticks, 3-yard line, stars at the 25s), end zones in the home team's colors with the school name (Tennessee's checkerboard and a few striped end zones), a midfield badge (or the imported logo), 2.5D goal posts with wind ribbons, and TV-style line of scrimmage and first-down lines.
+- Lighting by kickoff time: crisp daytime, warm sunset with stadium shadow, darker night games with light pools; muddy, glossy rain games and snow that builds up.
+
 ## Version 7 (part 2)
 
 - Real 2026 rosters and logos as a separate file you import (it is not built into the app): every FBS and FCS program, about 28,000 players with numbers, positions, class, height, weight and hometowns, rated from their real 2025–26 stats. Logos are links that load when you're online; offline, the game's own badges show.
