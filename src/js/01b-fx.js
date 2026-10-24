@@ -13,6 +13,10 @@
      kickoff{} · touchback{} · fairCatch{p} · flag{x,y,on} · penalty{name,yards,on,team,accepted}
      firstDown{x} · turnover{team,kind} · timeout{team} · twoMinute{} · quarterEnd{q} · halftime{}
      final{} · injury{p} · bigPlay{yards,p} · redZone{} · review{call} · celebrate{p,pose}
+     dead{kind,p,qb,x,y,team,msg} (every whistle; kind = endPlay kind) · incomplete{same fields as dead}
+   Emitted by 05-engine today: snap{play} · tackle{c,d,big} · dead + td/incomplete/intercept/fumble/sack (same
+   payload as dead) · firstDown{x,team} · flag{x,y,m} (every flagMsg) · kickoff{side,why} · punt{x,dist,team}.
+   08e officials listen to flag, snap and firstDown.
    ========================================================= */
 const FX_SUBS={};
 function onFx(name,fn){(FX_SUBS[name]||(FX_SUBS[name]=[])).push(fn)}

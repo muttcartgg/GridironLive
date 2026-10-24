@@ -70,6 +70,7 @@ function oppPossession(dist,why){
 }
 function kickoffTo(side,why){
   S.clockRun=false;
+  fx('kickoff',{side,why});
   if(side==='home'){const tb=Math.random()<.55;const x=tb?35:clamp(10+R(16,36),20,60);if(!tb&&Math.random()<.012){S.score[0]+=6;banner('Kick return touchdown!',S.home.c1);sfx('roar');S.phase='pat';return setTimeout(showPAT,900)}toast(tb?'Touchback':`Kickoff returned to the ${spotLabel(x)}`);return startDrive(x,why)}
   const tb=Math.random()<.55;let x=tb?35:clamp(10+R(16,36),20,60);if(S.kickPen){x+=15;S.kickPen=false}oppPossession(110-x,why+(tb?' · touchback':''));
 }
@@ -198,7 +199,7 @@ function showOpt(head,opts){
   opts.forEach(o=>{const b=document.createElement('button');b.className='play '+(o.cls||'');b.innerHTML=`<b>${o.t}</b><small>${o.s||''}</small>`;b.onclick=()=>{ac();$('#opt').hidden=true;o.f()};row.appendChild(b)});
   $('#opt').hidden=false;
 }
-function flagMsg(m){logPBP('Flag: '+m);if(typeof BC!=='undefined'&&BC.flagCard(m)){sfx('whistle');BC.say('flag',{m});return}const f=$('#flag');f.textContent='🚩 '+m;f.classList.add('show');clearTimeout(flagMsg.t);flagMsg.t=setTimeout(()=>f.classList.remove('show'),2600);sfx('whistle');if(typeof BC!=='undefined')BC.say('flag',{m})}
+function flagMsg(m){fx('flag',{x:ball.x,y:ball.y,m});logPBP('Flag: '+m);if(typeof BC!=='undefined'&&BC.flagCard(m)){sfx('whistle');BC.say('flag',{m});return}const f=$('#flag');f.textContent='🚩 '+m;f.classList.add('show');clearTimeout(flagMsg.t);flagMsg.t=setTimeout(()=>f.classList.remove('show'),2600);sfx('whistle');if(typeof BC!=='undefined')BC.say('flag',{m})}
 function callSpecial(k){
   if(S.phase!=='presnap')return;$('#call').hidden=true;$('#toBtn').hidden=true;
   if(k==='punt')return doPunt();
@@ -235,6 +236,7 @@ function startPlay(pc,o){
   if(pl.run&&(pl.run.reverse||pl.run.counter||pl.run.trap)){pl.fakeY=clamp(2*S.ballY-pl.gapY,4,FW-4);for(const d of DEF)if(d.role!=='DL')d.react=pl.run.reverse?1.05:.6;else if(pl.run.trap)d.react=.4}
   if(pl.pa||pl.flea)for(const d of DEF)if(d.role==='LB'||d.role==='S')d.react=(d.react||0)+.25*(1.2-S.aiSkill*.4);
   S.phase='live';sfx('hike');$('#sit').classList.remove('on');if(!S.conv)tstat().plays++;if(S.down===3&&!S.conv)tstat().thirdA++;
+  fx('snap',{play:pl});
   S.wasThird=S.down===3&&!S.conv;
   if(typeof BC!=='undefined'){BC.snap();recStart()}
   showActs();
@@ -274,6 +276,7 @@ function userTackle(){
 function doPunt(){
   const k=kicker();let net=33+k.thr*2.4+R(-5,5)+(S.wx==='Wind'?R(-6,6):0);const land=S.los+net;
   dres('Punt');logPBP(`${S.home.abbr} punts ${Math.round(net)} yards.`);if(typeof BC!=='undefined')BC.card('PUNT',`${esc(k.last)} · ${Math.round(net)} yds`,land>=110?'Touchback':`Downed at the ${spotLabelFor(120-land,'away')}`,S.home.c1);sfx('thump');toast(`Punt · ${Math.round(net)} yds`);if(!S.ot)S.clock=Math.max(0,S.clock-6);S.phase='wait';S.clockRun=false;
+  fx('punt',{x:land,dist:net,team:S.home});
   setTimeout(()=>toOpp(land>=110?80:land-10,land>=110?'Punt · touchback':'Punt'),900);
 }
 function startKick(dist,kind){
@@ -340,6 +343,7 @@ function aiSpecial(k){
   hideActs();
   if(k==='kneel'){toast(`${S.away.abbr} kneels`);if(!S.ot&&S.clockRun)S.clock=Math.max(0,S.clock-Math.min(S.clock,40));S.los=Math.max(11,S.los-1);S.down++;S.clockRun=true;if(S.down>4)return toUser(Math.max(11,120-S.los),'Turnover on downs');return boundary(toPresnap)}
   if(k==='punt'){dres('Punt');const kk=oppKicker(),net=33+kk.thr*2.4+R(-5,5),land=S.los+net;logPBP(`${S.away.abbr} punts ${Math.round(net)} yards.`);if(typeof BC!=='undefined')BC.card('PUNT',`${esc(kk.last)} · ${Math.round(net)} yds`,land>=110?'Touchback':'',S.away.c1);sfx('thump');toast(`${S.away.abbr} punts · ${Math.round(net)} yds`);if(!S.ot)S.clock=Math.max(0,S.clock-6);S.clockRun=false;
+    fx('punt',{x:land,dist:net,team:S.away});
     setTimeout(()=>toUser(land>=110?30:clamp(120-land,11,99),land>=110?'Punt · touchback':'Punt'),900);return}
   if(k==='fg'){const dist=fgDist(),kk=oppKicker(),p=clamp(1.18-dist*.0125-(5-kk.thr)*.03,.15,.985);const good=Math.random()<p;S.clockRun=false;if(!S.ot)S.clock=Math.max(0,S.clock-5);
     dres(good?'FG':'Missed FG');if(good&&typeof BC!=='undefined')BC.scoringDrive(S.away);logPBP(`${S.away.abbr} ${dist}-yard field goal is ${good?'good':'no good'}.`);setTimeout(()=>{if(good){S.score[1]+=3;banner(`${S.away.abbr} field goal · ${dist} yd`,S.away.c1);sfx('groan')}else{banner(`${dist}-yd attempt is no good`,S.home.c1);sfx('roar')}if(typeof BC!=='undefined')BC.say('ofg',{good,dist});
@@ -631,6 +635,7 @@ function tackleCheck(c){
 function tackled(c,d){
   const pl=play;c.fallen=true;d.fallen=true;dirty(c);dirty(d);
   const closing=hyp(d.vx-c.vx,d.vy-c.vy);const big=closing>9&&Math.random()<(d.pl.tkl>=4||d.pl.str>=4?.6:.25);
+  fx('tackle',{c,d,big});
   S.shake=.12+d.pl.str*.05+(big?.25:0);spawnTurf(c.x,c.y,big?16:10);credit(d,'tkl',1,big?6:3);haptic(big?'heavy':'medium');injuryCheck(c,d,big);
   /* falling forward: momentum carries the ball a little further */
   if(c.vx>2)c.x+=(c.pl.str>=d.pl.tkl?R(.5,1.5):R(.1,.8));
@@ -681,6 +686,7 @@ function endPlay(kind,msg){
   else if(kind==='td'){const us=uo;{const oi=offIdx(),pre=S.score[oi]-S.score[1-oi];if(!S.ot&&S.q===4&&S.clock<S.qlen*.2&&pre<=0&&pre>-6){slowMo(1.3);setTimeout(()=>typeof BC!=='undefined'&&BC.chip('GO-AHEAD SCORE',offT().c1,fmtClock(S.clock)+' left'),2600)}}banner(S.conv?'Two-point good':'Touchdown',offT().c1,S.conv?'':`${c.pl.last} · ${offT().abbr} ${S.score[offIdx()]+6}, ${defT().abbr} ${S.score[1-offIdx()]}`);sfx(us?'roar':'groan');if(us){sfx('fight');S.celebrate=c;spawnConfetti(c.x,c.y)}slowMo(.5);if(us&&!S.conv)showCelebrate()}
   else if(kind==='int'){banner('Intercepted',defT().c1);sfx(uo?'groan':'roar');sfx('whistle');slowMo(.4)}
   else{sfx('whistle');if(LG.settings.gfx===false){if(kind==='inc')toast(msg||'Incomplete');else if(kind==='sack')toast(`Sacked · ${gain} yds`);else toast(`${msg?msg+' · ':''}${gain>=0?'+':''}${gain} yds${kind==='oob'?' · out of bounds':''}`)}}
+  {const e={kind,p:kind==='fum'?play.fumbler||c:c,qb:Q,x:play.result.x,y:play.result.y,team:offT(),msg};fx('dead',e);const n={td:'td',inc:'incomplete',int:'intercept',fum:'fumble',sack:'sack'}[kind];if(n)fx(n,e)}
   if(!S.conv&&kind!=='fum'||kind==='fum'&&!S.conv){
     if(kind==='tackle'||kind==='oob'||kind==='td'||kind==='fum'){
       const g=kind==='fum'?Math.round(play.result.x-S.los):gain;
@@ -748,6 +754,7 @@ function applyResult(){
   if(pen&&pen.type==='add15'){nx=Math.min(109,nx+15);S.down=3;S.firstDownX=nx}
   if(r.kind!=='inc')S.ballY=clamp(r.y,HASH1,HASH2);
   if(nx<=10){dres('Safety');S.clockRun=false;if(uOff()){S.score[1]+=2;banner('Safety',S.away.c1);return boundary(()=>oppPossession(R(55,62),'Free kick after the safety'))}S.score[0]+=2;banner('Safety!',S.home.c1);sfx('roar');return boundary(()=>startDrive(R(40,48),'Free kick after the safety'))}
+  if(nx>=S.firstDownX)fx('firstDown',{x:nx,team:offT()});
   if(nx>=S.firstDownX){if(wasThird)st.thirdC++;S.los=nx;S.down=1;S.firstDownX=Math.min(110,nx+10);st.firstDowns++;if(!pen)toast('First down');if(S.clockRun&&(S.q===2||S.q===4)&&S.clock<120*S.qlen/900+10)S.clockHold=2.2;if(typeof BC!=='undefined')BC.say('first',{});return nextSnap()}
   if(S.down===4)return turnoverDowns(nx);
   S.down++;S.los=nx;nextSnap();
