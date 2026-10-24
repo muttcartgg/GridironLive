@@ -400,8 +400,12 @@ function pollAdjust(L,ids,sc,G,r,Qv){
       for(let pi=0;pi<25&&pi<prev.length;pi++){const id=prev[pi];if(lastRes[id]!==true)continue;const ni=list.indexOf(id);const cap=pi+2;
         if(ni>cap){list.splice(ni,1);list.splice(cap,0,id)}}
     }
-    for(let pass=0;pass<3;pass++)for(let i=0;i<Math.min(40,list.length-1);i++){const a=list[i],b=list[i+1];const ta=L.teams[a],tb=L.teams[b];
-      if(h2h(L,b,a)===-1&&tb.rec.l<=ta.rec.l){list[i]=b;list[i+1]=a}}
+    /* head-to-head: a team that beat a team with the same or a worse record is ranked ahead of it, however far apart
+       they were (the old pass only swapped neighbours, so a winner 5 spots back never caught up) */
+    for(let pass=0;pass<6;pass++){let moved=false;
+      for(let wi=1;wi<Math.min(50,list.length);wi++){const w=list[wi],tw=L.teams[w];
+        for(let li=0;li<wi;li++){const l=list[li];if(tw.rec.l<=L.teams[l].rec.l&&h2h(L,w,l)===-1){list.splice(wi,1);list.splice(li,0,w);moved=true;break}}}
+      if(!moved)break}
     let k=0;ids=ids.map(id=>(L.teams[id].div||'FBS')===div?list[k++]:id);
   }
   /* resume card */
