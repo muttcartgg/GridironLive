@@ -3065,7 +3065,8 @@ function gameOver(){
   if(typeof BC!=='undefined')BC.stop();
   const g=S.game,[us,them]=S.score,won=us>them,s=S.stats,os=S.ostats||newGameStats(),rate=ncaaRating(s),u=S.home,opp=S.away;
   const storm=won&&S.userHome&&rankOf(opp.id)&&rankOf(opp.id)<=10&&(!rankOf(u.id)||rankOf(u.id)>rankOf(opp.id)+5);
-  if(S.userHome){g.hs=us;g.as=them}else{g.hs=them;g.as=us}
+  /* the user is listed first (g.h) in many neutral-site games (conference title games, bowls, playoffs), so map by g.h, not by who has home field */
+  if(g.h===LG.user){g.hs=us;g.as=them}else{g.hs=them;g.as=us}
   settleInjuries();closeDrive();recordGame(LG,g);
   const info={us,them,won,pst:S.pst,dxp:S.dxp,stats:s,storm,simmed:false};
   const rep=processUserGame(LG,g,info);LG.live=null;
