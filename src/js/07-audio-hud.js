@@ -27,6 +27,7 @@ function hud(){
   if(!S.home)return;const h=$('#tmH'),a=$('#tmA');
   h.style.setProperty('--c',S.home.c1);a.style.setProperty('--c',S.away.c1);
   h.querySelector('.ab').textContent=S.home.abbr;a.querySelector('.ab').textContent=S.away.abbr;
+  if(typeof teamLogoURL==='function')[[h,S.home],[a,S.away]].forEach(([el,t])=>{const im=el.querySelector('.lg');if(!im)return;const u=teamLogoURL(t,true);if(im.dataset.u!==u){im.dataset.u=u;if(u){im.hidden=false;im.src=u}else{im.hidden=true;im.removeAttribute('src')}}el.classList.toggle('haslg',!!u&&!im.hidden)});
   h.querySelector('.rk').textContent=rankOf(S.home.id)||'';a.querySelector('.rk').textContent=rankOf(S.away.id)||'';
   h.querySelector('.rec').textContent=recStr(S.home);a.querySelector('.rec').textContent=recStr(S.away);
   const tos=n=>S.ot?'':[0,1,2].map(i=>`<i class="${i<n?'':'u'}"></i>`).join('');h.querySelector('.tos').innerHTML=tos(S.to[0]);a.querySelector('.tos').innerHTML=tos(S.to[1]);
