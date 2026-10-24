@@ -9,6 +9,14 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 9): passing and coverage
+
+- Throwing: accuracy from the QB's accuracy rating, worse under pressure, on the run and near his max range; arm strength sets ball speed and distance. Bullets are fast and flat; lobs float over underneath defenders but give DBs time. Underthrown balls get undercut; long balls sail.
+- Tipped passes at the line (more against short QBs) and deflections that pop up for anyone to catch.
+- Catching: contested catches decided by hands and strength against coverage and ball skills, drops on bullets, big hits and bad weather, and toe-tap catches at the sideline and end line.
+- Coverage: press jams, defenders a step late when a good route runner breaks, trail technique, real zone depths with pattern-matching, safety help, a QB spy, and linebackers and safeties biting on play-action based on awareness.
+- 13 defensive calls (Cover 0, 1, 1 Spy, 2, 2-man, Tampa 2, 3, 4, 6, fire zone, A-gap and corner blitzes, prevent); the CPU picks them by situation. In tests: about 60–68% completions, 7–8 yards per attempt and 2.5–3% interceptions.
+
 ## Version 7 (part 8): score bug, broadcast graphics and sound
 
 - Passing camera: on pass plays the camera keeps your QB and his target in view together (the deepest receiver during the dropback, your aim point while aiming, the landing spot in the air), zooming out only as far as needed, in portrait and landscape.

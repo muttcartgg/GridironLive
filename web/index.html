@@ -2814,29 +2814,12 @@ function setupFormation(pc,flip){
   const cov=uOff()?aiPickCoverage(dtm,sitInfo()):(S.defCall==='auto'?aiPickCoverage(dtm,sitInfo()):S.defCall);S.cov=cov;
   const D={};[-3.3,-1.1,1.1,3.3].forEach((dy,i)=>D['DL'+i]=add('d','DL',Math.min(119,L+1),b+dy,F(d.DL,i,4)||d.DL[0],dtm,'DL'+i));
   D.LB0=add('d','LB',Math.min(119,L+4.6),b-3.8,d.LB[0],dtm,'LB0');D.LB1=add('d','LB',Math.min(119,L+4.6),b+3.8,d.LB[1]||d.LB[0],dtm,'LB1');
-  const third=KP.H.role==='WR'?KP.H:KP.Y,press=cov==='man'||cov==='blitz';
-  [KP.X,KP.Z,third].forEach((w,i)=>D['CB'+i]=add('d','CB',Math.min(119,L+(press?R(1.6,2.6):R(5.5,7.5))),w.y,d.CB[i]||d.CB[0],dtm,'CB'+i));
-  const deepS=cov==='prevent'?20:cov==='cover4'||cov==='cover2'?13:11;
-  D.S0=add('d','S',Math.min(119,L+deepS),clamp(b-9,4,FW-4),d.S[0],dtm,'S0');D.S1=add('d','S',Math.min(119,L+deepS),clamp(b+9,4,FW-4),d.S[1]||d.S[0],dtm,'S1');
-  assignCoverage(cov,D,KP);
+  const third=KP.H.role==='WR'?KP.H:KP.Y;
+  [KP.X,KP.Z,third].forEach((w,i)=>D['CB'+i]=add('d','CB',Math.min(119,L+6),w.y,d.CB[i]||d.CB[0],dtm,'CB'+i));
+  D.S0=add('d','S',Math.min(119,L+12),clamp(b-9,4,FW-4),d.S[0],dtm,'S0');D.S1=add('d','S',Math.min(119,L+12),clamp(b+9,4,FW-4),d.S[1]||d.S[0],dtm,'S1');
+  assignCoverage(cov,D,KP);alignDefense(cov,D,KP);
   S.ctrl=null;if(!uOff()){S.ctrl=D[S.ctrlKey]||D.LB0}
   ball={state:'held',x:L,y:b,z:0};
-}
-function assignCoverage(cov,D,K){
-  const L=S.los,b=S.ballY,sX=K.X.y<b?-1:1,hS=K.H.y<b?-1:1;
-  const yS=(side,off)=>side<0?off:FW-off;
-  const Z=(x,y,deep)=>({type:'zone',x:Math.min(L+x,deep?117:114),y:clamp(y,2,FW-2),deep:!!deep});
-  const M=t=>({type:'man',tgt:t}),rush={type:'rush'};
-  for(const k in D)if(k.startsWith('DL'))D[k].cov=rush;
-  const third=K.H.role==='WR'?K.H:K.Y,te=K.H.role==='WR'?K.Y:K.H;
-  switch(cov){
-    case 'man':D.CB0.cov=M(K.X);D.CB1.cov=M(K.Z);D.CB2.cov=M(third);D.LB0.cov=M(te);D.LB1.cov=M(K.R);D.S0.cov=Z(16,CEN,1);D.S1.cov=Z(9,b,0);break;
-    case 'blitz':D.CB0.cov=M(K.X);D.CB1.cov=M(K.Z);D.CB2.cov=M(third);D.S1.cov=M(te);D.S0.cov=M(K.R);D.LB0.cov=rush;D.LB1.cov=rush;break;
-    case 'cover2':D.CB0.cov=Z(4.5,yS(sX,9));D.CB1.cov=Z(4.5,yS(-sX,9));D.CB2.cov=Z(7,b+hS*9);D.LB0.cov=Z(7,b-4);D.LB1.cov=Z(7,b+4);D.S0.cov=Z(17,yS(-1,14),1);D.S1.cov=Z(17,yS(1,14),1);break;
-    case 'cover4':D.CB0.cov=Z(14,yS(sX,8),1);D.CB1.cov=Z(14,yS(-sX,8),1);D.S0.cov=Z(15,yS(-1,20),1);D.S1.cov=Z(15,yS(1,20),1);D.CB2.cov=Z(5,yS(hS,12));D.LB0.cov=Z(7,b-4);D.LB1.cov=Z(7,b+4);break;
-    case 'prevent':D.CB0.cov=Z(22,yS(sX,10),1);D.CB1.cov=Z(22,yS(-sX,10),1);D.S0.cov=Z(27,yS(-1,20),1);D.S1.cov=Z(27,yS(1,20),1);D.CB2.cov=Z(11,CEN);D.LB0.cov=Z(9,b-7);D.LB1.cov=Z(9,b+7);break;
-    default:D.CB0.cov=Z(15,yS(sX,9),1);D.CB1.cov=Z(15,yS(-sX,9),1);D.S0.cov=Z(18,CEN,1);D.CB2.cov=Z(6,yS(hS,13));D.S1.cov=Z(6,yS(-hS,13));D.LB0.cov=Z(7,b-4.5);D.LB1.cov=Z(7,b+4.5);
-  }
 }
 function sitInfo(){
   const togo=S.firstDownX-S.los,late=S.q>=4&&S.clock<S.qlen*.3&&!S.ot,diff=S.score[offIdx()]-S.score[1-offIdx()];
@@ -2923,7 +2906,7 @@ function startPlay(pc,o){
   }
   if(pl.fake){for(const d of DEF){if(d.role==='CB'||d.role==='S')d.x=Math.min(119,d.x+8);if(d.role==='LB')d.x=Math.min(119,d.x+3);d.react=.7}toast(pl.fake==='fakepunt'?'Fake punt!':'Fake field goal!')}
   if(pl.run&&(pl.run.reverse||pl.run.counter||pl.run.trap)){pl.fakeY=clamp(2*S.ballY-pl.gapY,4,FW-4);for(const d of DEF)if(d.role!=='DL')d.react=pl.run.reverse?1.05:.6;else if(pl.run.trap)d.react=.4}
-  if(pl.pa||pl.flea)for(const d of DEF)if(d.role==='LB'||d.role==='S')d.react=(d.react||0)+.25*(1.2-S.aiSkill*.4);
+  coverageSnap();
   S.phase='live';sfx('hike');$('#sit').classList.remove('on');if(!S.conv)tstat().plays++;if(S.down===3&&!S.conv)tstat().thirdA++;
   fx('snap',{play:pl});
   S.wasThird=S.down===3&&!S.conv;
@@ -3062,10 +3045,13 @@ function assignRunBlocks(ck){
 }
 function runRoute(p,dt){
   if(play.scramble){const dirY=Math.sign(Q.vy)||1;steer(p,Math.max(p.x,S.los+3)+1.5,clamp(p.y+dirY*3,2,FW-2),p.spd*.8,dt);return}
-  let t=p.wi<p.route.length?p.route[p.wi]:null;
-  if(t&&hyp(t[0]-p.x,t[1]-p.y)<.9){p.wi++;t=p.wi<p.route.length?p.route[p.wi]:null}
-  if(t){steer(p,t[0],t[1],p.spd,dt);return}
-  if(p.cont&&!p.stop&&hyp(p.cont[0]-p.x,p.cont[1]-p.y)>1.5){steer(p,p.cont[0],p.cont[1],p.spd,dt);return}
+  let t=p.wi<p.route.length?p.route[p.wi]:null,sp=p.spd;if(p.jamT>0){p.jamT-=dt;sp*=.35}
+  if(t&&hyp(t[0]-p.x,t[1]-p.y)<.9){p.wi++;t=p.wi<p.route.length?p.route[p.wi]:(p.stop?null:p.cont);
+    /* a real break (not just the end of a stem): man defenders react late by rte vs cov (05d routeBreak) */
+    if(t){const v=hyp(p.vx,p.vy)||1,ex=t[0]-p.x,ey=t[1]-p.y,e=hyp(ex,ey)||1;if((p.vx*ex+p.vy*ey)/(v*e)<.9)routeBreak(p)}else routeBreak(p);t=p.wi<p.route.length?p.route[p.wi]:null}
+  const sharp=p.brkT!=null&&play.t-p.brkT<.4?6+1.6*p.pl.rte:undefined;
+  if(t){steer(p,t[0],t[1],sp,dt,sharp);return}
+  if(p.cont&&!p.stop&&hyp(p.cont[0]-p.x,p.cont[1]-p.y)>1.5){steer(p,p.cont[0],p.cont[1],sp,dt,sharp);return}
   /* route finished: settle, then work back to open grass instead of standing still */
   p.settle+=dt;if(p.settle<.6){steer(p,p.x,p.y,0,dt);return}
   const [d,dd]=nearest(DEF,p.x,p.y,o=>o.stun<=0);
@@ -3076,12 +3062,6 @@ function runRoute(p,dt){
 function intercept(d,c,s){const rx=c.x-d.x,ry=c.y-d.y,vx=c.vx,vy=c.vy;s=Math.max(1,s||d.spd);const a=vx*vx+vy*vy-s*s,b=2*(rx*vx+ry*vy),cc=rx*rx+ry*ry;let t=2.5;
   if(Math.abs(a)<1e-3){if(b<0)t=-cc/b}else{const disc=b*b-4*a*cc;if(disc>=0){const q=Math.sqrt(disc),t1=(-b-q)/(2*a),t2=(-b+q)/(2*a),lo=Math.min(t1,t2),hi=Math.max(t1,t2);if(lo>0)t=lo;else if(hi>0)t=hi}}
   t=clamp(t,0,2.5);return [c.x+vx*t,clamp(c.y+vy*t,-1,FW+1)]}
-function zoneAI(d,cv){
-  const L=S.los,zx=cv.x,zy=cv.y,R0=cv.deep?11:10;let thr=null,td=1e9;
-  for(const o of OFF){if(!eligible(o)||o.blocker)continue;if(cv.deep&&o.x<L+7)continue;const dist=hyp((o.x-zx)*1.2,(o.y-zy)*.75);if(dist>R0)continue;if(dist<td){td=dist;thr=o}}
-  if(thr){if(cv.deep)return [Math.max(zx-3,thr.x+2.2+thr.vx*.3),lerp(zy,thr.y,.7)];return [clamp(thr.x+thr.vx*.3-.4,L+2,zx+4),lerp(zy,thr.y+thr.vy*.3,.7)]}
-  return [zx,lerp(zy,Q?Q.y:CEN,.12)];
-}
 function defAI(d,dt){
   d.lungeCD-=dt;if(d.freeT>0)d.freeT-=dt;
   if(d.stun>0){d.stun-=dt;steer(d,d.x,d.y,0,dt,4);if(d.fallen&&d.stun<.5&&d.anim!=='getup'&&!play.ended)setAnim(d,'getup');if(d.stun<=0)d.fallen=false;return}
@@ -3092,23 +3072,25 @@ function defAI(d,dt){
   const eng=false;let spd=d.spd*(d.freeT>0?1.1:1);
   if(d.react>0&&play.t<d.react){if(play.fakeY!=null&&d.role!=='DL'){steer(d,d.x-.2,play.fakeY,d.spd*.55,dt);return}spd*=.35}
   const L=S.los,c=play.carrier,runner=isRunner();let tx,ty;
-  if(ball.state==='air'&&!ball.pitch){const rem=ball.T-ball.t,dd=hyp(ball.tx-d.x,ball.ty-d.y),rt=d.role==='DL'?99:d.role==='LB'?.4:.25+(1-S.aiSkill)*.15;if(play.t-play.ballT0>rt&&dd/d.spd<rem+.7){tx=ball.tx;ty=ball.ty}}
+  if(ball.state==='air'&&!ball.pitch){const rem=ball.T-ball.t,dd=hyp(ball.tx-d.x,ball.ty-d.y),since=ball.tip?ball.t:play.t-play.ballT0,zone=d.cov&&d.cov.type==='zone';
+    /* zone eyes see the throw; a man defender with his back to the QB plays the receiver until he looks up */
+    const rt=ball.tip?(dd<6?.1:99):d.role==='DL'||d.cov&&d.cov.type==='rush'?99:zone?.16+(3.5-d.pl.awr)*.05+(d.user?0:(1-S.aiSkill)*.1):Math.max(.3+(3.5-d.pl.awr)*.05,ball.T*.45);
+    if(since>rt&&!play.throwAway){if(dd/d.spd<rem+.7){tx=ball.tx;ty=ball.ty;const a=!zone&&d.cov&&d.cov.tgt;if(a&&a===play.intended&&!ball.tip){tx=lerp(a.x,tx,.6);ty=lerp(a.y,ty,.6)}}else if(!ball.tip&&d.role!=='DL'){tx=ball.tx+Math.min(4,dd*.25);ty=ball.ty}}}
   if(tx===undefined){
     let pursue=runner;
     if(play.type==='run'&&!play.fleaHold)pursue=play.t>({DL:0,LB:.5,CB:.9,S:.75})[d.role]||(d.cov&&d.cov.type==='rush');
-    if(play.scramble&&play.t-play.scrT<.35&&d.role!=='DL')pursue=false;
+    if(play.scramble&&play.t-play.scrT<.35&&d.role!=='DL'&&!(d.cov&&d.cov.type==='spy'))pursue=false;
     if(pursue&&c&&play.type==='run'&&d.role!=='DL'&&c.x<L+.3&&!(d.cov&&d.cov.type==='rush')){tx=L+2.4;ty=lerp(c.y,play.gapY,.6)}
     else if(pursue&&c){
       const n=hyp(c.x-d.x,c.y-d.y);[tx,ty]=intercept(d,c,spd);
       if(runner&&n<2.2&&n>1.05&&d.lungeCD<=0&&!eng&&d!==S.ctrl){d.lunge=.28;d.lungeCD=1.5;d.lx=c.x+c.vx*.26;d.ly=c.y+c.vy*.26}
     }else{
       const cv=d.cov||{type:'rush'};
-      if(cv.type==='rush'){const t=c||Q;tx=t.x;ty=t.y;
+      if(cv.type==='rush'){const t=c||Q;tx=t.x;ty=t.y;if(cv.gy!=null&&t===Q&&d.x>L-.5){tx=L-1;ty=cv.gy}
         /* a free rusher closing on the pocket QB dives to wrap him up (the sack check honours the longer lunge reach) */
         if(t===Q&&play.type==='pass'&&!play.thrown&&!play.scramble&&d.lungeCD<=0&&d!==S.ctrl){const n=hyp(Q.x-d.x,Q.y-d.y);if(n<2&&n>1){d.lunge=.28;d.lungeCD=1.5;d.lx=Q.x+Q.vx*.2;d.ly=Q.y+Q.vy*.2;return}}}
-      else if((play.pa||play.fleaHold)&&play.t<.65&&(d.role==='LB'||d.role==='S')){tx=L+1.5;ty=d.y}
-      else if(cv.type==='man'){const a=cv.tgt;if(a.blocker&&!a.route){tx=L+5;ty=lerp(d.y,a.y,.5)}else{const cush=Math.max(.35,(d.role==='CB'?1.5:1.1)-play.t*.8);tx=a.x+a.vx*.35+cush;ty=a.y+a.vy*.35+(a.y<CEN?.45:-.45)}}
-      else [tx,ty]=zoneAI(d,cv);
+      else if(play.fleaHold&&play.t<.65&&(d.role==='LB'||d.role==='S')){tx=L+1.5;ty=d.y}
+      else{const g=covTarget(d,cv,dt);return steer(d,g[0],g[1],spd*(g[2]||1),dt,g[3]||9.5+1.2*d.pl.cov)}
       return steer(d,tx,ty,spd,dt,9.5+1.2*d.pl.cov);
     }
   }
@@ -3168,45 +3150,6 @@ function qbMove(dt){
   if(!pl.handed&&ck&&ck!==Q){steer(Q,L-2.4,lerp(b,ck.y,.5),5,dt);return}
   if(pl.handed&&!pl.qbCarry)steer(Q,Q.x-1,Q.y-Math.sign(pl.gapY-b||1)*2,3,dt);
 }
-function aiQB(dt){
-  const pl=play;if(pl.thrown||pl.scramble||pl.carrier!==Q||pl.fleaHold)return;
-  const sk=S.aiSkill,readStart=(pl.screen?.75:pl.pa?1.4:1.15)+(pl.flea?1.2:0)+(pl.screen?0:pl.hold||(pl.hold=R(.05,.8)));
-  if(pl.t<readStart||pl.t<pl.nextRead)return;pl.nextRead=pl.t+.18;
-  const pressure=DEF.some(d=>!d.engaged&&d.stun<=0&&hyp(d.x-Q.x,d.y-Q.y)<2.6);
-  let best=null,bs=-1e9,bo=0;
-  for(const r of OFF){if(!eligible(r)||r.blocker||r.fallen)continue;
-    const px=r.x+r.vx*.55,py=r.y+r.vy*.55;const [,dd]=nearest(DEF,px,py,o=>o.stun<=0);const depth=px-S.los;
-    let s=dd*1.1+Math.min(Math.max(depth,0),25)*.16+(px>=S.firstDownX?1.4:0)-(depth<-1?1.6:0)+R(-1,1)*(1-sk);
-    if(pl.screen&&r.key===pl.screen)s+=pl.t<1.6?6:-2;
-    if(S.down>=3&&px<S.firstDownX&&!pl.screen)s-=1.2;
-    if(s>bs){bs=s;best=r;bo=dd}}
-  const need=3.7-(pl.t-readStart)*.8-(pressure?1:0);
-  if(best&&(bo>=need||pl.t>4.3)){aiThrow(best);return}
-  if(pressure&&pl.t>2.3){if(Q.pl.spd>=4&&Math.random()<.45){pl.scramble=true;pl.scrT=pl.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}return}if(Math.random()<.35){throwAway();return}}
-  if(pl.t>5.2)throwAway();
-}
-function aiThrow(r){
-  const d=hyp(r.x-Q.x,r.y-Q.y),v=17.5+1.8*Q.pl.thr,T=Math.max(.3,d/(v+d*.18));
-  let tx=r.x+r.vx*T*.92,ty=r.y+r.vy*T*.92;tx=Math.min(tx,119);ty=clamp(ty,.8,FW-.8);
-  throwBall(tx,ty,d<15&&Math.random()<.6,r);
-}
-function throwAway(){throwBall(Q.x+10,Q.y<CEN?-4:FW+4,false,null);play.throwAway=true}
-function throwBall(tx,ty,bullet,intended){
-  const qb=Q,d=hyp(tx-qb.x,ty-qb.y),thr=qb.pl.thr;
-  const lob=!bullet&&!!(qb.user&&S.lob);const er=aimError(d,bullet)*(lob?.9:1);
-  const ux=(tx-qb.x)/(d||1),uy=(ty-qb.y)/(d||1),a=Math.random()*Math.PI*2,r=er*Math.sqrt(Math.random());
-  const along=Math.cos(a)*r*.55,perp=Math.sin(a)*r;tx+=ux*along-uy*perp;ty+=uy*along+ux*perp;
-  const v=(17.5+1.8*thr)*(bullet?1.45:lob?.8:1),T=Math.max(.3,d/(v+d*.18));
-  if(S.wind&&S.wind.mph>3){const k=S.wind.mph/20*.55*T*(lob?1.5:bullet?.4:1);tx+=windX()*k;ty+=windY()*k}
-  ball={state:'air',fx:qb.x,fy:qb.y,x:qb.x,y:qb.y,z:0,tx,ty,t:0,T,h:bullet?d*.03+.45:lob?d*.18+1.3:d*.11+.5,bullet,lob,spin:0};haptic('light');
-  if(!intended){const [n,nd]=nearest(OFF,tx,ty,o=>eligible(o)&&!o.blocker);intended=nd<8?n:null}
-  play.intended=intended;play.thrown=true;play.ballT0=play.t;play.carrier=null;qb.throwT=.35;if(!S.conv){tstat().att++;ps(qb).pa++}sfx(bullet?'zip':'thump');hint('');$('#bulletBtn').hidden=true;hideActs();showActs();
-}
-function aimError(d,bullet){
-  const qb=Q;if(!qb)return 1;const pressure=DEF.some(o=>!o.engaged&&o.stun<=0&&hyp(o.x-qb.x,o.y-qb.y)<2.4);
-  const wx=S.wx==='Rain'?1.2:S.wx==='Snow'?1.15:S.wx==='Wind'&&d>20?1.3:1,moving=hyp(qb.vx,qb.vy)>3.2?1.25:1;
-  return (.45+d*.009*(6.4-qb.pl.acc))*(bullet?1.2:1)*(pressure?1.3:1)*wx*moving*(qb.user&&focus('passing')?.8:1)*(qb.user?1/SL('acc'):1.08-S.aiSkill*.16);
-}
 function logPass(res){if(S.conv)return null;const r={depth:ball.tx-S.los,y:ball.ty,res,yds:0,yac:0};if(uOff())S.stats.passes.push(r);return r}
 
 /* ---------- main simulation step ---------- */
@@ -3215,7 +3158,7 @@ function simulate(dt){
   if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,4);p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
   const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.jukeCD-=dt;for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
   if(!S.ot&&!S.conv)S.clock=Math.max(0,S.clock-dt*CLK.play);
-  runMech(dt);
+  runMech(dt);if(pl.type==='pass'&&!pl.thrown&&Q)qbTick(dt);
   const runner=isRunner(),L=S.los;
   for(const p of OFF){
     p.engaged=false;
@@ -3225,7 +3168,7 @@ function simulate(dt){
     if(pl.flea&&p===RB&&!pl.fleaDone){steer(p,L-1.8,p.y,5.5,dt);continue}
     if(pl.pitchMan===p&&!pl.pitched){steer(p,Q.x-1.6,Q.y+Math.sign(pl.gapY-S.ballY||1)*3.6,p.spd*.85,dt);continue}
     if(p.blocker)blockAI(p,dt);else if(p.route&&(p!==RB||pl.t>.4))runRoute(p,dt);else steer(p,p.x,p.y,0,dt);
-    if(ball.state==='air'&&!ball.pitch&&eligible(p)&&!p.blocker&&ball.t/ball.T>.2&&(p===pl.intended||hyp(p.x-ball.tx,p.y-ball.ty)<6))steer(p,ball.tx,ball.ty,p.spd,dt,13);
+    if(ball.state==='air'&&!ball.pitch&&eligible(p)&&!p.blocker&&(ball.tip||ball.t>.2)&&(p===pl.intended||hyp(p.x-ball.tx,p.y-ball.ty)<6))steer(p,ball.tx,ball.ty,p.spd,dt,13);
   }
   if(!uOff()&&pl.type==='pass')aiQB(dt);
   if(pl.screen&&!pl.screenGo&&pl.t>.9){pl.screenGo=true;for(const o of OFF)if(o.role==='OL'){o.tgt=null;o.eng=null}for(const d of DEF)if(d.role==='DL'){d.immune=true}}
@@ -3234,7 +3177,7 @@ function simulate(dt){
     if(p.side==='d')p.face=p.vx>2.8?1:p.vx<-.3||Math.abs(p.vx)<2.8?-1:p.face;else p.face=p.vx<-2.8?-1:1;}
   /* collisions: blockers give way, defenders are not shoved backwards */
   const hold=pl.carrier;
-  for(let i=0;i<P.length;i++){const a=P[i];if(a===hold||a.fallen)continue;for(let j=i+1;j<P.length;j++){const c=P[j];if(c===hold||c.fallen)continue;const ddx=c.x-a.x,ddy=c.y-a.y,d=hyp(ddx,ddy);if(d<.95&&d>1e-4){const o=(.95-d);let wa=.5,wc=.5;if(a.side!==c.side){if(a.side==='d'){wa=.2;wc=.8}else{wa=.8;wc=.2}}a.x-=ddx/d*o*wa;a.y-=ddy/d*o*wa;c.x+=ddx/d*o*wc;c.y+=ddy/d*o*wc}}}
+  for(let i=0;i<P.length;i++){const a=P[i];if(a===hold||a.fallen)continue;for(let j=i+1;j<P.length;j++){const c=P[j];if(c===hold||c.fallen)continue;const ddx=c.x-a.x,ddy=c.y-a.y,d=hyp(ddx,ddy);if(d<.95&&d>1e-4){const o=(.95-d);let wa=.5,wc=.5;if(a.side!==c.side&&!(ball.state==='air'&&!ball.pitch)){if(a.side==='d'){wa=.2;wc=.8}else{wa=.8;wc=.2}}a.x-=ddx/d*o*wa;a.y-=ddy/d*o*wa;c.x+=ddx/d*o*wc;c.y+=ddy/d*o*wc}}}
   const c=pl.carrier;
   if(c&&!pl.ended){
     if(runner||(pl.type==='run'&&!pl.handed&&c===Q&&pl.t>.15)){
@@ -3250,10 +3193,9 @@ function simulate(dt){
   }
   if(ball.state==='held'){const h=pl.carrier||Q;ball.x=h.x;ball.y=h.y;ball.z=0}
   else if(ball.state==='air'){
+    if(!ball.pitch)return ballFlight(dt);
     ball.t+=dt;const p=Math.min(1,ball.t/ball.T);ball.x=lerp(ball.fx,ball.tx,p);ball.y=lerp(ball.fy,ball.ty,p);ball.z=4*ball.h*p*(1-p);ball.spin+=dt*20;
-    if(ball.pitch){if(p>=1){const to=ball.to;if(Math.random()<.01&&!pl.flea){ball.state='held';pl.carrier=to;pl.fumbler=to;return endPlay('fum','Bad pitch')}ball.state='held';pl.carrier=to;if(pl.flea&&to===Q){pl.fleaDone=true;pl.fleaHold=false}else{pl.handed=true}}return}
-    if(ball.bullet&&p>.12&&p<.86&&ball.z<1.5){for(const d of DEF){if(pl.tipped.has(d)||d.stun>0)continue;if(hyp(d.x-ball.x,d.y-ball.y)<.8){pl.tipped.add(d);if(Math.random()<.3+(d.pl.cat-3)*.06){if(Math.random()<.3){logPass('I');pl.carrier=d;credit(d,'dint',1,25);return endPlay('int')}logPass('X');return endPlay('inc','Tipped at the line')}}}}
-    if(p>=1)resolveCatch();
+    {if(p>=1){const to=ball.to;if(Math.random()<.01&&!pl.flea){ball.state='held';pl.carrier=to;pl.fumbler=to;return endPlay('fum','Bad pitch')}ball.state='held';pl.carrier=to;if(pl.flea&&to===Q){pl.fleaDone=true;pl.fleaHold=false}else{pl.handed=true}}return}
   }
 }
 /* designed-run mechanics: handoffs, toss, jet, reverse, option, read option, flea flicker */
@@ -3282,34 +3224,6 @@ function carrierPre(p,dt){
 
 /* ---------- contact: tackles, broken tackles, big hits, fumbles ---------- */
 function dirty(p){if(!p||!p.pl)return;const k=p.pl.id;S.dirt[k]=Math.min(1,(S.dirt[k]||0)+.06+(S.wx==='Rain'||S.wx==='Snow'?.08:0));p.dirt=S.dirt[k]}
-
-/* ---------- catch resolution ---------- */
-function resolveCatch(){
-  const tx=ball.tx,ty=ball.ty,pl=play;
-  const [rec,dr]=nearest(OFF,tx,ty,o=>eligible(o)&&!o.blocker),[df,dd]=nearest(DEF,tx,ty,d=>d.stun<=0);
-  const inb=ty>=0&&ty<=FW&&tx<=120;const cr=rec?1.55+rec.pl.cat*.1:0;
-  pl.passDepth=tx-S.los;
-  const userSwat=df&&df===S.ctrl&&pl.swat>0;
-  if(rec&&dr<cr&&inb&&!pl.throwAway){
-    const contested=dd<2.1;pl.contested=contested;pl.cover=df;
-    const ballSk=df?(df.pl.cat+df.pl.spd)/2:3;
-    if(contested&&dd<dr&&Math.random()<.06+(ballSk-3)*.03+(userSwat?.15:0)){logPass('I');pl.carrier=df;credit(df,'dint',1,25);return endPlay('int')}
-    const cat=rec.pl.cat,wxC=S.wx==='Rain'?-.06:S.wx==='Snow'?-.04:0;
-    const pc=(contested?clamp(.15+dd*.2+(cat-3)*.07,.1,.66):.58+.05*cat)+wxC+(rec.user&&focus('passing')?.03:0)-(ball.bullet&&cat<4?.05:0)-(userSwat?.18:0)+(rec.user?0:(S.aiSkill-.5)*.08);
-    if(Math.random()<pc){
-      ball.state='held';pl.carrier=rec;pl.caught=true;rec.route=null;if(!S.conv){tstat().comp++;ps(Q).pc++;ps(rec).rec++}
-      pl.rec=logPass('C');
-      OFF.forEach(o=>{if(o!==rec&&o!==Q){o.blocker=true;o.tgt=null}});
-      if(dr>.3){rec.x=lerp(rec.x,tx,.6);rec.y=lerp(rec.y,ty,.6)}
-      pl.catchX=rec.x;if(contested){toast('Contested catch!');slowMo(.3)}
-      if(rec.user)hint('Drag to steer · JUKE / SPIN / TRUCK buttons');showActs();
-      if(typeof BC!=='undefined')BC.say('catch',{p:rec,contested});return;
-    }
-    logPass('X');if(contested&&df)credit(df,'xp',6,0);return endPlay('inc',contested?(userSwat?'Swatted away!':'Broken up'):'Dropped');
-  }
-  if(df&&dd<1.2&&inb&&!pl.throwAway&&Math.random()<.1+((df.pl.cat+df.pl.spd)/2-3)*.05+(userSwat?.15:0)){logPass('I');pl.carrier=df;credit(df,'dint',1,25);return endPlay('int')}
-  logPass('X');endPlay('inc',pl.throwAway?'Thrown away':df&&dd<1.7?'Pass defended':'Incomplete');
-}
 
 /* ---------- end of play ---------- */
 function endPlay(kind,msg){
@@ -3687,7 +3601,24 @@ const PLAYBOOK=[
 ];
 PLAYBOOK.forEach((p,i)=>p.id=i);
 const playByName=n=>PLAYBOOK.find(p=>p.name===n);
-const DEF_CALLS=[['man','Cover 1','Man coverage, one deep safety'],['cover2','Cover 2','Two deep halves, corners sit in the flats'],['cover3','Cover 3','Three deep thirds, four underneath'],['cover4','Quarters','Four deep, take away the long ball'],['blitz','Blitz','Send the linebackers'],['prevent','Prevent','Everyone deep; give up the short stuff']];
+/* defensive calls (05d assignCoverage / alignDefense). shell = safeties shown pre-snap ('1' single-high, '2' two-high;
+   05d sometimes disguises it and rotates at the snap), press = corners may press. 'blitz' is Cover 0 (old saves keep it). */
+const COVS={
+  blitz:{n:'Cover 0',d:'All-out man blitz, no deep help',shell:'1',press:1},
+  man:{n:'Cover 1',d:'Man under, one deep safety, a robber',shell:'1',press:1},
+  spy:{n:'Cover 1 Spy',d:'Man, one deep, a linebacker shadows the QB',shell:'1',press:1},
+  '2man':{n:'2-Man',d:'Trail man under two deep halves',shell:'2',press:1},
+  cover2:{n:'Cover 2',d:'Two deep halves, corners squat the flats',shell:'2'},
+  tampa2:{n:'Tampa 2',d:'Cover 2, the Mike runs the deep middle',shell:'2'},
+  cover3:{n:'Cover 3',d:'Three deep thirds, four underneath',shell:'1'},
+  cover4:{n:'Quarters',d:'Four deep, pattern-match the verticals',shell:'2'},
+  cover6:{n:'Cover 6',d:'Quarters to the field, Cover 2 to the boundary',shell:'2'},
+  firezone:{n:'Fire Zone',d:'Five-man pressure, three deep, three under',shell:'1'},
+  agap:{n:'A-Gap Mug',d:'Linebackers in the A gaps, Cover 1 behind',shell:'1',press:1},
+  cblitz:{n:'Nickel Blitz',d:'Slot corner off the edge, Cover 1 behind',shell:'1',press:1},
+  prevent:{n:'Prevent',d:'Everyone deep; give up the short stuff',shell:'2'}
+};
+const DEF_CALLS=Object.entries(COVS).map(([k,c])=>[k,c.n,c.d]);
 
 /* team schemes (real where known) shape AI play-calling and simulated stats */
 const SCHEME_OVR={ARMY:'Option',NAVY:'Option',AF:'Option',KENN:'Option',TTU:'Air Raid',WSU:'Air Raid',UNT:'Air Raid',ORST:'Power',WIS:'Power',IOWA:'Pro',STAN:'Pro',MICH:'Power',ALA:'Pro',UGA:'Pro',OSU:'Spread',ORE:'Spread',MISS:'Air Raid',UTAH:'Power',KSU:'Power',NDSU:'Power',SDST:'Power',MTST:'Option',BYU:'Pro',IU:'Spread',TEX:'Spread',LSU:'Pro',TAMU:'Spread',ND:'Pro',MIA:'Spread',COLO:'Spread',CLEM:'Spread',PSU:'Pro',USC:'Air Raid',OKST:'Air Raid',HOU:'Air Raid',WKU:'Air Raid',UGS:'Option',GASO:'Option',ODU:'Spread',JMU:'Spread'};
@@ -3709,9 +3640,22 @@ function aiPickPlay(team,sit){
     pool.push([p,w])}
   let r=Math.random()*sum(pool.map(x=>x[1]));for(const [p,w] of pool){if((r-=w)<=0)return p}return pool[0][0];
 }
+/* situational CPU coverage: 2-man / quarters on 3rd & long, Cover 0 near the goal line, pressure on short yardage,
+   deep zones late with a lead, a spy vs a mobile QB; each team leans man or zone (stable per team) */
 function aiPickCoverage(team,sit){
-  const sc=schemeOf(team);const opts=[['man',3],['cover2',2],['cover3',3],['cover4',2],['blitz',sit&&sit.toGo<=3?3:1.6],['prevent',sit&&sit.prevent?6:0]];
-  let r=Math.random()*sum(opts.map(o=>o[1]));for(const [k,w] of opts){if((r-=w)<=0)return k}return 'cover3';
+  sit=sit||{};const tg=sit.toGo!=null?sit.toGo:10,dn=sit.down||1,oi=offIdx(),lead=S.score[1-oi]-S.score[oi],late=S.q>=4&&S.clock<S.qlen*.3&&!S.ot;
+  if(team.manLean==null)team.manLean=Math.random();const ml=team.manLean;
+  const w={blitz:.6,man:2+ml*2,spy:0,'2man':.8+ml,cover2:1.6,tampa2:1,cover3:3-ml,cover4:1.4,cover6:1.1,firezone:1.2,agap:.6,cblitz:.7,prevent:0};
+  if(dn>=3&&tg>=7){w['2man']+=3;w.cover4+=2.5;w.cover6+=1;w.firezone+=.8;w.blitz*=.4;w.cover2*=.7}
+  else if(dn===2&&tg>=8){w.cover4+=1;w['2man']+=.8}
+  if(tg<=3){w.blitz+=1.2;w.agap+=1.4;w.man+=1.2;w.cblitz+=.6;w.cover4*=.5}
+  if(S.los>=100){w.blitz+=3;w.man+=1.5;w.agap+=.8;w.cover4*=.4;w.cover2*=.5;w.tampa2*=.3}
+  else if(S.los>=88){w.man+=1;w.cover2+=.6;w.firezone+=.6}
+  if(late&&lead>0&&lead<=16){w.prevent=S.clock<S.qlen*.12?4:0;w.cover4+=2;w.cover3+=1.5;w.cover2+=1;w.blitz=0;w.agap*=.2;w.cblitz*=.2;w.firezone*=.4}
+  if(late&&lead<0){w.blitz+=1;w.agap+=.8;w.cblitz+=.8;w.firezone+=.8}
+  if(sit.lastPlay){w.prevent=10;w.blitz=0}
+  if(Q&&Q.pl.spd>=3.7)w.spy=1.2+(Q.pl.spd-3.7)*2;
+  let r=Math.random()*sum(Object.values(w));for(const k in w){if((r-=w[k])<=0)return k}return 'cover3';
 }
 
 /* tiny play diagram for the playbook grid */
@@ -3997,6 +3941,271 @@ function tackled(c,d){
   const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
   if(Math.random()<fumP&&spotOf(c)+pl.fp<110){pl.fumbler=c;pl.forcer=d;return endPlay('fum')}
   endPlay('tackle');
+}
+
+/* =========================================================
+   05d · Passing & coverage (Step 7)
+   Throw: aimError(d,bullet,lob) = error radius in yards from acc and distance, worse under pressure (nearest
+   rusher inside PASS.prR yd, closer = worse; pressure()), off-platform (QB moving / feet not set: Q.setT builds while
+   he stands still) and near max range (maxRange() from thr). flightT: thr sets ball speed; bullets are fast and flat
+   (harder to catch up close), lobs float (apex d*.18+1.3) over underneath defenders but hang for the DBs. The error
+   splits into along (ball.err: short = DBs undercut, long = sails) and lateral parts. Release: anim 'throw', fx throw.
+   In flight (ballFlight): a defender the ball passes within reach of (arc height vs his reach) can get a hand on it:
+   DL in the lane bat passes at the line (more vs short QBs), LBs/DBs undercut low throws. A deflection pops the
+   ball up (ball.tip) and whoever gets under it can catch it (tipLand).
+   Arrival (resolveCatch): receiver reach (cat, height; a dive reaches further but is harder to hold) vs defender
+   position. A defender who gets there first plays the ball (INT / PBU), a close one contests (cov+cat vs cat+str),
+   otherwise it is the receiver's hands (cat; bullets, big hits and rain/snow cause drops); sideline / end-line
+   catches need a toe-tap. fx catch / drop / deflect; anims catch / dive / swat.
+   Coverage (COVS in 05b): man = press jam at the snap by press-capable corners, mirror with cov/spd/agi, reaction
+   lag on breaks from rte vs cov (routeBreak), trail technique under two-deep help; zone = real landmarks (flat,
+   curl, hook, robber, deep thirds / halves / quarters, Tampa pole) that pattern-match receivers entering them and
+   hand verticals off to the deep defenders. Blitzers take gap/edge paths, a man defender whose man stays in to
+   block adds to the rush, a spy shadows a mobile QB. Disguise: the shell shown pre-snap can differ (rotation at
+   the snap). Play-action: LBs/safeties bite (step up) by awr, opening windows behind them.
+   ========================================================= */
+const PASS={prR:2.6,dive:1.05,drop:.06,pbu:.24,popUp:.24};
+
+/* ---------- QB: platform, pressure, accuracy, flight ---------- */
+function qbTick(dt){const v=hyp(Q.vx,Q.vy);Q.setT=v<1.8?(Q.setT||0)+dt:Math.max(0,(Q.setT||0)-dt*3)}
+function pressure(){let p=0;if(!Q)return 0;for(const d of DEF){if(d.stun>0||d.cov&&d.cov.type!=='rush'&&d.role!=='DL')continue;const r=d.engaged?1.4:PASS.prR,k=hyp(d.x-Q.x,d.y-Q.y);if(k<r){const v=(1-k/r)*(d.engaged?.45:1);if(v>p)p=v}}return p}
+function aimError(d,bullet,lob){
+  const qb=Q;if(!qb)return 1;const v=hyp(qb.vx,qb.vy),set=clamp((qb.setT||0)/.45,0,1),mr=maxRange(),strain=clamp((d/mr-.72)/.28,0,1);
+  const wx=S.wx==='Rain'?1.15:S.wx==='Snow'?1.12:S.wx==='Wind'&&d>20?1.25:1;
+  const plat=1+Math.min(1,v/5.5)*.6*(1.15-.05*qb.pl.agi)+(1-set)*.15;
+  const e=(.3+d*.0074*(6.3-qb.pl.acc))*(1+pressure()*.9)*plat*(1+strain*.6)*(bullet?1.15:lob?.92:1)*wx;
+  return e*(qb.user?(focus('passing')?.8:1)/SL('acc'):1.1-S.aiSkill*.2);
+}
+function flightT(d,bullet,lob,thr){let T=(.2+d*.028+d*d*.00028)*(1.1-.035*thr);if(bullet)T*=.72;else if(lob)T=T*1.28+.08;const mr=maxRange();if(d>mr*.8)T*=1+(d/mr-.8)*.8;return Math.max(.28,T)}
+function throwBall(tx,ty,bullet,intended,lob){
+  const qb=Q,pl=play,mr=maxRange();let d=hyp(tx-qb.x,ty-qb.y);bullet=!!bullet;lob=!bullet&&!!(lob!=null?lob:qb.user&&S.lob);
+  if(d>mr){tx=qb.x+(tx-qb.x)*mr/d;ty=qb.y+(ty-qb.y)*mr/d;d=mr}
+  const er=pl.throwAway?0:aimError(d,bullet,lob),ux=(tx-qb.x)/(d||1),uy=(ty-qb.y)/(d||1),a=Math.random()*Math.PI*2,r=er*Math.sqrt(Math.random());
+  const along=Math.cos(a)*r*.75,perp=Math.sin(a)*r;tx+=ux*along-uy*perp;ty+=uy*along+ux*perp;
+  const T=flightT(Math.max(1,d+along),bullet,lob,qb.pl.thr);
+  if(S.wind&&S.wind.mph>3){const k=S.wind.mph/20*.55*T*(lob?1.5:bullet?.4:1);tx+=windX()*k;ty+=windY()*k}
+  const dd=hyp(tx-qb.x,ty-qb.y);
+  ball={state:'air',fx:qb.x,fy:qb.y,x:qb.x,y:qb.y,z:0,tx,ty,t:0,T,h:bullet?dd*.03+.45:lob?dd*.18+1.3:dd*.11+.5,bullet,lob,spin:0,err:along};haptic('light');
+  if(!intended){const [n,nd]=nearest(OFF,tx,ty,o=>eligible(o)&&!o.blocker);intended=nd<8?n:null}
+  pl.intended=intended;pl.thrown=true;pl.ballT0=pl.t;pl.carrier=null;qb.throwT=.35;setAnim(qb,'throw',.35);
+  if(!S.conv){tstat().att++;ps(qb).pa++}
+  sfx(bullet?'zip':'thump');hint('');$('#bulletBtn').hidden=true;hideActs();showActs();
+  fx('throw',{qb,to:intended,x:tx,y:ty,bullet,lob});
+}
+function throwAway(){play.throwAway=true;throwBall(Q.x+10,Q.y<CEN?-4:FW+4,false,null)}
+/* CPU throw: pick the ball type for the window, lead the receiver over the real flight time */
+function aiThrow(r){
+  const pl=play,[df,dd]=nearest(DEF,r.x,r.y,o=>o.stun<=0);let d=hyp(r.x-Q.x,r.y-Q.y),bullet=false,lob=false;
+  const deep=r.x-S.los>15&&d>20,trail=df&&df.x<r.x-.3;
+  if(deep&&(trail||Math.random()<.3))lob=true;else if(d<18&&dd<2.6&&Math.random()<.6)bullet=true;else if(d<11&&Math.random()<.25)bullet=true;
+  let T=flightT(d,bullet,lob,Q.pl.thr),tx=r.x,ty=r.y;
+  for(let i=0;i<2;i++){tx=r.x+r.vx*T*.92;ty=r.y+r.vy*T*.92;d=hyp(tx-Q.x,ty-Q.y);T=flightT(d,bullet,lob,Q.pl.thr)}
+  throwBall(Math.min(tx,119),clamp(ty,.8,FW-.8),bullet,r,lob);
+}
+/* CPU QB: progression read on predicted windows; awr = better judgment, pressure speeds the clock up */
+function passWindow(r){
+  const d0=hyp(r.x-Q.x,r.y-Q.y),T=flightT(d0,false,false,Q.pl.thr),px=r.x+r.vx*T*.85,py=r.y+r.vy*T*.85;let w=9;
+  for(const d of DEF){if(d.stun>0||d.role==='DL'&&d.engaged)continue;const k=hyp(d.x-px,d.y-py)-Math.max(0,T-.3)*d.spd*.35;if(k<w)w=k;
+    /* an underneath defender sitting in the throwing lane */
+    if(d.x>Q.x+3&&d.x<px-1){const t=clamp(((d.x-Q.x)*(px-Q.x)+(d.y-Q.y)*(py-Q.y))/((px-Q.x)**2+(py-Q.y)**2||1),0,1),lx=Q.x+(px-Q.x)*t,ly=Q.y+(py-Q.y)*t,l=hyp(d.x-lx,d.y-ly);if(l<1.3&&d0<22)w=Math.min(w,l+.4)}}
+  return [w,px];
+}
+function aiQB(dt){
+  const pl=play;if(pl.thrown||pl.scramble||pl.carrier!==Q||pl.fleaHold)return;
+  const sk=S.aiSkill,awr=Q.pl.awr,readStart=(pl.screen?.75:pl.pa?1.35:1.05)+(pl.flea?1.2:0)+(pl.screen?0:pl.hold||(pl.hold=R(.2,1.1)));
+  if(pl.t<readStart||pl.t<pl.nextRead)return;pl.nextRead=pl.t+.2;
+  const pr=pressure(),noise=(1.15-.17*awr)*(1.2-sk*.4);
+  let best=null,bs=-1e9,bo=0;
+  for(const r of OFF){if(!eligible(r)||r.blocker||r.fallen||r.jamT>0)continue;
+    const [w,px]=passWindow(r),depth=px-S.los;
+    let s=w*1.1+Math.min(Math.max(depth,0),20)*.15-Math.max(0,depth-15)*.1+(px>=S.firstDownX?1.3:0)-(depth<1&&!pl.screen?1.2:0)-(depth<-1?1:0)+R(-1,1)*noise;
+    if(pl.screen&&r.key===pl.screen)s+=pl.t<1.6?6:-2;
+    if(S.down>=3&&px<S.firstDownX&&!pl.screen)s-=1.1;
+    if(s>bs){bs=s;best=r;bo=w+R(-.6,.6)*noise-Math.max(0,depth-15)*.05}}
+  const need=3.6-(pl.t-readStart)*.75-pr*.9;
+  if(best&&(bo>=need||pl.t>4.2)){if(bo<.6&&pl.t>3.4&&Math.random()<.5){throwAway();return}aiThrow(best);return}
+  if(pr>.5&&pl.t>2.1){if(Q.pl.spd>=3.6&&Math.random()<.3){pl.scramble=true;pl.scrT=pl.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}return}if(Math.random()<.18){throwAway();return}}
+  if(pl.t>5)throwAway();
+}
+
+/* ---------- ball in flight: undercuts, batted balls, pop-ups ---------- */
+const reachOf=p=>.95+.11*p.pl.cat+.03*((p.pl.ht||73)-73);
+function ballFlight(dt){
+  const pl=play;ball.t+=dt;const p=Math.min(1,ball.t/ball.T);ball.x=lerp(ball.fx,ball.tx,p);ball.y=lerp(ball.fy,ball.ty,p);ball.z=4*ball.h*p*(1-p);ball.spin+=dt*20;
+  if(p>=1)return ball.tip?tipLand():resolveCatch();
+  if(ball.tip||pl.throwAway||p>.9)return;
+  for(const d of DEF){
+    if(d.stun>0||d.fallen||pl.tipped.has(d))continue;
+    const k=hyp(d.x-ball.x,d.y-ball.y);if(k>.9)continue;
+    const dl=d.role==='DL'&&ball.x<S.los+2,reach=dl?.88+.028*((d.pl.ht||75)-75)+.03*(75-(Q.pl.ht||75)):1.2+.03*((d.pl.ht||73)-73);
+    if(ball.z>reach)continue;pl.tipped.add(d);
+    const man=d.cov&&d.cov.type==='man'&&!dl,react=(ball.bullet?.7:1)*(man?.55:1)*(p<.2&&!dl?.6:1)*(d.user?1:.9+S.aiSkill*.2);
+    const pPlay=(dl?.3+.05*(d.pl.awr-3)+(d.engaged?.12:0):.32+.08*(d.pl.cov-3)+.08*(d.pl.cat-3))*react;
+    if(Math.random()>=pPlay)continue;
+    setAnim(d,'swat');fx('deflect',{p:d,x:ball.x,y:ball.y});credit(d,'xp',6,0);
+    if(!dl&&Math.random()<clamp(.3+.1*(d.pl.cat-3),.1,.55))return pickOff(d,'flight');
+    if(Math.random()<(dl?.3:.4)){tipBall(d);toast(dl?'Batted at the line!':'Tipped!');return}
+    logPass('X');pl.pbu=d;return endPlay('inc',dl?'Batted at the line':'Knocked away');
+  }
+}
+function tipBall(by){
+  const pl=play,dir=Math.atan2(ball.ty-ball.fy,ball.tx-ball.fx),a=dir+R(-1.4,1.4),r=R(1,3.2);
+  ball={state:'air',tip:true,tipBy:by,fx:ball.x,fy:ball.y,x:ball.x,y:ball.y,z:0,tx:ball.x+Math.cos(a)*r,ty:ball.y+Math.sin(a)*r,t:0,T:R(.55,.9),h:R(1,2.2),bullet:false,lob:false,spin:0,err:0};
+  pl.tipN=(pl.tipN||0)+1;slowMo(.35);
+}
+function tipLand(){
+  const pl=play,bx=ball.tx,by=ball.ty;let best=null,bs=1e9;
+  for(const p of P){if(p.stun>0||p.fallen||p===ball.tipBy||p===Q||p.side==='o'&&!eligible(p))continue;const k=hyp(p.x-bx,p.y-by);if(k>reachOf(p)+.4)continue;if(k<bs){bs=k;best=p}}
+  if(best&&by>=0&&by<=FW&&bx<=120&&Math.random()<clamp(.4+.08*(best.pl.cat-3)-bs*.3,.08,.7)){
+    if(best.side==='d')return pickOff(best,'tip');
+    return completeTo(best,bx,by,false);
+  }
+  logPass('X');endPlay('inc','Deflected');
+}
+function pickOff(d,src){play.intSrc=src||'arr';logPass('I');ball.state='held';play.carrier=d;credit(d,'dint',1,25);setAnim(d,'catch');endPlay('int')}
+function breakup(d,msg,pop){
+  setAnim(d,'swat');fx('deflect',{p:d,x:ball.x,y:ball.y});credit(d,'xp',6,0);credit(d,'pd',1,0);play.pbu=d;
+  if(Math.random()<pop){tipBall(d);return}
+  logPass('X');endPlay('inc',msg);
+}
+function completeTo(rec,cx,cy,contested,dive){
+  const pl=play;ball.state='held';pl.carrier=rec;pl.caught=true;rec.route=null;if(!S.conv){tstat().comp++;ps(Q).pc++;ps(rec).rec++}
+  pl.rec=logPass('C');
+  OFF.forEach(o=>{if(o===rec||o===Q)return;if(o.role==='OL'||hyp(o.x-cx,o.y-cy)<9){o.blocker=true;o.tgt=null}else{o.route=null;o.cont=null}});
+  rec.x=cx;rec.y=cy;pl.catchX=rec.x;setAnim(rec,dive?'dive':'catch');{const k=dive?.35:contested?.5:.62;rec.vx*=k;rec.vy*=k;pl.slowT=Math.max(pl.slowT,.3)}
+  if(contested){toast('Contested catch!');slowMo(.3)}
+  if(rec.user)hint('Drag to steer · JUKE / SPIN / TRUCK buttons');showActs();
+  fx('catch',{p:rec,contested:!!contested});
+  if(typeof BC!=='undefined')BC.say('catch',{p:rec,contested});
+}
+
+/* ---------- arrival ---------- */
+function resolveCatch(){
+  const pl=play,tx=ball.tx,ty=ball.ty;pl.passDepth=tx-S.los;
+  if(pl.throwAway){logPass('X');return endPlay('inc','Thrown away')}
+  const out=ty<-.5||ty>FW+.5||tx>120.5;let rec=null,dr=1e9,df=null,dd=1e9;
+  for(const o of OFF){if(!eligible(o)||o.blocker||o.fallen||o.stun>0)continue;const k=hyp(o.x-tx,o.y-ty);if(k<dr){dr=k;rec=o}}
+  for(const d of DEF){if(d.stun>0||d.fallen)continue;const k=hyp(d.x-tx,d.y-ty);if(k<dd){dd=k;df=d}}
+  const userSwat=!!df&&df===S.ctrl&&pl.swat>0,rR=rec?reachOf(rec):0,dR=df?reachOf(df)*.9+(userSwat?.4:0):0;
+  pl.sep=rec?nearest(DEF,rec.x,rec.y,d=>d.stun<=0&&!d.fallen)[1]:null;pl.cover=df;pl.arr=[dr,dd];
+  if(out||!rec||dr>rR+PASS.dive){
+    if(df&&!out&&dd<dR){if(Math.random()<clamp(.12+.07*(df.pl.cat-3)+(userSwat?.15:0),.1,.65))return pickOff(df,'norec');return breakup(df,'Pass defended',.2)}
+    logPass('X');return endPlay('inc',out?'Sails out of bounds':ball.err<-.6?'Underthrown':ball.err>.6?'Overthrown':'Off target');
+  }
+  const dive=dr>rR;
+  /* a defender who gets there first plays the ball: undercut on short balls, high-point on lobs */
+  if(df&&dd<dR&&dd<dr-.6){
+    const pI=clamp(.07+.06*(df.pl.cat-3)+.04*(df.pl.cov-3)+(ball.err<-.5?.1:0)+(ball.lob?.05:0)-(ball.bullet?.05:0)+(userSwat?.15:0),.04,.4);
+    if(Math.random()<pI)return pickOff(df,'first');return breakup(df,userSwat?'Swatted away!':'Broken up',.3);
+  }
+  const contested=!!df&&dd<dR+.45&&pl.sep<1.7;pl.contested=contested;
+  if(contested){const edge=((df.pl.cov+df.pl.cat)-(rec.pl.cat+rec.pl.str))/2;
+    const pB=clamp(PASS.pbu+.12*edge+(dr-dd)*.25+(1.7-pl.sep)*.12+(userSwat?.25:0)+(ball.lob?.05:0)+(dive?.1:0)+(df.user?0:(S.aiSkill-.5)*.1),.05,.75);
+    if(Math.random()<pB)return breakup(df,userSwat?'Swatted away!':'Broken up',PASS.popUp)}
+  /* the receiver's hands */
+  const hit=df&&dd<1.9&&hyp(df.vx,df.vy)>4?.06*(df.pl.str/3):0,wx=S.wx==='Rain'?.035:S.wx==='Snow'?.03:0;
+  const shortBullet=ball.bullet&&hyp(tx-ball.fx,ty-ball.fy)<15?.05:0;
+  let pD=PASS.drop-.012*(rec.pl.cat-3)+shortBullet+hit+wx+(contested?.1+.03*(df.pl.str-rec.pl.str):0)-(rec.user&&focus('passing')?.01:0)-(rec.user?0:(S.aiSkill-.5)*.02);
+  if(dive)pD=1-(1-pD)*clamp(.55+.07*(rec.pl.cat-3),.35,.8);
+  const cx=lerp(rec.x,tx,.6),cy=lerp(rec.y,ty,.6),m=Math.min(cy,FW-cy,120-cx);
+  if(Math.random()<clamp(pD,.01,.9)){
+    logPass('X');if(dive){setAnim(rec,'dive');return endPlay('inc','Just out of reach')}
+    if(contested){credit(df,'xp',6,0);credit(df,'pd',1,0);pl.pbu=df;setAnim(df,'swat');fx('deflect',{p:df,x:tx,y:ty});return endPlay('inc','Broken up')}
+    setAnim(rec,'catch');fx('drop',{p:rec});if(!S.conv)tstat().drops=(tstat().drops||0)+1;return endPlay('inc','Dropped');
+  }
+  /* sideline / end line: the toe-tap */
+  if(m<.55&&Math.random()>clamp(.35+.55*m/.55+.08*(rec.pl.awr-3)+.05*(rec.pl.agi-3),0,.97)){logPass('X');setAnim(rec,'catch');return endPlay('inc','No feet in bounds')}
+  completeTo(rec,clamp(cx,0,119.9),clamp(cy,.1,FW-.1),contested,dive);
+}
+
+/* ---------- coverage: alignment, assignments, man, zone, spy, play-action ---------- */
+const ZK={flat:{r:9,hand:8},curl:{r:9,hand:13},hook:{r:8.5,hand:12},robber:{r:9,hand:15},pole:{r:11,deep:1,minD:9},third:{r:13,deep:1,minD:8},mid:{r:17,deep:1,minD:8},half:{r:15,deep:1,minD:8},quarter:{r:10,deep:1,minD:6},prev:{r:16,deep:1,minD:10}};
+const pressOK=d=>d.pl.cov+.6*d.pl.str>=4.8;
+function assignCoverage(cov,D,K){
+  const L=S.los,b=S.ballY,sX=K.X.y<b?-1:1,hS=K.H.y<b?-1:1,fS=b<CEN?1:-1;
+  const yS=(side,off)=>side<0?off:FW-off;
+  const Z=(k,x,y)=>Object.assign({type:'zone',k,x:Math.min(L+x,117),y:clamp(y,2,FW-2)},ZK[k]);
+  const M=(t,o)=>Object.assign({type:'man',tgt:t},o||{}),rush={type:'rush'},gap=gy=>({type:'rush',gy});
+  for(const k in D)if(k.startsWith('DL'))D[k].cov=rush;
+  const third=K.H.role==='WR'?K.H:K.Y,te=K.H.role==='WR'?K.Y:K.H,cbX=D.CB0,cbZ=D.CB1;
+  const sTop=D.S0,sBot=D.S1;
+  switch(cov){
+    case 'blitz':cbX.cov=M(K.X,{tight:1});cbZ.cov=M(K.Z,{tight:1});D.CB2.cov=M(third,{tight:1});sBot.cov=M(te,{dog:1});sTop.cov=M(K.R,{dog:1});D.LB0.cov=gap(b-.8);D.LB1.cov=gap(b+.8);break;
+    case 'man':case 'spy':cbX.cov=M(K.X);cbZ.cov=M(K.Z);D.CB2.cov=M(third);D.LB0.cov=M(te);sTop.cov=Z('mid',17,CEN);
+      if(cov==='spy'){D.LB1.cov={type:'spy'};sBot.cov=M(K.R,{dog:1})}else{D.LB1.cov=M(K.R,{dog:1});sBot.cov=Z('robber',10,b)}break;
+    case '2man':cbX.cov=M(K.X,{trail:1});cbZ.cov=M(K.Z,{trail:1});D.CB2.cov=M(third,{trail:1});D.LB0.cov=M(te,{trail:1});D.LB1.cov=M(K.R,{dog:1});sTop.cov=Z('half',16,yS(-1,15));sBot.cov=Z('half',16,yS(1,15));break;
+    case 'cover2':case 'tampa2':cbX.cov=Z('flat',5,yS(sX,9));cbZ.cov=Z('flat',5,yS(-sX,9));D.CB2.cov=Z('curl',10,yS(hS,17));
+      if(cov==='tampa2'){D.LB0.cov=Z('pole',14,CEN);D.LB1.cov=Z('hook',9,yS(-hS,20));sTop.cov=Z('half',17,yS(-1,13));sBot.cov=Z('half',17,yS(1,13))}
+      else{D.LB0.cov=Z('hook',9,b-4);D.LB1.cov=Z('hook',9,b+4);sTop.cov=Z('half',16,yS(-1,15));sBot.cov=Z('half',16,yS(1,15))}break;
+    case 'cover4':cbX.cov=Z('quarter',13,yS(sX,8));cbZ.cov=Z('quarter',13,yS(-sX,8));sTop.cov=Z('quarter',13.5,yS(-1,20));sBot.cov=Z('quarter',13.5,yS(1,20));
+      D.CB2.cov=Z('flat',6,yS(hS,10));D.LB0.cov=Z('hook',9,b-4);D.LB1.cov=Z('hook',9,b+4);break;
+    case 'cover6':{const cbF=sX===fS?cbX:cbZ,cbB=cbF===cbX?cbZ:cbX,sF=fS>0?sBot:sTop,sB=sF===sBot?sTop:sBot;
+      cbF.cov=Z('quarter',13,yS(fS,8));sF.cov=Z('quarter',13.5,yS(fS,20));cbB.cov=Z('flat',5,yS(-fS,9));sB.cov=Z('half',16,yS(-fS,15));
+      D.CB2.cov=Z('curl',10,yS(hS,17));D.LB0.cov=Z('hook',9,b-4);D.LB1.cov=Z('hook',9,b+4);break}
+    case 'firezone':D.LB0.cov=gap(b-1.5);D.LB1.cov=gap(b+1.5);D.DL0.cov=Z('hook',8,b-5);cbX.cov=Z('third',16,yS(sX,9));cbZ.cov=Z('third',16,yS(-sX,9));sTop.cov=Z('mid',17,CEN);
+      D.CB2.cov=Z('curl',9,yS(hS,14));sBot.cov=Z('curl',9,yS(-hS,14));break;
+    case 'agap':D.LB0.cov=gap(b-.7);D.LB1.cov=M(K.R,{dog:1});cbX.cov=M(K.X);cbZ.cov=M(K.Z);D.CB2.cov=M(third);sBot.cov=M(te);sTop.cov=Z('mid',17,CEN);break;
+    case 'cblitz':D.CB2.cov=gap(third.y<b?b-5.5:b+5.5);sBot.cov=M(third);cbX.cov=M(K.X);cbZ.cov=M(K.Z);D.LB0.cov=M(te);D.LB1.cov=M(K.R,{dog:1});sTop.cov=Z('mid',17,CEN);break;
+    case 'prevent':cbX.cov=Z('prev',22,yS(sX,10));cbZ.cov=Z('prev',22,yS(-sX,10));sTop.cov=Z('prev',27,yS(-1,20));sBot.cov=Z('prev',27,yS(1,20));D.CB2.cov=Z('robber',11,CEN);D.LB0.cov=Z('hook',9,b-7);D.LB1.cov=Z('hook',9,b+7);break;
+    default:cbX.cov=Z('third',16,yS(sX,9));cbZ.cov=Z('third',16,yS(-sX,9));sTop.cov=Z('mid',17,CEN);D.CB2.cov=Z('curl',9,yS(hS,14));sBot.cov=Z('curl',9,yS(-hS,14));D.LB0.cov=Z('hook',8.5,b-4.5);D.LB1.cov=Z('hook',8.5,b+4.5);
+  }
+  /* man coverage behind two deep safeties trails underneath; single-high man plays inside leverage */
+  for(const k in D){const cv=D[k].cov;if(cv.type==='man'&&cov==='2man')cv.trail=1}
+}
+/* pre-snap look: press or off corners, the safety shell (sometimes a disguise that rotates at the snap), mugged LBs */
+function alignDefense(cov,D,K){
+  const C=COVS[cov]||COVS.cover3,L=S.los,b=S.ballY,set=(p,x,y)=>{p.x=p.homeX=Math.min(119,x);p.y=p.homeY=clamp(y,1.5,FW-1.5)};
+  const shell=C.shell==='1'?(Math.random()<.42?'2':'1'):(Math.random()<.18?'1':'2');
+  for(const k of ['CB0','CB1','CB2']){const d=D[k],cv=d.cov,t=cv.type==='man'?cv.tgt:null;d.press=false;
+    if(t&&C.press&&k!=='CB2'&&pressOK(d)&&t.x>S.los-2){d.press=true;set(d,L+1.2,t.y+(t.y<CEN?.5:-.5))}
+    else if(t)set(d,L+(k==='CB2'?R(3,5):R(5,7)),t.y+(t.y<CEN?.8:-.8));
+    else if(cv.type==='rush')set(d,L+R(3,5),d.y);
+    else if(cv.k==='flat')set(d,L+R(4,5.5),d.y+(d.y<CEN?-1:1));
+    else set(d,L+(cov==='prevent'?R(9,11):R(6,8)),d.y)}
+  if(shell==='2'){set(D.S0,L+R(11.5,13.5),clamp(b-9.5,5,FW-5));set(D.S1,L+R(11.5,13.5),clamp(b+9.5,5,FW-5))}
+  else{const deep=D.S1.cov.type==='zone'&&D.S1.cov.deep&&!(D.S0.cov.type==='zone'&&D.S0.cov.deep)?D.S1:D.S0,low=deep===D.S0?D.S1:D.S0;set(deep,L+R(12,14),lerp(b,CEN,.5));set(low,L+R(6.5,8.5),clamp(b+(low===D.S0?-6:6),4,FW-4))}
+  if(cov==='prevent'){set(D.S0,L+20,D.S0.y);set(D.S1,L+20,D.S1.y)}
+  if(cov==='agap'||cov==='blitz'&&Math.random()<.4){set(D.LB0,L+1.4,b-.9);set(D.LB1,L+1.4,b+.9)}
+}
+/* snap: press jams + play-action bites */
+function coverageSnap(){
+  const pl=play;
+  for(const d of DEF){d.lagT=0;d.bite=0;const cv=d.cov;
+    if(d.press&&cv&&cv.type==='man'&&cv.tgt.route&&pl.type==='pass'){const w=cv.tgt,r=(.4*d.pl.str+.4*d.pl.cov+.2*d.pl.agi)-(.35*w.pl.rte+.35*w.pl.agi+.3*w.pl.str)+R(-1,1)*.9;
+      if(r>.35)w.jamT=R(.3,.55);else if(r<-.6){d.lagT=R(.3,.5);d.lvx=0;d.lvy=0}else w.jamT=R(.08,.18)}
+    if((pl.pa||pl.flea)&&(d.role==='LB'||d.role==='S')&&cv&&cv.type!=='rush'){const k=clamp(.95-.2*d.pl.awr+(d.role==='LB'?.15:0)-(cv.type==='man'?.2:0)+(d.user?0:.15-.3*S.aiSkill)+R(-.15,.15),0,.75);d.bite=k>.08?.2+k*.9:0}}
+}
+/* a receiver breaks: man defenders on him react late by route running vs coverage */
+function routeBreak(p){
+  p.brkT=play.t;
+  for(const d of DEF){const cv=d.cov;if(!cv||cv.type!=='man'||cv.tgt!==p||d.stun>0)continue;
+    const lag=clamp(.3+.09*(p.pl.rte-d.pl.cov)-.03*(d.pl.agi-3)+R(-.06,.08),.05,.5)*(cv.trail?.8:1);if(lag>d.lagT){d.lagT=lag;d.lvx=d.vx;d.lvy=d.vy}}
+}
+function covTarget(d,cv,dt){
+  const L=S.los,pl=play;
+  if(d.bite>0&&pl.t<d.bite&&!pl.thrown)return [L+(d.role==='LB'?1.2:6),lerp(d.y,RB?RB.y:S.ballY,.3),.8,12];
+  if(cv.type==='spy'){if(pl.type==='run'&&pl.handed)return [pl.carrier.x,pl.carrier.y,1];return [Math.max(L+3.5,Q.x+9),Q.y,.9,12]}
+  if(cv.type==='man'){
+    const a=cv.tgt;
+    if(a.blocker&&!a.route){if(cv.dog&&pl.type==='pass'&&!pl.thrown&&pl.t>.5){d.cov={type:'rush'};return [Q.x,Q.y,1]}return [L+4.5,lerp(d.y,a.y,.5),.8]}
+    if(d.lagT>0){d.lagT-=dt;return [d.x+d.lvx*.5,d.y+d.lvy*.5,1,6]}
+    const look=.3+.06*(d.pl.cov-3),inside=a.y<CEN?1:-1,lev=cv.tight?.35:cv.trail?.6:.45;
+    const cush=cv.trail?-.8:Math.max(.25,(d.role==='CB'?1.6:1.1)-pl.t*.7);
+    return [a.x+a.vx*look+cush,a.y+a.vy*look+inside*lev,1,7+1.2*d.pl.cov];
+  }
+  return zoneAI(d,cv);
+}
+function zoneAI(d,cv){
+  const L=S.los,zx=cv.x,zy=cv.y;let thr=null,ts=1e9;
+  for(const o of OFF){if(!eligible(o)||o.blocker)continue;const px=o.x+o.vx*.35,py=o.y+o.vy*.35,depth=px-L;
+    if(cv.deep){if(depth<cv.minD)continue}else if(depth>cv.hand)continue;
+    const k=hyp((px-zx)*(cv.deep?.6:1),(py-zy)*(cv.deep?.8:1));if(k>cv.r)continue;const s=k-(cv.deep?depth*.35:0);if(s<ts){ts=s;thr=o}}
+  if(thr){if(cv.deep)return [Math.max(zx-3,thr.x+thr.vx*.4+1.6+.5*(3.5-d.pl.spd)),lerp(zy,thr.y,.8),1,9+d.pl.cov];
+    return [clamp(thr.x+thr.vx*.3-.8,L+1.5,zx+3.5),lerp(zy,thr.y+thr.vy*.3,.8),1,9+d.pl.cov]}
+  /* nothing in an underneath zone: sink under the nearest vertical through it (cloud corner, hook carrying a seam) */
+  if(!cv.deep){let v=null,vd=1e9;for(const o of OFF){if(!eligible(o)||o.blocker||o.x-L<=cv.hand)continue;const k=Math.abs(o.y-zy);if(k<cv.r*.8&&k<vd){vd=k;v=o}}
+    if(v)return [Math.min(v.x-2,L+cv.hand+4),lerp(zy,v.y,.6),1,9+d.pl.cov]}
+  return [zx,lerp(zy,Q?Q.y:CEN,cv.deep?.1:.25),cv.deep?1:.85,9];
 }
 
 /* =========================================================
@@ -4968,7 +5177,7 @@ function drawFlashbulbs(c){
   const n=Math.round((BC.noise()-.6)*40);c.save();c.fillStyle='#fff';for(let i=0;i<n;i++){if(Math.random()<.7)continue;const x=Math.random()*W,y=Math.random()*standBot*.9;c.globalAlpha=R(.4,1);c.beginPath();c.arc(x,y,R(1,2.4),0,7);c.fill()}c.restore();
 }
 
-function covName(){return {man:'Cover 1',cover2:'Cover 2',cover3:'Cover 3',cover4:'Quarters',blitz:'Blitz',prevent:'Prevent'}[S.cov]||'zone'}
+function covName(){const c=typeof COVS!=='undefined'&&COVS[S.cov];return (c&&c.n)||{man:'Cover 1',cover2:'Cover 2',cover3:'Cover 3',cover4:'Quarters',blitz:'Blitz',prevent:'Prevent'}[S.cov]||'zone'}
 /* final score graphic, then championship celebrations */
 function finalGraphic(won,pog,g){
   STORMERS=[];S.stormT=Math.max(S.stormT||0,3.2);BC.finalCard(won,pog,g);

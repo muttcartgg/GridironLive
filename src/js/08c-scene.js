@@ -130,7 +130,7 @@ function drawFlashbulbs(c){
   const n=Math.round((BC.noise()-.6)*40);c.save();c.fillStyle='#fff';for(let i=0;i<n;i++){if(Math.random()<.7)continue;const x=Math.random()*W,y=Math.random()*standBot*.9;c.globalAlpha=R(.4,1);c.beginPath();c.arc(x,y,R(1,2.4),0,7);c.fill()}c.restore();
 }
 
-function covName(){return {man:'Cover 1',cover2:'Cover 2',cover3:'Cover 3',cover4:'Quarters',blitz:'Blitz',prevent:'Prevent'}[S.cov]||'zone'}
+function covName(){const c=typeof COVS!=='undefined'&&COVS[S.cov];return (c&&c.n)||{man:'Cover 1',cover2:'Cover 2',cover3:'Cover 3',cover4:'Quarters',blitz:'Blitz',prevent:'Prevent'}[S.cov]||'zone'}
 /* final score graphic, then championship celebrations */
 function finalGraphic(won,pog,g){
   STORMERS=[];S.stormT=Math.max(S.stormT||0,3.2);BC.finalCard(won,pog,g);
