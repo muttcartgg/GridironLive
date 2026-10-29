@@ -18,8 +18,7 @@ const tStat=t=>t===S.home?S.stats:S.ostats;
 function sAdd(t,k,n){const s=tStat(t);if(s)s[k]=(s[k]||0)+(n==null?1:n)}
 /* punter / kickoff man = the K with the best leg (thr); field-goal kicker = the most accurate (acc) */
 function bestK(t,k){const l=((S.dc&&dcOf(t).K)||[]).filter(Boolean);return l.reduce((a,b)=>!a||b[k]>a[k]?b:a,null)}
-/* kick units: backups first (a starter costs 2.5 points of the unit score), returners may be starters */
-const STARTERS={QB:1,RB:1,WR:3,TE:1,OL:5,DL:4,LB:2,CB:3,S:2,K:1};
+/* kick units: backups first (a starter, per 02 STARTERS, costs 2.5 points of the unit score), returners may be starters */
 function stPick(t,poss,n,f,used,st){const c=[],v=new Map();for(const pos of poss)(dcOf(t)[pos]||[]).forEach((p,i)=>{if(p&&!used.has(p.id)&&!v.has(p.id)){c.push(p);v.set(p.id,f(p)-(!st&&i<(STARTERS[pos]||1)?2.5:0))}});c.sort((a,b)=>v.get(b.id)-v.get(a.id));
   const out=[];for(const p of c){if(out.length>=n)break;if(!used.has(p.id)){used.add(p.id);out.push(p)}}return out}
 const retF=p=>1.5*p.spd+p.agi+.6*p.car,covF=p=>1.2*p.spd+p.tkl+.5*p.awr,blkF=p=>p.blk+.6*p.str+.4*p.spd;
@@ -109,12 +108,12 @@ function stScrimYds(c,x){const g=Math.round(x-S.los),st=tstat();
   if(play.caught){st.passYds+=g;const yac=Math.max(0,Math.round(x-play.catchX));st.yac+=yac;if(play.rec){play.rec.yds=g;play.rec.yac=yac}ps(Q).py+=g;ps(c).recy+=g}
   else{st.rushYds+=g;ps(c).ry+=g}if(g>=20)st.bigPlays++}
 function stFumble(c,d,msg){
-  const pl=play;if(S.conv&&!pl.st){pl.fumbler=c;pl.forcer=d;return endPlay('fum',msg)}
+  const pl=play;if(!pl||pl.ended||S.phase!=='live')return;if(S.conv&&!pl.st){pl.fumbler=c;pl.forcer=d;return endPlay('fum',msg)}
   if(!pl.st){pl.st={kind:'fum',t:0,poss0:S.poss,chg:false,ck:S.ctrlKey};stClear();if(c.side==='o')stScrimYds(c,Math.min(109.9,c.x+.45))}
   const st=pl.st;Object.assign(st,{phase:'loose',lt:0,still:0,imp:c.side,lastSide:c.side,fumBy:c,recd:false,t:0});
   sAdd(c.team,'fum');if(d){sAdd(d.team,'ff');credit(d,'ff',1,12)}
-  pl.fumbler=c;pl.forcer=d;c.stun=Math.max(c.stun||0,.9);c.fallen=true;if(d){d.stun=Math.max(d.stun||0,.6);d.fallen=true}
-  ballLoose(c.x+stDir(c)*.5,c.y,c.vx*.4+R(-3,3),c.vy*.4+R(-3,3),R(1.5,3.5),.9);
+  pl.fumbler=c;pl.forcer=d;c.stun=Math.max(c.stun||0,.45);c.fallen=true;if(d){d.stun=Math.max(d.stun||0,.6);d.fallen=true}
+  ballLoose(c.x+stDir(c)*.5,c.y,c.vx*.3+R(-2.5,2.5),c.vy*.3+R(-2.5,2.5),R(1.5,3.5),.9);
   toast(msg&&msg!=='Fumble'?msg+'!':'Fumble! Ball is loose!');slowMo(.6);sfx('cut');S.shake=.3;haptic('heavy');stCtrlInit();showActs();
   hint('Loose ball! Drag to go after it · tap to dive on it');
 }
@@ -264,7 +263,7 @@ function stAirTick(dt){
   if(lx<0)return stEnd('tb','Touchback',{side:'o',x:5,y:ly});
   const f=st.fielder;
   if(f&&!st.noCatch&&f.stun<=0&&hyp(f.x-lx,f.y-ly)<1.5){
-    if(st.sub==='onside'){if(Math.random()<(st.alert?.75:.5)){st.touched=true;ball={state:'held',x:f.x,y:f.y,z:0};play.carrier=f;st.gx=st.rx=f.x;setAnim(f,'catch');return stEnd('down','Onside kick recovered')}st.touched=true;st.lastSide='o'}
+    if(st.sub==='onside'){if(Math.random()<(st.alert?.6:.45)){st.touched=true;ball={state:'held',x:f.x,y:f.y,z:0};play.carrier=f;st.gx=st.rx=f.x;setAnim(f,'catch');return stEnd('down','Onside kick recovered')}st.touched=true;st.lastSide='o'}
     else return stCatch(f);
   }
   if(lx<10&&!st.touched)return stEnd('tb','Touchback',{side:'o',x:5,y:ly});
@@ -333,7 +332,7 @@ function stRecoverCheck(){
   let best=null,bd=9;for(const p of P){if(p.recCD>0||!stCanRec(p))continue;const k=hyp(p.x-b.x,p.y-b.y);if(k<(p.lunge>0?1.35:1)&&k<bd){bd=k;best=p}}
   if(!best)return;const p=best;p.recCD=.45;
   let pr=.3+.1*(p.pl.car-3)+.08*(p.pl.awr-3)-.25*Math.max(0,b.h-.35)-.03*hyp(b.vx,b.vy)+(p.lunge>0?.12:0);
-  if(st.sub==='onside'&&p.side==='o')pr+=st.alert?.2:-.05;
+  if(st.sub==='onside'&&p.side==='o')pr+=st.alert?.02:-.05;if(st.fumBy&&p.side===st.fumBy.side)pr+=.03;
   if(Math.random()<clamp(pr,.06,.82))return stRecover(p,p.lunge>0||P.some(o=>o.side!==p.side&&o.stun<=0&&hyp(o.x-p.x,o.y-p.y)<1.8));
   if(p.side==='o'&&(st.kind==='ko'||st.kind==='punt')){st.touched=true;st.lastSide='o'}
   const a=R(0,6.283),sp=R(1.5,4.5);b.vx=b.vx*.3+Math.cos(a)*sp;b.vy=b.vy*.3+Math.sin(a)*sp;b.vz=R(.8,2.8);b.h=Math.max(b.h,.2);fx('deflect',{p,x:b.x,y:b.y});

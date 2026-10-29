@@ -133,7 +133,7 @@ function boxScoreHTML(){
   return `${typeof BC!=='undefined'?BC.linescore():''}
     <table class="box"><thead><tr><th></th><th class="n">${esc(u.abbr)}</th><th class="n">${esc(a.abbr)}</th></tr></thead><tbody>
     ${row('Total yards',s.passYds+s.rushYds,o.passYds+o.rushYds)}${row('Passing',`${s.comp}/${s.att} · ${s.passYds}`,`${o.comp}/${o.att} · ${o.passYds}`)}${row('Rushing',`${s.rushAtt} · ${s.rushYds}`,`${o.rushAtt} · ${o.rushYds}`)}
-    ${row('First downs',s.firstDowns,o.firstDowns)}${row('3rd down',`${s.thirdC}/${s.thirdA}`,`${o.thirdC}/${o.thirdA}`)}${row('Turnovers',s.int+s.fum,o.int+o.fum)}${row('Sacks taken',s.sacks,o.sacks)}${row('Penalties',`${s.pen}-${s.penYds}`,`${o.pen}-${o.penYds}`)}</tbody></table>
+    ${row('First downs',s.firstDowns,o.firstDowns)}${row('3rd down',`${s.thirdC}/${s.thirdA}`,`${o.thirdC}/${o.thirdA}`)}${row('Turnovers',s.int+(s.fumLost||0),o.int+(o.fumLost||0))}${row('Sacks taken',s.sacks,o.sacks)}${row('Penalties',`${s.pen}-${s.penYds}`,`${o.pen}-${o.penYds}`)}${[['Kick returns','kr','krYds'],['Punt returns','pr','prYds'],['Punts','punts','puntYds']].map(([l,n,y])=>row(l,`${s[n]||0} · ${s[y]||0}`,`${o[n]||0} · ${o[y]||0}`)).join('')}${row('Field goals',`${s.fgm||0}/${s.fga||0}`,`${o.fgm||0}/${o.fga||0}`)}</tbody></table>
     <p class="note"><b>${esc(u.abbr)}:</b> ${esc(lead(u,S.pst))}<br><b>${esc(a.abbr)}:</b> ${esc(lead(a,S.opst||{}))}</p>
     <p class="note">Opponent columns count drives you played on defense.</p>`;
 }
