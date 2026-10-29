@@ -9,6 +9,14 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 10): live turnovers and special teams
+
+- Interceptions and fumbles are live: the play keeps going, loose balls bounce and roll, players dive for them, and whoever recovers can run it back (pick-sixes and scoop-and-scores happen naturally). You steer the returner when your team makes the play.
+- Playable kickoffs: deep, squib or onside; touchbacks and fair catches inside the 25 go to the 25; you return kicks behind a wall of blockers. The CPU tries onside kicks when it trails by 9–16 late.
+- Playable punts: gunners, coffin-corner and rugby punts, fair catches (tap), muffs, downed punts and rare blocks; punt touchbacks go to the 20. The best leg punts and the most accurate kicker kicks field goals.
+- Rare blocked field goals and extra points, and the 2026 fair catch kick (a free kick for 3 after a fair catch).
+- Special-teams stats in the box score: return yards, punts and average, touchbacks, fair catches, field goals, blocks, forced and recovered fumbles, interception return yards.
+
 ## Version 7 (part 9): passing and coverage
 
 - Throwing: accuracy from the QB's accuracy rating, worse under pressure, on the run and near his max range; arm strength sets ball speed and distance. Bullets are fast and flat; lobs float over underneath defenders but give DBs time. Underthrown balls get undercut; long balls sail.
