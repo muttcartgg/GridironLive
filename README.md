@@ -9,6 +9,16 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 11): 2026 rules, clock and penalties
+
+- Penalties are called during plays: pre-snap fouls (false start, offside, encroachment, neutral zone, delay of game, illegal formation, illegal motion, too many men) stop the play; live fouls (holding, pass interference — offensive is 10 yards under the 2026 rule — grounding, illegal forward pass, ineligible downfield, roughing the passer, targeting, face mask, late hits, unsportsmanlike conduct, block in the back, kick-catch interference, running into or roughing the kicker) drop the official's flag at the spot and are enforced after the whistle. You choose accept or decline when declining could help you; offsetting fouls replay the down; a penalty on the last play of a half gives an untimed down.
+- Targeting goes to replay and the player is ejected for the rest of the game.
+- Replay reviews of goal-line and pylon touchdowns, sideline catches, fumbles and targeting.
+- College clock: out of bounds restarts on the ready signal except inside two minutes of a half; first downs stop the clock only inside two minutes; the two-minute timeout in each half; no back-to-back timeouts.
+- Current NCAA overtime: alternating possessions from the 25, two-point tries required from the second overtime, alternating two-point plays from the third.
+- Crowd noise: road offenses in loud stadiums get more false starts and slower snaps.
+- Settings → Gameplay → Penalties (Normal / Fewer / Off); penalties by type in the box score.
+
 ## Version 7 (part 10): live turnovers and special teams
 
 - Interceptions and fumbles are live: the play keeps going, loose balls bounce and roll, players dive for them, and whoever recovers can run it back (pick-sixes and scoop-and-scores happen naturally). You steer the returner when your team makes the play.
