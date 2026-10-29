@@ -117,7 +117,7 @@ function tipLand(){
   }
   logPass('X');endPlay('inc','Deflected');
 }
-function pickOff(d,src){play.intSrc=src||'arr';logPass('I');ball.state='held';play.carrier=d;credit(d,'dint',1,25);setAnim(d,'catch');endPlay('int')}
+function pickOff(d,src){play.intSrc=src||'arr';logPass('I');ball.state='held';play.carrier=d;credit(d,'dint',1,25);setAnim(d,'catch');stInt(d)}
 function breakup(d,msg,pop){
   setAnim(d,'swat');fx('deflect',{p:d,x:ball.x,y:ball.y});credit(d,'xp',6,0);credit(d,'pd',1,0);play.pbu=d;
   if(Math.random()<pop){tipBall(d);return}
