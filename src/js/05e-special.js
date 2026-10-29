@@ -19,7 +19,7 @@ function sAdd(t,k,n){const s=tStat(t);if(s)s[k]=(s[k]||0)+(n==null?1:n)}
 /* punter / kickoff man = the K with the best leg (thr); field-goal kicker = the most accurate (acc) */
 function bestK(t,k){const l=((S.dc&&dcOf(t).K)||[]).filter(Boolean);return l.reduce((a,b)=>!a||b[k]>a[k]?b:a,null)}
 /* kick units: backups first (a starter, per 02 STARTERS, costs 2.5 points of the unit score), returners may be starters */
-function stPick(t,poss,n,f,used,st){const c=[],v=new Map();for(const pos of poss)(dcOf(t)[pos]||[]).forEach((p,i)=>{if(p&&!used.has(p.id)&&!v.has(p.id)){c.push(p);v.set(p.id,f(p)-(!st&&i<(STARTERS[pos]||1)?2.5:0))}});c.sort((a,b)=>v.get(b.id)-v.get(a.id));
+function stPick(t,poss,n,f,used,st){const c=[],v=new Map();for(const pos of poss)(dcOf(t)[pos]||[]).forEach((p,i)=>{if(p&&!used.has(p.id)&&!v.has(p.id)&&!isOut(p)){c.push(p);v.set(p.id,f(p)-(!st&&i<(STARTERS[pos]||1)?2.5:0))}});c.sort((a,b)=>v.get(b.id)-v.get(a.id));
   const out=[];for(const p of c){if(out.length>=n)break;if(!used.has(p.id)){used.add(p.id);out.push(p)}}return out}
 const retF=p=>1.5*p.spd+p.agi+.6*p.car,covF=p=>1.2*p.spd+p.tkl+.5*p.awr,blkF=p=>p.blk+.6*p.str+.4*p.spd;
 function stAdd(side,pl,x,y,t,job,key){const p=add(side,SPD[pl.pos]?pl.pos:'LB',clamp(x,-2,122),clamp(y,1,FW-1),pl,t,key);p.stj=job;p.recCD=0;p.react=0;return p}
@@ -32,7 +32,7 @@ function stPrep(recv,name){
   P=[];OFF=[];DEF=[];Q=null;RB=null;KP={};aim=null;touch=null;stick=null;S.bullet=false;S.celebrate=null;S.ctrl=null;S.pc=null;
   play=newPlay({name,cat:'st'});play.type='st';play.carrier=null;
 }
-function stGo(why){S.phase='live';stCtrlInit();if(typeof recStart==='function')recStart();showActs()}
+function stGo(why){S.phase='live';S.toDB=[0,0];play.fouls=[];play.pend=[];stCtrlInit();if(typeof recStart==='function')recStart();showActs()}
 
 /* ---------- kickoffs: from the 35 (x=45 in the kicking team's coordinates); after a safety from the 20 ---------- */
 function stKickoff(recv,sub,from,why){
@@ -92,7 +92,7 @@ function stPuntKick(){
   else if(Math.random()<.15){st.style='rugby';dist*=.88;T*=.72;h=3.4}
   ball={state:'air',kick:true,fx:k.x-.4,fy:k.y,x:k.x-.4,y:k.y,z:-.6,z0:-.6,tx:st.spot-dist,ty:clamp(ty,-3,FW+3),t:0,T,h,spin:0};
   st.phase='air';st.t=0;st.decided=false;stAssignFielder();stCtrlInit();showActs();
-  fx('punt',{x:ball.tx,y:ball.ty,dist:Math.round(dist),team:st.kt,style:st.style});
+  fx('punt',{x:ball.tx,y:ball.ty,dist:Math.round(dist),team:st.kt,style:st.style});rulesPuntKick(k);
 }
 
 /* ---------- live interception / fumble entry points (from 05d pickOff and 05c tackled / strip sack) ---------- */
@@ -438,18 +438,20 @@ function stReplay(){if(LG.settings.replay==='off'||typeof REC==='undefined'||REC
 function stOTOver(){S.phase='wait';setTimeout(()=>{if(S.score[0]!==S.score[1])gameOver();else{S.otRound++;startOT()}},900)}
 function stApply(){
   const r=play.result,st=play.st;
-  if(S.celebFlag){S.celebFlag=false;flagMsg(`Unsportsmanlike conduct · ${S.home.abbr} · 15 yards on the kickoff`);S.kickPen=true}
+  if(S.celebFlag){S.celebFlag=false;flagMsg(`Unsportsmanlike conduct · ${S.home.abbr} · 15 yards on the kickoff`);penStat(S.home,'usc',15);S.kickPen=true}
   S.celebrate=null;S.celebPose=null;S.clockRun=false;S.clockHold=0;S.ctrl=null;if(st.ck)S.ctrlKey=st.ck;
   const team=r.side==='o'?offT():defT(),ui=team===S.home?0:1,p0=st.poss0==='away'?S.away:S.home;
-  if(r.sk==='td'){S.score[ui]+=6;if(st.kind!=='ko'&&st.kind!=='punt')dres(team===p0?'TD':st.kind==='int'?'INT':'Fumble');if(S.ot)return stOTOver();
+  /* booth review: fumble or down by contact? (the engine's call is the truth: the ruling stands) */
+  if(st.kind==='fum'&&team!==p0&&!play.revDone&&r.sk!=='td'&&Math.random()<.6){play.revDone=1;return reviewBeat('Fumble · was he down by contact?','confirmed',`Fumble · ${team.abbr} ball`,()=>stApply())}
+  if(r.sk==='td'){S.score[ui]+=6;if(st.kind!=='ko'&&st.kind!=='punt')dres(team===p0?'TD':st.kind==='int'?'INT':'Fumble');if(S.ot&&(team!==p0||S.otPos===1&&S.score[ui]>S.score[1-ui]))return stOTOver();
     if(ui===0){S.poss='home';S.phase='pat';return setTimeout(showPAT,500)}S.poss='away';S.phase='wait';return aiPAT()}
   if(r.sk==='safety'){S.score[1-ui]+=2;fx('safety',{team:ui?S.home:S.away});if(st.kind==='fum'&&team===p0)dres('Safety');if(S.ot)return stOTOver();return boundary(()=>stKickoff(ui?'home':'away','deep',30,'Free kick after the safety'))}
   let x=r.side==='o'?r.x:120-r.x;
   if(r.sk==='tb')x=st.kind==='ko'?STK.koTB:STK.ptTB;else if(r.sk==='koob')x=STK.koOOB;else if(r.sk==='fc'&&st.kind==='ko')x=Math.max(STK.koTB,x);
   x=Math.round(clamp(x,11,109)*2)/2;S.ballY=clamp(r.y,HASH1,HASH2);
   if(st.kind==='fum'&&!st.chg&&team===p0){   // the offense fell on its own fumble: the series goes on
-    S.clockRun=r.sk!=='oob';const ts=tstat();
-    if(x>=S.firstDownX){S.los=x;S.down=1;S.firstDownX=Math.min(110,x+10);ts.firstDowns++;toast('First down');return nextSnap()}
+    S.clockRun=r.sk!=='oob'||!inside2();S.clockHold=r.sk==='oob'&&S.clockRun?2.5:0;const ts=tstat();
+    if(x>=S.firstDownX){S.los=x;S.down=1;S.firstDownX=Math.min(110,x+10);ts.firstDowns++;toast('First down');if(S.clockRun&&inside2())S.clockHold=Math.max(S.clockHold,2.2);return nextSnap()}
     if(S.down===4)return turnoverDowns(x);S.down++;S.los=x;return nextSnap()}
   if(st.kind==='fum'||st.kind==='int'){if(team!==p0&&st.kind==='fum')dres('Fumble');S.rzActive=false}
   if(S.ot)return otNext(st.poss0||'home');
