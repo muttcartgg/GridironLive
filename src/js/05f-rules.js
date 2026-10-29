@@ -10,7 +10,7 @@
    Engine coordinates: the offense attacks +x, its goal line is x=10, the defense's x=110.
    ========================================================= */
 SETTINGS_EXTRA.push({card:'Gameplay',key:'penalties',label:'Penalties',opts:[['normal','Normal'],['low','Fewer'],['off','Off']],def:'normal',note:'Pre-snap and live-ball fouls, enforced under the 2026 college rules.'});
-const penMul=()=>{const v=LG&&LG.settings?LG.settings.penalties:'normal';return v==='off'?0:v==='low'?.45:1};
+const penMul=()=>{const v=LG&&LG.settings?LG.settings.penalties:'normal';return v==='off'?0:v==='low'?.55:1.2};
 const PN={fs:'False start',enc:'Encroachment',nzi:'Neutral zone infraction',offs:'Offside',ifm:'Illegal formation',imo:'Illegal motion',ish:'Illegal shift',tmm:'Too many men on the field',dog:'Delay of game',
   oh:'Holding',dh:'Holding',dpi:'Pass interference',opi:'Offensive pass interference',ig:'Intentional grounding',ifp:'Illegal forward pass',idf:'Ineligible man downfield',rtp:'Roughing the passer',
   tgt:'Targeting',fm:'Face mask',lh:'Late hit out of bounds',ur:'Unnecessary roughness',ibb:'Illegal block in the back',kci:'Kick-catch interference',rik:'Running into the kicker',rok:'Roughing the kicker',usc:'Unsportsmanlike conduct'};
