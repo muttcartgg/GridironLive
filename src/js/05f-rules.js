@@ -99,7 +99,7 @@ function overturnTD(pl){
 function rulesPreSnap(){
   const m=penMul();if(!m||S.conv)return false;
   const nz=crowdNoise(),dO=discOf(offT())*m,dD=discOf(defT())*m,roll=p=>Math.random()<p;let f=null;
-  if(roll(.0145*dO*(1+1.8*nz)))f={k:'fs',side:'o'};
+  if(roll(.0115*dO*(1+1.8*nz)))f={k:'fs',side:'o'};
   else if(roll(.0035*dO*(1+.8*nz)))f={k:'ifm',side:'o'};
   else if(roll(.003*dO))f={k:Math.random()<.6?'imo':'ish',side:'o'};
   else if(!uOff()&&roll(.0035*dO*(1+nz)))f={k:'dog',side:'o'};
@@ -131,7 +131,7 @@ function rulesSnap(pl){
   pl.fouls=[];pl.pend=[];pl.st0=PEN_ST0;PEN_ST0=null;S.toDB=[0,0];
   const m=penMul();if(!m||S.conv||pl.fake)return;
   const nz=crowdNoise(),dO=discOf(offT())*m,dD=discOf(defT())*m;
-  if(Math.random()<.019*dO*(1+.25*nz))pl.pend.push({k:'oh',t:R(.4,2.2)});
+  if(Math.random()<.027*dO*(1+.25*nz))pl.pend.push({k:'oh',t:R(.4,2.2)});
   if(pl.type==='pass'&&Math.random()<.011*dD)pl.pend.push({k:'dh',t:R(.6,1.9)});
   if(Math.random()<.0035*dD)pl.pend.push({k:'offs',t:.05});
   if(nz>.35&&uOff())for(const o of OFF)if(o.role==='OL')o.spd*=1-.08*nz;   // silent count: the line is a beat late off the ball
@@ -153,7 +153,7 @@ function penTry(pl,e){
       const rec=pl.intended||nearest(OFF,ball.tx,ball.ty,o=>eligible(o)&&!o.blocker)[0];if(!rec)return true;
       const [d,dd]=nearest(DEF,rec.x,rec.y,o=>o.stun<=0&&!o.fallen);if(!d||dd>1.7)return dd>4;
       const close=(1.7-dd)/1.2;
-      if(rec.x>S.los+1&&Math.random()<.11*close*e.dD*(1+.12*(3-d.pl.cov))){penFlag('dpi','d',d,Math.min(rec.x,119.5),rec.y);return true}
+      if(rec.x>S.los+1&&Math.random()<.075*close*e.dD*(1+.12*(3-d.pl.cov))){penFlag('dpi','d',d,Math.min(rec.x,119.5),rec.y);return true}
       if(Math.random()<.03*close*e.dO){penFlag('opi','o',rec,rec.x,rec.y);return true}
       return true}
     case 'ibb':{const st=pl.st;if(!st||st.phase!=='ret')return true;const c=pl.carrier;for(const b of P){if(b.side!=='o'||b===c||!b.eng||!b.engaged)continue;penFlag('ibb','o',b,b.x,b.y);return true}return false}
@@ -186,9 +186,9 @@ onFx('tackle',e=>{
   const pl=play,c=e.c,d=e.d;if(!pl||!pl.fouls||!c||!d||S.conv||pl.ended)return;const m=penMul();if(!m)return;
   if(pl.st){if(!(pl.st.kind==='ko'||pl.st.kind==='punt')||d.side!=='d')return}else if(c.side!=='o'||d.side!=='d')return;
   const k=discOf(d.team)*m,defenseless=pl.caught&&pl.t-(pl.catchT||0)<.6,side=c.y<1.3||c.y>FW-1.3;
-  if(e.big&&Math.random()<(defenseless?.09:.035)*k){penFlag('tgt','d',d,c.x,c.y,{real:Math.random()<.68});return}
-  if(Math.random()<.0035*k){penFlag('fm','d',d,c.x,c.y);return}
-  if(side&&Math.random()<.03*k){penFlag('lh','d',d,c.x,c.y);return}
+  if(e.big&&Math.random()<(defenseless?.04:.012)*k){penFlag('tgt','d',d,c.x,c.y,{real:Math.random()<.68});return}
+  if(Math.random()<.005*k){penFlag('fm','d',d,c.x,c.y);return}
+  if(side&&Math.random()<.04*k){penFlag('lh','d',d,c.x,c.y);return}
   if(Math.random()<.0025*k)penFlag('ur','d',d,c.x,c.y);
 });
 
@@ -253,7 +253,7 @@ function penResolve(){
 }
 function penDecline(f){const pl=play;pl.penDone=true;penAnnounce(`${PN[f.k]} · ${sideWord(f)} · declined`);fx('penalty',{name:PN[f.k],yards:0,on:f.side,team:f.team,accepted:false,k:f.k});applyResult()}
 function penAccept(a){
-  const pl=play,f=a.f;pl.penDone=true;if(!a.keep)penRestore(pl);
+  const pl=play,f=a.f;pl.penDone=true;if(!a.keep)penRestore(pl);if(pl.st&&pl.st.ck){S.ctrlKey=pl.st.ck;S.ctrl=null}
   penStat(f.team,f.k,a.yds);fx('penalty',{name:PN[f.k],yards:a.yds,on:f.side,team:f.team,accepted:true,k:f.k});
   S.clockRun=playRun(pl.result);S.clockHold=S.clockRun?2.2:0;S.celebrate=null;$('#celebBtn').hidden=true;
   penAnnounce(`${PN[f.k]} · ${sideWord(f)} · ${a.txt}`);
