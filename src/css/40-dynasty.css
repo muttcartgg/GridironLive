@@ -16,3 +16,32 @@
 .mtab .tag{padding:2px 7px;font-size:10.5px}
 .mswipe{display:none;margin:-4px 0 -6px}
 @media (max-width:620px){.mtab .tname .mab{display:inline}.mtab .tname .mct{display:none}.mswipe{display:block}.mtab td{font-size:13px}}
+/* recruiting (04b): prospect rows (position, name + stars, ranks/hometown, top schools), interest column, prospect sheet */
+.rc-row{grid-template-columns:auto minmax(0,1fr) auto}
+.rc-row .meta small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-top{display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center;font:700 12px/1 var(--tv);color:var(--mute);font-variant-numeric:tabular-nums}
+.rc-top>span{display:inline-flex;align-items:center;gap:4px}
+.rc-top>span.me{color:var(--fg)}
+.rc-top .badge.sm{--s:20px;border-width:1.5px;font-size:7px}
+.rc-int{display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:62px}
+.rc-int b{font:800 italic 21px/1 var(--tv);font-variant-numeric:tabular-nums}
+.rc-int .tag{white-space:nowrap;font-size:10.5px;padding:3px 6px 2px}
+.rc-head .rc-tabs{display:flex;margin-top:4px}
+.rc-head .rc-tabs button{flex:1}
+.rc-stsel{display:flex;align-items:center;gap:8px;margin:0}
+.rc-stsel label{margin:0}
+.rc-stsel select{min-height:38px;min-width:96px}
+.rc-sheet{margin:12px 0 6px;gap:16px}
+.rc-attr{display:grid;grid-template-columns:repeat(auto-fill,minmax(132px,1fr));gap:6px 14px}
+.rc-a{display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.rc-a b{font:800 15px/1 var(--tv);font-variant-numeric:tabular-nums}
+.rc-pref{display:grid;grid-template-columns:minmax(0,1fr) auto 30px;gap:10px;align-items:center;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.rc-pref b{font:800 15px/1 var(--tv);text-align:right}
+.rc-pref .tag{padding:2px 5px;font-size:9.5px;margin-left:4px}
+.rc-dots{display:inline-flex;gap:3px}
+.rc-dots i{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.12)}
+.rc-dots i.on{background:var(--gold)}
+.rc-tm{display:grid;grid-template-columns:72px 36px;gap:8px;align-items:center;font-variant-numeric:tabular-nums}
+.rc-tm b{text-align:right}
+.rc-home .h2 small{font-size:12px;font-weight:600;margin-left:6px}
+@media (max-width:420px){.rc-int{min-width:52px}.rc-int b{font-size:18px}.rc-tm{grid-template-columns:52px 34px}}

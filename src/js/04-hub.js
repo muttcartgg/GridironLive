@@ -217,7 +217,7 @@ function startDynasty(id){
 }
 
 /* ---------- hub ---------- */
-const TABS=[['home','Home'],['schedule','Schedule'],['rankings','Rankings'],['playoff','Playoff'],['feed','Feed'],['team','Roster'],['program','Program'],['stats','Stats'],['league','League'],['settings','Settings']];
+const TABS=[['home','Home'],['schedule','Schedule'],['rankings','Rankings'],['playoff','Playoff'],['feed','Feed'],['team','Roster'],['recruit','Recruiting'],['program','Program'],['stats','Stats'],['league','League'],['settings','Settings']];
 function showHub(tab){
   const prev=TAB,wasHidden=$('#hub').hidden;
   invalidate();hideAll();if(tab)TAB=tab;S.phase='hub';applyStyle();
@@ -229,7 +229,7 @@ function showHub(tab){
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${TAB===k}">${k==='home'&&LG.phase==='offseason'?'Offseason':l}${k==='home'&&LG.event?'<span class="dot"></span>':''}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{showHub(b.id.slice(4));$('#hubScroll').scrollTop=0});
   const hb=$('#hubBody');
-  hb.innerHTML=({home:hubHome,schedule:hubSchedule,rankings:hubRankings,playoff:hubPlayoff,feed:hubFeed,team:hubTeam,program:hubProgram,stats:hubStats,league:hubLeague,settings:hubSettings})[TAB]();
+  hb.innerHTML=({home:hubHome,schedule:hubSchedule,rankings:hubRankings,playoff:hubPlayoff,feed:hubFeed,team:hubTeam,recruit:hubRecruit,program:hubProgram,stats:hubStats,league:hubLeague,settings:hubSettings})[TAB]();
   bindHub();$('#hub').hidden=false;applyAccess();
   const nav=$('#tabs'),tb=$('#tab-'+TAB);if(tb)nav.scrollLeft=tb.offsetLeft-nav.offsetLeft-(nav.clientWidth-tb.offsetWidth)/2;
   /* tab changes slide in from the side they come from; same-tab refreshes (settings toggles, upgrades) don't animate */
@@ -276,7 +276,7 @@ function hubHome(){
   const lw=LG.lastWeek?`<div class="card"><div class="eyebrow">Around the league · ${esc(LG.lastWeek.label)}</div><div class="list">${LG.lastWeek.games.filter(x=>x.h===LG.user||x.a===LG.user||(x.tag&&!/First Round|Second Round/.test(x.tag))||x.upset||((x.rh||x.ra)&&T(x.h).div===u.div)||T(x.h).conf===u.conf).sort((a,b)=>((b.h===LG.user||b.a===LG.user)-(a.h===LG.user||a.a===LG.user))||(!!(b.rh||b.ra)-!!(a.rh||a.ra))).slice(0,14).map(x=>{const hw=x.hs>x.as;return `<div class="lrow"><span class="l">${tcell(T(x.h),(x.rh?'#'+x.rh+' ':'')+T(x.h).city)}<b class="${hw?'res-w':''}">${x.hs}</b><span class="note">–</span><b class="${!hw?'res-w':''}">${x.as}</b>${tcell(T(x.a),(x.ra?'#'+x.ra+' ':'')+T(x.a).city)}</span>${x.upset?'<span class="tag hot">Upset</span>':x.tag?`<span class="note">${esc(x.tag)}</span>`:''}</div>`}).join('')}</div></div>`:'';
   const news=LG.news.length?`<div class="card news"><div class="eyebrow">Top news</div><div class="list">${LG.news.slice(0,4).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${n.good?'<span class="tag ok">Program</span> ':''}${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
   const conf=`<div class="card"><div class="eyebrow">${confName(u.conf)} standings</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th></tr></thead><tbody>${cs.map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t)}</td><td class="n">${t.rec.cw}–${t.rec.cl}</td><td class="n">${recStr(t)}</td></tr>`).join('')}</tbody></table></div></div>`;
-  return main+`<div class="grid2">${season}${news||conf}</div>`+gameOfWeek()+`<div class="grid2">${ad}${heis||potw}</div>${lw||news?`<div class="grid2">${lw}${news?conf:''}</div>`:''}${potw&&heis?`<div class="grid2">${potw}</div>`:''}`;
+  return main+`<div class="grid2">${season}${news||conf}</div>`+(typeof rcHomeCard==='function'?rcHomeCard():'')+gameOfWeek()+`<div class="grid2">${ad}${heis||potw}</div>${lw||news?`<div class="grid2">${lw}${news?conf:''}</div>`:''}${potw&&heis?`<div class="grid2">${potw}</div>`:''}`;
 }
 function hubSchedule(){
   const rows=LG.weeks.map((w,i)=>{const g=w.games.find(x=>x.h===LG.user||x.a===LG.user);if(!g)return w.kind==='reg'?`<tr class="${i===LG.week?'me':''}"><td>Wk ${i+1}</td><td class="note">Bye week</td><td></td></tr>`:'';const home=g.h===LG.user,opp=T(home?g.a:g.h);
@@ -561,7 +561,7 @@ function bindHub(){
   on('packExport',()=>{const pack={conferences:LG.confs.map(c=>c.name),teams:LG.teams.map(t=>({school:t.city,mascot:t.name,abbr:t.abbr,primary:t.c1,secondary:t.c2,prestige:t.prestige,stadium:t.stadium}))};openModal(`<div class="eyebrow">Team pack</div><div class="h2">Export</div><textarea readonly id="packOut">${esc(JSON.stringify(pack,null,1))}</textarea><div class="btns"><button class="btn light" id="packCopy">Copy</button><button class="btn ghost" id="packX">Done</button></div>`);on('packX',closeModal);on('packCopy',()=>{const ta=$('#packOut');ta.select();try{navigator.clipboard.writeText(ta.value).then(()=>toast('Copied'),()=>{})}catch(e){}})});
   on('packImport',()=>openPackImport(LG,()=>{saveNow();showHub();toast('Team pack applied')}));
   // offseason controls
-  bindOffseason();
+  bindOffseason();if(typeof bindRecruit==='function')bindRecruit();
 }
 
 /* ---------- modals ---------- */
@@ -634,7 +634,7 @@ function simUserGame(g){
 /* ---------- offseason ---------- */
 function hubOffseason(){
   const o=LG.off,u=T(LG.user),h=LG.history[LG.history.length-1];
-  const steps=['recap','departures','carousel','portal','recruit','signing'];const names={recap:'Season recap',departures:'Departures & draft',carousel:'Coaching carousel',portal:'Transfer portal',recruit:'Recruiting',signing:'Signing day'};
+  const steps=['recap','departures','carousel','portal','recruit','signing'];const names={recap:'Season recap',departures:'Departures & draft',carousel:'Coaching carousel',portal:'Transfer portal',recruit:'Class review',signing:'Signing Day'};
   const prog=`<div class="chips">${steps.map(s=>`<span class="chipbtn" aria-pressed="${o.stage===s}">${names[s]}</span>`).join('')}</div>`;
   if(o.stage==='recap'){
     const a=LG.awards[0];const mine=k=>a[k].filter(x=>x.team===LG.user);
@@ -657,9 +657,11 @@ function hubOffseason(){
   if(o.stage==='portal'){
     return `${prog}<div class="card"><div class="setrow"><div class="h2">Transfer portal</div><span class="pill gold">${money(LG.nil)} NIL available</span></div><p class="note">Sign experienced players using your NIL collective. Transfers keep their class year. Roster: ${u.roster.length}/${ROSTER_CAP}.</p>
     <div class="list">${o.portal.map((p,i)=>`<button class="rrow ${p.signed?'sel':''}" id="tp-${i}"><span class="num">${p.pos}</span><span class="meta"><b>${esc(fullName(p))} <small>${yrStr(p)} · from ${esc(T(p.from).city)}</small></b><span class="attrs">${PATTR[p.pos].map(k=>`<span>${attrShort(p.pos,k)} ${`<span class="ovr">${a99(p[k])}</span>`}</span>`).join('')}</span></span><span class="pill">${p.signed?'Signed':money(portalCost(p))}</span></button>`).join('')}</div>
-    <button class="btn wide" id="offNext">Continue to recruiting</button></div>`;
+    <button class="btn wide" id="offNext">Continue to class review</button></div>`;
   }
-  if(o.stage==='recruit'){
+  if(o.stage==='recruit'&&!o.recruits)return rcReviewHTML(prog);   /* season-long recruiting: review the class before Signing Day */
+  if(o.stage==='signing'&&!o.signing)return rcSigningHTML(prog);
+  if(o.stage==='recruit'){   /* older saves that reached the point-based board keep it */
     const spent=sum(o.recruits.filter(r=>r.offered).map(recruitCost)),left=o.rp+o.nilBoost-spent,visits=o.recruits.filter(r=>r.visit).length;
     return `${prog}<div class="card"><div class="setrow"><div class="h2">Recruiting board</div><div class="pills"><span class="pill gold">${left} points left</span><span class="pill">${visits}/3 official visits</span></div></div>
     <p class="note">Offer scholarships with recruiting points (two per star, minus one). Interest is each recruit's chance of signing with you on Signing Day; an official visit adds 20%. Prestige, fan approval and titles raise interest.</p>
@@ -679,8 +681,8 @@ function bindOffseason(){
   on('offNext',()=>{
     if(o.stage==='recap'){departures(LG);o.stage='departures'}
     else if(o.stage==='departures'){jobOffers(LG);if(o.offers.length)o.stage='carousel';else{buildPortal(LG);o.stage='portal'}}
-    else if(o.stage==='portal'){buildRecruits(LG);o.stage='recruit'}
-    else if(o.stage==='recruit'){signingDay(LG);o.stage='signing'}
+    else if(o.stage==='portal'){rcEnsure(LG);o.stage='recruit'}
+    else if(o.stage==='recruit'){if(o.recruits){signingDay(LG);LG.recruit=null}else rcSigningDay(LG);o.stage='signing'}
     else if(o.stage==='signing'){const camp=startNewSeason(LG);saveNow();showHub('home');$('#hubScroll').scrollTop=0;banner(LG.season+' season','var(--team)');toast(`Camp: ${camp.length} rating upgrades`);return}
     saveNow();showHub('home');$('#hubScroll').scrollTop=0;
   });
@@ -689,7 +691,7 @@ function bindOffseason(){
     if(p.signed){p.signed=false;LG.nil+=c;u.roster=u.roster.filter(x=>x.id!==p.id);const src=T(p.from);if(!src.roster.some(x=>x.id===p.id)&&p.from!==LG.user)src.roster.push(stripPortal(p))}
     else{if(LG.nil<c){toast('Not enough NIL');return}if(u.roster.length>=ROSTER_CAP){toast('Roster is full');return}p.signed=true;LG.nil-=c;const src=T(p.from);src.roster=src.roster.filter(x=>x.id!==p.id);u.roster.push(stripPortal(p));assignNumbers(u)}
     saveNow();rerender()}));
-  if(o.stage==='recruit'){
+  if(o.stage==='recruit'&&o.recruits){
     on('nilBoost',()=>{if(LG.nil>=150&&o.nilBoost<5){LG.nil-=150;o.nilBoost++;saveNow();rerender()}});
     o.recruits.forEach((r,i)=>{on('rof-'+i,()=>{const spent=sum(o.recruits.filter(x=>x.offered).map(recruitCost));if(r.offered){r.offered=false;r.visit=false}else if(spent+recruitCost(r)<=o.rp+o.nilBoost)r.offered=true;else{toast('Not enough points');return}saveNow();rerender()});
       on('rvi-'+i,()=>{const v=o.recruits.filter(x=>x.visit).length;if(r.visit)r.visit=false;else if(v<3)r.visit=true;saveNow();rerender()})});

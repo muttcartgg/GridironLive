@@ -459,6 +459,7 @@ function finishWeek(L){
   L.heismanWatch=heismanTop(L,5).map(x=>({pid:x.p.id,name:fullName(x.p),pos:x.p.pos,team:x.t.id,line:statLine(x.p)}));
   if(w.kind==='post0')awardHeisman(L);
   for(const g of w.games)if(g.upset&&L.news.length<40){const wt=L.teams[winner(g)],lt=L.teams[loser(g)];L.news.unshift({t:`Upset: ${wt.city} beats ${rk(lt.id)?'#'+rk(lt.id)+' ':''}${lt.city}, ${Math.max(g.hs,g.as)}–${Math.min(g.hs,g.as)}.`})}
+  if(typeof rcOnWeek==='function')try{rcOnWeek(L,w)}catch(e){console.error(e)}   /* season-long recruiting (04b) */
   L.news=L.news.slice(0,30);
   L.week++;
   if(L.week>=L.R&&L.week<=L.R+4)buildPost(L);
@@ -596,6 +597,7 @@ function signingDay(L){
 }
 function startNewSeason(L){
   const u=L.teams[L.user];const camp=[];const trainM=1+.2*(L.fac.training-1);
+  if(typeof rcArrive==='function')try{rcArrive(L)}catch(e){console.error(e);L.recruit=null}   /* signees join as freshmen (60-man limit, by need) */
   for(const t of L.teams){
     const g=t.rec.w;
     if(t.id===L.user){const h=L.history[L.history.length-1];if(h.champ||g>=10||h.madePO)t.prestige=Math.min(5,t.prestige+1);else if(g<=4)t.prestige=Math.max(1,t.prestige-1)}
@@ -605,10 +607,12 @@ function startNewSeason(L){
       if(p.isNew){delete p.isNew;continue}
       if(p.redshirt&&p.ss.gp<=4&&!p.rs){p.rs=true}else p.yr=Math.min(4,p.yr+1);
       p.redshirt=false;
-      const ch=[0,.35,.25,.15,.08][p.yr-1]||.08;for(const k of PATTR[p.pos])if(Math.random()<ch*1.6)p[k]=r1(p[k]+R(.15,.5));
+      const ch=[0,.35,.25,.15,.08][p.yr-1]||.08,dv=[1,1.3,1.65,2.1][p.dev|0];for(const k of PATTR[p.pos])if(Math.random()<ch*1.6*dv)p[k]=r1(p[k]+R(.15,.5)*(dv>1.5?1.15:1));   /* development trait */
       p.cond=100;p.inj=0;p.injWhy='';
     }
-    for(const pos of POS_ORDER){let have=t.roster.filter(p=>p.pos===pos).length;while(have<POS_COUNTS[pos]){t.roster.push(genPlayer(pos,t.id===L.user?qOf(t)-.9:qOf(t)-.3,1));have++}}
+    /* walk-ons fill what recruiting didn't (classes now come from the prospect pool, by prestige, need and success) */
+    const wl=t.id===L.user?Math.min(qOf(t)-.9,3.3):Math.min(qOf(t)-.55,3.6);
+    for(const pos of POS_ORDER){let have=t.roster.filter(p=>p.pos===pos).length;while(have<POS_COUNTS[pos]){t.roster.push(genPlayer(pos,wl,1));have++}}
     assignNumbers(t);
   }
   for(const p of u.roster)addXP(p,20*trainM,camp);
@@ -618,6 +622,7 @@ function startNewSeason(L){
   L.season++;L.week=0;L.phase='regular';L.off=null;L.lastWeek=null;L.heisman=null;L.fcsPoy=null;L.heismanWatch=null;L.potw=null;L.event=null;invalidate();
   if(L.kind==='ncaa'&&typeof syncNCAAConfs==='function')syncNCAAConfs(L);   /* current conference alignment and formats */
   refreshStaffPool(L);resetRecords(L);buildSchedule(L);updateRankings(L);
+  if(typeof rcEnsure==='function')try{rcEnsure(L)}catch(e){console.error(e)}   /* next year's prospect pool */
   L.news.unshift({t:`Fall camp is done. ${camp.length} rating upgrades from spring practice and camp.`,good:true});
   return camp;
 }
