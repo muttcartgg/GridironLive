@@ -96,6 +96,9 @@ function showHot(p){
     bar.hidden=true;haptic('light')});
 }
 
+/* the steered defender's ring: on defense, and on any live kick or turnover return the user is chasing (an
+   interception or fumble the CPU returns keeps S.poss on your offense, so uOff() alone hid it) */
+const ctrlRing=p=>!uOff()||!!(play&&play.st&&play.carrier!==p);
 /* play-by-play log + drive chart */
 function logPBP(t,cls){if(!S.home)return;S.pbp=S.pbp||[];S.pbp.push({q:S.ot?'OT':ordQ(S.q),c:S.ot?'':fmtClock(S.clock),tm:offT().abbr,t,cls:cls||''});if(S.pbp.length>400)S.pbp.shift()}
 function logPlay(r,gain){
