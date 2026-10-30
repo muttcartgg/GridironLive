@@ -368,7 +368,8 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
   <div id="banner"><div class="bn"><i class="bk"></i><i class="gl"></i><div class="bl" hidden></div><div class="bt"><small class="ki"></small><span class="ti"></span><em class="su"></em></div><b class="pt" hidden></b></div></div>
   <div id="hint" hidden></div>
 
-  <div id="snapBar" hidden><span id="snapName"></span><button class="btn ghost sm" id="snapBack">Change</button><button class="btn ghost sm" id="snapFlip">Flip</button><button class="btn" id="snapGo">Snap</button></div>
+  <div id="snapBar" hidden><span id="snapName"></span><button class="btn ghost sm" id="snapBack">Change</button><button class="btn ghost sm" id="snapAdj" aria-expanded="false" aria-controls="adjMenu">Adjust</button><button class="btn" id="snapGo">Snap</button></div>
+  <div id="adjMenu" hidden></div>
   <div id="actBar" hidden></div>
   <div id="hotBar" hidden></div>
   <div id="photoBar" hidden><label for="phZoom">Zoom</label><input type="range" id="phZoom" min="0.5" max="2.2" step="0.05" value="1"><select id="phFilter" aria-label="Filter"><option value="none">No filter</option><option value="film">Film</option><option value="bw">Black &amp; white</option><option value="vivid">Vivid</option><option value="night">Night</option></select><button class="btn sm" id="phDone">Done</button><span class="note">Drag to move the camera</span></div>
