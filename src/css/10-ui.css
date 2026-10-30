@@ -183,6 +183,7 @@
 #ticker .tt{display:inline-flex;align-items:center;gap:4px;color:#c9d2dd}#ticker .tt.w{color:#fff}
 #ticker .tt b{font-weight:700;color:#fff;font-variant-numeric:tabular-nums}
 #ticker .dot{display:inline-block;width:7px;height:7px;border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+#ticker .tlogo{flex:none;width:16px;height:16px;object-fit:contain;filter:drop-shadow(0 0 1px rgba(0,0,0,.6))}
 #ticker sup{font-size:10px;color:var(--gold);vertical-align:baseline;margin-right:1px}
 #ticker em{font-style:normal;font:700 11px/1 var(--tv);letter-spacing:.08em;color:var(--mute);margin-left:2px}
 #ticker .tk.live em{color:#ff6b6b}#ticker .tk.hl em{color:var(--gold);margin-right:6px}

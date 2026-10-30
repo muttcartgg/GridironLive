@@ -51,7 +51,9 @@ const BC={
   tickItem(g,f){
     const [h,a,st]=this.partial(g,f),H=T(g.h),A=T(g.a),rh=rankOf(g.h),ra=rankOf(g.a),fin=st==='FINAL',pre=/AM|PM/.test(st),live=!fin&&!pre;
     const up=live&&this.gameF(g,f)>.45&&((rh||99)<(ra||99)&&a-h>=7&&rh||(ra||99)<(rh||99)&&h-a>=7&&ra);
-    const side=(t,r,sc,win)=>`<span class="tt ${win?'w':''}"><i class="dot" style="background:${t.c1}"></i>${r?`<sup>${r}</sup>`:''}${esc(t.abbr)}${pre?'':` <b>${sc}</b>`}</span>`;
+    /* imported team logos (02c logoHTML) when a pack has them; the colour dot otherwise, or if the image fails to load */
+    const mark=t=>{const l=typeof logoHTML==='function'?logoHTML(t,16):'',dot=`<i class="dot" style="background:${t.c1}${l?';display:none':''}"></i>`;return l?l.replace(`this.style.display='none'`,`this.style.display='none';this.nextElementSibling.style.display=''`)+dot:dot};
+    const side=(t,r,sc,win)=>`<span class="tt ${win?'w':''}">${mark(t)}${r?`<sup>${r}</sup>`:''}${esc(t.abbr)}${pre?'':` <b>${sc}</b>`}</span>`;
     return `<span class="tk ${live?'live':''}">${up?'<b class="ua">UPSET ALERT</b>':''}${side(A,ra,a,fin&&a>h)}${side(H,rh,h,fin&&h>a)}<em>${st}</em></span>`;
   },
   updTicker(){
