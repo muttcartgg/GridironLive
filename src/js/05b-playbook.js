@@ -283,14 +283,15 @@ function covWeights(team,sit){
 function aiPickCoverage(team,sit){const w=covWeights(team,sit);let r=Math.random()*sum(Object.values(w));for(const k in w){if((r-=w[k])<=0)return k}return 'cover3'}
 /* front by offensive personnel, down & distance and the team's even/odd lean */
 function aiPickFront(team,sit,pc){
-  sit=sit||{};const f=FORMS[(pc&&pc.form)||'Gun Doubles']||{},pers=f.pers||'11',tg=sit.toGo!=null?sit.toGo:10;
-  if(team.oddLean==null)team.oddLean=Math.random()<.35?1:0;const odd=team.oddLean;
-  if(S.los>=104&&(pers==='23'||pers==='21'||pers==='22'||tg<=1)||pers==='23')return 'goal';
+  sit=sit||{};const f=FORMS[(pc&&pc.form)||'Gun Doubles']||{},pers=f.pers||'11',tg=sit.toGo!=null?sit.toGo:10,heavy=['21','12','22','23','30'].includes(pers);
+  if(team.oddLean==null)team.oddLean=Math.random()<.35?1:0;const base=team.oddLean?'34':'43';
+  /* heavy fronts only in obvious run situations (goal line, short yardage vs big personnel); nickel is the default */
+  if(S.los>=105&&(heavy||tg<=1))return 'goal';
   if((sit.down>=3&&tg>=8)||sit.twoMin)return Math.random()<.6?'dime':'nickel';
-  if(pers==='21'||pers==='12'||pers==='30')return odd?'34':'43';
   if(pers==='10')return Math.random()<.5?'dime':'nickel';
-  if(tg<=2)return odd?'34':'43';
-  return odd&&Math.random()<.45?'335':'nickel';
+  if(heavy&&(tg<=2||S.los>=100)||tg<=1&&sit.down>=3)return base;
+  if(heavy&&Math.random()<.3)return base;
+  return team.oddLean&&Math.random()<.2?'335':'nickel';
 }
 
 /* tiny play diagram for the playbook grid */

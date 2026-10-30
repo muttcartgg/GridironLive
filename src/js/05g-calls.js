@@ -45,7 +45,7 @@ function runSnap(pl){
 }
 /* the read key before the decision: crash the mesh, or squeeze and stay square to the QB */
 function rdMove(d,dt){
-  const pl=play,L=S.los,ck=KP[pl.ckey];if(pl.decided&&pl.t>pl.decT+.3)return false;
+  const pl=play,L=S.los,ck=KP[pl.ckey];if(pl.decided&&pl.t>pl.decT+.5)return false;
   if(d.rdMode==='crash'){if(pl.run&&pl.run.inv)steer(d,L-.4,S.ballY+(Math.sign(pl.gapY-S.ballY)||1)*1.4,d.spd,dt);else steer(d,ck?ck.x+.8:L,ck?ck.y:pl.gapY,d.spd,dt);return true}
   if(pl.run&&pl.run.rpo)return false;
   /* staying home: the midline / dive key and the power-read end widen to the QB's lane; the zone-read end squeezes and stays square */

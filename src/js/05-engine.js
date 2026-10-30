@@ -393,7 +393,8 @@ function defAI(d,dt){
     if(since>rt&&!play.throwAway){if(dd/d.spd<rem+.7){tx=ball.tx;ty=ball.ty;const a=!zone&&d.cov&&d.cov.tgt;if(a&&a===play.intended&&!ball.tip){tx=lerp(a.x,tx,.6);ty=lerp(a.y,ty,.6)}}else if(!ball.tip&&d.role!=='DL'){tx=ball.tx+Math.min(4,dd*.25);ty=ball.ty}}}
   if(tx===undefined){
     let pursue=runner;
-    if(play.type==='run'&&!play.fleaHold)pursue=play.t>({DL:0,LB:.5,CB:.9,S:.75})[d.role]||(d.cov&&d.cov.type==='rush');
+    /* the secondary reads run a beat late (it has pass responsibilities); that is where the explosive runs come from */
+    if(play.type==='run'&&!play.fleaHold)pursue=play.t>({DL:0,LB:.5,CB:1.02,S:.92})[d.role]||(d.cov&&d.cov.type==='rush');
     if(play.scramble&&play.t-play.scrT<.35&&d.role!=='DL'&&!(d.cov&&d.cov.type==='spy'))pursue=false;
     if(pursue&&c&&play.type==='run'&&d.role!=='DL'&&c.x<L+.3&&!(d.cov&&d.cov.type==='rush')){tx=L+2.4;ty=lerp(c.y,play.gapY,.6)}
     else if(pursue&&c){

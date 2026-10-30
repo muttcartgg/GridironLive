@@ -86,7 +86,8 @@ function repDiff(d,o,m){const a=d.pl,b=o.pl;let r,k;
     case 'spin':r=.5*a.shd+.5*a.agi;k=.6*b.blk+.4*b.awr;break;
     default:r=.6*a.shd+.3*a.str+.1*a.awr;k=.6*b.blk+.4*b.str}
   let m2=0;if(!d.user)m2+=(S.diffMul-1)*2;if(!o.user)m2-=(S.diffMul-1)*2;
-  if(o.user&&play.type==='run')m2-=.15+(focus('running')?.2:0)+(SL('run')-1)*1.2;
+  /* the user's run blocking gets a small edge (a bit more against the heavier base / odd / goal-line fronts) */
+  if(o.user&&play.type==='run')m2-=.35+(S.front&&S.front!=='nickel'&&S.front!=='dime'?.1:0)+(focus('running')?.2:0)+(SL('run')-1)*1.2;
   if(d===S.ctrl)m2+=.25;
   return r-k+m2+.8*((o.fat||0)-(d.fat||0));
 }
@@ -214,7 +215,7 @@ function breakP(c,d){
   if(d.lunge>0)q+=.05;if(pl.slowT>0)q-=.07;q+=.25*((d.fat||0)-(c.fat||0));
   if(pl.truckT>0&&!TK.behind)q+=.14+.08*(a.str-3)+.05*(a.car-3)-.05*(b.str-3)+.15*TK.mr;
   if(pl.stiffT>0&&!TK.head)q+=.14+.09*(a.str-3)+.05*(a.car-3)-.04*(b.str-3);
-  q+=c.user?.02+(focus('running')?.04:0):(S.aiSkill-.5)*.06;
+  q+=c.user?(play.type==='run'&&!play.caught?.065:.02)+(focus('running')?.04:0):(S.aiSkill-.5)*.06;
   q-=d.user?(d.userLunge?.05:0):(S.diffMul-1)*1.2;
   if(c.user)q*=2-SL('tkl');
   return q;
