@@ -9,6 +9,14 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 13): menus and look
+
+- New design across every menu: deep navy panels with light grain, team-color accents and Barlow Condensed headings; sheets slide up from the bottom in portrait.
+- Title screen with animated stadium lights, save slots as team-colored cards, and a "What's new" sheet.
+- Team select with search, division and conference chips, and team cards (stars, overall/offense/defense, stadium and capacity, a fit hint).
+- Team-colored hub header with record, conference record and AP/CFP rank; a scrollable tab bar with sliding tabs.
+- Home tab: next-game card split in both teams' colors with the point spread, win odds, weather and stadium; season progress, top news and quick actions. Matching pregame screen.
+
 ## Version 7 (part 12): playbook and play calling
 
 - 112 plays in 12 formations (Shotgun, Pistol, I-Form, Singleback, Empty, Trips, Bunch, Flexbone, Wildcat, Jumbo and more): RPOs, zone read, triple option and midline, QB power and counter, zone, duo, power, counter, trap, toss, jet sweep, speed option, screens, play-action shots, quick game, dropback concepts, goal line, two-minute plays, Hail Mary and trick plays. Option and RPO reads are real: the QB gives, keeps, pulls or throws based on the read defender. Navy, Army and Air Force run option-heavy offenses.
