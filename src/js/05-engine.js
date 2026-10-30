@@ -39,7 +39,7 @@ function startUserGame(g,snap){
     aiSkill:clamp(.45+(teamOvr(opp)-3)*.13+(boost-1)*4+(LG.settings.diff-1)*.08,.2,.97),wx:g.wx||'Clear',slot:g.slot||'Afternoon',ts:1,slowT:0,shake:0,paused:false,simmed:false,celebrate:null,defCall:'auto',ctrlKey:LG.settings.defPlayer||'LB0'});
   muted=!!LG.settings.muted;
   S.dc={u:{},a:{}};for(const pos of POS_ORDER){S.dc.u[pos]=depth(u,pos);S.dc.a[pos]=depth(opp,pos)}
-  Object.assign(S,{tmo:{},ejected:[],otPos:0,otFirst:'home',untimed:false,toDB:[0,0],kickPenA:false,clockHold:0});
+  Object.assign(S,{tmo:{},ejected:[],otPos:0,otFirst:'home',untimed:false,toDB:[0,0],kickPenA:false,clockHold:0,pbp:[],drives:[],drive:null});   // a resumed game brings back its log and drives (snapshot)
   if(snap)Object.assign(S,JSON.parse(JSON.stringify(snap.S)));
   else Object.assign(S,{score:[0,0],q:1,clock:LG.settings.qlen,ot:false,otRound:0,to:[3,3],stats:newGameStats(),ostats:newGameStats(),pst:{},opst:{},dxp:{},clockRun:false,rzActive:false,poss:'home',dirt:{},wear:[],recv2:'away'});
   S.uHist=[];S.aHist=[];S.defFront='auto';S.gm=null;if(!snap){S.injured=[];S.pbp=[];S.drives=[];S.drive=null;S.fat={};S.snapN=0;initWind()}if(!S.fat){S.fat={};S.snapN=0}if(!S.wind)initWind();if(!snap&&typeof suspKick==="function")suspKick();applyInjuredDepth();ejectDepth();
@@ -56,7 +56,7 @@ function resumeGame(simRest){const g=userGameThisWeek();if(!g||!LG.live){LG.live
 function snapshot(pat){
   if(!LG||!S.home)return;
   LG.live={wk:LG.week,opp:S.away.id,score:S.score.slice(),q:S.q,clock:S.clock,ot:S.ot,pat:!!pat,
-    S:{score:S.score,q:S.q,clock:S.clock,los:S.los,ballY:S.ballY,down:S.down,firstDownX:S.firstDownX,conv:S.conv,ot:S.ot,otRound:S.otRound,to:S.to,stats:S.stats,ostats:S.ostats,pst:S.pst,opst:S.opst,dxp:S.dxp,rzActive:S.rzActive,poss:S.poss,clockRun:S.clockRun,recv2:S.recv2,dirt:S.dirt,wear:S.wear.slice(-40),wind:S.wind,injured:S.injured,drives:S.drives,line:S.line,lineLast:S.lineLast,fat:S.fat,snapN:S.snapN,tmo:S.tmo,ejected:S.ejected,otPos:S.otPos,otFirst:S.otFirst,untimed:S.untimed,kickPenA:S.kickPenA,kickPen:S.kickPen}};
+    S:{score:S.score,q:S.q,clock:S.clock,los:S.los,ballY:S.ballY,down:S.down,firstDownX:S.firstDownX,conv:S.conv,ot:S.ot,otRound:S.otRound,to:S.to,stats:S.stats,ostats:S.ostats,pst:S.pst,opst:S.opst,dxp:S.dxp,rzActive:S.rzActive,poss:S.poss,clockRun:S.clockRun,recv2:S.recv2,dirt:S.dirt,wear:S.wear.slice(-40),wind:S.wind,injured:S.injured,drives:(S.drives||[]).slice(-40),drive:S.drive,pbp:(S.pbp||[]).slice(-120),line:S.line,lineLast:S.lineLast,fat:S.fat,snapN:S.snapN,tmo:S.tmo,ejected:S.ejected,otPos:S.otPos,otFirst:S.otFirst,untimed:S.untimed,kickPenA:S.kickPenA,kickPen:S.kickPen}};
   Saves.saveLive(SLOT,LG);
 }
 
