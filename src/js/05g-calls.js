@@ -108,7 +108,62 @@ function coachPicks(n,filter){
   const sit=sitInfo(),cov=readCov(),last=(S.uHist||[]).slice(-2).map(h=>h.id),out=[],tabs={};
   const list=PLAYBOOK.filter(p=>!(S.conv&&p.hail)&&(!filter||filter(p))).map(p=>{const [s,why]=rateCall(p,sit,S.home,cov);return {p,s:s*(last.includes(p.id)?.35:1)*(1+((p.id*37)%11)/60),why}}).filter(x=>x.s>0).sort((a,c)=>c.s-a.s);
   for(const x of list){if(out.length>=n)break;if((tabs[x.p.tab]||0)>=2)continue;if(out.length===n-1&&out.every(o=>o.p.cat===x.p.cat)&&list.some(y=>y.p.cat!==x.p.cat&&y.s>x.s*.5&&!out.includes(y)))continue;tabs[x.p.tab]=(tabs[x.p.tab]||0)+1;out.push(x)}
-  return out.map(x=>({p:x.p,why:`${ddShort()} · ${x.why}`}));
+  /* each pick says why in its own words: the most specific reason whose angle (and text) no earlier pick used */
+  const usedT=new Set(),usedC=new Set();
+  return out.map(x=>{const rs=pickReasons(x.p,sit,cov,x.why),r=rs.find(([c,t])=>!usedT.has(t)&&!usedC.has(c))||rs.find(([,t])=>!usedT.has(t))||['gen',`${x.why} · ${x.p.name}`];usedT.add(r[1]);usedC.add(r[0]);return {p:x.p,why:`${ddShort()} · ${r[1]}`}});
+}
+/* the front the defense should show against a play's personnel (aiPickFront without the dice) */
+function expFront(p){const pers=(FORMS[p.form]||{}).pers||'11',heavy=['21','12','22','23','30'].includes(pers),tg=S.firstDownX-S.los;
+  if(S.los>=105&&(heavy||tg<=1))return 'goal';if(S.down>=3&&tg>=8)return 'dime';if(heavy&&tg<=2)return defT().oddLean?'34':'43';return pers==='10'?'dime':heavy?(defT().oddLean?'34':'43'):'nickel'}
+/* why a play fits, one line per angle, most specific first: the clock, short yardage, the expected coverage and front,
+   down & distance, field zone and tendency (yours, and the scheme's), then what the play does. [angle, text] */
+function pickReasons(p,sit,cov,why0){
+  const run=p.cat==='run',tg=Math.max(1,Math.round(sit.toGo)),dn=sit.down,L=S.los,out=[],add=(c,t)=>{if(t&&!out.some(x=>x[1]===t))out.push([c,t])};
+  const fam=COV_FAM[cov]||'3',cn=(COVS[cov]||COVS.cover3).n,fk=expFront(p),fn=(FRONTS[fk]||FRONTS.nickel).n,light=['nickel','dime','335'].includes(fk);
+  const deep=!run&&p.depth>=15,quick=!run&&!!p.quick,h=(S.uHist||[]).slice(-8),np=h.filter(x=>x.p).length,id=identityOf(S.home);
+  if(sit.twoMin&&p.two)add('clock','Two-minute · get out of bounds');
+  if(sit.twoMin&&quick&&!p.two)add('clock','Two-minute · quick completion, then hurry up');
+  if(sit.leadingLate&&run)add('clock','Bleed the clock · stay in bounds');
+  if(L>=103&&p.goal)add('field','Goal line · heavy set');
+  if(tg<=1&&run&&(/h/.test(p.v)||p.run&&p.run.sneak))add('dd','Short yardage · power it');
+  const hc=[...fam].find(c=>p.v.includes(c));
+  if(hc)add('cov',`vs ${cn} · ${{m:'beats man',3:'attacks the thirds',2:'beats Cover 2',4:'beats quarters',b:'beats the blitz'}[hc]}`);
+  if(run&&p.v.includes('l')&&(fam==='2'||fam==='4'))add('cov',`${cn} shell · two deep safeties, run it`);
+  if(fam.includes('b')&&(p.screen||quick||run&&p.run&&p.run.delay))add('cov',`${cn} look · pressure coming, get it out fast`);
+  if(!run&&!hc&&deep&&fam==='2')add('cov',`vs ${cn} · the hole between the safeties`);
+  if(!run&&!hc&&!deep&&fam==='4')add('cov',`vs ${cn} · deep safeties, take the underneath`);
+  if(!run&&!hc&&quick&&fam.includes('m'))add('cov',`vs ${cn} · quick break before the corner recovers`);
+  if(run&&fam.includes('m')&&!fam.includes('b'))add('cov',`vs ${cn} · DBs turn and chase, run behind them`);
+  if(run&&light)add('front',`vs ${fn} · light box, run at it`);
+  if(p.pa&&!light)add('front',`${fn} front · play-action pulls the linebackers up`);
+  if(!run&&!p.screen&&!p.pa&&!light)add('front',`${fn} front · linebackers in coverage, throw on them`);
+  if(!run&&fk==='dime'&&p.screen)add('front',`vs ${fn} · six DBs back, screen underneath`);
+  if(tg<=1&&quick)add('dd','Short yardage · quick throw beats a stacked box');
+  if(tg<=3&&tg>1&&run)add('dd','Short to go · run for the first');
+  if(tg<=3&&quick)add('dd','Short to go · high-percentage throw');
+  if(dn<=2&&tg<=4&&(deep||p.pa))add('dd','Early down, short to go · free shot downfield');
+  if(tg>=8&&!run&&p.depth>=tg+1)add('dd','Long yardage · routes break past the sticks');
+  if(tg>=8&&p.screen)add('dd','Long yardage · screen vs a rush pinning its ears back');
+  if(tg>=7&&run&&p.run&&p.run.delay)add('dd','Long yardage · draw vs an upfield rush');
+  if(dn===3&&!run&&p.depth>=tg&&tg<8)add('dd','Third down · the route sits at the sticks');
+  if(dn===1&&run)add('dd','First down · stay on schedule');
+  if(dn===1&&p.pa)add('dd','First down · play-action on a run down');
+  if(sit.redzone&&['Goal Line Fade','Slants','Snag','Smash','Stick','Bunch Stick'].includes(p.name))add('field','Red zone · beats a compressed field');
+  if(sit.redzone&&run)add('field','Red zone · short field, pound it');
+  if(sit.redzone&&quick)add('field','Red zone · quick hitter before the window closes');
+  if(L<20&&(run||quick))add('field','Backed up · safe call, no negative play');
+  if(L>=20&&L<45&&deep)add('field','Own territory · flip the field with one throw');
+  if(L>=50&&L<80&&(deep||p.pa))add('field','Plus territory · take a shot');
+  if(L>=80&&L<90&&!deep)add('field','Field-goal range · keep the ball moving, no sacks');
+  if(h.length>=4&&np/h.length>=.65&&run)add('tend',`${np} passes in your last ${h.length} · they expect pass`);
+  if(h.length>=4&&np/h.length<=.35&&p.pa)add('tend',`${h.length-np} runs in your last ${h.length} · play-action freezes the safeties`);
+  if(h.length>=4&&np/h.length<=.35&&!run&&!p.pa)add('tend',`${h.length-np} runs in your last ${h.length} · they're crowding the box`);
+  if(h.length&&h[h.length-1].p===run)add('tend',`Change it up after a ${run?'pass':'run'}`);
+  const fit=id.sc==='Air Raid'&&!run&&p.form.startsWith('Gun')||id.sc==='Power'&&(p.form==='I-Form'||p.form.includes('Ace'))||id.sc==='Spread'&&(p.form.startsWith('Gun')||p.form==='Pistol'||p.run&&p.run.rpo)||id.sc==='Pro'&&(p.pa||p.form==='Singleback'||p.form==='I-Form');
+  if(fit)add('tend',`${id.sc} staple · it's who you are`);
+  add('gen',why0);
+  add('gen',p.screen?'Screen · let the rush run past':run?(p.run.rpo?'RPO · the QB reads the overhang':p.run.read||p.run.triple||p.run.option?'Option · make the end choose':'Keep them honest'):p.quick?'Quick rhythm throw':p.pa?'Play-action · hold the safeties':p.depth>=20?'Take a shot':'Move the sticks');
+  return out;
 }
 
 /* ---------- offense call sheet ---------- */
