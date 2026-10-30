@@ -40,7 +40,7 @@ const SLOTS=[1,2,3];
 const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',B64I=new Int8Array(128).fill(-1);for(let i=0;i<64;i++)B64I[B64.charCodeAt(i)]=i;
 function lzB64(s){
   const n=s.length;
-  let cap=1<<15,mask=cap-1,kp=new Int32Array(cap).fill(-1),kc=new Uint16Array(cap),kv=new Int32Array(cap),cnt=0;
+  let cap=1<<15;while(cap<n/2&&cap<1<<22)cap<<=1;let mask=cap-1,kp=new Int32Array(cap).fill(-1),kc=new Uint16Array(cap),kv=new Int32Array(cap),cnt=0;
   const one=new Int32Array(65536).fill(-1),pend=new Uint8Array(65536),out=[];let val=0,pos=0;
   const hs=(p,c)=>(Math.imul(p,0x9E3779B1)^Math.imul(c+1,0x85EBCA6B))>>>0;
   const grow=()=>{const op=kp,oc=kc,ov=kv;cap<<=1;mask=cap-1;kp=new Int32Array(cap).fill(-1);kc=new Uint16Array(cap);kv=new Int32Array(cap);

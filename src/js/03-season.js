@@ -184,8 +184,8 @@ function simStats(t,pts,opp,oppPts,wx,solo){
   const dv=[[D.LB[0],.125],[D.LB[1],.1],[D.LB[2],.04],[D.S[0],.09],[D.S[1],.08],[D.S[2],.02],[D.CB[0],.06],[D.CB[1],.055],[D.CB[2],.04],[D.CB[3],.015],[D.DL[0],.05],[D.DL[1],.045],[D.DL[2],.04],[D.DL[3],.035],[D.DL[4],.02],[D.DL[5],.015]].filter(x=>x[0]);
   const tk=50+gauss()*7;for(const [p,w] of dv){const n=Math.round(tk*w*half(p)*(.6+Math.random()*.8)*Math.sqrt(avA(p,['tkl','spd'])/3));if(n)add(p,'tkl',n);else played.add(p)}
   const prush=avA(D.DL[0],['shd','spd'])*.4+avA(D.DL[1],['shd','spd'])*.3+avA(D.LB[0],['shd','spd'])*.3,pblk=opp?unitOvr(opp,['OL']):3;
-  const ns=poi(2.1*Math.pow(clamp(prush/Math.max(1.5,pblk),.6,1.4),.8)*coachMod(t,'sack'));
-  const sk=[[D.DL[0],.22],[D.DL[1],.19],[D.DL[2],.1],[D.DL[3],.09],[D.LB[0],.09],[D.LB[1],.07],[D.DL[4],.04],[D.S[0],.03],[D.CB[0],.02]].filter(x=>x[0]),skw=sk.map(([p,w])=>w*(avA(p,['shd','spd','str'])/3)*half(p));
+  const ns=poi(1.85*Math.pow(clamp(prush/Math.max(1.5,pblk),.6,1.4),.8)*coachMod(t,'sack'));
+  const sk=[[D.DL[0],.19],[D.DL[1],.17],[D.DL[2],.1],[D.DL[3],.09],[D.LB[0],.09],[D.LB[1],.07],[D.DL[4],.04],[D.S[0],.03],[D.CB[0],.02]].filter(x=>x[0]),skw=sk.map(([p,w])=>w*(avA(p,['shd','spd','str'])/3)*half(p));
   for(let i=0;i<ns;i++){const p=wpick(sk.map(x=>x[0]),skw);add(p,'sck',1);add(p,'tkl',1)}
   if(Math.random()<.3*coachMod(t,'fum')){const f=pick(dv.map(x=>x[0]));if(f)add(f,'ff',1)}   /* forced fumbles */
   /* games played: starters, rotation players, and the deep bench in a blowout */
