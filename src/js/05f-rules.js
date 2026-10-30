@@ -272,7 +272,10 @@ function penResolveKick(){
   if(tg){tg.rev=1;const who=`#${tg.p.pl.num} ${tg.p.pl.last}`;return reviewBeat(`Targeting · ${tg.team.abbr} ${who}`,tg.real?'confirmed':'overturned',tg.real?`Targeting confirmed · ${who} is ejected`:'No targeting · the flag is picked up',()=>{if(tg.real)eject(tg.p);else F.splice(F.indexOf(tg),1);penResolveKick()})}
   const fo=F.filter(f=>f.side==='o'),fd=F.filter(f=>f.side==='d'),done=()=>{pl.penDone=true;applyResult()};
   if(!F.length)return done();
-  if(fo.length&&fd.length){penAnnounce('Offsetting fouls · the result of the kick stands');return done()}
+  /* offsetting fouls on a kick: the kick is replayed (its kick and return stats come off) */
+  if(fo.length&&fd.length){pl.penDone=true;penAnnounce('Offsetting fouls · re-kick');S.clockRun=false;S.clockHold=0;
+    if(st.s0)for(const [t,k0] of [[S.home,st.s0[0]],[S.away,st.s0[1]]]){const s=t===S.home?S.stats:S.ostats;if(s)for(const k of ST_KEYS)s[k]=k0[k]||0}
+    return setTimeout(()=>{if(st.kind==='ko')return stKickoff(st.rt===S.home?'home':'away',st.sub,120-st.spot,'Re-kick');S.los=st.L;S.firstDownX=120-st.ltg;S.ballY=st.by!=null?st.by:CEN;S.down=4;stPunt(st.kt===S.home?'home':'away')},1000)}
   const f=(fo.length?fo:fd)[0],rt=st.rt,kt=st.kt,recv=r.team===rt&&r.sk!=='safety',endX=r.sk==='td'&&r.team===rt?110:recv?r.x:null;
   const decline=()=>{penAnnounce(`${PN[f.k]} · ${sideWord(f)} · declined`);fx('penalty',{name:PN[f.k],yards:0,on:f.side,team:f.team,accepted:false,k:f.k});done()};
   const recvBall=(x,y,txt)=>{x=Math.round(clamp(x,11,109)*2)/2;pl.penDone=true;penStat(f.team,f.k,y);fx('penalty',{name:PN[f.k],yards:y,on:f.side,team:f.team,accepted:true,k:f.k});
@@ -280,7 +283,9 @@ function penResolveKick(){
     setTimeout(()=>{if(S.ot)return otNext(st.poss0||'home');rt===S.home?toUser(x,'Penalty on the kick'):toOpp(110-x,'Penalty on the kick')},1000)};
   if(f.k==='ibb'){   // the return team: 10 yards from the spot of the foul (or from the end of the run, if that is shorter); in its own end zone = safety
     if(!recv)return decline();
-    const base=Math.min(f.x,endX);if(base<=10){pl.penDone=true;penStat(f.team,f.k,0);penAnnounce(`${PN[f.k]} · ${sideWord(f)} · in the end zone · safety`);return setTimeout(scoreSafety,900)}
+    const base=Math.min(f.x,endX),wiped=Math.max(0,Math.round(endX-base));   // the return only counts to the spot of the foul
+    if(wiped||r.sk==='td'){const ko=st.kind==='ko';sAdd(rt,ko?'krYds':'prYds',-wiped);if(r.sk==='td')sAdd(rt,ko?'krTD':'prTD',-1)}
+    if(base<=10){pl.penDone=true;penStat(f.team,f.k,0);penAnnounce(`${PN[f.k]} · ${sideWord(f)} · in the end zone · safety`);return setTimeout(scoreSafety,900)}
     const y=Math.min(10,(base-10)/2);return recvBall(base-y,y,y<10?'half the distance':'10 yards from the spot')}
   if(f.k==='kci'){const y=Math.min(15,(110-f.x)/2),ax=f.x+y,user=rt===S.home;
     if(!recv||endX==null||endX<ax)return recvBall(ax,y,'15 yards from the spot');

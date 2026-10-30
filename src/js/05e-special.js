@@ -15,6 +15,9 @@
    ========================================================= */
 const STK={g:10.7,koTB:35,ptTB:30,koOOB:45};
 const tStat=t=>t===S.home?S.stats:S.ostats;
+/* the kick and return stats a replayed kick (offsetting fouls, 05f) takes back: saved at the kick in st.s0 */
+const ST_KEYS=['kr','krYds','krTD','pr','prYds','prTD','punts','puntYds','puntTB','koN','koTB','fc','blk','ff','fr','fumLost'];
+const stS0=()=>[S.stats,S.ostats].map(s=>{const o={};for(const k of ST_KEYS)o[k]=s&&s[k]||0;return o});
 function sAdd(t,k,n){const s=tStat(t);if(s)s[k]=(s[k]||0)+(n==null?1:n)}
 /* punter / kickoff man = the K with the best leg (thr); field-goal kicker = the most accurate (acc) */
 function bestK(t,k){const l=((S.dc&&dcOf(t).K)||[]).filter(Boolean);return l.reduce((a,b)=>!a||b[k]>a[k]?b:a,null)}
@@ -47,7 +50,7 @@ function stKickoff(recv,sub,from,why){
   else{[7,17,CEN,36,46].forEach((y,i)=>B[i]&&stAdd('o',B[i],spot-12,y,rt,'blk','B'+i));[11,21,32,42].forEach((y,i)=>B[5+i]&&stAdd('o',B[5+i],spot-24,y,rt,'blk','B'+(5+i)));
     if(R[0])stAdd('o',R[0],Math.max(12,spot-61),CEN-5,rt,'ret','R0');if(R[1])stAdd('o',R[1],Math.max(14,spot-58),CEN+5,rt,'ret','R1')}
   ballLoose(spot,CEN,0,0,0,0);
-  play.st={kind:'ko',sub,phase:'set',t:0,spot,kt,rt,kicker:kp,alert,sd,imp:'d',lastSide:'d',ck:S.ctrlKey,why};
+  play.st={kind:'ko',sub,phase:'set',t:0,spot,kt,rt,kicker:kp,alert,sd,imp:'d',lastSide:'d',ck:S.ctrlKey,why,s0:stS0()};
   S.los=spot;S.ballY=CEN;S.down=1;S.firstDownX=Math.min(110,spot+10);
   sAdd(kt,'koN');fx('kickoff',{side:recv,why,sub});stGo();
   hint(rt===S.home?(ons?'Onside kick! Drag to move · tap to dive on the ball':'Tap or FAIR CATCH to signal · drag to steer after the catch'):'You cover · drag to move · TACKLE to dive · SWITCH');
@@ -77,7 +80,7 @@ function stPunt(kSide){
   stPick(rt,['CB','S'],2,p=>p.cov+.5*p.str+.5*p.spd,used).forEach((pl,i)=>{const j=stAdd('o',pl,spot-1.6,i?FW-3.6:3.6,rt,'jam','J'+i);j.tgt=G[i];j.jam=true});
   stPick(rt,['LB','DL','S','TE','RB','CB','WR','OL'],8,p=>.5*(p.str+p.spd+p.blk),used).forEach((pl,i)=>i<6?stAdd('o',pl,spot-1,by+(i%2?1:-1)*(1.6+1.6*(i>>1)),rt,i<2?'rush':'hold','H'+i):stAdd('o',pl,spot-13,by+(i%2?6:-6),rt,'blk','H'+i));
   ballLoose(spot,by,0,0,0,0);
-  play.st={kind:'punt',phase:'set',t:0,spot,kt,rt,kicker:pp,ret,ltg:120-ltg,L,imp:'d',lastSide:'d',ck:S.ctrlKey};
+  play.st={kind:'punt',phase:'set',t:0,spot,kt,rt,kicker:pp,ret,ltg:120-ltg,L,by,imp:'d',lastSide:'d',ck:S.ctrlKey,s0:stS0()};
   S.los=spot;S.ballY=by;S.down=1;S.firstDownX=Math.min(110,spot+10);stGo();
   hint(rt===S.home?'Punt return · tap or FAIR CATCH to signal · drag to steer after the catch':'Punt coverage · drag to move · TACKLE to dive · SWITCH');
 }
