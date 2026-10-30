@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 16): transfer portal, NIL and coaching career
+
+- Every team has a head coach, offensive and defensive coordinators with ratings, contracts and 1–2 signature traits (Turnover Specialist, QB Whisperer, Offensive Guru, Air Raid, Run Game Architect, Defensive Mastermind, Pass Rush Guru, Special Teams Ace, Recruiter, Portal King, Developer, Motivator, Clock Manager, Disciplinarian…) that matter in live games, simulated games and the season. The roster pack adds the real 2026 head coaches and Alabama DC Kane Wommack (Turnover Specialist); the app itself keeps generated names.
+- Coaching career: contract, athletic director target with a hot-seat meter, coach XP and a skill tree, coordinators who get poached when they win, and a carousel where CPU schools fire, retire and hire.
+- One yearly player budget (revenue sharing + NIL collective) on the Program tab for retention deals, portal offers and recruiting pitches.
+- 2026 transfer portal rules: one January window (Jan 2–16) plus a window after a coaching change; players enter over playing time, morale, money and coaching changes; you get retention offers first, then compete for portal players.
+
 ## Version 7 (part 15): season-long recruiting
 
 - About 2,000 prospects every season with composite ratings (2–5 stars, ~30–35 five-stars nationally), national, position and state rankings, real home states, size, hidden true ratings and development traits (gems and busts), and what each one cares about (playing time, contender, pro potential, NIL, close to home, academics, coach stability, exposure, conference).
