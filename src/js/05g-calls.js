@@ -4,19 +4,19 @@
    the double pass, defensive fronts and the talent-gap compression of ratings.
    ========================================================= */
 
-/* ---------- talent gap: in-game ratings are compressed toward this game's mean at each position, so a
-   blue blood still beats an FCS team by 35 but the box score looks like football (diminishing returns
-   on huge rating gaps; even matchups are almost untouched). The roster objects are never modified. ---------- */
-const GAP={knee:.5,k:.42};
+/* ---------- talent gap: in-game, each team's ratings at a position are shifted toward the matchup's mean when the
+   two units are far apart (soft knee). A blue blood still beats an FCS team by five scores, but the box score looks like
+   football; even matchups and every player's edge over his own teammates are untouched. Roster objects are never modified. ---------- */
+const GAP={knee:.2,k:.3};
 function gameMeans(){
   if(!S.dc)return;const m={};
-  for(const pos in STARTERS){const l=[...(S.dc.u[pos]||[]).slice(0,STARTERS[pos]),...(S.dc.a[pos]||[]).slice(0,STARTERS[pos])];if(!l.length)continue;
-    const o={};for(const k of ATTR_KEYS)o[k]=sum(l.map(p=>+p[k]||0))/l.length;m[pos]=o}
+  for(const pos in STARTERS){const f=l=>{const o={};l=l.slice(0,STARTERS[pos]);for(const k of ATTR_KEYS)o[k]=l.length?sum(l.map(p=>+p[k]||0))/l.length:3;return o};
+    if(S.dc.u[pos]&&S.dc.a[pos])m[pos]={u:f(S.dc.u[pos]),a:f(S.dc.a[pos])}}
   S.gm=m;
 }
-function gview(pl){
-  const m=S.gm&&S.gm[pl.pos];if(!m)return pl;const v=Object.create(pl);
-  for(const k of ATTR_KEYS){const x=pl[k];if(typeof x!=='number')continue;const d=x-m[k],a=Math.abs(d);if(a>GAP.knee)v[k]=m[k]+Math.sign(d)*(GAP.knee+(a-GAP.knee)*GAP.k)}
+function gview(pl,side){
+  const m=S.gm&&S.gm[pl.pos];if(!m)return pl;const me=m[side?'a':'u'],ot=m[side?'u':'a'],v=Object.create(pl);
+  for(const k of ATTR_KEYS){const x=pl[k];if(typeof x!=='number')continue;const g=(me[k]-ot[k])/2,a=Math.abs(g);if(a>GAP.knee)v[k]=x-Math.sign(g)*(a-GAP.knee)*(1-GAP.k)}
   return v;
 }
 
@@ -35,19 +35,22 @@ function alignFront(fk,cov,D,K){
 function crashRoll(d,base){const cv=d.cov||{};let p=base-.06*((d.pl.awr||3)-3);if(cv.type==='rush'&&d.role!=='DL')p+=.2;if(cv.type==='spy')p-=.35;if(S.cov==='blitz'||S.cov==='agap')p+=.15;return Math.random()<clamp(p,.12,.88)?'crash':'home'}
 function runSnap(pl){
   const r=pl.run,L=S.los,b=S.ballY,side=Math.sign(pl.gapY-b)||1;
-  if(r.pull){const ol=OFF.filter(p=>p.role==='OL').sort((a,c)=>(a.y-c.y)*side);for(let i=0;i<Math.min(2,r.pull);i++){const g=ol[i===0?1:0];if(g){g.lead=true;g.pull=true}}}
+  if(r.pull){const ol=OFF.filter(p=>p.role==='OL').sort((a,c)=>(a.y-c.y)*side);for(let i=0;i<Math.min(2,r.pull);i++){const g=ol[i===0?1:0];if(g)g.pull=true}}
   const keyBy=f=>{let best=null,bv=-1e9;for(const d of DEF){if(d.x>L+3.6||(d.role==='CB'||d.role==='S')&&d.x>L+2.6)continue;const v=f(d);if(v>bv){bv=v;best=d}}return bv>-1e8?best:null};
   let key=null;
   if(r.read)key=r.midline?keyBy(d=>d.role==='DL'&&(d.y-b)*side>.3?-Math.abs(d.y-b):-1e9):r.inv?keyBy(d=>(d.y-b)*side):keyBy(d=>(d.y-b)*-side);
   else if(r.triple){key=keyBy(d=>d.role==='DL'&&(d.y-b)*side>1.4?-Math.abs(d.y-b):-1e9);const pm=KP[r.triple];if(pm&&pm!==KP[pl.ckey]){pl.pitchMan=pm;pm.blocker=false}}
   else if(r.rpo){const rec=KP[r.rpo[0]];if(rec){const px=L+4,py=(rec.y+b)/2;let bd=1e9;for(const d of DEF){if(d.role==='DL')continue;const dd=hyp(d.x-px,d.y-py);if(dd<bd){bd=dd;key=d}}}}
-  if(key){key.rdKey=true;key.rdMode=crashRoll(key,r.rpo?.45:.5);pl.rdKeyP=key}
+  if(key){key.rdKey=true;key.rdMode=crashRoll(key,r.rpo?.52:.5);pl.rdKeyP=key}
 }
 /* the read key before the decision: crash the mesh, or squeeze and stay square to the QB */
 function rdMove(d,dt){
   const pl=play,L=S.los,ck=KP[pl.ckey];if(pl.decided&&pl.t>pl.decT+.3)return false;
-  if(d.rdMode==='crash'){steer(d,ck?ck.x+.8:L,ck?ck.y:pl.gapY,d.spd,dt);return true}
+  if(d.rdMode==='crash'){if(pl.run&&pl.run.inv)steer(d,L-.4,S.ballY+(Math.sign(pl.gapY-S.ballY)||1)*1.4,d.spd,dt);else steer(d,ck?ck.x+.8:L,ck?ck.y:pl.gapY,d.spd,dt);return true}
   if(pl.run&&pl.run.rpo)return false;
+  /* staying home: the midline / dive key and the power-read end widen to the QB's lane; the zone-read end squeezes and stays square */
+  const r=pl.run,side=Math.sign(pl.gapY-S.ballY)||1;
+  if(r.midline||r.triple||r.inv){steer(d,L+.6,S.ballY+side*(r.inv?6.5:3.4),d.spd*.6,dt);return true}
   steer(d,Math.max(L+.3,d.x-.15),lerp(d.y,Q.y,.12),d.spd*.42,dt);return true;
 }
 /* the QB's read at the mesh: give, keep, or pull and throw (awr = fewer misreads) */
@@ -59,7 +62,7 @@ function optTick(pl){
     const box=DEF.filter(d=>d.x<L+5.5&&Math.abs(d.y-b)<6.5&&d.stun<=0).length,blk=OFF.filter(p=>p.blocker&&p.role!=='QB'&&p.key!==pl.ckey&&Math.abs(p.y-b)<6.5).length;
     let thr=!!(k&&(k.rdMode==='crash'||k.cov&&k.cov.type==='rush'))||box>blk+1,best=null,bs=-1;
     for(const key of r.rpo){const p=KP[key];if(!p||p.fallen)continue;const [,dd]=nearest(DEF,p.x,p.y,o=>o.stun<=0);if(dd>bs){bs=dd;best=p}}
-    if(bs<1.5)thr=false;if(miss)thr=!thr;
+    if(bs<1.1)thr=false;if(miss)thr=!thr;
     if(thr&&best){rpoThrow(pl,best);return true}
     return false;
   }
@@ -148,7 +151,7 @@ function defHead(){
 function renderDefCall(){
   defHead();const sit=sitInfo(),pc=S.aiPlay;
   if(!S.dcPick)S.dcPick=[aiPickFront(S.home,sit,pc),aiPickCoverage(S.home,sit)];
-  const [pf,pv]=S.dcPick,f=pc&&FORMS[pc.form],why=`${ddShort()} · ${f?f.pers:'11'} personnel${sit.toGo>=8?' · pass down':sit.toGo<=2?' · run down':''}`;
+  const [pf,pv]=S.dcPick,f=pc&&FORMS[pc.form],why=`${ddShort()} · ${f?f.pers:'11'} personnel${sit.down>=2&&sit.toGo>=7?' · passing down':sit.toGo<=2?' · run down':sit.redzone?' · red zone':''}`;
   const fr=S.defFront||'auto';
   const fronts=[['auto','Auto'],...Object.entries(FRONTS).map(([k,v])=>[k,v.n])].map(([k,l])=>`<button class="chip" data-fr="${k}" aria-pressed="${fr===k}">${l}</button>`).join('');
   $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs cs-fronts"><span class="cs-lbl">Front</span>${fronts}</div></div>`+
@@ -164,7 +167,9 @@ function renderDefCall(){
 
 /* ---------- pre-snap Adjust menu (one button on the snap bar) ---------- */
 function adjClose(){const m=$('#adjMenu');if(m)m.hidden=true;const b=$('#snapAdj');if(b)b.setAttribute('aria-expanded','false')}
-function adjToggle(){const m=$('#adjMenu');if(!m.hidden)return adjClose();adjRender();m.hidden=false;$('#snapAdj').setAttribute('aria-expanded','true')}
+function adjToggle(){const m=$('#adjMenu');if(!m.hidden)return adjClose();adjRender();m.hidden=false;$('#snapAdj').setAttribute('aria-expanded','true');
+  /* sit just above the snap bar (it moves with the ticker / safe areas), never over SNAP */
+  const r=$('#snapBar').getBoundingClientRect(),ph=(m.offsetParent||document.body).getBoundingClientRect();m.style.bottom=Math.round(ph.bottom-r.top+8)+'px';m.style.maxHeight=Math.max(120,Math.round(r.top-ph.top-12))+'px'}
 function adjRender(){
   const pc=S.pc,m=$('#adjMenu');if(!pc)return;const g=FORMS[pc.form].g;
   const aud=coachPicks(4,p=>p.id!==pc.id&&FORMS[p.form].g===g&&!p.hail&&p.tab!=='trick');

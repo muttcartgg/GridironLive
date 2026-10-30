@@ -243,7 +243,7 @@ function rateCall(p,sit,team,cov){
   if(id.sc==='Power'&&(p.form==='I-Form'||p.form.includes('Ace')))s*=1.4;
   if(id.sc==='Spread'&&(p.form.startsWith('Gun')||p.form==='Pistol'||p.run&&p.run.rpo))s*=1.3;
   if(id.sc==='Pro'&&(p.pa||p.form==='Singleback'||p.form==='I-Form'))s*=1.3;
-  if(!why)why=run?(dn===1?'Stay on schedule':'Keep them honest'):p.quick?'Quick rhythm throw':p.depth>=20?'Take a shot':'Move the sticks';
+  if(!why)why=p.screen?'Screen · let the rush run past':run?(p.run.rpo?'RPO · the QB reads the overhang':p.run.read||p.run.triple||p.run.option?'Option · make the end choose':dn===1?'Stay on schedule':'Keep them honest'):p.quick?'Quick rhythm throw':p.pa?'Play-action · hold the safeties':p.depth>=20?'Take a shot':'Move the sticks';
   return [s,why];
 }
 /* CPU offense: blends rateCall with the team's run/pass identity, game script and self-scouting (no repeats, mixed tendencies) */
@@ -257,7 +257,7 @@ function aiPickPlay(team,sit){
   for(const p of PLAYBOOK){if((p.cat==='pass')!==pass&&!(p.screen&&!pass&&Math.random()<.12))continue;if(p.hail&&!sit.lastPlay)continue;
     let [w]=rateCall(p,sit,team,cov);if(w<=0)continue;
     const n=recent.filter(h=>h.id===p.id).length;if(n)w*=Math.pow(.3,n);
-    pool.push([p,Math.pow(w,1.3)])}
+    pool.push([p,w])}
   if(!pool.length)return playByName(pass?'Curl Flat':'Inside Zone');
   let r=Math.random()*sum(pool.map(x=>x[1]));for(const [p,w] of pool){if((r-=w)<=0)return p}return pool[0][0];
 }

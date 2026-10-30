@@ -42,7 +42,7 @@ function startUserGame(g,snap){
   Object.assign(S,{tmo:{},ejected:[],otPos:0,otFirst:'home',untimed:false,toDB:[0,0],kickPenA:false,clockHold:0});
   if(snap)Object.assign(S,JSON.parse(JSON.stringify(snap.S)));
   else Object.assign(S,{score:[0,0],q:1,clock:LG.settings.qlen,ot:false,otRound:0,to:[3,3],stats:newGameStats(),ostats:newGameStats(),pst:{},opst:{},dxp:{},clockRun:false,rzActive:false,poss:'home',dirt:{},wear:[],recv2:'away'});
-  if(!snap){S.injured=[];S.pbp=[];S.drives=[];S.drive=null;S.fat={};S.snapN=0;initWind()}if(!S.fat){S.fat={};S.snapN=0}if(!S.wind)initWind();applyInjuredDepth();ejectDepth();
+  S.uHist=[];S.aHist=[];S.defFront='auto';S.gm=null;if(!snap){S.injured=[];S.pbp=[];S.drives=[];S.drive=null;S.fat={};S.snapN=0;initWind()}if(!S.fat){S.fat={};S.snapN=0}if(!S.wind)initWind();applyInjuredDepth();ejectDepth();
   if(!S.ostats)S.ostats=newGameStats();if(!S.opst)S.opst={};if(!S.dirt)S.dirt={};if(!S.wear)S.wear=[];
   lastScore=S.score.slice();resetRenderCaches();particles=[];
   document.documentElement.style.setProperty('--opp',opp.c1);
@@ -106,7 +106,7 @@ function toPresnap(){
 }
 
 function add(side,role,x,y,pl0,team,key){
-  const user=team===S.home,pl=gview(pl0);
+  const user=team===S.home,pl=gview(pl0,user?0:1);
   const p={side,role,key,team,user,x,y,vx:0,vy:0,z:0,pl,num:pl.num,spd:speedOf(role,pl,user),acc:ACC[role],route:null,rpath:null,cont:null,wi:0,stop:false,stun:0,bt:0,immune:false,shed:0,cov:null,homeX:x,homeY:y,blocker:false,face:side==='o'?1:-1,phase:Math.random()*6.28,fallen:false,fallP:0,lunge:0,lungeCD:0,stiff:0,throwT:0,react:0,engaged:false,eng:null,tgt:null,dirt:(S.dirt&&S.dirt[pl.id])||0,ovr:ovr99(pl0),settle:0};
   if(!user&&side==='d'&&uOff()&&role!=='DL')p.spd*=Math.sqrt(SL('cov'));
   if(user&&side==='o'&&LG.staff){const oc=LG.staff.oc;if(['WR','TE','RB'].includes(role))p.spd*=1+.01*(oc.r-3)+(oc.trait==='Play Caller'?.03:0)}
@@ -124,7 +124,7 @@ function setupFormation(pc,flip){
   [-2.2,-1.1,0,1.1,2.2].forEach((dy,i)=>add('o','OL',L-.7,b+dy,o.OL[i]||o.OL[0],ot,'OL'+i));
   /* personnel: each slot's role comes from the formation (12 = two TEs, 21 = a fullback, Jumbo = three TEs, Wildcat = the RB takes the snap);
      rotation: a gassed starting RB/WR sits and the next man on the depth chart plays (05c pickFresh) */
-  const role={QB:'QB',R:'RB',X:'WR',Z:'WR',H:'WR',Y:'TE',...(form.roles||{})},pool={QB:o.QB,RB:o.RB,WR:o.WR,TE:o.TE},cnt={QB:0,RB:0,WR:0,TE:0},nS={QB:1,RB:1,WR:3,TE:1};
+  const role={QB:'QB',R:'RB',X:'WR',Z:'WR',H:'WR',Y:'TE',...(form.roles||{})},pool={QB:o.QB,RB:o.RB,WR:o.WR,TE:o.TE},bo=blowout(ot)?1:0,cnt={QB:bo&&o.QB.length>1?1:0,RB:bo,WR:bo,TE:0},nS={QB:1,RB:1,WR:3,TE:1};
   const take=r=>{const l=pool[r]||o.WR;while(cnt[r]<l.length){const i=cnt[r]++;if(r==='QB'){if(!used.has(l[i])){used.add(l[i]);return l[i]}continue}const had=used.has(l[i]),p=pickFresh(l,i,nS[r],used);if(p&&!(had&&p===l[i]))return p}
     const f=l.find(p=>!used.has(p))||o.WR.find(p=>!used.has(p))||l[0];used.add(f);return f};
   const who={};for(const k of ['QB','R','Y','X','Z','H'])who[k]=take(role[k]);
@@ -137,10 +137,10 @@ function setupFormation(pc,flip){
   if(uOff()){cov=S.covLock||(S.covLock=aiPickCoverage(dtm,sit));if(!S.frontLock||S.frontLock[0]!==pers)S.frontLock=[pers,aiPickFront(dtm,sit,pc)];fk=S.frontLock[1]}
   else{const dp=S.dcPick;cov=S.defCall==='auto'||!S.defCall?(dp?dp[1]:aiPickCoverage(dtm,sit)):S.defCall;fk=!S.defFront||S.defFront==='auto'?(dp?dp[0]:aiPickFront(dtm,sit,pc)):S.defFront}
   S.cov=cov;S.front=fk;
-  const FR=FRONTS[fk]||FRONTS.nickel,sub=FR.sub||{},dused=new Set(),D={};
+  const FR=FRONTS[fk]||FRONTS.nickel,sub=FR.sub||{},dused=new Set(),D={},dbo=blowout(dtm)?1:0;
   const pickU=(l,i)=>{for(let j=i;j<l.length;j++)if(!dused.has(l[j])){dused.add(l[j]);return l[j]}const f=l.find(p=>!dused.has(p))||l[0];dused.add(f);return f};
   const mk=(key,role,x,y,list,i,fresh)=>{const sb=sub[key];if(sb)return D[key]=add('d',sb[0],x,y,pickU(d[sb[1]]||list,sb[2]),dtm,key);
-    let pl=fresh?F(list,i,4):list[i];if(!pl||dused.has(pl))pl=pickU(list,i);else dused.add(pl);return D[key]=add('d',role,x,y,pl||list[0],dtm,key)};
+    if(dbo&&list.length>i+4)i+=key.startsWith('DL')?4:key.startsWith('CB')?3:2;let pl=fresh&&!dbo?F(list,i,4):list[i];if(!pl||dused.has(pl))pl=pickU(list,i);else dused.add(pl);return D[key]=add('d',role,x,y,pl||list[0],dtm,key)};
   [-3.3,-1.1,1.1,3.3].forEach((dy,i)=>mk('DL'+i,'DL',Math.min(119,L+1),b+dy,d.DL,i,1));
   mk('LB0','LB',Math.min(119,L+4.6),b-3.8,d.LB,0);mk('LB1','LB',Math.min(119,L+4.6),b+3.8,d.LB,1);
   const third=KP.H.role==='WR'?KP.H:KP.Y;
@@ -150,6 +150,8 @@ function setupFormation(pc,flip){
   S.ctrl=null;if(!uOff()){S.ctrl=D[S.ctrlKey]||D.LB0}
   ball={state:'held',x:L,y:b,z:0};
 }
+/* a CPU team up four scores in the second half empties the bench (the user's lineup is never touched) */
+const blowout=t=>t!==S.home&&!S.ot&&S.q>=3&&S.score[t===S.away?1:0]-S.score[t===S.away?0:1]>=28;
 function sitInfo(){
   const togo=S.firstDownX-S.los,late=S.q>=4&&S.clock<S.qlen*.3&&!S.ot,diff=S.score[offIdx()]-S.score[1-offIdx()];
   const twoMin=!S.ot&&(S.q===2||S.q===4)&&S.clock<=S.qlen*.28&&(S.q===2?S.los>=25||S.clock<=S.qlen*.2:diff<=0&&diff>=-16);
