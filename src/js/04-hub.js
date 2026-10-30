@@ -18,21 +18,86 @@ const on=(id,f)=>{const e=document.getElementById(id);if(e)e.onclick=f};
 /* pregame odds for team a (homeEdge: 1 home, 0 neutral, -1 road) from the point-spread model in 05w-winprob.js */
 const winProb=(a,b,homeEdge)=>winProbPre(a,b,homeEdge||0);
 
-/* ---------- save slots ---------- */
+/* ---------- shared menu helpers (title, team select, hub, pregame) ---------- */
+const deepC=t=>lum(t.c1)>.6&&lum(t.c2)<lum(t.c1)?t.c2:t.c1;   /* the darker team color, for gradients behind white text */
+const starsHTML=n=>{n=clamp(Math.round(n||0),0,5);return `<span class="stars" role="img" aria-label="Prestige ${n} of 5">${'★'.repeat(n)}<i>${'★'.repeat(5-n)}</i></span>`};
+const fitOf=t=>{const o=tOvr99(teamOvr(t)),p=t.prestige;return o>=92||p>=5?['gold','Contender']:o>=86||p>=4?['blue','Top 25']:o<70||p<=1?['hot','Rebuild']:p<=2&&o>=78?['ok','Sleeper']:['','Build-up']};
+const cfpOf=id=>{const i=(LG.cfpRank||[]).indexOf(id);return i>=0&&i<25?i+1:null};
+const ordinal=n=>n+(['st','nd','rd'][((n+90)%100-10)%10-1]||'th');
+const KICK={Noon:'12:00 PM',Afternoon:'3:30 PM',Primetime:'7:30 PM'};
+/* forecast high for a game (same curve the broadcast uses on game day, without the random part) */
+const fcTemp=(g,wk)=>{const b=84-(wk||0)*3.2-(g.slot==='Primetime'?7:g.slot==='Noon'?-3:0);return Math.round(g.wx==='Snow'?27:g.wx==='Rain'?Math.max(38,b-6):Math.max(30,b))};
+const lineStr=(a,b,s)=>{const v=Math.round(Math.abs(s)*2)/2;return v<.5?'Pick ’em':`${(s>0?a:b).abbr} −${v}`};
+const ICO={play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
+  code:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
+/* the slot meta keeps the imported logo (if any) so the title screen can show it without opening the save */
+if(!Saves._lg){const t0=Saves.touch;Saves._lg=1;Saves.touch=function(slot,L){t0.call(this,slot,L);try{const u=L.teams[L.user],lg=typeof teamLogoURL==='function'?teamLogoURL(u):'';if(lg){const m=this.meta();if(m.slots[slot]){m.slots[slot].logo=lg;this.writeMeta(m)}}}catch(e){}}}
+
+/* title screen backdrop: two light towers, sweeping beams and drifting haze on a tiny canvas the CSS scales up (soft for free).
+   ~30 fps, stops as soon as the title screen is hidden; one still frame with reduced motion. */
+const Stage={raf:0,
+  run(){const cv=$('#stageCv'),sc=$('#setup');if(!cv||this.raf)return;const rm=matchMedia('(prefers-reduced-motion: reduce)').matches;let last=-99;
+    const loop=t=>{this.raf=0;if(sc.hidden||!sc.classList.contains('title'))return;if(t-last>=32){last=t;this.draw(cv,t/1000)}if(!rm)this.raf=requestAnimationFrame(loop)};
+    this.raf=requestAnimationFrame(loop)},
+  draw(cv,t){
+    const W=220,H=clamp(Math.round(W*innerHeight/Math.max(1,innerWidth)),90,520);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+    const x=cv.getContext('2d');x.clearRect(0,0,W,H);x.globalCompositeOperation='lighter';
+    const port=H>W,ty=H*(port?.075:.13),len=Math.hypot(W,H)*1.15;
+    for(const [tx,s] of [[W*.1,1],[W*.9,-1]]){
+      for(let i=0;i<3;i++){
+        const a=Math.PI/2-s*((port?.28:.62)+i*(port?.17:.24))+Math.sin(t*.32+i*1.9+s*.7)*.045,sp=.075+i*.012,fl=.85+.15*Math.sin(t*1.7+i*2.3+s);
+        const g=x.createLinearGradient(tx,ty,tx+Math.cos(a)*len*.8,ty+Math.sin(a)*len*.8);
+        g.addColorStop(0,`rgba(255,246,222,${.2*fl})`);g.addColorStop(.45,`rgba(205,220,255,${.07*fl})`);g.addColorStop(1,'rgba(205,220,255,0)');
+        x.fillStyle=g;x.beginPath();x.moveTo(tx,ty);x.lineTo(tx+Math.cos(a-sp)*len,ty+Math.sin(a-sp)*len);x.lineTo(tx+Math.cos(a+sp)*len,ty+Math.sin(a+sp)*len);x.closePath();x.fill();
+      }
+      const gl=x.createRadialGradient(tx,ty,0,tx,ty,W*.16);gl.addColorStop(0,'rgba(255,250,235,.9)');gl.addColorStop(.18,'rgba(255,240,205,.32)');gl.addColorStop(1,'rgba(255,240,205,0)');
+      x.fillStyle=gl;x.fillRect(tx-W*.16,ty-W*.16,W*.32,W*.32);
+      x.fillStyle='rgba(255,255,250,.95)';for(let r=0;r<2;r++)for(let c=0;c<4;c++)x.fillRect(tx-6+c*3.4,ty-3+r*3.2,2,2);
+    }
+    for(const [cx,cy,r,c] of [[.32+.12*Math.sin(t*.07),.5,.75,'rgba(90,130,210,.07)'],[.7+.1*Math.cos(t*.05),.68,.6,'rgba(120,150,220,.06)'],[.5,.98,.7,'rgba(70,170,110,.08)']]){
+      const h=x.createRadialGradient(cx*W,cy*H,0,cx*W,cy*H,r*Math.max(W,H*.6));h.addColorStop(0,c);h.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=h;x.fillRect(0,0,W,H)}
+    x.globalCompositeOperation='source-over';
+  }};
+addEventListener('resize',()=>{const sc=$('#setup');if(sc&&!sc.hidden&&sc.classList.contains('title'))Stage.run()});
+
+const WHATS_NEW=[
+  ['112-play playbook','12 formations with real RPO and option reads: the QB gives, keeps, pulls or throws off the read defender.'],
+  ['New play calling','Category tabs, formation chips, route art, three Coach’s picks, and a snap bar with audibles, motion, hard counts and hot routes.'],
+  ['Smarter defense and CPU','6 fronts × 13 coverages and blitzes; the CPU calls by situation, runs a two-minute drill and goes for it by the numbers.'],
+  ['2026 rules','Penalties called during plays, targeting with replay review, the college clock and current NCAA overtime.'],
+  ['Live turnovers','Loose balls bounce, players dive for them, and pick-sixes and scoop-and-scores happen naturally.'],
+  ['Special teams you play','Kickoffs, squibs and onside kicks, punts with gunners and muffs, blocked kicks and the fair catch kick.'],
+  ['Passing and coverage','Accuracy, arm strength, tipped balls, contested catches, press jams and pattern-matching zones.'],
+  ['TV broadcast package','A new score bug, big-moment graphics, win probability with swing callouts, and rebuilt pregame and halftime shows.'],
+  ['Rankings that feel real','An AP poll that moves like voters, CFP committee rankings from Week 10 and the 12-team playoff.'],
+  ['Gameday look','New stadium, crowds, player models, animations, field markings, lighting by kickoff time and a 7-person officiating crew.'],
+  ['Real rosters (optional)','Import 2026 rosters and logos for every FBS and FCS program from a file.']];
+
+/* ---------- title screen + save slots ---------- */
 function showSlots(){
   hideAll();S.phase='menu';LG=null;SLOT=null;document.documentElement.dataset.style='modern';
-  const m=Saves.meta();
+  const m=Saves.meta();$('#setup').classList.add('title');
+  const card=n=>{const s=m.slots[n];
+    if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="h2">New dynasty</span><span class="note">Slot ${n} · empty</span></button>`;
+    const t={abbr:s.abbr,c1:s.c1,c2:s.c2,logo:s.logo},wk=/^Week (\d+)$/.exec(s.label||''),bak=KV.get('gl3.bak'+n);
+    return `<div class="slot full" style="--c1:${s.c1};--c2:${s.c2};--d:${deepC(t)}">
+      <div class="sl-head"><span class="sl-wm" aria-hidden="true">${esc(s.abbr)}</span>${badge(t,'lg')}<div class="sl-id"><small>Slot ${n}${s.live?' · <i class="sl-live">Game in progress</i>':''}</small><b>${esc(s.team)}</b><span>${esc(s.coach)} · ${esc(s.name)}</span></div></div>
+      <div class="sl-stats"><div><em>Record</em><b>${esc(s.rec)}</b></div><div><em>Season</em><b>${s.season}</b></div><div><em>Week</em><b class="${wk?'':'sm'}">${esc(wk?wk[1]:s.label||'—')}</b></div><div><em>Titles</em><b>${s.titles||0}</b></div></div>
+      <div class="sl-foot"><span>Last played ${timeAgo(s.updated)}</span>${s.titles?`<span class="tag gold">${s.titles}× champion</span>`:''}</div>
+      <div class="btns"><button class="btn" id="slotGo-${n}">${s.live?'Resume':'Continue'}</button><button class="btn ghost sm" id="slotDel-${n}">Delete</button>${bak?`<button class="btn ghost sm" id="slotBak-${n}">Restore backup · ${timeAgo(+KV.get('gl3.bakt'+n))}</button>`:''}</div>
+      <div id="slotConf-${n}" class="sl-conf" hidden><p class="note" style="color:#FF8A96">Delete this dynasty for good?</p><div class="btns"><button class="btn danger sm" id="slotYes-${n}">Delete</button><button class="btn ghost sm" id="slotNo-${n}">Keep</button></div></div></div>`};
   $('#setupBody').innerHTML=`
-    <div style="display:flex;flex-direction:column;gap:6px"><div class="h1">Gridiron Live</div><div class="eyebrow">College football dynasty</div></div>
-    <div class="slots">${SLOTS.map(n=>{const s=m.slots[n];if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="h2">+ New dynasty</span><span class="note">Slot ${n} is empty</span></button>`;
-      return `<div class="slot" style="--team:${s.c1}"><div class="top"><span class="badge lg" style="--c1:${s.c1};--c2:${s.c2};--bt:${inkOn(s.c1)}">${esc(s.abbr)}</span><div style="min-width:0"><b>${esc(s.team)}</b><div class="note">${esc(s.name)} · ${esc(s.coach)}</div></div></div>
-      <div class="tags"><span class="tag">${s.season} · ${esc(s.label)}</span><span class="tag">${esc(s.rec)}</span>${s.titles?`<span class="tag gold">${s.titles}× champion</span>`:''}${s.live?'<span class="tag hot">Game in progress</span>':''}</div>
-      <div class="note">Slot ${n} · saved ${timeAgo(s.updated)}</div>
-      <div class="btns"><button class="btn" id="slotGo-${n}">Continue</button><button class="btn ghost sm" id="slotDel-${n}">Delete</button>${KV.get('gl3.bak'+n)?`<button class="btn ghost sm" id="slotBak-${n}">Restore backup · ${timeAgo(+KV.get('gl3.bakt'+n))}</button>`:''}</div>
-      <div id="slotConf-${n}" hidden><p class="note" style="color:var(--hot)">Delete this dynasty for good?</p><div class="btns"><button class="btn danger sm" id="slotYes-${n}">Delete</button><button class="btn ghost sm" id="slotNo-${n}">Keep</button></div></div></div>`}).join('')}</div>
-    <div class="card"><div class="setrow"><div><div class="h2">Quick play</div><p class="note">Any two programs, one game, nothing saved.</p></div><button class="btn" id="quickPlay">Quick play</button></div></div>
-    <div class="card"><div class="setrow"><div><div class="h2">Have a save code?</div><p class="note">Paste a code from Settings › Export save to restore a dynasty on this device.</p></div><button class="btn ghost" id="importCode">Import save code</button></div></div>`;
+    <header class="ttl"><div class="ttl-net"><span class="gln">GLN</span><span>College football dynasty</span></div>
+      <h1 class="ttl-word" aria-label="Gridiron Live"><span class="g">Gridiron</span><span class="l"><i></i>Live</span></h1>
+      <div class="ttl-sub"><span>265 programs</span><span>2026 season</span></div>
+      <button class="ttl-new" id="whatsNew"><i></i>What’s new in version 7</button></header>
+    <div class="eyebrow ttl-h">Your dynasties</div>
+    <div class="slots">${SLOTS.map(card).join('')}</div>
+    <div class="grid2 ttl-more">
+      <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">Any two programs, one game, nothing saved.</p></div><button class="btn" id="quickPlay">Play</button></div>
+      <div class="card ttl-act"><span class="ta-ic">${ICO.code}</span><div><div class="h2">Have a save code?</div><p class="note">Restore a dynasty from Settings › Export save.</p></div><button class="btn ghost" id="importCode">Import</button></div></div>`;
   on('quickPlay',()=>{ac();openQuickPlay()});
+  on('whatsNew',()=>{openModal(`<div class="eyebrow">Gridiron Live 7</div><div class="h2">What’s new</div><ul class="wn">${WHATS_NEW.map(([h,d])=>`<li><b>${h}</b><span>${d}</span></li>`).join('')}</ul><button class="btn light wide" id="wnX">Let’s play</button>`);on('wnX',closeModal)});
   for(const n of SLOTS){
     on('slotNew-'+n,()=>showSetup(n));
     on('slotBak-'+n,()=>{openModal(`<div class="h2">Restore the backup?</div><p class="note">Slot ${n} goes back to the version saved ${timeAgo(+KV.get('gl3.bakt'+n))}. Anything after that is lost.</p><div class="btns"><button class="btn" id="bakYes">Restore</button><button class="btn ghost" id="bakNo">Cancel</button></div>`);on('bakNo',closeModal);on('bakYes',()=>{closeModal();toast(restoreBackup(n)?'Backup restored':'Backup could not be read');showSlots()})});
@@ -47,38 +112,48 @@ function showSlots(){
     on('codeX',closeModal);
     on('codeGo',()=>{try{const L=Saves.importCode($('#codeIn').value);if(!L)throw 0;Saves.save(slot,L);closeModal();showSlots();toast('Save imported')}catch(e){$('#codeErr').textContent='That code could not be read. Make sure you copied all of it.'}});
   });
-  $('#setup').hidden=false;
+  $('#setup').hidden=false;$('#setup .scroll').scrollTop=0;Stage.run();
 }
 
 /* ---------- new dynasty: team picker ---------- */
 function showSetup(slot){
-  hideAll();S.phase='menu';
+  hideAll();S.phase='menu';$('#setup').classList.remove('title');
   SETUP={L:genNCAALeague(),slot,coach:'',name:'',diff:1,conf:'all',div:'FBS',sort:'prestige',q:'',league:'ncaa'};if(typeof packAutoApply==='function')packAutoApply(SETUP.L);
   renderSetup();$('#setup').hidden=false;$('#setup .scroll').scrollTop=0;
 }
-function renderSetup(){
-  const st=SETUP,L=st.L;invalidate();
-  let teams=L.teams.slice();
+/* the schools that pass the division / conference / search filters, in the chosen order */
+function setupTeams(){
+  const st=SETUP,L=st.L,q=st.q.trim().toLowerCase();let teams=L.teams.slice();
   if(st.div!=='all')teams=teams.filter(t=>t.div===st.div);
   if(st.conf!=='all')teams=teams.filter(t=>t.conf===+st.conf);
-  if(st.q)teams=teams.filter(t=>teamName(t).toLowerCase().includes(st.q.toLowerCase())||t.abbr.toLowerCase().includes(st.q.toLowerCase()));
-  teams.sort(st.sort==='ovr'?(a,b)=>teamOvr(b)-teamOvr(a):st.sort==='name'?(a,b)=>a.city.localeCompare(b.city):(a,b)=>b.prestige-a.prestige||teamOvr(b)-teamOvr(a));
-  const tagFor=t=>t.prestige>=5?'<span class="tag gold">Contender</span>':t.prestige<=1?'<span class="tag hot">Rebuild</span>':t.prestige<=2?'<span class="tag blue">Sleeper</span>':'';
+  if(q)teams=teams.filter(t=>teamName(t).toLowerCase().includes(q)||t.abbr.toLowerCase().includes(q)||(t.stadium||'').toLowerCase().includes(q));
+  return teams.sort(st.sort==='ovr'?(a,b)=>teamOvr(b)-teamOvr(a):st.sort==='name'?(a,b)=>a.city.localeCompare(b.city):(a,b)=>b.prestige-a.prestige||teamOvr(b)-teamOvr(a));
+}
+function renderTeamGrid(){
+  const L=SETUP.L,teams=setupTeams(),g=$('#teamGrid');if(!g)return;
+  g.innerHTML=teams.map(t=>{const [fc,fl]=fitOf(t);return `<button class="tp" id="tp-${t.id}" style="--c1:${t.c1};--c2:${t.c2}">${badge(t,'lg')}<span class="meta"><b>${esc(t.city)}</b><small>${esc(t.name)} · ${esc(confName(t.conf,L))}</small>${starsHTML(t.prestige)}<small class="st">${esc(t.stadium||'')}${t.cap?` · ${Math.round(t.cap/1000)}K`:''}</small></span><span class="rt"><span class="o">${tOvr99(teamOvr(t))}<small>OVR</small></span><span class="od"><i>OFF <b>${tOvr99(offOvr(t))}</b></i><i>DEF <b>${tOvr99(defOvr(t))}</b></i></span>${fl?`<span class="tag ${fc}">${fl}</span>`:''}</span></button>`}).join('')||'<p class="note">No schools match that search.</p>';
+  $('#teamCount').textContent=`${teams.length} ${teams.length===1?'program':'programs'}`;
+  g.querySelectorAll('.tp').forEach(b=>b.onclick=()=>openTeamDetail(+b.id.slice(3)));
+}
+function renderSetup(){
+  const st=SETUP,L=st.L;invalidate();
+  const confs=L.confs.map((c,i)=>[c,i]).filter(([c])=>st.div==='all'||c.div===st.div);
   $('#setupBody').innerHTML=`
-    <div class="setrow"><div><div class="eyebrow">New dynasty · slot ${st.slot}</div><div class="h1">Pick your program</div></div><button class="btn ghost sm" id="setBack">Back to saves</button></div>
+    <div class="su-head"><div><div class="eyebrow">New dynasty · slot ${st.slot}</div><div class="h1">Pick your program</div></div><button class="btn ghost sm" id="setBack">‹ Saves</button></div>
     <div class="card"><div class="grid2">
       <div class="field-row"><label for="coachName">Coach name</label><input type="text" id="coachName" maxlength="24" placeholder="Coach Merchant" value="${esc(st.coach)}"></div>
       <div class="field-row"><label for="dynName">Dynasty name</label><input type="text" id="dynName" maxlength="28" placeholder="My Dynasty" value="${esc(st.name)}"></div></div>
       <div class="setrow"><span class="eyebrow">Difficulty</span><div class="seg" id="setDiff">${[[0,'Rookie'],[1,'Varsity'],[2,'All-American'],[3,'Heisman']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${v===st.diff}">${l}</button>`).join('')}</div></div></div>
     <div class="card"><div class="setrow"><span class="eyebrow">League</span><div class="seg" id="leagueSeg">${[['ncaa','All FBS & FCS'],['original','Original schools'],['pack','Load a team pack']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.league===v}">${l}</button>`).join('')}</div></div>
       <p class="note">${st.league==='ncaa'?`All ${L.teams.length} Division I programs: ${L.teams.filter(t=>t.div==='FBS').length} FBS and ${L.teams.filter(isFCS).length} FCS, in their ${L.confs.length} conferences for 2026, with team colors, real rivalries and strength based on recent results. Badges use abbreviations, not official logos. ${st.L.pack?`Rosters from ${esc(st.L.pack.name)}.`:'Players are generated; import real rosters any time.'}`:st.league==='pack'?'Your team pack is loaded.':'Thirty-two original schools you can rename and recolor.'}</p>${typeof packSetupHTML==='function'?packSetupHTML(st):''}</div>
-    <div class="card">
+    <div class="su-filter">
+      <div class="su-q"><input type="search" id="teamQ" placeholder="Search schools, mascots, stadiums" value="${esc(st.q)}" autocomplete="off" aria-label="Search schools"></div>
       ${L.teams.some(isFCS)?`<div class="chips" id="divChips">${[['FBS','FBS'],['FCS','FCS'],['all','All Division I']].map(([v,l])=>`<button class="chipbtn" data-v="${v}" aria-pressed="${st.div===v}">${l}</button>`).join('')}</div>`:''}
-      <div class="field-row"><label for="confSel">Conference</label><select id="confSel"><option value="all">All conferences</option>${L.confs.map((c,i)=>[c,i]).filter(([c])=>st.div==='all'||c.div===st.div).map(([c,i])=>`<option value="${i}" ${String(i)===st.conf?'selected':''}>${esc(c.name)} (${L.teams.filter(t=>t.conf===i).length})</option>`).join('')}</select></div>
-      <div class="setrow"><input type="search" id="teamQ" placeholder="Search schools" value="${esc(st.q)}" style="max-width:320px"><div class="seg" id="sortSeg">${[['prestige','Prestige'],['ovr','Overall'],['name','A–Z']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.sort===v}">${l}</button>`).join('')}</div></div>
-      <div class="teampick">${teams.map(t=>`<button class="tp" id="tp-${t.id}" style="--c1:${t.c1}">${badge(t)}<span class="meta"><b>${esc(teamName(t))}</b><small>${esc(confName(t.conf,L))} · ${`Prestige ${t.prestige}/5`}</small><span class="tags">${tagFor(t)}</span></span><span class="ovr">${tOvr99(teamOvr(t))}<small>OVR</small></span></button>`).join('')||'<p class="note">No schools match that search.</p>'}</div>
-      <button class="btn ghost" id="customProg">Build a custom program from scratch</button>
-    </div>`;
+      <div class="chips scrollx" id="confChips"><button class="chipbtn" data-v="all" aria-pressed="${st.conf==='all'}">All conferences</button>${confs.map(([c,i])=>`<button class="chipbtn" data-v="${i}" aria-pressed="${String(i)===st.conf}">${esc(c.name)}</button>`).join('')}</div>
+      <div class="setrow"><span class="eyebrow" id="teamCount"></span><div class="seg" id="sortSeg">${[['prestige','Prestige'],['ovr','Overall'],['name','A–Z']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.sort===v}">${l}</button>`).join('')}</div></div></div>
+    <div class="teampick" id="teamGrid"></div>
+    <button class="btn ghost wide" id="customProg">Build a custom program from scratch</button>`;
+  renderTeamGrid();
   on('setBack',showSlots);
   $('#coachName').oninput=e=>st.coach=e.target.value;$('#dynName').oninput=e=>st.name=e.target.value;
   document.querySelectorAll('#setDiff button').forEach(b=>b.onclick=()=>{st.diff=+b.dataset.v;renderSetupKeep()});
@@ -87,25 +162,25 @@ function renderSetup(){
     else if(v==='ncaa'){st.L=genNCAALeague();if(typeof packAutoApply==='function')packAutoApply(st.L);st.league=v;st.conf='all';st.div='FBS';renderSetupKeep()}
     else openPackImport(st.L,()=>{st.league='pack';renderSetupKeep()},true)});
   document.querySelectorAll('#divChips button').forEach(b=>b.onclick=()=>{st.div=b.dataset.v;st.conf='all';renderSetupKeep()});
-  const cs=$('#confSel');if(cs)cs.onchange=()=>{st.conf=cs.value;renderSetupKeep()};
+  document.querySelectorAll('#confChips button').forEach(b=>b.onclick=()=>{st.conf=b.dataset.v;renderSetupKeep()});
   document.querySelectorAll('#sortSeg button').forEach(b=>b.onclick=()=>{st.sort=b.dataset.v;renderSetupKeep()});
-  $('#teamQ').oninput=e=>{st.q=e.target.value;renderSetupKeep();const i=$('#teamQ');i.focus();i.setSelectionRange(i.value.length,i.value.length)};
-  document.querySelectorAll('.tp').forEach(b=>b.onclick=()=>openTeamDetail(+b.id.slice(3)));
+  $('#teamQ').oninput=e=>{st.q=e.target.value;renderTeamGrid()};
+  const ac2=$('#confChips [aria-pressed="true"]');if(ac2&&st.conf!=='all'){const r=$('#confChips');r.scrollLeft=ac2.offsetLeft-r.offsetLeft-16}
   on('customProg',openCustomProgram);if(typeof packSetupBind==='function')packSetupBind(st);
 }
 function renderSetupKeep(){const y=$('#setup .scroll').scrollTop;renderSetup();$('#setup .scroll').scrollTop=y}
 function openTeamDetail(id){
   const L=SETUP.L,t=L.teams[id];applyTeamTheme(t);
-  const top=t.roster.slice().sort((a,b)=>ovr(b)-ovr(a)).slice(0,5);const riv=t.rival!=null?L.teams[t.rival]:null;
-  const bar=(l,v)=>`<div class="bar"><span>${l}</span>${meterHTML((v-1)/4*100,t.c1)}<b>${v.toFixed(1)}</b></div>`;
-  openModal(`<div style="display:flex;gap:14px;align-items:center">${badge(t,'xl')}<div style="min-width:0"><div class="eyebrow">${esc(confName(t.conf,L))} · ${t.div}</div><div class="h2" style="font-size:24px">${esc(teamName(t))}</div><div>${`Prestige ${t.prestige}/5`} <span class="note">prestige</span></div></div></div>
-    <div class="bars">${bar('Offense',offOvr(t))}${bar('Defense',defOvr(t))}${bar('Overall',teamOvr(t))}</div>
+  const top=t.roster.slice().sort((a,b)=>ovr(b)-ovr(a)).slice(0,5);const riv=t.rival!=null?L.teams[t.rival]:null;const [fc,fl]=fitOf(t);
+  const kp=(l,v)=>{const o=tOvr99(v);return `<div><em>${l}</em><b>${o}</b>${meterHTML((o-40)/59*100,t.c1)}</div>`};
+  openModal(`<div class="td-hero" style="--c1:${t.c1};--c2:${t.c2};--d:${deepC(t)}"><span class="td-wm" aria-hidden="true">${esc(t.abbr)}</span>${badge(t,'xl')}<div class="td-id"><div class="eyebrow">${esc(confName(t.conf,L))} · ${t.div}</div><div class="h2">${esc(t.city)}</div><div class="td-m">${esc(t.name)}</div><div class="td-tags">${starsHTML(t.prestige)}${fl?`<span class="tag ${fc}">${fl}</span>`:''}</div></div></div>
+    <div class="kpis td-k">${kp('Overall',teamOvr(t))}${kp('Offense',offOvr(t))}${kp('Defense',defOvr(t))}</div>
     <div class="list">
       <div class="lrow"><span class="note">Stadium</span><span>${esc(t.stadium)} · ${(t.cap/1000).toFixed(0)}K seats</span></div>
       <div class="lrow"><span class="note">Rival</span><span>${riv?esc(riv.city)+' · '+esc(t.trophy):'None'}</span></div>
       <div class="lrow"><span class="note">AD expectation</span><span>${adTarget(t)}+ wins a season</span></div>
     </div>
-    <div><div class="eyebrow" style="margin-bottom:6px">Best players</div><div class="list">${top.map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${esc(fullName(p))} · ${yrStr(p)}</span></span>${ovrTag(p)}</div>`).join('')}</div></div>
+    <div><div class="eyebrow" style="margin-bottom:4px">Best players</div><div class="list">${top.map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${esc(fullName(p))} · ${yrStr(p)}</span></span>${ovrTag(p)}</div>`).join('')}</div></div>
     <div class="btns"><button class="btn" id="coachHere">Coach here</button><button class="btn ghost" id="tdEdit">Rename &amp; recolor</button><button class="btn ghost" id="tdX">Back</button></div>`);
   on('tdX',closeModal);on('tdEdit',()=>openEditor(id,()=>openTeamDetail(id),SETUP.L));
   on('coachHere',()=>startDynasty(id));
@@ -144,44 +219,64 @@ function startDynasty(id){
 /* ---------- hub ---------- */
 const TABS=[['home','Home'],['schedule','Schedule'],['rankings','Rankings'],['playoff','Playoff'],['feed','Feed'],['team','Roster'],['program','Program'],['stats','Stats'],['league','League'],['settings','Settings']];
 function showHub(tab){
+  const prev=TAB,wasHidden=$('#hub').hidden;
   invalidate();hideAll();if(tab)TAB=tab;S.phase='hub';applyStyle();
   const u=T(LG.user);applyTeamTheme(u);
-  $('#hubTop').innerHTML=`${badge(u,'lg')}<div class="who"><b>${esc(teamName(u))}</b><small>${LG.season} · ${esc(weekLabel(LG))} · ${confName(u.conf)} · ${esc(LG.coach.name)}</small></div>
-    <div class="pills"><span class="pill">${recStr(u)}</span>${rankOf(u.id)?`<span class="pill gold">#${rankOf(u.id)}</span>`:''}<span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL collective">${money(LG.nil)} NIL</span></div>`;
+  const ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null,top=$('#hubTop');top.style.setProperty('--hd',deepC(u));
+  top.innerHTML=`<span class="ht-wm" aria-hidden="true">${esc(u.abbr)}</span>${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)} <span>${esc(u.name)}</span></b><small>${esc(LG.coach.name)}</small></div>
+    <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div>
+    <div class="pills"><span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL collective">${money(LG.nil)} NIL</span></div>`;
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${TAB===k}">${k==='home'&&LG.phase==='offseason'?'Offseason':l}${k==='home'&&LG.event?'<span class="dot"></span>':''}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{showHub(b.id.slice(4));$('#hubScroll').scrollTop=0});
-  $('#hubBody').innerHTML=({home:hubHome,schedule:hubSchedule,rankings:hubRankings,playoff:hubPlayoff,feed:hubFeed,team:hubTeam,program:hubProgram,stats:hubStats,league:hubLeague,settings:hubSettings})[TAB]();
-  bindHub();$('#hub').hidden=false;applyAccess();const hb=$('#hubBody');hb.classList.remove('fade');void hb.offsetWidth;hb.classList.add('fade');
+  const hb=$('#hubBody');
+  hb.innerHTML=({home:hubHome,schedule:hubSchedule,rankings:hubRankings,playoff:hubPlayoff,feed:hubFeed,team:hubTeam,program:hubProgram,stats:hubStats,league:hubLeague,settings:hubSettings})[TAB]();
+  bindHub();$('#hub').hidden=false;applyAccess();
+  const nav=$('#tabs'),tb=$('#tab-'+TAB);if(tb)nav.scrollLeft=tb.offsetLeft-nav.offsetLeft-(nav.clientWidth-tb.offsetWidth)/2;
+  /* tab changes slide in from the side they come from; same-tab refreshes (settings toggles, upgrades) don't animate */
+  hb.classList.remove('fade','fwd','back');
+  if(wasHidden||prev!==TAB){const d=TABS.findIndex(x=>x[0]===TAB)-TABS.findIndex(x=>x[0]===prev);void hb.offsetWidth;hb.classList.add('fade');if(!wasHidden&&d)hb.classList.add(d>0?'fwd':'back')}
   if(TAB==='home'&&LG.event&&$('#modal').hidden)openEvent();
 }
 function rerender(){const y=$('#hubScroll').scrollTop;showHub();$('#hubScroll').scrollTop=y}
 
+/* next-game card, split in both teams' colors: ranks, records, line, win odds, kickoff, forecast (home tab + pregame) */
+function gameHero(g,wi,extra,link){
+  const u=T(LG.user),opp=T(g.h===LG.user?g.a:g.h),home=g.h===LG.user&&!g.neutral,site=home?1:g.neutral?0:-1,w=LG.weeks[wi];
+  const wp=winProb(u,opp,site),sp=pointSpread(u,opp,site),venue=g.neutral?'Neutral site':(home?u:opp).stadium;
+  const side=(t,c)=>{const r=rankOf(t.id);return `<div class="ng-t ${c}"${link?` data-team="${t.id}"`:''}>${badge(t,'xl')}<div class="tx"><small>${r?`<i>#${r}</i> · `:''}${recStr(t)} · ${t.rec.cw}–${t.rec.cl} ${esc(confName(t.conf))}</small><b>${esc(t.city)}</b><em>${esc(t.name)} · OVR ${tOvr99(teamOvr(t))}</em></div></div>`};
+  return `<div class="card ng" style="--a:${deepC(u)};--b:${deepC(opp)};--a1:${u.c1};--b1:${opp.c1}">
+    <div class="ng-bar"><span class="gln">GLN</span><span class="ng-wk">${esc(w?w.label:'')} · ${g.neutral?'Neutral':home?'Home':'Away'}</span><span class="ng-ko">${esc(KICK[g.slot]||g.slot||'')} <small>ET</small></span></div>
+    <div class="ng-mu">${side(u,'a')}<div class="ng-mid"><span class="at">${home||g.neutral?'VS':'AT'}</span><span class="ln">${esc(lineStr(u,opp,sp))}</span></div>${side(opp,'b')}</div>
+    <div class="ng-wp" style="--w:${(wp*100).toFixed(1)}%"><b>${pct(wp)}</b><span class="bar"><i></i><i></i></span><b>${pct(1-wp)}</b><em>Win odds</em></div>
+    <div class="ng-meta"><span>${WX_ICON[g.wx]||''} ${esc(g.wx||'Clear')} · ${fcTemp(g,wi)}°</span><span>${esc(venue||'')}</span>${gameFlags(LG,g,wi).map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join('')}</div>
+    ${extra||''}</div>`;
+}
 function hubHome(){
   if(LG.phase==='offseason')return hubOffseason();
   const u=T(LG.user),w=LG.weeks[LG.week],g=userGameThisWeek();
   let main='';
-  if(LG.live&&g){main+=`<div class="card hero"><div class="eyebrow">Game in progress</div><div class="h2">${esc(u.city)} ${LG.live.score[0]} – ${LG.live.score[1]} ${esc(T(LG.live.opp).city)} · ${LG.live.ot?'OT':qName(LG.live.q)+' '+fmtClock(LG.live.clock)}</div><div class="btns"><button class="btn" id="resumeGame">Resume game</button><button class="btn ghost" id="abandonGame">Sim the rest</button></div></div>`}
-  else if(g){
-    const opp=T(g.h===LG.user?g.a:g.h),home=g.h===LG.user&&!g.neutral;const wp=winProb(u,opp,home?1:g.neutral?0:-1);
-    main+=`<div class="card hero"><div class="eyebrow">${esc(w.label)}${g.neutral?' · Neutral site':home?' · Home':' · Away'}</div>
-      <div class="tags">${gameFlags(LG,g,LG.week).map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join('')}</div>
-      <div class="matchup"><div class="side">${badge(u,'lg')}<b>${rankTag(u.id)}${esc(u.city)}</b><small>${recStr(u)} · OVR ${tOvr99(teamOvr(u))}</small></div><span class="vs">${home||g.neutral?'VS':'AT'}</span>
-      <div class="side">${badge(opp,'lg')}<b>${rankTag(opp.id)}${esc(opp.city)}</b><small>${recStr(opp)} · OVR ${tOvr99(teamOvr(opp))}</small></div></div>
-      <div class="tags"><span class="tag">${WX_ICON[g.wx]} ${g.wx}</span><span class="tag">${g.slot} kickoff</span><span class="tag ${wp>=.5?'ok':'hot'}">Win chance ${pct(wp)}</span></div>
-      <div class="btns"><button class="btn" id="playGame">Play game</button><button class="btn ghost" id="simGame">Sim game</button></div></div>`;
-  }else if(w){
-    main+=`<div class="card"><div class="eyebrow">${esc(w.label)}</div><div class="h2">${LG.week>=LG.R?'Your season is over. The postseason goes on.':'Bye week'}</div><div class="list">${w.games.slice(0,10).map(x=>`<div class="lrow"><span class="l">${tcell(T(x.h))} <span class="note">vs</span> ${tcell(T(x.a))}</span><span class="note">${esc(x.tag||'')}</span></div>`).join('')}</div><button class="btn" id="advWeek">Sim ${esc(w.label)}</button></div>`;
+  if(LG.live&&g){const o=T(LG.live.opp);main+=`<div class="card hero lvc"><div class="eyebrow"><i class="onair"></i>Game in progress · ${esc(w?w.label:'')}</div>
+    <div class="lvs">${badge(u,'lg')}<b>${LG.live.score[0]}</b><span>${LG.live.ot?'OT':qName(LG.live.q)+' · '+fmtClock(LG.live.clock)}</span><b>${LG.live.score[1]}</b>${badge(o,'lg')}</div>
+    <div class="lvn"><span>${esc(u.city)}</span><span>${esc(o.city)}</span></div>
+    <div class="btns"><button class="btn" id="resumeGame">Resume game</button><button class="btn ghost" id="abandonGame">Sim the rest</button></div></div>`}
+  else if(g)main+=gameHero(g,LG.week,`<div class="btns ng-act"><button class="btn" id="playGame">${ICO.play}Play game</button><button class="btn ghost" id="simGame">Sim game</button></div>`,true);
+  else if(w){
+    main+=`<div class="card bye"><div class="eyebrow">${esc(w.label)}</div><div class="h2">${LG.week>=LG.R?'Your season is over. The postseason goes on.':'Bye week'}</div><div class="list">${w.games.slice(0,10).map(x=>`<div class="lrow"><span class="l">${tcell(T(x.h))} <span class="note">vs</span> ${tcell(T(x.a))}</span><span class="note">${esc(x.tag||'')}</span></div>`).join('')}</div><button class="btn" id="advWeek">Sim ${esc(w.label)}</button></div>`;
   }
-  const tgt=adTarget(u),sec=LG.coach.security;
+  const tgt=adTarget(u),sec=LG.coach.security,R=LG.R||13;
+  const cs=confStandings(LG,u.conf),cpos=cs.findIndex(t=>t.id===LG.user)+1,ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null;
+  const track=LG.weeks.slice(0,R).map((wk,i)=>{const x=wk.games.find(z=>z.h===LG.user||z.a===LG.user);const c=!x?'bye':x.hs==null?'':((x.h===LG.user?x.hs>x.as:x.as>x.hs)?'w':'l');return `<i class="${c}${i===LG.week?' now':''}"></i>`}).join('');
+  const season=`<div class="card sp"><div class="sp-top"><div><div class="eyebrow">${LG.season} season</div><div class="sp-wk">${LG.week<R?`Week ${LG.week+1}<small>of ${R}</small>`:esc(w?w.label:'Postseason')}</div></div>
+    <div class="sp-k"><div><em>Record</em><b>${recStr(u)}</b></div>${cpos?`<div><em>${esc(confName(u.conf))}</em><b>${ordinal(cpos)}</b></div>`:''}<div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div></div>
+    <div class="sp-track" aria-hidden="true">${track}</div><div class="sp-foot"><span>${u.rec.cw}–${u.rec.cl} in conference</span><span>AD expects ${tgt}+ wins</span></div></div>`;
   const ad=`<div class="card"><div class="eyebrow">Athletic director</div><div class="kv"><span>Expectation</span><b>${tgt}+ wins</b></div><div class="kv"><span>Job security</span><b class="${sec<30?'res-l':''}">${sec<25?'Hot seat':sec<50?'Uneasy':sec<80?'Stable':'Untouchable'}</b></div>${meterHTML(sec)}
     <div class="kv"><span>Fan approval</span><b>${Math.round(LG.fan)}%</b></div>${meterHTML(LG.fan)}<div class="kv"><span>Locker room</span><b>${Math.round(LG.morale)}%</b></div>${meterHTML(LG.morale)}</div>`;
   const heis=LG.heismanWatch&&LG.heismanWatch.length?`<div class="card"><div class="eyebrow">Heisman watch</div><div class="list">${LG.heismanWatch.map((h,i)=>`<div class="lrow"><span class="l"><span class="rank">${i+1}</span>${badge(T(h.team),'sm')}<span><b>${esc(h.name)}</b> <span class="note">${h.pos}</span><br><small class="note">${esc(h.line)}</small></span></span></div>`).join('')}</div></div>`:'';
   const potw=LG.potw?`<div class="card"><div class="eyebrow">${confName(u.conf)} player of the week</div><div class="tname">${badge(T(LG.potw.team))}<span><b>${esc(LG.potw.name)}</b> · ${LG.potw.pos} · ${esc(T(LG.potw.team).city)}</span></div></div>`:'';
   const lw=LG.lastWeek?`<div class="card"><div class="eyebrow">Around the league · ${esc(LG.lastWeek.label)}</div><div class="list">${LG.lastWeek.games.filter(x=>x.h===LG.user||x.a===LG.user||(x.tag&&!/First Round|Second Round/.test(x.tag))||x.upset||((x.rh||x.ra)&&T(x.h).div===u.div)||T(x.h).conf===u.conf).sort((a,b)=>((b.h===LG.user||b.a===LG.user)-(a.h===LG.user||a.a===LG.user))||(!!(b.rh||b.ra)-!!(a.rh||a.ra))).slice(0,14).map(x=>{const hw=x.hs>x.as;return `<div class="lrow"><span class="l">${tcell(T(x.h),(x.rh?'#'+x.rh+' ':'')+T(x.h).city)}<b class="${hw?'res-w':''}">${x.hs}</b><span class="note">–</span><b class="${!hw?'res-w':''}">${x.as}</b>${tcell(T(x.a),(x.ra?'#'+x.ra+' ':'')+T(x.a).city)}</span>${x.upset?'<span class="tag hot">Upset</span>':x.tag?`<span class="note">${esc(x.tag)}</span>`:''}</div>`}).join('')}</div></div>`:'';
-  const news=LG.news.length?`<div class="card"><div class="eyebrow">Headlines</div><div class="list">${LG.news.slice(0,5).map(n=>`<div class="lrow"><span>${n.good?'<span class="tag ok">Program</span> ':''}${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
-  const cs=confStandings(LG,u.conf);
+  const news=LG.news.length?`<div class="card news"><div class="eyebrow">Top news</div><div class="list">${LG.news.slice(0,4).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${n.good?'<span class="tag ok">Program</span> ':''}${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
   const conf=`<div class="card"><div class="eyebrow">${confName(u.conf)} standings</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th></tr></thead><tbody>${cs.map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t)}</td><td class="n">${t.rec.cw}–${t.rec.cl}</td><td class="n">${recStr(t)}</td></tr>`).join('')}</tbody></table></div></div>`;
-  return main+gameOfWeek()+`<div class="grid2">${ad}${heis||potw}</div><div class="grid2">${lw||news}${conf}</div>${lw&&news?`<div class="grid2">${news}${potw&&heis?potw:''}</div>`:''}`;
+  return main+`<div class="grid2">${season}${news||conf}</div>`+gameOfWeek()+`<div class="grid2">${ad}${heis||potw}</div>${lw||news?`<div class="grid2">${lw}${news?conf:''}</div>`:''}${potw&&heis?`<div class="grid2">${potw}</div>`:''}`;
 }
 function hubSchedule(){
   const rows=LG.weeks.map((w,i)=>{const g=w.games.find(x=>x.h===LG.user||x.a===LG.user);if(!g)return w.kind==='reg'?`<tr class="${i===LG.week?'me':''}"><td>Wk ${i+1}</td><td class="note">Bye week</td><td></td></tr>`:'';const home=g.h===LG.user,opp=T(home?g.a:g.h);
@@ -520,15 +615,12 @@ function openPregame(g){
   if(g.wx==='Rain')keys.push('Rain makes the ball slick: shorter throws, and protect it.');if(g.wx==='Wind')keys.push('The wind will push deep balls and kicks off line.');if(g.wx==='Snow')keys.push('Snow slows everyone down a step. Lean on the run.');
   if(g.rival)keys.push(`${u.trophy} is on the line.`);
   const watch=[...starters(opp,'QB'),...starters(opp,'WR').slice(0,1),...starters(opp,'DL').slice(0,4).sort((a,b)=>ovr(b)-ovr(a)).slice(0,1)];
-  const wp=winProb(u,opp,home?1:g.neutral?0:-1);
-  openModal(`<div class="eyebrow">Pregame show · ${esc(LG.weeks[LG.week].label)} · ${esc(g.neutral?'Neutral site':home?u.stadium:opp.stadium)}</div>
-    <div class="tags">${gameFlags(LG,g,LG.week).map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join('')}</div>
-    <div class="matchup"><div class="side">${badge(u,'xl')}<b>${rankTag(u.id)}${esc(u.city)}</b><small>${recStr(u)}</small></div><span class="vs">${home||g.neutral?'VS':'AT'}</span><div class="side">${badge(opp,'xl')}<b>${rankTag(opp.id)}${esc(opp.city)}</b><small>${recStr(opp)}</small></div></div>
-    <div class="tags"><span class="tag">${WX_ICON[g.wx]} ${g.wx}</span><span class="tag">${g.slot}</span><span class="tag ${wp>=.5?'ok':'hot'}">Win chance ${pct(wp)}</span>${!home&&!g.neutral?'<span class="tag hot">Hostile crowd</span>':''}</div>
-    <div><div class="eyebrow" style="margin-bottom:6px">Keys to the game</div><div class="list">${keys.slice(0,3).map(k=>`<div class="lrow"><span>${esc(k)}</span></div>`).join('')}</div></div>
-    <div><div class="eyebrow" style="margin-bottom:6px">Players to watch</div><div class="list">${watch.map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${esc(fullName(p))} · ${esc(opp.city)}</span></span>${ovrTag(p)}</div>`).join('')}</div></div>
-    <div><div class="eyebrow" style="margin-bottom:6px">Uniform</div><div class="seg" id="uniSeg">${UNI_STYLES.map(([k,l])=>`<button data-v="${k}" aria-pressed="${(LG.settings.uniform||'auto')===k}">${l}</button>`).join('')}</div></div>
-    <div class="btns"><button class="btn" id="kickoff">Kick off</button><button class="btn ghost" id="pgX">Back</button></div>`,true);
+  openModal(`<div class="pg-head"><span class="eyebrow">Pregame show</span><span class="eyebrow">${esc(g.neutral?'Neutral site':home?u.stadium:opp.stadium)}</span>${!home&&!g.neutral?'<span class="tag hot">Hostile crowd</span>':''}</div>
+    ${gameHero(g,LG.week)}
+    <div class="grid2 pg-grid"><div class="card"><div class="eyebrow">Keys to the game</div><ol class="pg-keys">${keys.slice(0,3).map(k=>`<li>${esc(k)}</li>`).join('')}</ol></div>
+    <div class="card"><div class="eyebrow">Players to watch · ${esc(opp.abbr)}</div><div class="list">${watch.map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${esc(fullName(p))} <small class="note">#${p.num} · ${yrStr(p)}</small></span></span>${ovrTag(p)}</div>`).join('')}</div></div></div>
+    <div class="setrow pg-uni"><span class="eyebrow">Uniform</span><div class="seg" id="uniSeg">${UNI_STYLES.map(([k,l])=>`<button data-v="${k}" aria-pressed="${(LG.settings.uniform||'auto')===k}">${l}</button>`).join('')}</div></div>
+    <div class="btns"><button class="btn" id="kickoff">${ICO.play}Kick off</button><button class="btn ghost" id="pgX">Back</button></div>`,true);
   document.querySelectorAll('#uniSeg button').forEach(b=>b.onclick=()=>{LG.settings.uniform=b.dataset.v;document.querySelectorAll('#uniSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));saveNow()});
   on('pgX',closeModal);on('kickoff',()=>{closeModal();startUserGame(g)});
 }
