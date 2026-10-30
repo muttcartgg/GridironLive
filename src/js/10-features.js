@@ -169,7 +169,23 @@ function uniStyle(team){
   if(team===S.home)return userStyle;
   return userStyle==='white'?'color':'white';
 }
+/* colour distance 0..1 (weighted "redmean" RGB) */
+const uniRGB=h=>{const n=parseInt(String(h).slice(1),16)||0;return [n>>16,n>>8&255,n&255]};
+function uniDist(a,b){const [r1,g1,b1]=uniRGB(a),[r2,g2,b2]=uniRGB(b),rm=(r1+r2)/2,dr=r1-r2,dg=g1-g2,db=b1-b2;return Math.sqrt((2+rm/256)*dr*dr+4*dg*dg+(2+(255-rm)/256)*db*db)/765}
+/* teams always read differently: when the road team's jersey or helmet is too close to the host's (Georgia at
+   Fresno State: both red helmets; a silver team in colors vs a white road set), the road team switches to a
+   contrasting set: the dark alternate (or whites against a dark host) for a jersey clash, a contrasting helmet and
+   darker trim for a helmet clash */
 function uniColors(team){
+  const u=uniBase(team);if(!S.home||!S.away||(team!==S.home&&team!==S.away)||team===hostT())return u;
+  const o=uniBase(team===S.home?S.away:S.home);
+  if(uniDist(u.j,o.j)<.2){if(lum(o.j)>.35)return {j:'#17191f',t:team.c1,p:'#17191f',h:'#17191f',s:'#17191f',mask:team.c1};const k=shade(team.c1,-.45);return {j:'#F1F2F4',t:k,p:'#D7DAE0',h:k,s:k,mask:'#C7CCD4'}}
+  if(uniDist(u.h,o.h)<.2||uniDist(u.h,o.j)<.12){
+    let h=u.h,bd=-1;for(const c of [team.c2,shade(team.c1,-.55),'#17191f','#F1F2F4']){if(!c)continue;const d=Math.min(uniDist(c,o.h),uniDist(c,o.j)*1.3,uniDist(c,u.j)*2);if(d>bd){bd=d;h=c}}
+    const t=lum(u.j)>.8?(lum(h)<.6?h:shade(team.c1,-.45)):u.t;return {...u,h,t,s:lum(u.j)>.8?t:u.s}}
+  return u;
+}
+function uniBase(team){
   const st=uniStyle(team),c1=team.c1,c2=team.c2,ct=contrasty(c1,c2);
   if(st==='white')return {j:'#F1F2F4',t:c1,p:'#D7DAE0',h:c1,s:c1,mask:'#C7CCD4'};
   if(st==='alt')return {j:'#17191f',t:c1,p:'#17191f',h:'#17191f',s:'#17191f',mask:c1};
