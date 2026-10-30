@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 15): season-long recruiting
+
+- About 2,000 prospects every season with composite ratings (2–5 stars, ~30–35 five-stars nationally), national, position and state rankings, real home states, size, hidden true ratings and development traits (gems and busts), and what each one cares about (playing time, contender, pro potential, NIL, close to home, academics, coach stability, exposure, conference).
+- Recruit all season: spend weekly hours to scout, contact, pitch, offer and host official visits at home games (the result and the hype matter). Every school recruits against you; prospects commit and sometimes decommit; early signing after Championship Week and Signing Day in the offseason; 247-style class rankings.
+- New Recruiting tab: your board, a prospect search, prospect sheets and your class; a recruiting card on Home. "Let my staff handle it" (on by default) recruits for you.
+- Freshmen arrive with their true ratings (gems and busts revealed), and development traits speed up growth.
+
 ## Version 7 (part 14): the 2026 college landscape
 
 - Every FBS team now plays exactly 12 regular-season games (one bye, its league games, rivalries in Rivalry Week, an FCS opponent for many Power 4 teams); FCS teams play 12 (Ivy League 10).
