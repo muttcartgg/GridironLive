@@ -9,6 +9,15 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 17): development, awards, draft and simulation
+
+- Player development: small weekly gains for players who play, offseason growth by class year, development trait, potential, coach traits and training; the real 4-game redshirt rule with an auto-redshirt option; slower growth after injuries; targeting suspensions carry into the next game under the 2026 rules.
+- Awards: Heisman finalists and ceremony, the Maxwell, Walter Camp, Davey O'Brien, Doak Walker, Biletnikoff, Mackey, Outland, Rimington, Bednarik, Nagurski, Butkus, Thorpe, Lou Groza, Ray Guy and Broyles awards, Coach of the Year, All-America and Freshman All-America teams, all-conference teams and conference players of the year.
+- NFL draft: early declarations, a mock draft board during the season, a 7-round, 224-pick draft and draft counts per program (they help recruiting).
+- Simulation: about 27–28 points per game for FBS teams, a home edge of about 2.5 points, lower scoring in bad weather, and realistic stat leaders (about 4,300 passing, 1,500 rushing and 1,500 receiving yards, 14 sacks, 7 interceptions).
+- Record book (game, season and career records), Hall of Fame and program timeline.
+- Smaller, faster saves: about half the size, saving in well under a second; old saves load as before.
+
 ## Version 7 (part 16): transfer portal, NIL and coaching career
 
 - Every team has a head coach, offensive and defensive coordinators with ratings, contracts and 1–2 signature traits (Turnover Specialist, QB Whisperer, Offensive Guru, Air Raid, Run Game Architect, Defensive Mastermind, Pass Rush Guru, Special Teams Ace, Recruiter, Portal King, Developer, Motivator, Clock Manager, Disciplinarian…) that matter in live games, simulated games and the season. The roster pack adds the real 2026 head coaches and Alabama DC Kane Wommack (Turnover Specialist); the app itself keeps generated names.
