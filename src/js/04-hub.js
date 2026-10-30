@@ -242,7 +242,7 @@ function rerender(){const y=$('#hubScroll').scrollTop;showHub();$('#hubScroll').
 /* next-game card, split in both teams' colors: ranks, records, line, win odds, kickoff, forecast (home tab + pregame) */
 function gameHero(g,wi,extra,link){
   const u=T(LG.user),opp=T(g.h===LG.user?g.a:g.h),home=g.h===LG.user&&!g.neutral,site=home?1:g.neutral?0:-1,w=LG.weeks[wi];
-  const wp=winProb(u,opp,site),sp=pointSpread(u,opp,site),venue=g.neutral?'Neutral site':(home?u:opp).stadium;
+  const wp=winProb(u,opp,site),sp=pointSpread(u,opp,site),venue=g.neutral?g.site||'Neutral site':(home?u:opp).stadium;
   const side=(t,c)=>{const r=rankOf(t.id);return `<div class="ng-t ${c}"${link?` data-team="${t.id}"`:''}>${badge(t,'xl')}<div class="tx"><small>${r?`<i>#${r}</i> · `:''}${recStr(t)} · ${t.rec.cw}–${t.rec.cl} ${esc(confName(t.conf))}</small><b>${esc(t.city)}</b><em>${esc(t.name)} · OVR ${tOvr99(teamOvr(t))}</em></div></div>`};
   return `<div class="card ng" style="--a:${deepC(u)};--b:${deepC(opp)};--a1:${u.c1};--b1:${opp.c1}">
     <div class="ng-bar"><span class="gln">GLN</span><span class="ng-wk">${esc(w?w.label:'')} · ${g.neutral?'Neutral':home?'Home':'Away'}</span><span class="ng-ko">${esc(KICK[g.slot]||g.slot||'')} <small>ET</small></span></div>
@@ -376,16 +376,17 @@ function hubPlayoff(){
   const W=g=>g&&g.hs!=null?winner(g):null;
   /* bracket order top to bottom: QF0 (1 vs 8/9), QF3 (4 vs 5/12), QF1 (2 vs 7/10), QF2 (3 vs 6/11) */
   const r1=[3,0,2,1].map(k=>c.r1[k]?game(c.r1[k],null,null,`#${5+k} vs #${12-k}`):game(null,s[4+k],s[11-k],`#${5+k} vs #${12-k} · on campus`));
-  const qf=[0,3,1,2].map(k=>c.qf[k]?game(c.qf[k],null,null,CFP_QF[k]):game(null,s[k],W(c.r1[[3,2,1,0][k]]),CFP_QF[k]));
-  const sf=[0,1].map(k=>c.sf[k]?game(c.sf[k],null,null,CFP_SF[k]):game(null,W(c.qf[k===0?0:1]),W(c.qf[k===0?3:2]),CFP_SF[k]));
-  const fin=c.final?game(c.final,null,null,'National Championship'):game(null,W(c.sf[0]),W(c.sf[1]),'National Championship');
+  const B=c.bw||cfpBowls(LG,s),bl=b=>b.n+(b.d?' · '+b.d:''),fl='National Championship'+(B.fin.s?' · '+B.fin.d+' · '+B.fin.s.split(', ').pop():'');
+  const qf=[0,3,1,2].map(k=>c.qf[k]?game(c.qf[k],null,null,bl(B.qf[k])):game(null,s[k],W(c.r1[[3,2,1,0][k]]),bl(B.qf[k])));
+  const sf=[0,1].map(k=>c.sf[k]?game(c.sf[k],null,null,bl(B.sf[k])):game(null,W(c.qf[k===0?0:1]),W(c.qf[k===0?3:2]),bl(B.sf[k])));
+  const fin=c.final?game(c.final,null,null,fl):game(null,W(c.sf[0]),W(c.sf[1]),fl);
   const champ=LG.champ!=null&&LG.cfp?T(LG.champ):null;
   const bw=LG.weeks[LG.R+1]?LG.weeks[LG.R+1].games.filter(g=>g.bowl):[];
   return `<div class="card cfp"><div class="setrow"><div><div class="eyebrow">${c.projected?(c.src==='cfp'?'Projected · from this week’s CFP rankings':'Projected · from the AP Top 25 (CFP rankings start after Week '+cfpFrom(LG)+')'):LG.season+' College Football Playoff'}</div><div class="h2">College Football Playoff</div></div>${champ?`<div class="champ" style="--c1:${champ.c1}">${badge(champ,'lg')}<div><small>National champion</small><b>${esc(champ.city)}</b></div></div>`:''}</div>
     <div class="bracket2"><div class="bcol"><div class="bhead">First round</div><div class="bms">${r1.join('')}</div></div><div class="bcol"><div class="bhead">Quarterfinals</div><div class="bms">${qf.join('')}</div></div><div class="bcol"><div class="bhead">Semifinals</div><div class="bms">${sf.join('')}</div></div><div class="bcol fin"><div class="bhead">Championship</div><div class="bms">${fin}</div></div></div>
-    <p class="note">Twelve teams picked from the final CFP rankings: ${p4Set(LG).size>=LG.confs.filter(x=>x.div==='FBS'&&!x.ind).length?'every conference champion gets an automatic bid':'each Power 4 champion and the highest-ranked Group of 5 champion get automatic bids, Notre Dame is in if ranked in the top 12,'} and the highest-ranked teams left fill the field (★ conference champion). Straight seeding by ranking: seeds 1–4 get byes and seeds 5–8 host first-round games on campus. Swipe sideways to see the whole bracket.</p></div>
+    <p class="note">Twelve teams picked from the final CFP rankings: ${p4Set(LG).size>=LG.confs.filter(x=>x.div==='FBS'&&!x.ind).length?'every conference champion gets an automatic bid':'each Power 4 champion and the highest-ranked Group of 5 champion get automatic bids, Notre Dame is in if ranked in the top 12,'} and the highest-ranked teams left fill the field (★ conference champion). Straight seeding by ranking: seeds 1–4 get byes and seeds 5–8 host first-round games on campus.${LG.kind==='ncaa'?' First round Dec 18–19; quarterfinals at the Fiesta, Peach, Rose and Cotton bowls; semifinals at the Orange and Sugar bowls; title game Jan. 25, 2027 at Allegiant Stadium, Las Vegas.':''} Swipe sideways to see the whole bracket.</p></div>
     ${c.projected?`<div class="card"><div class="h2">Bubble watch</div>${cfpBubble(LG,c)||'<p class="note">Bubble watch starts in November.</p>'}</div>`:''}
-    ${bw.length?`<div class="card"><div class="h2">Bowl season · ${bw.length} games</div><div class="res-grid">${bw.map(g=>{const H=T(g.h),A=T(g.a),done=g.hs!=null;return `<div class="res-g"><div class="rt ${done&&g.as>g.hs?'w':''}" data-team="${A.id}">${badge(A,'sm')}<span>${esc(A.city)}</span><b>${done?g.as:''}</b></div><div class="rt ${done&&g.hs>g.as?'w':''}" data-team="${H.id}">${badge(H,'sm')}<span>${esc(H.city)}</span><b>${done?g.hs:''}</b></div><small class="note">${esc(g.tag)}</small></div>`}).join('')}</div></div>`:''}
+    ${bw.length?`<div class="card"><div class="h2">Bowl season · ${bw.length} games</div><div class="res-grid">${bw.map(g=>{const H=T(g.h),A=T(g.a),done=g.hs!=null;return `<div class="res-g"><div class="rt ${done&&g.as>g.hs?'w':''}" data-team="${A.id}">${badge(A,'sm')}<span>${esc(A.city)}</span><b>${done?g.as:''}</b></div><div class="rt ${done&&g.hs>g.as?'w':''}" data-team="${H.id}">${badge(H,'sm')}<span>${esc(H.city)}</span><b>${done?g.hs:''}</b></div><small class="note">${esc(g.tag+(g.date?' · '+g.date:''))}</small></div>`}).join('')}</div></div>`:''}
     ${LG.fcsp?fcsBracket():''}`;
 }
 function fcsBracket(){
@@ -615,7 +616,7 @@ function openPregame(g){
   if(g.wx==='Rain')keys.push('Rain makes the ball slick: shorter throws, and protect it.');if(g.wx==='Wind')keys.push('The wind will push deep balls and kicks off line.');if(g.wx==='Snow')keys.push('Snow slows everyone down a step. Lean on the run.');
   if(g.rival)keys.push(`${u.trophy} is on the line.`);
   const watch=[...starters(opp,'QB'),...starters(opp,'WR').slice(0,1),...starters(opp,'DL').slice(0,4).sort((a,b)=>ovr(b)-ovr(a)).slice(0,1)];
-  openModal(`<div class="pg-head"><span class="eyebrow">Pregame show</span><span class="eyebrow">${esc(g.neutral?'Neutral site':home?u.stadium:opp.stadium)}</span>${!home&&!g.neutral?'<span class="tag hot">Hostile crowd</span>':''}</div>
+  openModal(`<div class="pg-head"><span class="eyebrow">Pregame show</span><span class="eyebrow">${esc(g.neutral?g.site||'Neutral site':home?u.stadium:opp.stadium)}</span>${!home&&!g.neutral?'<span class="tag hot">Hostile crowd</span>':''}</div>
     ${gameHero(g,LG.week)}
     <div class="grid2 pg-grid"><div class="card"><div class="eyebrow">Keys to the game</div><ol class="pg-keys">${keys.slice(0,3).map(k=>`<li>${esc(k)}</li>`).join('')}</ol></div>
     <div class="card"><div class="eyebrow">Players to watch · ${esc(opp.abbr)}</div><div class="list">${watch.map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${esc(fullName(p))} <small class="note">#${p.num} · ${yrStr(p)}</small></span></span>${ovrTag(p)}</div>`).join('')}</div></div></div>

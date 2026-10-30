@@ -5,73 +5,73 @@
    Badges use text abbreviations, not official logos. Edit anything with a team pack.
    ========================================================= */
 const NCAA=[
- {name:'SEC',div:'FBS',cg:9,ccg:true,t:`Alabama|Crimson Tide|ALA|#9E1B32|#FFFFFF|4.5
+ {name:'SEC',div:'FBS',cg:9,ccg:true,site:'Mercedes-Benz Stadium, Atlanta',t:`Alabama|Crimson Tide|ALA|#9E1B32|#FFFFFF|4.3
 Arkansas|Razorbacks|ARK|#9D2235|#FFFFFF|2.9
-Auburn|Tigers|AUB|#0C2340|#E87722|3.3
-Florida|Gators|UF|#0021A5|#FA4616|3.3
+Auburn|Tigers|AUB|#0C2340|#E87722|3.5
+Florida|Gators|UF|#0021A5|#FA4616|3.8
 Georgia|Bulldogs|UGA|#BA0C2F|#000000|4.6
-Kentucky|Wildcats|UK|#0033A0|#FFFFFF|2.9
-LSU|Tigers|LSU|#461D7C|#FDD023|3.8
-Mississippi State|Bulldogs|MSST|#660000|#FFFFFF|2.8
+Kentucky|Wildcats|UK|#0033A0|#FFFFFF|3.9
+LSU|Tigers|LSU|#461D7C|#FDD023|4.0
+Mississippi State|Bulldogs|MSST|#660000|#FFFFFF|3.2
 Missouri|Tigers|MIZ|#F1B82D|#000000|3.7
-Oklahoma|Sooners|OU|#841617|#FDF9D8|4.2
-Ole Miss|Rebels|MISS|#CE1126|#14213D|4.4
+Oklahoma|Sooners|OU|#841617|#FDF9D8|3.5
+Ole Miss|Rebels|MISS|#CE1126|#14213D|4.1
 South Carolina|Gamecocks|SC|#73000A|#000000|3.3
 Tennessee|Volunteers|TENN|#FF8200|#FFFFFF|4.0
-Texas|Longhorns|TEX|#BF5700|#FFFFFF|4.4
-Texas A&M|Aggies|TAMU|#500000|#FFFFFF|4.2
-Vanderbilt|Commodores|VAN|#000000|#CFAE70|3.8`},
- {name:'Big Ten',div:'FBS',cg:9,ccg:true,t:`Illinois|Fighting Illini|ILL|#13294B|#E84A27|3.7
+Texas|Longhorns|TEX|#BF5700|#FFFFFF|4.1
+Texas A&M|Aggies|TAMU|#500000|#FFFFFF|3.6
+Vanderbilt|Commodores|VAN|#000000|#CFAE70|3.4`},
+ {name:'Big Ten',div:'FBS',cg:9,ccg:true,site:'Lucas Oil Stadium, Indianapolis',t:`Illinois|Fighting Illini|ILL|#13294B|#E84A27|3.7
 Indiana|Hoosiers|IU|#990000|#EEEDEB|4.8
-Iowa|Hawkeyes|IOWA|#000000|#FFCD00|3.7
+Iowa|Hawkeyes|IOWA|#000000|#FFCD00|3.6
 Maryland|Terrapins|MD|#E03A3E|#FFD520|2.9
-Michigan|Wolverines|MICH|#00274C|#FFCB05|4.1
+Michigan|Wolverines|MICH|#00274C|#FFCB05|3.5
 Michigan State|Spartans|MSU|#18453B|#FFFFFF|2.8
 Minnesota|Golden Gophers|MINN|#7A0019|#FFCC33|3.2
 Nebraska|Cornhuskers|NEB|#E41C38|#FFFFFF|3.3
-Northwestern|Wildcats|NW|#4E2A84|#FFFFFF|2.9
+Northwestern|Wildcats|NW|#4E2A84|#FFFFFF|3.7
 Ohio State|Buckeyes|OSU|#BB0000|#666666|4.8
-Oregon|Ducks|ORE|#154733|#FEE123|4.6
-Penn State|Nittany Lions|PSU|#041E42|#FFFFFF|3.8
+Oregon|Ducks|ORE|#154733|#FEE123|3.9
+Penn State|Nittany Lions|PSU|#041E42|#FFFFFF|3.3
 Purdue|Boilermakers|PUR|#000000|#CFB991|2.4
 Rutgers|Scarlet Knights|RUTG|#CC0033|#000000|2.9
-UCLA|Bruins|UCLA|#2D68C4|#F2A900|2.6
-USC|Trojans|USC|#990000|#FFC72C|4.0
-Washington|Huskies|UW|#4B2E83|#B7A57A|3.8
-Wisconsin|Badgers|WIS|#C5050C|#FFFFFF|2.9`},
- {name:'Big 12',div:'FBS',cg:9,ccg:true,t:`Arizona|Wildcats|ARIZ|#CC0033|#003366|3.4
+UCLA|Bruins|UCLA|#2D68C4|#F2A900|4.1
+USC|Trojans|USC|#990000|#FFC72C|3.8
+Washington|Huskies|UW|#4B2E83|#B7A57A|3.4
+Wisconsin|Badgers|WIS|#C5050C|#FFFFFF|3.4`},
+ {name:'Big 12',div:'FBS',cg:9,ccg:true,site:'AT&T Stadium, Arlington, Texas',t:`Arizona|Wildcats|ARIZ|#CC0033|#003366|3.7
 Arizona State|Sun Devils|ASU|#8C1D40|#FFC627|3.7
 Baylor|Bears|BAY|#154734|#FFB81C|3.3
-BYU|Cougars|BYU|#002E5D|#FFFFFF|4.1
+BYU|Cougars|BYU|#002E5D|#FFFFFF|4.4
 Cincinnati|Bearcats|CIN|#E00122|#000000|3.4
 Colorado|Buffaloes|COLO|#000000|#CFB87C|3.1
-Houston|Cougars|HOU|#C8102E|#FFFFFF|3.5
+Houston|Cougars|HOU|#C8102E|#FFFFFF|3.7
 Iowa State|Cyclones|ISU|#C8102E|#F1BE48|3.4
 Kansas|Jayhawks|KU|#0051BA|#E8000D|3.1
 Kansas State|Wildcats|KSU|#512888|#FFFFFF|3.3
-Oklahoma State|Cowboys|OKST|#FF7300|#000000|2.5
+Oklahoma State|Cowboys|OKST|#FF7300|#000000|3.4
 TCU|Horned Frogs|TCU|#4D1979|#FFFFFF|3.4
-Texas Tech|Red Raiders|TTU|#CC0000|#000000|4.4
+Texas Tech|Red Raiders|TTU|#CC0000|#000000|4.2
 UCF|Knights|UCF|#000000|#BA9B37|3.0
-Utah|Utes|UTAH|#CC0000|#FFFFFF|4.0
+Utah|Utes|UTAH|#CC0000|#FFFFFF|4.4
 West Virginia|Mountaineers|WVU|#002855|#EAAA00|2.9`},
- {name:'ACC',div:'FBS',cg:8,ccg:true,t:`Boston College|Eagles|BC|#98002E|#BC9B6A|2.8
+ {name:'ACC',div:'FBS',cg:9,less:'BC CLEM FSU GT UNC',ccg:true,site:'Bank of America Stadium, Charlotte',t:`Boston College|Eagles|BC|#98002E|#BC9B6A|2.8
 California|Golden Bears|CAL|#003262|#FDB515|3.0
 Clemson|Tigers|CLEM|#F56600|#522D80|3.7
 Duke|Blue Devils|DUKE|#003087|#FFFFFF|3.6
 Florida State|Seminoles|FSU|#782F40|#CEB888|3.2
 Georgia Tech|Yellow Jackets|GT|#B3A369|#003057|3.6
-Louisville|Cardinals|LOU|#AD0000|#000000|3.5
-Miami|Hurricanes|MIA|#F47321|#005030|4.5
+Louisville|Cardinals|LOU|#AD0000|#000000|3.3
+Miami|Hurricanes|MIA|#F47321|#005030|4.7
 North Carolina|Tar Heels|UNC|#7BAFD4|#13294B|2.6
 NC State|Wolfpack|NCST|#CC0000|#000000|3.0
 Pittsburgh|Panthers|PITT|#003594|#FFB81C|3.3
-SMU|Mustangs|SMU|#C8102E|#0033A0|3.6
+SMU|Mustangs|SMU|#C8102E|#0033A0|3.8
 Stanford|Cardinal|STAN|#8C1515|#FFFFFF|2.5
 Syracuse|Orange|SYR|#F76900|#000E54|2.7
 Virginia|Cavaliers|UVA|#232D4B|#F84C1E|3.6
 Virginia Tech|Hokies|VT|#630031|#CF4420|2.7
-Wake Forest|Demon Deacons|WAKE|#000000|#9E7E38|2.9`},
+Wake Forest|Demon Deacons|WAKE|#000000|#9E7E38|3.8`},
  {name:'American',div:'FBS',cg:8,ccg:true,t:`Army|Black Knights|ARMY|#000000|#D4BF91|3.0
 Charlotte|49ers|CLT|#005035|#A49665|1.9
 East Carolina|Pirates|ECU|#592A8A|#FDC82F|2.8
@@ -86,7 +86,7 @@ Tulane|Green Wave|TUL|#006747|#418FDE|3.6
 Tulsa|Golden Hurricane|TLSA|#002D72|#C8102E|2.1
 UAB|Blazers|UAB|#1E6B52|#F4C300|2.2
 UTSA|Roadrunners|UTSA|#0C2340|#F15A22|2.8`},
- {name:'Sun Belt',div:'FBS',cg:8,ccg:true,t:`Appalachian State|Mountaineers|APP|#000000|#FFCC00|2.6
+ {name:'Sun Belt',div:'FBS',cg:8,ccg:true,dv:{East:'APP CCU GASO GAST JMU MRSH ODU',West:'ARST ULL LT USA USM TROY ULM'},t:`Appalachian State|Mountaineers|APP|#000000|#FFCC00|2.6
 Arkansas State|Red Wolves|ARST|#CC092F|#000000|2.5
 Coastal Carolina|Chanticleers|CCU|#006F71|#A27752|2.4
 Georgia Southern|Eagles|GASO|#011E41|#87714D|2.6
@@ -100,10 +100,10 @@ Old Dominion|Monarchs|ODU|#003057|#7C878E|2.8
 South Alabama|Jaguars|USA|#00205B|#BF0D3E|2.4
 Southern Miss|Golden Eagles|USM|#000000|#FFAB00|2.5
 Troy|Trojans|TROY|#8A2432|#B3B5B8|2.6`},
- {name:'Pac-12',div:'FBS',cg:7,ccg:true,t:`Boise State|Broncos|BOIS|#0033A0|#D64309|3.6
+ {name:'Pac-12',div:'FBS',cg:7,ccg:true,flex:true,t:`Boise State|Broncos|BOIS|#0033A0|#D64309|3.7
 Colorado State|Rams|CSU|#1E4D2B|#C8C372|2.3
 Fresno State|Bulldogs|FRES|#DB0032|#002E6D|2.8
-Oregon State|Beavers|ORST|#DC4405|#000000|2.3
+Oregon State|Beavers|ORST|#DC4405|#000000|2.7
 San Diego State|Aztecs|SDSU|#A6192E|#000000|2.9
 Texas State|Bobcats|TXST|#501214|#8D734A|2.8
 Utah State|Aggies|USU|#0F2439|#A2AAAD|2.5
@@ -111,7 +111,7 @@ Washington State|Cougars|WSU|#981E32|#5E6A71|2.6`},
  {name:'Mountain West',div:'FBS',cg:8,ccg:true,t:`Air Force|Falcons|AF|#003087|#8A8D8F|2.3
 Hawaii|Rainbow Warriors|HAW|#024731|#FFFFFF|2.6
 Nevada|Wolf Pack|NEV|#003366|#807F84|1.9
-New Mexico|Lobos|UNM|#BA0C2F|#A7A8AA|2.7
+New Mexico|Lobos|UNM|#BA0C2F|#A7A8AA|2.9
 San Jose State|Spartans|SJSU|#0055A2|#E5A823|2.4
 UNLV|Rebels|UNLV|#CF0A2C|#666666|3.1
 Wyoming|Cowboys|WYO|#492F24|#FFC425|2.3
@@ -128,7 +128,7 @@ Missouri State|Bears|MOST|#5E0009|#FFFFFF|2.2
 New Mexico State|Aggies|NMSU|#8C0B42|#FFFFFF|1.9
 Sam Houston|Bearkats|SHSU|#F76800|#FFFFFF|1.9
 Western Kentucky|Hilltoppers|WKU|#C60C30|#FFFFFF|2.6`},
- {name:'MAC',div:'FBS',cg:8,ccg:true,t:`Akron|Zips|AKR|#041E42|#A89968|1.6
+ {name:'MAC',div:'FBS',cg:8,ccg:true,site:'Ford Field, Detroit',t:`Akron|Zips|AKR|#041E42|#A89968|1.6
 Ball State|Cardinals|BALL|#BA0C2F|#FFFFFF|1.8
 Bowling Green|Falcons|BGSU|#FE5000|#4F2C1D|2.1
 Buffalo|Bulls|BUFF|#005BBB|#FFFFFF|2.3
@@ -141,14 +141,14 @@ Sacramento State|Hornets|SAC|#043927|#C4B581|2.3
 Toledo|Rockets|TOL|#15397F|#FFDA00|2.7
 UMass|Minutemen|MASS|#881C1C|#FFFFFF|1.6
 Western Michigan|Broncos|WMU|#6C4023|#B5A167|2.6`},
- {name:'FBS Independents',div:'FBS',cg:0,ind:true,t:`Notre Dame|Fighting Irish|ND|#0C2340|#C99700|4.5
+ {name:'FBS Independents',div:'FBS',cg:0,ind:true,t:`Notre Dame|Fighting Irish|ND|#0C2340|#C99700|4.6
 UConn|Huskies|UCON|#000E2F|#FFFFFF|2.6`},
  {name:'Big Sky',div:'FCS',cg:8,auto:true,t:`Cal Poly|Mustangs|CP|#154734|#BD8B13|1.7
 Eastern Washington|Eagles|EWU|#A10022|#FFFFFF|2.1
-Idaho|Vandals|IDHO|#B3A369|#000000|2.5
+Idaho|Vandals|IDHO|#B3A369|#000000|1.9
 Idaho State|Bengals|IDST|#F47920|#000000|1.9
-Montana|Grizzlies|MONT|#70003C|#999999|2.9
-Montana State|Bobcats|MTST|#003875|#B9975B|3.2
+Montana|Grizzlies|MONT|#70003C|#999999|3.1
+Montana State|Bobcats|MTST|#003875|#B9975B|3.0
 Northern Arizona|Lumberjacks|NAU|#003466|#FFD200|2.2
 Northern Colorado|Bears|UNCO|#013C65|#F6B000|1.5
 Portland State|Vikings|PRST|#154734|#FFFFFF|1.6
@@ -158,7 +158,7 @@ Southern Utah|Thunderbirds|SUU|#CC0000|#FFFFFF|1.8
 Utah Tech|Trailblazers|UTU|#BA1C21|#003058|1.5`},
  {name:'CAA',div:'FCS',cg:8,auto:true,t:`Albany|Great Danes|ALB|#461660|#EEB211|2.0
 Bryant|Bulldogs|BRY|#000000|#C1A87D|1.7
-Campbell|Fighting Camels|CAMP|#F58025|#000000|1.7
+Campbell|Fighting Camels|CAMP|#F58025|#000000|2.1
 Elon|Phoenix|ELON|#73000A|#B59A57|2.0
 Hampton|Pirates|HAMP|#0067AC|#FFFFFF|1.6
 Maine|Black Bears|ME|#003263|#B0D7FF|1.9
@@ -175,11 +175,11 @@ Fordham|Rams|FOR|#860038|#FFFFFF|1.7
 Georgetown|Hoyas|GTWN|#041E42|#8D817B|1.5
 Holy Cross|Crusaders|HC|#602D89|#FFFFFF|2.1
 Lafayette|Leopards|LAF|#98002E|#FFFFFF|2.2
-Lehigh|Mountain Hawks|LEH|#653819|#FFFFFF|2.6
+Lehigh|Mountain Hawks|LEH|#653819|#FFFFFF|2.7
 Richmond|Spiders|RICH|#990000|#000066|2.2
 Villanova|Wildcats|NOVA|#00205B|#13B5EA|2.7
 William & Mary|Tribe|W&M|#115740|#B9975B|2.2`},
- {name:'Ivy League',div:'FCS',cg:7,auto:true,t:`Brown|Bears|BRWN|#4E3629|#C00404|1.6
+ {name:'Ivy League',div:'FCS',cg:7,games:10,auto:true,t:`Brown|Bears|BRWN|#4E3629|#C00404|1.6
 Columbia|Lions|CLMB|#B9D9EB|#1D4F91|1.6
 Cornell|Big Red|COR|#B31B1B|#FFFFFF|1.6
 Dartmouth|Big Green|DART|#00693E|#FFFFFF|2.1
@@ -190,14 +190,14 @@ Yale|Bulldogs|YALE|#00356B|#FFFFFF|2.3`},
  {name:'Missouri Valley',div:'FCS',cg:8,auto:true,t:`Illinois State|Redbirds|ILST|#CE1126|#FFFFFF|2.8
 Indiana State|Sycamores|INST|#00669A|#FFFFFF|1.5
 Murray State|Racers|MUR|#002144|#ECAC00|1.4
-North Dakota|Fighting Hawks|UND|#009A44|#000000|2.6
+North Dakota|Fighting Hawks|UND|#009A44|#000000|2.8
 Northern Iowa|Panthers|UNI|#4B116F|#FFCC00|2.3
 South Dakota|Coyotes|USD|#CD1241|#FFFFFF|2.6
-South Dakota State|Jackrabbits|SDST|#0033A0|#FFD100|3.0
+South Dakota State|Jackrabbits|SDST|#0033A0|#FFD100|3.2
 Southern Illinois|Salukis|SIU|#720000|#FFFFFF|2.4
-Youngstown State|Penguins|YSU|#C8102E|#FFFFFF|2.2`},
+Youngstown State|Penguins|YSU|#C8102E|#FFFFFF|2.6`},
  {name:'Southern',div:'FCS',cg:8,auto:true,t:`Chattanooga|Mocs|UTC|#00386B|#E0AA0F|2.1
-East Tennessee State|Buccaneers|ETSU|#041E42|#FFC72C|2.1
+East Tennessee State|Buccaneers|ETSU|#041E42|#FFC72C|2.3
 Furman|Paladins|FUR|#582C83|#FFFFFF|1.9
 Mercer|Bears|MER|#F76800|#000000|2.7
 Samford|Bulldogs|SAM|#002F6C|#C8102E|1.8
@@ -214,11 +214,11 @@ McNeese|Cowboys|MCN|#005CA9|#FFD204|1.6
 Nicholls|Colonels|NICH|#C41230|#A7A8AA|1.8
 Northwestern State|Demons|NWST|#492F92|#F58025|1.4
 Southeastern Louisiana|Lions|SELA|#006341|#EAAA00|2.1
-Stephen F. Austin|Lumberjacks|SFA|#5F259F|#FFFFFF|2.1
+Stephen F. Austin|Lumberjacks|SFA|#5F259F|#FFFFFF|2.6
 UTRGV|Vaqueros|RGV|#F05023|#646469|2.0`},
  {name:'Ohio Valley',div:'FCS',cg:7,auto:true,t:`Charleston Southern|Buccaneers|CHSO|#002855|#A89968|1.4
 Eastern Illinois|Panthers|EIU|#004B83|#A7A8AA|1.6
-Gardner-Webb|Runnin' Bulldogs|GWEB|#BB0000|#000000|1.6
+Gardner-Webb|Runnin' Bulldogs|GWEB|#BB0000|#000000|1.8
 Lindenwood|Lions|LIN|#000000|#B5A36A|1.6
 Southeast Missouri State|Redhawks|SEMO|#C8102E|#000000|2.0
 Tennessee State|Tigers|TNST|#00539F|#FFFFFF|1.8
@@ -229,13 +229,13 @@ Austin Peay|Governors|APSU|#C41E3A|#000000|2.0
 Central Arkansas|Bears|UCA|#4F2D7F|#A7A9AC|2.0
 Eastern Kentucky|Colonels|EKU|#861F41|#FFFFFF|1.9
 North Alabama|Lions|UNA|#46166B|#DB9F11|1.6
-Tarleton State|Texans|TAR|#4F2D7F|#FFFFFF|2.7
+Tarleton State|Texans|TAR|#4F2D7F|#FFFFFF|2.9
 West Florida|Argonauts|UWF|#004C97|#8DC8E8|1.9
 West Georgia|Wolves|UWG|#0656A5|#E21B3C|1.7`},
  {name:'Pioneer',div:'FCS',cg:8,auto:true,t:`Butler|Bulldogs|BUT|#13294B|#FFFFFF|1.4
 Davidson|Wildcats|DAV|#AC1A2F|#000000|1.4
 Dayton|Flyers|DAY|#CE1141|#004B8D|1.6
-Drake|Bulldogs|DRKE|#004477|#FFFFFF|1.8
+Drake|Bulldogs|DRKE|#004477|#FFFFFF|1.9
 Marist|Red Foxes|MRST|#C8102E|#FFFFFF|1.3
 Morehead State|Eagles|MORE|#005EB8|#FFC72C|1.4
 Presbyterian|Blue Hose|PRES|#0060A9|#9D2235|1.4
@@ -243,7 +243,7 @@ St. Thomas|Tommies|STMN|#510C76|#FFFFFF|1.6
 San Diego|Toreros|SDU|#003B70|#75BEE9|1.6
 Stetson|Hatters|STET|#006747|#FFFFFF|1.4
 Valparaiso|Beacons|VAL|#613318|#FFCC00|1.3`},
- {name:'Northeast',div:'FCS',cg:7,auto:true,t:`Central Connecticut|Blue Devils|CCSU|#1B49A2|#FFFFFF|1.5
+ {name:'Northeast',div:'FCS',cg:7,auto:true,t:`Central Connecticut|Blue Devils|CCSU|#1B49A2|#FFFFFF|1.7
 Duquesne|Dukes|DUQ|#041E42|#BA0C2F|1.7
 LIU|Sharks|LIU|#69B3E7|#FFC72C|1.3
 Mercyhurst|Lakers|MERC|#00543C|#13294B|1.2
@@ -257,7 +257,7 @@ Morgan State|Bears|MORG|#F47937|#003DA5|1.5
 Norfolk State|Spartans|NORF|#007A53|#F3D03E|1.4
 North Carolina Central|Eagles|NCCU|#880023|#A2AAAD|1.9
 South Carolina State|Bulldogs|SCST|#841C2C|#00205B|1.9`},
- {name:'SWAC',div:'FCS',cg:8,ccg:true,celebration:true,t:`Alabama A&M|Bulldogs|AAMU|#660000|#FFFFFF|1.5
+ {name:'SWAC',div:'FCS',cg:8,ccg:true,celebration:true,dv:{East:'AAMU ALST BCU FAMU JKST MVSU',West:'ALCN UAPB GRAM PV SOU TXSO'},t:`Alabama A&M|Bulldogs|AAMU|#660000|#FFFFFF|1.5
 Alabama State|Hornets|ALST|#000000|#C99700|1.7
 Alcorn State|Braves|ALCN|#46166B|#E9A713|1.6
 Arkansas-Pine Bluff|Golden Lions|UAPB|#000000|#E3A81D|1.2
@@ -278,10 +278,22 @@ function genNCAALeague(name){
   NCAA.forEach((c,ci)=>{confs.push({name:c.name,div:c.div,cg:c.cg,ccg:!!c.ccg,ind:!!c.ind,auto:c.div==='FCS'?!!c.auto:true,celebration:!!c.celebration});
     for(const line of c.t.split('\n')){const [school,mascot,abbr,c1,c2,r]=line.split('|');const q=parseFloat(r);const prestige=clamp(Math.round(q),1,5);
       teams.push(genTeam(id++,school,mascot,c1,prestige,ci,{exact:true,abbr,c2,div:c.div,q,stadium:school+' Stadium'}))}});
-  const L=baseLeague(name,teams,confs);L.kind='ncaa';
+  const L=baseLeague(name,teams,confs);L.kind='ncaa';syncNCAAConfs(L);
   const by={};for(const t of teams)by[t.abbr]=t;
   for(const [a,b,tr] of NCAA_RIVALS){const x=by[a],y=by[b];if(x&&y&&x.rival==null&&y.rival==null)setRival(x,y,tr)}
   finishLeague(L);applyNotable(L);return L;
+}
+/* 2026 conference details on L.confs, by school abbreviation: league games (cg; `less` = schools playing one fewer, the ACC's
+   8-game teams), divisions (dv: Sun Belt, SWAC), the Pac-12 flex week, neutral title-game sites (others are hosted by the top
+   seed) and the Ivy League's 10-game season. Run for new dynasties and at the start of each new season, so an older save also
+   picks up 2026 membership (a school listed in another conference moves there). */
+function syncNCAAConfs(L){
+  const by={};for(const t of L.teams)by[t.abbr]=t;const ci={};L.confs.forEach((c,i)=>ci[c.name]=i);
+  NCAA.forEach(c=>{const i=ci[c.name];if(i==null)return;const k=L.confs[i];
+    for(const line of c.t.split('\n')){const t=by[line.split('|')[2]];if(t&&t.conf!==i){t.conf=i;t.div=c.div}}
+    const ids=s=>(s||'').split(' ').map(a=>by[a]).filter(t=>t&&t.conf===i).map(t=>t.id);
+    Object.assign(k,{cg:c.cg,ccg:!!c.ccg,less:ids(c.less),flex:!!c.flex,games:c.games||0,site:c.site||'',dv:c.dv?Object.entries(c.dv).map(([n,s])=>({n,ids:ids(s)})):null});
+    if(k.dv)for(const t of L.teams)if(t.conf===i&&!k.dv.some(d=>d.ids.includes(t.id)))k.dv.reduce((a,b)=>b.ids.length<a.ids.length?b:a).ids.push(t.id)});
 }
 /* well-known 2026 players placed on their real teams (names only; ratings are game estimates and every roster is editable) */
 const NOTABLE=[['ALA','Keelon','Russell','QB',2,{thr:5,acc:4,spd:4,end:4}],['ALA','Ryan','Williams','WR',3,{spd:5,cat:5,str:3,end:4}],

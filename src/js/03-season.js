@@ -10,51 +10,98 @@ function weatherFor(i){const r=Math.random();if(i>=8&&r<.13)return 'Snow';if(r<.
 const WX_ICON={Clear:'☀︎',Rain:'☂︎',Snow:'❄︎',Wind:'⚑'};
 const isInd=(L,t)=>!!(L.confs[t.conf]&&L.confs[t.conf].ind);
 
-/* General scheduler: rivalry games, conference games (circulant graph per conference so every
-   team gets the same number), non-conference fill to 12 games, then weeks by greedy edge colouring. */
+/* ---------- 2026 scheduler ----------
+   Rivalry Week first (each protected rivalry; the Pac-12 flex week pairs its other teams for a non-conference game), then every
+   conference's league schedule (its game count with per-team exceptions such as the ACC's 8-game teams; Sun Belt and SWAC
+   divisions: round robin plus cross-division games), an FCS opponent for most FBS teams (Big Ten less often, Notre Dame never),
+   non-conference games until every FBS team has exactly 12 (FCS 11–12, Ivy League 10), home/away balance (FBS hosts FCS, a
+   Power 4 team usually hosts a Group of 6 team), then 13 weeks by edge colouring with Kempe-chain repairs: non-conference
+   games early, league games late, one bye each. */
+const NC_RIVAL=new Set(['ARMY|NAVY','NAVY|ARMY']);   /* same-conference rivals whose game doesn't count in the standings */
+const FCS_OPP={SEC:.85,ACC:.8,'Big 12':.85,'Big Ten':.4};   /* chance a team schedules an FCS opponent (others .7) */
+/* adds games among ids until each has need[id] more or no legal partner is left: highest need first, partner by need +
+   preference + noise; then repairs by swapping out a game this call added (a and b stuck: c–d becomes a–c and b–d) */
+function pairUp(ids,need,ok,pref,add,drop){
+  const mine=[];
+  for(;;){const open=shuffle(ids.filter(id=>need[id]>0)).sort((x,y)=>need[y]-need[x]);let a=null,b=null;
+    for(const x of open){let bs=-1e9;for(const y of open)if(y!==x&&ok(x,y)){const s=need[y]+(pref?pref(x,y):0)+Math.random()*1.5;if(s>bs){bs=s;b=y}}if(b!=null){a=x;break}}
+    if(a==null)break;mine.push(add(a,b));need[a]--;need[b]--}
+  for(let it=0;it<300;it++){const open=ids.filter(id=>need[id]>0);if(!open.length)break;
+    const a=pick(open),o=open.filter(x=>x!==a),b=o.length?pick(o):need[a]>1?a:null;if(b==null)continue;
+    for(const g of shuffle(mine.filter(g=>!g.dead))){const c=g.h,d=g.a;if(c===a||c===b||d===a||d===b)continue;
+      const xy=[[c,d],[d,c]].find(([x,y])=>ok(a,x)&&ok(b,y));if(!xy)continue;
+      drop(g);mine.push(add(a,xy[0]),add(b,xy[1]));need[a]--;need[b]--;break}}
+}
+/* frees week a at v for game g (u–v) by swapping an a/b alternating path that starts at v (fails if it reaches u or a fixed game) */
+function kempe(S,g,u,v,R,put,lift){
+  const fu=[],fv=[];for(let k=0;k<R;k++){if(!S[u][k])fu.push(k);if(!S[v][k])fv.push(k)}
+  for(const a of shuffle(fu))for(const b of shuffle(fv)){if(a===b)continue;const path=[];let x=v,c=a,bad=false;
+    for(let s=0;s<300;s++){const e=S[x][c];if(!e)break;if(e.fix){bad=true;break}path.push(e);x=e.h===x?e.a:e.h;if(x===u){bad=true;break}c=c===a?b:a}
+    if(bad)continue;const ws=path.map(e=>e.w);path.forEach(lift);path.forEach((e,i)=>put(e,ws[i]===a?b:a));put(g,a);return true}
+  return false;
+}
 function buildSchedule(L){
-  const TT=L.teams,n=TT.length,games=[],played=new Set(),deg=new Array(n).fill(0);
-  const key=(a,b)=>a<b?a+'-'+b:b+'-'+a;
-  const addG=(a,b,extra)=>{const h=Math.random()<.5?a:b;const g=Object.assign({h,a:h===a?b:a},extra||{});games.push(g);played.add(key(a,b));deg[a]++;deg[b]++;return g};
-  const rivalGames=[];
-  for(const t of TT)if(t.rival!=null&&t.id<t.rival&&TT[t.rival]&&TT[t.rival].rival===t.id)rivalGames.push(addG(t.id,t.rival,{rival:true,tag:t.trophy}));
-  L.confs.forEach((c,ci)=>{if(c.ind)return;const ids=shuffle(TT.filter(t=>t.conf===ci).map(t=>t.id)),m=ids.length;if(m<2)return;
-    const ord=[],used=new Set();for(const id of ids){if(used.has(id))continue;ord.push(id);used.add(id);const r=TT[id].rival;if(r!=null&&ids.includes(r)&&!used.has(r)){ord.push(r);used.add(r)}}
-    const d=Math.min(c.cg,m-1),h=Math.floor(d/2);
-    for(let i=0;i<m;i++)for(let j=i+1;j<m;j++){const dist=Math.min(j-i,m-(j-i));const want=d>=m-1||(dist<=h)||(d%2===1&&m%2===0&&dist===m/2);if(want&&!played.has(key(ord[i],ord[j])))addG(ord[i],ord[j])}});
-  const TARGET=12;
-  for(let pass=0;pass<4;pass++){
-    const need=shuffle(TT.filter(t=>deg[t.id]<TARGET).map(t=>t.id));
-    for(const a of need){
-      while(deg[a]<TARGET){const ta=TT[a];
-        let c=need.filter(b=>b!==a&&deg[b]<TARGET&&(pass>=3||TT[b].conf!==ta.conf||isInd(L,ta))&&!played.has(key(a,b)));
-        if(!c.length)break;
-        const same=c.filter(b=>TT[b].div===ta.div);const pool=same.length&&Math.random()<.86?same:c;addG(a,pick(pool));
-      }
-    }
-  }
-  let R=13,assign=null;
-  for(let attempt=0;attempt<30;attempt++){
-    if(attempt===12)R=14;
-    const busy=Array.from({length:n},()=>new Set()),as=new Map();let fail=0;
-    for(const g of rivalGames){busy[g.h].add(R-1);busy[g.a].add(R-1);as.set(g,R-1)}
-    const rg=new Set(rivalGames);
-    const others=shuffle(games.filter(g=>!rg.has(g))).sort((x,y)=>(TT[x.h].conf===TT[x.a].conf)-(TT[y.h].conf===TT[y.a].conf));
-    for(const g of others){const conf=TT[g.h].conf===TT[g.a].conf;let w=-1;
-      if(conf){for(let k=R-2;k>=0;k--)if(!busy[g.h].has(k)&&!busy[g.a].has(k)){w=k;break}}
-      else{for(let k=0;k<R-1;k++)if(!busy[g.h].has(k)&&!busy[g.a].has(k)){w=k;break}}
-      if(w<0){fail++;continue}busy[g.h].add(w);busy[g.a].add(w);as.set(g,w)}
-    assign=as;if(!fail)break;
-  }
+  const TT=L.teams,n=TT.length,C=L.confs,games=[],deg=new Array(n).fill(0),cnt=new Map();
+  const key=(a,b)=>a<b?a*8192+b:b*8192+a,met=(a,b)=>cnt.get(key(a,b))||0;
+  const add=(a,b,x)=>{const g=Object.assign({h:a,a:b},x);games.push(g);cnt.set(key(a,b),met(a,b)+1);deg[a]++;deg[b]++;return g};
+  const drop=g=>{g.dead=true;cnt.set(key(g.h,g.a),met(g.h,g.a)-1);deg[g.h]--;deg[g.a]--};
+  const cf=t=>C[t.conf]||{},ind=t=>!!cf(t).ind,fcs=t=>t.div==='FCS',P=p4Set(L);
+  const maxG=t=>fcs(t)?cf(t).games||12:12,minG=t=>fcs(t)?cf(t).games||11:12,tier=t=>fcs(t)?0:P.has(t.conf)||isND(L,t)?2:1;
+  /* Rivalry Week: protected rivalries (a same-conference rivalry is a league game unless it's Army–Navy) */
+  for(const t of TT){const r=TT[t.rival];if(r&&t.id<r.id&&r.rival===t.id)add(t.id,r.id,{rival:true,tag:t.trophy,fix:true,lg:t.conf===r.conf&&!ind(t)&&!NC_RIVAL.has(t.abbr+'|'+r.abbr)})}
+  /* league schedules */
+  C.forEach((c,ci)=>{if(c.ind)return;const ids=TT.filter(t=>t.conf===ci).map(t=>t.id),m=ids.length;if(m<2)return;
+    const lg={};for(const id of ids)lg[id]=0;for(const g of games)if(g.lg&&lg[g.h]!=null){lg[g.h]++;lg[g.a]++}
+    const addL=(a,b)=>add(a,b,{lg:true});let ok=(a,b)=>!met(a,b);
+    if(c.dv&&c.dv.length===2){const dv={};c.dv.forEach((d,k)=>d.ids.forEach(id=>dv[id]=k));for(const id of ids)if(dv[id]==null)dv[id]=0;
+      for(let i=0;i<m;i++)for(let j=i+1;j<m;j++){const a=ids[i],b=ids[j];if(dv[a]===dv[b]&&!met(a,b)){addL(a,b);lg[a]++;lg[b]++}}
+      ok=(a,b)=>dv[a]!==dv[b]&&!met(a,b)}
+    const need={};for(const id of ids)need[id]=Math.max(0,Math.min(m-1,(c.cg||0)-((c.less||[]).includes(id)?1:0))-lg[id]);
+    pairUp(ids,need,ok,null,addL,drop);
+    if(c.flex){const fl=shuffle(ids.filter(id=>!games.some(g=>g.fix&&!g.dead&&(g.h===id||g.a===id))));for(let k=0;k+1<fl.length;k+=2)add(fl[k],fl[k+1],{fix:true,tag:c.name+' Flex Week'})}});
+  /* an FCS opponent for most FBS teams (an FCS team plays at most two FBS teams; the Ivy League doesn't) */
+  const pool=TT.filter(t=>fcs(t)&&maxG(t)>=11),fbsG={};
+  for(const t of shuffle(TT.filter(t=>!fcs(t)))){if(deg[t.id]>=12||isND(L,t)||Math.random()>=(FCS_OPP[cf(t).name]||.7))continue;
+    const c=pool.filter(f=>deg[f.id]<maxG(f)&&!met(t.id,f.id)),c1=c.filter(f=>!fbsG[f.id]),pk=c1.length?c1:c.filter(f=>fbsG[f.id]<2);
+    if(pk.length){const f=pick(pk);add(t.id,f.id,{});fbsG[f.id]=(fbsG[f.id]||0)+1}}
+  /* non-conference games until every FBS team has 12 (Notre Dame mostly plays Power 4 teams) */
+  const fbs=TT.filter(t=>!fcs(t)).map(t=>t.id),nd={};for(const id of fbs)nd[id]=Math.max(0,12-deg[id]);
+  pairUp(fbs,nd,(a,b)=>!met(a,b)&&(TT[a].conf!==TT[b].conf||ind(TT[a])),(a,b)=>{const x=TT[a],y=TT[b];return (tier(x)===tier(y)?.6:0)+(isND(L,x)||isND(L,y)?(Math.min(tier(x),tier(y))===2?1.5:-1):0)},(a,b)=>add(a,b,{}),drop);
+  for(const a of fbs)for(let k=0;nd[a]>0&&k<12;k++){const c=pool.filter(f=>deg[f.id]<maxG(f)&&!met(a,f.id));
+    if(c.length){add(a,pick(c).id,{});nd[a]--;continue}
+    const o=fbs.filter(b=>b!==a&&nd[b]>0&&!met(a,b));if(!o.length)break;const b=pick(o);add(a,b,{});nd[a]--;nd[b]--}
+  /* FCS non-conference games: 12 where the calendar allows, at least 11 (Ivy League 10) */
+  const fc=TT.filter(fcs).map(t=>t.id),nf={};for(const id of fc)nf[id]=Math.max(0,maxG(TT[id])-deg[id]);
+  pairUp(fc,nf,(a,b)=>!met(a,b)&&(TT[a].conf!==TT[b].conf||ind(TT[a])),null,(a,b)=>add(a,b,{}),drop);
+  for(const a of fc)for(let k=0;deg[a]<minG(TT[a])&&k<4;k++){const o=fc.filter(b=>b!==a&&deg[b]<maxG(TT[b])&&!met(a,b));if(!o.length)break;add(a,pick(o),{})}
+  /* home and away */
+  const gs=games.filter(g=>!g.dead),home=new Array(n).fill(0);
+  for(const g of shuffle(gs.slice())){const x=TT[g.h],y=TT[g.a],tx=tier(x),ty=tier(y);let h;
+    if(tx!==ty&&!g.fix&&Math.random()<(Math.min(tx,ty)===0?1:.85))h=tx>ty?g.h:g.a;
+    else h=home[g.h]!==home[g.a]?(home[g.h]<home[g.a]?g.h:g.a):pick([g.h,g.a]);
+    if(h!==g.h){g.a=g.h;g.h=h}home[h]++}
+  /* weeks: Rivalry Week fixed, non-conference games take the earliest open week, league games the latest */
+  const R=13,up=[...Array(R).keys()],down=up.slice().reverse();let left=[];
+  for(let at=0;at<12;at++){
+    const S=Array.from({length:n},()=>new Array(R).fill(null)),put=(g,w)=>{g.w=w;S[g.h][w]=S[g.a][w]=g},lift=g=>{S[g.h][g.w]=S[g.a][g.w]=null;g.w=-1};
+    for(const g of gs){g.w=-1;if(g.fix)put(g,R-1)}
+    const q=shuffle(gs.filter(g=>!g.fix&&!g.lg)).concat(shuffle(gs.filter(g=>!g.fix&&g.lg)));
+    for(let step=0;q.length&&step<30000;step++){const g=q.shift(),wk=g.lg?down:up;
+      const w=wk.find(k=>!S[g.h][k]&&!S[g.a][k]);if(w!=null){put(g,w);continue}
+      if(kempe(S,g,g.h,g.a,R,put,lift)||kempe(S,g,g.a,g.h,R,put,lift))continue;
+      const fv=up.filter(k=>!S[g.a][k]&&S[g.h][k]&&!S[g.h][k].fix);if(!fv.length){q.push(g);continue}
+      const e=S[g.h][pick(fv)],k=e.w;lift(e);put(g,k);q.push(e)}
+    left=q;if(!q.length)break}
   L.R=R;
   L.weeks=Array.from({length:R},(_,i)=>({label:i===R-1?'Rivalry Week':'Week '+(i+1),kind:'reg',games:[]}));
-  for(const [g,w] of assign)L.weeks[w].games.push({h:g.h,a:g.a,hs:null,as:null,wx:weatherFor(w),slot:pick(['Noon','Afternoon','Afternoon','Primetime']),tag:g.rival?g.tag:null,rival:!!g.rival});
+  for(const g of gs)if(g.w>=0&&!left.includes(g)){const nc=TT[g.h].conf===TT[g.a].conf&&!ind(TT[g.h])&&!g.lg;
+    L.weeks[g.w].games.push(Object.assign({h:g.h,a:g.a,hs:null,as:null,wx:weatherFor(g.w),slot:pick(['Noon','Afternoon','Afternoon','Primetime']),tag:g.tag||null,rival:!!g.rival},nc?{nc:true}:null))}
   L.cfp=null;L.fcsp=null;L.champ=null;L.champF=null;
   if(L.user!=null)setHomecoming(L);
 }
 function setHomecoming(L){const ws=[];L.weeks.forEach((w,i)=>{if(i>=1&&i<L.R-3&&w.games.some(g=>g.h===L.user))ws.push(i)});L.hcWeek=ws.length?pick(ws):null}
 function seniorDayWeek(L){let last=null;L.weeks.forEach((w,i)=>{if(w.kind==='reg'&&w.games.some(g=>g.h===L.user))last=i});return last}
-const isConfGame=g=>{const a=T(g.h),b=T(g.a);return a.conf===b.conf&&!g.post&&!isInd(LG,a)};
+const isConfGame=g=>{const a=T(g.h),b=T(g.a);return a.conf===b.conf&&!g.post&&!g.nc&&!isInd(LG,a)};
 function gameFlags(L,g,wi){
   const f=[];const u=L.user;const home=g.h===u&&!g.neutral;
   if(g.rival)f.push(['gold','Rivalry · '+g.tag]);
@@ -63,6 +110,7 @@ function gameFlags(L,g,wi){
   if(home&&wi===seniorDayWeek(L)&&L.weeks[wi].kind==='reg')f.push(['blue','Senior Day']);
   if(!g.post&&isConfGame(g))f.push(['','Conference game']);
   if(!g.post&&T(g.h).div!==T(g.a).div)f.push(['','FBS vs FCS']);
+  if(g.post&&g.date)f.push(['',g.date+(g.neutral&&g.site?' · '+g.site:'')]);
   if(g.slot==='Primetime')f.push(['hot','Primetime']);
   return f;
 }
@@ -93,7 +141,7 @@ function simStats(t,pts){
   for(const p of [...starters(t,'OL'),...starters(t,'DL')])p.ss.gp++;
 }
 function recordGame(L,g){
-  const H=L.teams[g.h],A=L.teams[g.a];const conf=!g.post&&H.conf===A.conf&&!isInd(L,H);
+  const H=L.teams[g.h],A=L.teams[g.a];const conf=!g.post&&!g.nc&&H.conf===A.conf&&!isInd(L,H);
   H.rec.pf+=g.hs;H.rec.pa+=g.as;A.rec.pf+=g.as;A.rec.pa+=g.hs;
   if(g.hs>g.as){H.rec.w++;A.rec.l++;if(conf){H.rec.cw++;A.rec.cl++}}else{A.rec.w++;H.rec.l++;if(conf){A.rec.cw++;H.rec.cl++}}
 }
@@ -230,11 +278,35 @@ const rankList=(L,t)=>isFCS(t)?(L.rankF||[]):L.rank;
 const rankOf=id=>{const t=LG.teams[id];const i=rankList(LG,t).indexOf(id);return i>=0&&i<25?i+1:null};
 const rankTag=id=>{const r=rankOf(id);return r?`#${r} `:''};
 const pollName=(L,div)=>{const n=div==='FCS'?'FCS Top 25':'AP Top 25';return L.phase==='offseason'||L.week>L.R+4?'Final '+n:L.week===0?'Preseason '+n:n};
-function h2h(L,a,b){for(const w of L.weeks)for(const g of w.games)if(g.hs!=null&&!g.post&&((g.h===a&&g.a===b)||(g.h===b&&g.a===a)))return winner(g)===a?-1:1;return 0}
-function confStandings(L,c){
-  const ri=id=>{const t=L.teams[id];const i=rankList(L,t).indexOf(id);return i<0?999:i};
-  return L.teams.filter(t=>t.conf===c).sort((a,b)=>(b.rec.cw-b.rec.cl)-(a.rec.cw-a.rec.cl)||h2h(L,a.id,b.id)||(b.rec.w-b.rec.l)-(a.rec.w-a.rec.l)||ri(a.id)-ri(b.id));
+/* ranking used by tiebreakers: CFP rankings (FBS, once out), else the AP poll, else the power rating */
+const crk=(L,id)=>{const t=L.teams[id];let i=!isFCS(t)&&L.cfpRank&&L.cfpRank.length?L.cfpRank.indexOf(id):-1;if(i<0)i=rankList(L,t).indexOf(id);return i<0?999-((L.power&&L.power[id])||0):i};
+/* conference standings: league winning % (so the ACC's 8- and 9-game teams compare fairly), ties broken the usual way:
+   head-to-head among the tied teams (combined record when they all played each other, otherwise a team that beat, or lost
+   to, every other tied team), then record vs common league opponents, then the ranking above; once a team is separated the
+   rest start over. Non-league games between league members (Army–Navy, the Pac-12 flex week) don't count. `sub`: a division. */
+function confStandings(L,c,sub){
+  const all=L.teams.filter(t=>t.conf===c),ts=sub||all;
+  if(L.confs[c]&&L.confs[c].ind)return ts.slice().sort((a,b)=>(b.rec.w-b.rec.l)-(a.rec.w-a.rec.l)||crk(L,a.id)-crk(L,b.id));
+  const res={};for(const t of all)res[t.id]={};
+  for(const w of L.weeks)for(const g of w.games)if(g.hs!=null&&!g.post&&!g.nc&&res[g.h]&&res[g.a])for(const [p,o,won] of [[g.h,g.a,g.hs>g.as],[g.a,g.h,g.as>g.hs]]){const r=res[p][o]||(res[p][o]=[0,0]);r[won?0:1]++}
+  const met=(a,b)=>!!res[a][b],beat=(a,b)=>met(a,b)&&res[a][b][0]>res[a][b][1];
+  const pc=(id,os,d)=>{let w=0,l=0;for(const o of os){const r=res[id][o];if(r){w+=r[0];l+=r[1]}}return w+l?w/(w+l):d};
+  const brk=g=>{if(g.length<2)return g;let r;
+    const split=f=>{const s={};for(const id of g)s[id]=f(id);const v=[...new Set(g.map(id=>s[id]))].sort((a,b)=>b-a);return v.length<2?null:v.flatMap(x=>brk(g.filter(id=>s[id]===x)))};
+    if(g.every(a=>g.every(b=>a===b||met(a,b)))){if((r=split(id=>pc(id,g,.5))))return r}
+    else{const top=g.find(a=>g.every(b=>a===b||beat(a,b)));if(top!=null)return [top,...brk(g.filter(x=>x!==top))];
+      const bot=g.find(a=>g.every(b=>a===b||beat(b,a)));if(bot!=null)return [...brk(g.filter(x=>x!==bot)),bot]}
+    const com=all.map(t=>t.id).filter(o=>!g.includes(o)&&g.every(id=>met(id,o)));
+    if(com.length&&(r=split(id=>pc(id,com,0))))return r;
+    return g.slice().sort((a,b)=>crk(L,a)-crk(L,b))};
+  const by=new Map();for(const t of ts){const k=t.rec.cw+t.rec.cl?t.rec.cw/(t.rec.cw+t.rec.cl):0;if(!by.has(k))by.set(k,[]);by.get(k).push(t.id)}
+  return [...by.keys()].sort((a,b)=>b-a).flatMap(k=>brk(by.get(k))).map(id=>L.teams[id]);
 }
+/* title game: the top two (division winners for the Sun Belt and SWAC, the better league record hosting) at the conference's
+   neutral site, or at the top seed's stadium (American, Pac-12, Mountain West, C-USA, Sun Belt, SWAC) */
+function ccgGame(L,i){const c=L.confs[i],s=confStandings(L,i);if(s.length<2)return null;let [a,b]=s;
+  if(c.dv&&c.dv.length===2){const w=c.dv.map(d=>confStandings(L,i,s.filter(t=>d.ids.includes(t.id)))[0]);if(w[0]&&w[1])[a,b]=s.indexOf(w[0])<s.indexOf(w[1])?w:[w[1],w[0]]}
+  return postGame(a.id,b.id,{tag:c.name+' Championship',ccg:true,conf:i,neutral:!!c.site,site:c.site||'',date:L.kind==='ncaa'?'Dec 4–5':'',wx:c.site?'Clear':weatherFor(12)})}
 
 /* ---------- postseason: title games, 12-team CFP, bowls, 24-team FCS playoff, Celebration Bowl ---------- */
 /* 12-team CFP field (2026 format) from the final CFP rankings (the AP poll if they don't exist): each Power 4 champion and the
@@ -251,45 +323,83 @@ function cfpSelect(L,order,champs){
 }
 function postGame(h,a,extra){return Object.assign({h,a,hs:null,as:null,post:true,neutral:true,wx:'Clear',slot:'Primetime'},extra)}
 const WIN=g=>g&&g.hs!=null?winner(g):null;
+const dayKey=s=>{const m=/^(\w+) (\d+)/.exec(s||'');return m?({Nov:-30,Dec:0,Jan:31}[m[1]]||0)+ +m[2]:0};
+/* CFP sites: seeds 1–4 are placed in the quarterfinal bowls by preference (Big Ten → Rose, SEC/ACC → Peach, Big 12 → Cotton,
+   others → Fiesta first), the 1/4 half of the bracket plays its semifinal in the Orange Bowl, the 2/3 half in the Sugar Bowl */
+function cfpBowls(L,seeds){
+  if(L.kind!=='ncaa')return {qf:CFP_QF.map(n=>({n})),sf:CFP_SF.map(n=>({n})),fin:{n:'National Championship'}};
+  const mk=([n,d,s])=>({n,d,s}),left=CFP26.qf.slice(),qf=[];
+  for(let k=0;k<4;k++){const t=L.teams[seeds[k]],pr=((t&&CFP26.pref[confName(t.conf,L)])||'Fiesta Cotton Peach Rose').split(' ');
+    const b=pr.map(p=>left.find(x=>x[0].startsWith(p))).find(Boolean)||left[0];left.splice(left.indexOf(b),1);qf.push(mk(b))}
+  return {qf,sf:CFP26.sf.map(mk),fin:mk(CFP26.fin)};
+}
+/* bowls: 6+ wins (a team moving up from FCS also needs five wins over FBS teams), topped up with 5–7 teams by ranking when
+   there are too few; bowls choose in tier order (Citrus, ReliaQuest, Alamo and Pop-Tarts first), each side taking the
+   best-ranked team left from its tie-in conferences (Notre Dame counts for ACC slots), else an at-large team, preferring
+   conferences with teams to spare; no same-conference matchups or regular-season rematches when it can be helped */
+const MOVING_UP=['NDSU','SAC'];
+function pickBowls(L,taken){
+  const TS=L.teams,ord=L.rank.filter(id=>!isFCS(TS[id])&&!taken.has(id)),pos={};ord.forEach((id,i)=>pos[id]=i);
+  const reg=[];for(const w of L.weeks)if(w.kind==='reg')reg.push(...w.games);
+  const fbsW=id=>reg.filter(g=>g.hs!=null&&winner(g)===id&&!isFCS(TS[loser(g)])).length;
+  const lineup=L.kind==='ncaa'?BOWLS26:BOWLS.map(n=>[n,'','','*','*',3]);
+  let el=ord.filter(id=>{const t=TS[id];return t.rec.w>=6&&(!MOVING_UP.includes(t.abbr)||fbsW(id)>=5)});
+  if(el.length<lineup.length*2)el=el.concat(ord.filter(id=>TS[id].rec.w===5&&!el.includes(id)&&!MOVING_UP.includes(TS[id].abbr)));
+  el=el.slice(0,lineup.length*2);if(el.length%2)el.pop();
+  const cn=id=>isND(L,TS[id])?'ACC':confName(TS[id].conf,L),fits=(id,tie)=>tie==='*'||tie.split('/').includes(cn(id));
+  const bowls=lineup.map((b,i)=>({b,i})).sort((x,y)=>x.b[5]-y.b[5]||x.i-y.i).slice(0,el.length/2),left=new Set(el),out=[];
+  const side=(tie,bi,vs)=>{const pool=[...left].sort((a,b)=>pos[a]-pos[b]),seen=new Set();
+    if(vs!=null)for(const g of reg)if(g.h===vs||g.a===vs)seen.add(g.h===vs?g.a:g.h);
+    const good=pool.filter(id=>vs==null||(cn(id)!==cn(vs)&&!seen.has(id)));let c=good.filter(id=>fits(id,tie));if(c.length)return c[0];
+    const dem={},av={};for(let k=bi+1;k<bowls.length;k++)for(const t of [bowls[k].b[3],bowls[k].b[4]])if(t!=='*')for(const x of t.split('/'))dem[x]=(dem[x]||0)+1;
+    for(const id of left)av[cn(id)]=(av[cn(id)]||0)+1;c=good.length?good:pool;const sp=c.filter(id=>av[cn(id)]>(dem[cn(id)]||0));return (sp.length?sp:c)[0]};
+  bowls.forEach(({b,i},bi)=>{if(left.size<2)return;const a=side(b[3],bi,null);left.delete(a);const h=side(b[4],bi,a);left.delete(h);
+    const [x,y]=pos[a]<pos[h]?[a,h]:[h,a];out.push(postGame(x,y,{bowl:true,tag:b[0],date:b[1],site:b[2],bi:i}))});
+  return out.sort((x,y)=>x.bi-y.bi);
+}
 function buildPost(L){
-  const k=L.week-L.R,cs=L.confs.map((c,i)=>[c,i]),games=[];
+  const k=L.week-L.R,cs=L.confs.map((c,i)=>[c,i]),games=[],nc=L.kind==='ncaa',F=nc?FCS26:{};
   if(k===0){
-    for(const [c,i] of cs)if(c.ccg&&!c.ind){const s=confStandings(L,i);if(s.length>=2)games.push(postGame(s[0].id,s[1].id,{tag:c.name+' Championship',ccg:true,conf:i}))}
+    for(const [c,i] of cs)if(c.ccg&&!c.ind){const g=ccgGame(L,i);if(g)games.push(g)}
     for(const [c,i] of cs)if(c.div==='FCS'&&!c.ccg&&!c.ind){const s=confStandings(L,i);if(s[0]){s[0].cc=true;s[0].ccTitles++}}
     const fcs=L.teams.filter(isFCS);
     if(fcs.length>=16){
+      /* 24 teams: the 11 automatic qualifiers plus 13 at-large; 16 seeds, 1–8 get byes, 9–16 host first-round games */
       const field=fcs.filter(t=>t.cc&&L.confs[t.conf].auto).map(t=>t.id);
       for(const id of L.rankF){if(field.length>=24)break;const t=L.teams[id];if(!field.includes(id)&&!L.confs[t.conf].celebration)field.push(id)}
       const seeds=field.sort((a,b)=>L.rankF.indexOf(a)-L.rankF.indexOf(b));
       L.fcsp={seeds,r1:[],r2:[],qf:[],sf:[],final:null};for(const id of seeds)L.teams[id].playoffApps++;
-      for(let j=0;j<8;j++){const hi=seeds[8+j],lo=seeds[23-j];if(hi==null||lo==null){L.fcsp.r1.push(null);continue}const g=postGame(hi,lo,{fcsp:true,neutral:false,tag:`FCS Playoffs · First Round · #${9+j} vs #${24-j}`,wx:weatherFor(12),slot:'Afternoon'});L.fcsp.r1.push(g);games.push(g)}
+      for(let j=0;j<8;j++){const hi=seeds[8+j],lo=seeds[23-j];if(hi==null||lo==null){L.fcsp.r1.push(null);continue}const g=postGame(hi,lo,{fcsp:true,neutral:false,tag:`FCS Playoffs · First Round · #${9+j} vs #${24-j}`,date:F.r1,wx:weatherFor(12),slot:'Afternoon'});L.fcsp.r1.push(g);games.push(g)}
     }
     L.weeks[L.week]={label:WEEK_NAMES[0],kind:'post0',games};
   }
   if(k===1){
     const sel=cfpSelect(L,selOrder(L),L.teams.filter(t=>!isFCS(t)&&t.cc).map(t=>t.id)),seeds=sel.seeds;
-    L.cfp={seeds,auto:sel.auto,r1:[],qf:[],sf:[],final:null};for(const id of seeds)L.teams[id].playoffApps++;
-    for(let j=0;j<4;j++){const g=postGame(seeds[4+j],seeds[11-j],{cfp:true,neutral:false,tag:`CFP First Round · #${5+j} vs #${12-j}`,wx:weatherFor(13)});L.cfp.r1.push(g);games.push(g)}
-    const elig=L.rank.filter(id=>!seeds.includes(id)&&L.teams[id].rec.w>=6),names=shuffle(BOWLS.slice());
-    for(let j=0;j+1<elig.length&&j/2<names.length;j+=2)games.push(postGame(elig[j],elig[j+1],{bowl:true,tag:names[j/2]}));
+    L.cfp={seeds,auto:sel.auto,bw:cfpBowls(L,seeds),r1:[],qf:[],sf:[],final:null};for(const id of seeds)L.teams[id].playoffApps++;
+    for(let j=0;j<4;j++){const g=postGame(seeds[4+j],seeds[11-j],{cfp:true,neutral:false,tag:`CFP First Round · #${5+j} vs #${12-j}`,date:nc?(j?'Dec 19':'Dec 18'):'',wx:weatherFor(13)});L.cfp.r1.push(g);games.push(g)}
+    games.push(...pickBowls(L,new Set(seeds)));
     const cel=cs.filter(([c])=>c.celebration).map(([c,i])=>L.teams.find(t=>t.conf===i&&t.cc)||confStandings(L,i)[0]).filter(Boolean);
-    if(cel.length===2)games.push(postGame(cel[0].id,cel[1].id,{bowl:true,tag:'Celebration Bowl'}));
-    if(L.fcsp){const s=L.fcsp.seeds;for(let sd=1;sd<=8;sd++){const opp=WIN(L.fcsp.r1[8-sd]);if(s[sd-1]==null||opp==null){L.fcsp.r2.push(null);continue}const g=postGame(s[sd-1],opp,{fcsp:true,neutral:false,tag:`FCS Playoffs · Second Round · #${sd} seed`,slot:'Afternoon'});L.fcsp.r2.push(g);games.push(g)}}
+    if(cel.length===2)games.push(postGame(cel[0].id,cel[1].id,{bowl:true,tag:'Celebration Bowl',date:nc?FCS26.cel[0]:'',site:nc?FCS26.cel[1]:''}));
+    if(L.fcsp){const s=L.fcsp.seeds;for(let sd=1;sd<=8;sd++){const opp=WIN(L.fcsp.r1[8-sd]);if(s[sd-1]==null||opp==null){L.fcsp.r2.push(null);continue}const g=postGame(s[sd-1],opp,{fcsp:true,neutral:false,tag:`FCS Playoffs · Second Round · #${sd} seed`,date:F.r2,slot:'Afternoon'});L.fcsp.r2.push(g);games.push(g)}}
+    games.sort((x,y)=>dayKey(x.date)-dayKey(y.date));
     L.weeks[L.week]={label:WEEK_NAMES[1],kind:'post1',games};
   }
+  const B=L.cfp&&(L.cfp.bw||cfpBowls(L,L.cfp.seeds)),at=b=>b?{date:b.d,site:b.s}:{};
   if(k===2){
-    const s=L.cfp.seeds,r=L.cfp.r1.map(WIN);L.cfp.qf=[[s[0],r[3]],[s[1],r[2]],[s[2],r[1]],[s[3],r[0]]].map(([a,b],j)=>postGame(a,b,{cfp:true,tag:`CFP Quarterfinal · ${CFP_QF[j]}`}));games.push(...L.cfp.qf);
-    if(L.fcsp){const r2=L.fcsp.r2.map(WIN);L.fcsp.qf=[[0,7],[1,6],[2,5],[3,4]].map(([a,b])=>r2[a]!=null&&r2[b]!=null?postGame(r2[a],r2[b],{fcsp:true,neutral:false,tag:'FCS Playoffs · Quarterfinal',slot:'Afternoon'}):null);games.push(...L.fcsp.qf.filter(Boolean))}
+    const s=L.cfp.seeds,r=L.cfp.r1.map(WIN);L.cfp.qf=[[s[0],r[3]],[s[1],r[2]],[s[2],r[1]],[s[3],r[0]]].map(([a,b],j)=>postGame(a,b,{cfp:true,tag:`CFP Quarterfinal · ${B.qf[j].n}`,...at(B.qf[j])}));games.push(...L.cfp.qf);
+    if(L.fcsp){const r2=L.fcsp.r2.map(WIN);L.fcsp.qf=[[0,7],[1,6],[2,5],[3,4]].map(([a,b])=>r2[a]!=null&&r2[b]!=null?postGame(r2[a],r2[b],{fcsp:true,neutral:false,tag:'FCS Playoffs · Quarterfinal',date:F.qf,slot:'Afternoon'}):null);games.push(...L.fcsp.qf.filter(Boolean))}
+    games.sort((x,y)=>dayKey(x.date)-dayKey(y.date));
     L.weeks[L.week]={label:WEEK_NAMES[2],kind:'post2',games};
   }
   if(k===3){
-    const q=L.cfp.qf.map(WIN);L.cfp.sf=[postGame(q[0],q[3],{cfp:true,tag:'CFP Semifinal · '+CFP_SF[0]}),postGame(q[1],q[2],{cfp:true,tag:'CFP Semifinal · '+CFP_SF[1]})];games.push(...L.cfp.sf);
-    if(L.fcsp){const f=L.fcsp.qf.map(WIN);L.fcsp.sf=[[0,3],[1,2]].map(([a,b])=>f[a]!=null&&f[b]!=null?postGame(f[a],f[b],{fcsp:true,neutral:false,tag:'FCS Playoffs · Semifinal',slot:'Afternoon'}):null);games.push(...L.fcsp.sf.filter(Boolean))}
+    const q=L.cfp.qf.map(WIN);L.cfp.sf=[postGame(q[0],q[3],{cfp:true,tag:'CFP Semifinal · '+B.sf[0].n,...at(B.sf[0])}),postGame(q[1],q[2],{cfp:true,tag:'CFP Semifinal · '+B.sf[1].n,...at(B.sf[1])})];games.push(...L.cfp.sf);
+    if(L.fcsp){const f=L.fcsp.qf.map(WIN);L.fcsp.sf=[[0,3],[1,2]].map(([a,b])=>f[a]!=null&&f[b]!=null?postGame(f[a],f[b],{fcsp:true,neutral:false,tag:'FCS Playoffs · Semifinal',date:F.sf,slot:'Afternoon'}):null);games.push(...L.fcsp.sf.filter(Boolean))}
+    games.sort((x,y)=>dayKey(x.date)-dayKey(y.date));
     L.weeks[L.week]={label:WEEK_NAMES[3],kind:'post3',games};
   }
   if(k===4){
-    const f=L.cfp.sf.map(WIN);L.cfp.final=postGame(f[0],f[1],{cfp:true,tag:'CFP National Championship'});games.push(L.cfp.final);
-    if(L.fcsp){const g=L.fcsp.sf.map(WIN);if(g[0]!=null&&g[1]!=null){L.fcsp.final=postGame(g[0],g[1],{fcsp:true,tag:'FCS National Championship'});games.push(L.fcsp.final)}}
+    const f=L.cfp.sf.map(WIN);L.cfp.final=postGame(f[0],f[1],{cfp:true,tag:'CFP National Championship',...at(B.fin)});games.push(L.cfp.final);
+    if(L.fcsp){const g=L.fcsp.sf.map(WIN);if(g[0]!=null&&g[1]!=null){L.fcsp.final=postGame(g[0],g[1],{fcsp:true,tag:'FCS National Championship',date:nc?F.fin[0]:'',site:nc?F.fin[1]:''});games.unshift(L.fcsp.final)}}
     L.weeks[L.week]={label:WEEK_NAMES[4],kind:'post4',games};
   }
 }
@@ -499,6 +609,7 @@ function startNewSeason(L){
   L.nil+=300+u.prestige*150+L.fan*4+(h.champ?400:0)+(h.madePO?200:0);
   if(!L.captains.length)L.captains=u.roster.filter(p=>p.yr>=3).sort((a,b)=>ovr(b)-ovr(a)).slice(0,2).map(p=>p.id);
   L.season++;L.week=0;L.phase='regular';L.off=null;L.lastWeek=null;L.heisman=null;L.fcsPoy=null;L.heismanWatch=null;L.potw=null;L.event=null;invalidate();
+  if(L.kind==='ncaa'&&typeof syncNCAAConfs==='function')syncNCAAConfs(L);   /* current conference alignment and formats */
   refreshStaffPool(L);resetRecords(L);buildSchedule(L);updateRankings(L);
   L.news.unshift({t:`Fall camp is done. ${camp.length} rating upgrades from spring practice and camp.`,good:true});
   return camp;

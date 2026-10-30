@@ -13,6 +13,52 @@ const TROPHY_B=['Lantern','Anvil','Compass','Spike','Canteen','Kettle','Saddle',
 const BOWLS=['Harbor Lights Bowl','Prairie Bowl','Evergreen Bowl','Desert Classic','Gulf Coast Bowl','Mountain Pass Bowl','Lakeshore Bowl','Canyon Bowl','Redwood Bowl','Riverboat Bowl','Copper State Bowl','Heartland Classic','Bayside Bowl','Magnolia Bowl','Frontier Bowl','Lone Pine Bowl','Cascade Bowl','Riverwalk Bowl','Palmetto Classic','Sunbelt Shores Bowl','Bluegrass Bowl','Crossroads Bowl','Iron Range Bowl','Painted Desert Bowl','Golden Isles Bowl','Big Sky Country Bowl','Prairie Wind Bowl','Gateway Bowl','Coastal Plains Bowl','Silver State Bowl','Ozark Bowl','Tidewater Bowl','Keystone Bowl','Delta Bowl','Pacific Rim Bowl','Hill Country Bowl','Northern Lights Bowl','Capitol City Bowl','Sunset Coast Bowl','Lakefront Bowl'];
 const CFP_QF=['Sunrise Bowl','Golden Coast Bowl','Twin Rivers Bowl','Starlight Bowl'];
 const CFP_SF=['Summit Bowl','Bluewater Bowl'];
+/* NCAA leagues: the 2026–27 FBS bowl lineup in date order, [bowl, date, site, tie-in A, tie-in B, pick tier (1 first)];
+   tie-ins are conference names ('/' = either). The New Year's Six bowls are all CFP games in the 12-team format. */
+const BOWLS26=[['Salute to Veterans Bowl','Dec 15','Cramton Bowl, Montgomery, Ala.','Sun Belt','MAC',5],
+ ['Frisco Football Classic','Dec 15','Ford Center at The Star, Frisco, Texas','American/Conference USA','MAC/Sun Belt',5],
+ ['Boca Raton Bowl','Dec 18','Flagler Credit Union Stadium, Boca Raton, Fla.','American','Conference USA/MAC/Sun Belt',4],
+ ['Gasparilla Bowl','Dec 18','Raymond James Stadium, Tampa, Fla.','American','ACC/SEC',4],
+ ['Myrtle Beach Bowl','Dec 21','Brooks Stadium, Conway, S.C.','Sun Belt','American',5],
+ ['Famous Idaho Potato Bowl','Dec 21','Albertsons Stadium, Boise, Idaho','Mountain West','MAC',5],
+ ['Puerto Rico Bowl','Dec 22','Juan Ramón Loubriel Stadium, Bayamón, P.R.','Conference USA/MAC','American/Sun Belt',5],
+ ['Cure Bowl','Dec 22','Acrisure Bounce House, Orlando, Fla.','Sun Belt','American/Conference USA',5],
+ ['Independence Bowl','Dec 22','Independence Stadium, Shreveport, La.','Big 12/Pac-12','Conference USA',4],
+ ['New Orleans Bowl','Dec 23','Caesars Superdome, New Orleans','Sun Belt','Conference USA',4],
+ ['Armed Forces Bowl','Dec 23','Amon G. Carter Stadium, Fort Worth, Texas','Big 12','Mountain West',3],
+ ['Poinsettia Bowl','Dec 23','Snapdragon Stadium, San Diego','Pac-12','Mountain West',4],
+ ['Frisco Bowl','Dec 23','Ford Center at The Star, Frisco, Texas','American/Mountain West','Sun Belt/Conference USA',5],
+ ['New Mexico Bowl','Dec 24','University Stadium, Albuquerque, N.M.','Mountain West','Conference USA/American',4],
+ ['Hawaii Bowl','Dec 24','Clarence T.C. Ching Athletics Complex, Honolulu','Mountain West','American',4],
+ ['Pinstripe Bowl','Dec 26','Yankee Stadium, Bronx, N.Y.','ACC','Big Ten',3],
+ ['Fenway Bowl','Dec 26','Fenway Park, Boston','ACC','American',3],
+ ["Duke's Mayo Bowl",'Dec 26','Bank of America Stadium, Charlotte','ACC','SEC',2],
+ ['68 Ventures Bowl','Dec 26','Hancock Whitney Stadium, Mobile, Ala.','Sun Belt','MAC/Conference USA',5],
+ ['Cactus Bowl','Dec 26','Mountain America Stadium, Tempe, Ariz.','Big 12','Big Ten',3],
+ ['Military Bowl','Dec 28','Navy–Marine Corps Memorial Stadium, Annapolis, Md.','ACC','American',3],
+ ['Holiday Bowl','Dec 28','Snapdragon Stadium, San Diego','ACC','Pac-12',2],
+ ['Birmingham Bowl','Dec 29','Protective Stadium, Birmingham, Ala.','SEC','American',3],
+ ['Pop-Tarts Bowl','Dec 29','Camping World Stadium, Orlando, Fla.','ACC','Big 12',1],
+ ['Alamo Bowl','Dec 29','Alamodome, San Antonio','Big 12','Pac-12',1],
+ ['Gator Bowl','Dec 30','EverBank Stadium, Jacksonville, Fla.','SEC','ACC',2],
+ ['Music City Bowl','Dec 30','Nissan Stadium, Nashville','SEC','Big Ten',2],
+ ['ReliaQuest Bowl','Dec 31','Raymond James Stadium, Tampa, Fla.','SEC','Big Ten',1],
+ ['Sun Bowl','Dec 31','Sun Bowl Stadium, El Paso, Texas','ACC','Pac-12',2],
+ ['Las Vegas Bowl','Dec 31','Allegiant Stadium, Las Vegas','Big Ten/SEC','Pac-12',2],
+ ['Texas Bowl','Dec 31','NRG Stadium, Houston','SEC','Big 12',2],
+ ['Citrus Bowl','Jan 2','Camping World Stadium, Orlando, Fla.','SEC','Big Ten',1],
+ ['First Responder Bowl','Jan 2','Gerald J. Ford Stadium, Dallas','American','Conference USA/Big 12',4],
+ ['Arizona Bowl','Jan 2','Casino Del Sol Stadium, Tucson, Ariz.','Mountain West','MAC',4],
+ ['Liberty Bowl','Jan 2','Simmons Bank Liberty Stadium, Memphis, Tenn.','SEC','Big 12',2]];
+/* 2026–27 CFP: first round on campus (seeds 5–8 host, Dec 18–19); quarterfinals at the Fiesta (Dec 30), Peach, Rose and Cotton
+   (Jan 1); semifinals at the Orange (Jan 14) and Sugar (Jan 15); title game Jan 25, 2027 at Allegiant Stadium, Las Vegas.
+   pref: which quarterfinal bowl a top-4 seed from that conference is placed in first. */
+const CFP26={qf:[['Fiesta Bowl','Dec 30','State Farm Stadium, Glendale, Ariz.'],['Peach Bowl','Jan 1','Mercedes-Benz Stadium, Atlanta'],['Rose Bowl','Jan 1','Rose Bowl, Pasadena, Calif.'],['Cotton Bowl','Jan 1','AT&T Stadium, Arlington, Texas']],
+  sf:[['Orange Bowl','Jan 14','Hard Rock Stadium, Miami Gardens, Fla.'],['Sugar Bowl','Jan 15','Caesars Superdome, New Orleans']],
+  fin:['National Championship','Jan 25','Allegiant Stadium, Las Vegas'],
+  pref:{'Big Ten':'Rose Cotton Fiesta Peach',SEC:'Peach Cotton Fiesta Rose','Big 12':'Cotton Fiesta Peach Rose',ACC:'Peach Cotton Fiesta Rose','Pac-12':'Rose Fiesta Cotton Peach'}};
+/* 2026 FCS playoffs (24 teams, title game Jan 11 at FirstBank Stadium, Nashville) and the Celebration Bowl (MEAC vs SWAC) */
+const FCS26={r1:'Nov 28',r2:'Dec 5',qf:'Dec 11–12',sf:'Dec 19',fin:['Jan 11','FirstBank Stadium, Nashville'],cel:['Dec 12','Mercedes-Benz Stadium, Atlanta']};
 
 const POS_ORDER=['QB','RB','WR','TE','OL','DL','LB','CB','S','K'];
 const POS_NAME={QB:'Quarterbacks',RB:'Running backs',WR:'Wide receivers',TE:'Tight ends',OL:'Offensive line',DL:'Defensive line',LB:'Linebackers',CB:'Cornerbacks',S:'Safeties',K:'Kickers & punters'};
