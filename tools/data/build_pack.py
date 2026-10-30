@@ -499,6 +499,37 @@ def write_pack(path, pack):
 
 
 
+# ---- kickers and punters: production z-scores plus the per-team calibration pushed the best legs to the 97 ceiling
+# (thr/acc capped at 5.0), so they crowded every team's best-players list. Rank all K/P by their raw (uncapped) rating
+# and cap each at a league-wide curve by rank: the best about 90, the top 2% about 85, a typical FBS starter 72-82;
+# the lower half keeps its rating. thr and acc move together (the leg/accuracy mix is kept); ovr follows the in-game formula.
+KCURVE = [(0, 90), (.008, 88), (.02, 85), (.05, 81), (.10, 77), (.18, 73), (.30, 69), (.45, 66), (1, 66)]
+
+
+def kcap(r):
+    for (ra, ta), (rb, tb) in zip(KCURVE, KCURVE[1:]):
+        if r <= rb:
+            return ta + (tb - ta) * (r - ra) / ((rb - ra) or 1)
+    return KCURVE[-1][1]
+
+
+def rescale_kickers(kents):
+    kents.sort(key=lambda x: (-(ovr(dict(x[1]['a'], pos='K')) + .02 * x[1]['score']), x[1]['pid']))
+    n = 0
+    for i, (ent, p) in enumerate(kents):
+        cur = ovr(dict(ent, pos='K'))
+        tgt = kcap(i / max(1, len(kents) - 1))
+        if o99(cur) <= tgt + .5:
+            continue
+        v = 1 + 4 * math.pow(clamp((tgt - 45) / 52, 0, 1), 1 / .9)
+        d = v - cur
+        ent['thr'] = r1(ent['thr'] + d)
+        ent['acc'] = r1(ent['acc'] + d)
+        ent['ovr'] = p['ovr'] = ovr99(ovr(dict(ent, pos='K')))
+        n += 1
+    print('kickers rescaled:', n, 'of', len(kents))
+
+
 def main():
     progs = game_programs()
     roster = pd.read_parquet(os.path.join(DATA, 'rosters', 'parquet', 'rosters_2026.parquet'))
@@ -712,7 +743,7 @@ def main():
             p['_o'] = ovr(floatp(p))
         devs.append(team_ovr([floatp(p) for p in select60(by_team[ds])]) - curve_at(curve, g['q']))
     mdev = sorted(devs)[len(devs) // 2]
-    teams_out, calib = [], []
+    teams_out, calib, kents = [], [], []
     for g in progs:
         ds = match.get(g['abbr'])
         if not ds:
@@ -778,8 +809,13 @@ def main():
                  'ht': p['ht'], 'wt': p['wt'], 'home': p['home'], 'espnId': p['pid']}
             e.update(p['ar'])
             e['ovr'] = p['ovr']
-            team['roster'].append({k: v for k, v in e.items() if v is not None})
+            ent = {k: v for k, v in e.items() if v is not None}
+            team['roster'].append(ent)
+            if p['pos'] == 'K':
+                kents.append((ent, p))
         teams_out.append(team)
+
+    rescale_kickers(kents)
 
     pack = {'format': 'gridiron-live-pack', 'version': 2, 'season': 2026, 'name': 'College football 2026 rosters & logos',
             'notes': 'Rosters: ESPN via cfbfastR-data (2026 season). Ratings are game estimates from 2025+2026 production, class, size and program strength. Logos are links to the ESPN CDN.' + COACH_NOTE,
