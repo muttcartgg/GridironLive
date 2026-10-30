@@ -116,8 +116,15 @@ const draftEligible=p=>p.yr>=3||(p.yr===2&&p.rs);
 /* only juniors with a real draft grade leave early: ~110 early entrants a year league-wide, ~4–7 at the deepest programs (was ~400, up to 16 a team) */
 const declareOdds=p=>(p.yr===3||(p.yr===2&&p.rs))?clamp((draftGrade(p)-92)/8,0,.85):0;
 function mockBoard(L){const all=[];for(const t of L.teams)for(const p of t.roster)if(draftEligible(p))all.push({p,t,g:draftGrade(p)});return all.sort((a,b)=>b.g-a.g).slice(0,32)}
+/* NFL teams draft players, not programs, but a loaded program's depth was never that far ahead of everyone else's
+   starters: from a school's seventh pick on, each further player slides (0.8 grade points a pick) and 14 is the ceiling,
+   so the deepest programs land about 8–13 picks like the real draft instead of 16–19 */
+const draftSlide=n=>n<6?0:(n-5)*.8;
 function runDraft(L,pool){
-  const ord=pool.map(x=>({...x,g:draftGrade(x.p)+R(-2.5,2.5)})).sort((a,b)=>b.g-a.g).slice(0,224),cnt={},first={};
+  const cand=pool.map(x=>({...x,g:draftGrade(x.p)+R(-2.5,2.5)})).sort((a,b)=>b.g-a.g),ord=[],took={},used=new Set(),cnt={},first={};
+  while(ord.length<224){let best=null,bv=-1e9;
+    for(const x of cand){if(x.g<bv)break;if(used.has(x))continue;const n=took[x.t.id]||0;if(n>=14)continue;const v=x.g-draftSlide(n);if(v>bv){bv=v;best=x}}   // sorted by grade: nothing below the best adjusted grade can beat it
+    if(!best)break;used.add(best);took[best.t.id]=(took[best.t.id]||0)+1;ord.push(best)}
   const picks=ord.map((x,i)=>{cnt[x.t.id]=(cnt[x.t.id]||0)+1;if(i<32)first[x.t.id]=(first[x.t.id]||0)+1;return [fullName(x.p),x.p.pos,x.t.id,ovr99(x.p),yrStr(x.p),x.declare?1:0]});
   for(const t of L.teams){t.dp=Math.round(((t.dp||0)*.5+(cnt[t.id]||0)+(first[t.id]||0)*.5)*10)/10;if(cnt[t.id])t.nfl=(t.nfl||0)+cnt[t.id]}
   L.draft={season:L.season,picks};
