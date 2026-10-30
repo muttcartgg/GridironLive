@@ -77,6 +77,8 @@
   background:linear-gradient(180deg,rgba(3,6,12,.74),rgba(3,6,12,.9));-webkit-backdrop-filter:none;backdrop-filter:none;animation:mFade .2s ease}
 #modal>.panel,#pausem>.panel{background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,0) 140px),#0C1320;border:1px solid var(--m-line2);border-radius:22px;padding:20px;box-shadow:0 30px 80px rgba(0,0,0,.6);animation:mIn .3s cubic-bezier(.2,.9,.25,1)}
 #modal .card:not(.ng){background:rgba(255,255,255,.03);box-shadow:none}
+/* long sheets keep their main action in reach */
+#modal .btns.cta{position:sticky;bottom:calc(-16px - env(safe-area-inset-bottom,0px));z-index:2;margin:0 -20px -20px;padding:16px 20px calc(20px + env(safe-area-inset-bottom,0px));border-radius:0 0 22px 22px;background:linear-gradient(180deg,rgba(12,19,32,0),#0C1320 22%)}
 @keyframes mFade{from{opacity:0}}
 @keyframes mIn{from{opacity:0;transform:translateY(14px) scale(.98)}}
 @keyframes sheetUp{from{transform:translateY(36%);opacity:0}}
@@ -84,6 +86,7 @@
   #modal{padding:calc(env(safe-area-inset-top,0px) + 28px) 0 0}
   #modal>.panel{margin:auto 0 0;max-width:none;border-radius:24px 24px 0 0;border-bottom:0;padding:10px 18px calc(18px + env(safe-area-inset-bottom,0px));animation:sheetUp .34s cubic-bezier(.2,.9,.25,1)}
   #modal>.panel::before{content:"";flex:none;align-self:center;width:38px;height:5px;border-radius:3px;background:rgba(255,255,255,.22)}
+  #modal .btns.cta{bottom:0;margin:0 -18px calc(-18px - env(safe-area-inset-bottom,0px));padding:16px 18px calc(16px + env(safe-area-inset-bottom,0px));border-radius:0}
 }
 
 /* ---------- toasts on menu screens (the in-game toast sits under the score bug, below the screens) ---------- */
@@ -170,6 +173,10 @@
    ========================================================= */
 .su-head{display:flex;align-items:flex-end;justify-content:space-between;gap:12px}
 .su-head .h1{margin-top:6px}
+#setup .su-names{grid-template-columns:1fr 1fr;gap:10px}
+#setup .su-opts>.setrow,#setup .card>.setrow:first-child{flex-direction:column;align-items:stretch;gap:8px}
+#setup .su-opts .seg,#setup #leagueSeg{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+#setup .su-opts .seg button,#setup #leagueSeg button{padding:4px 6px;white-space:normal;line-height:1.05}
 .su-filter{display:flex;flex-direction:column;gap:10px}
 .su-q{position:relative}
 .su-q::before{content:"";position:absolute;left:14px;top:50%;width:18px;height:18px;margin-top:-9px;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238D99AD' stroke-width='2.4' stroke-linecap='round'%3E%3Ccircle cx='10.5' cy='10.5' r='6.5'/%3E%3Cpath d='m15.5 15.5 5 5'/%3E%3C/svg%3E") center/contain no-repeat}
@@ -199,7 +206,8 @@
 .td-tags{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:4px}
 .td-tags .stars{font-size:14px}
 .td-k{grid-template-columns:repeat(3,minmax(0,1fr))}
-.td-k div{display:flex;flex-direction:column;gap:7px}
+.td-k>div{display:flex;flex-direction:column;gap:8px}
+.td-k .meter{padding:0;border:0;border-radius:3px;background:rgba(255,255,255,.08);min-width:0}
 :where(#modal) .td-k b{font-size:32px}
 
 /* =========================================================
@@ -262,7 +270,7 @@
 .ng-t .tx{display:flex;flex-direction:column;gap:4px;min-width:0;max-width:100%}
 .ng-t .tx small{font:700 12px/1 var(--tv);letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ng-t .tx small i{font-style:normal;color:var(--gold)}
-.ng-t .tx b{font:var(--dstyle) var(--dw) clamp(22px,6.4vw,34px)/.92 var(--disp);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 12px rgba(0,0,0,.45)}
+.ng-t .tx b{display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font:var(--dstyle) var(--dw) clamp(22px,6.4vw,34px)/.92 var(--disp);text-transform:uppercase;text-wrap:balance;text-shadow:0 2px 12px rgba(0,0,0,.45)}
 .ng-t .tx em{font:600 12.5px/1.15 var(--body);font-style:normal;color:rgba(255,255,255,.78);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ng-mid{display:flex;flex-direction:column;align-items:center;gap:9px;padding:0 6px}
 .ng-mid .at{font:italic 800 30px/1 var(--tv);color:rgba(255,255,255,.6)}
@@ -270,7 +278,7 @@
 .ng-wp{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:6px 10px;padding:10px 14px;background:rgba(0,0,0,.3);border-top:1px solid rgba(255,255,255,.06)}
 .ng-wp em{grid-row:1;grid-column:1/-1;text-align:center;font:700 10.5px/1 var(--tv);font-style:normal;letter-spacing:.16em;text-transform:uppercase;color:var(--m-mute)}
 .ng-wp b{font:italic 800 21px/1 var(--tv);font-variant-numeric:tabular-nums}
-.ng-wp .bar{display:flex;gap:2px;height:8px;border-radius:4px;overflow:hidden}
+.ng-wp .bar{display:flex;align-items:stretch;gap:2px;height:8px;border-radius:4px;overflow:hidden}
 .ng-wp .bar i{display:block;background:var(--b1)}.ng-wp .bar i:first-child{width:var(--w);background:var(--a1)}.ng-wp .bar i:last-child{flex:1}
 .ng-meta{display:flex;flex-wrap:wrap;align-items:center;gap:7px 12px;padding:11px 14px 0;font:700 13px/1.2 var(--tv);letter-spacing:.06em;text-transform:uppercase;color:#C5CEDD}
 .ng-meta:last-child{padding-bottom:13px}

@@ -140,7 +140,7 @@ function renderSetup(){
   const confs=L.confs.map((c,i)=>[c,i]).filter(([c])=>st.div==='all'||c.div===st.div);
   $('#setupBody').innerHTML=`
     <div class="su-head"><div><div class="eyebrow">New dynasty · slot ${st.slot}</div><div class="h1">Pick your program</div></div><button class="btn ghost sm" id="setBack">‹ Saves</button></div>
-    <div class="card"><div class="grid2">
+    <div class="card su-opts"><div class="grid2 su-names">
       <div class="field-row"><label for="coachName">Coach name</label><input type="text" id="coachName" maxlength="24" placeholder="Coach Merchant" value="${esc(st.coach)}"></div>
       <div class="field-row"><label for="dynName">Dynasty name</label><input type="text" id="dynName" maxlength="28" placeholder="My Dynasty" value="${esc(st.name)}"></div></div>
       <div class="setrow"><span class="eyebrow">Difficulty</span><div class="seg" id="setDiff">${[[0,'Rookie'],[1,'Varsity'],[2,'All-American'],[3,'Heisman']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${v===st.diff}">${l}</button>`).join('')}</div></div></div>
@@ -181,7 +181,7 @@ function openTeamDetail(id){
       <div class="lrow"><span class="note">AD expectation</span><span>${adTarget(t)}+ wins a season</span></div>
     </div>
     <div><div class="eyebrow" style="margin-bottom:4px">Best players</div><div class="list">${top.map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${esc(fullName(p))} · ${yrStr(p)}</span></span>${ovrTag(p)}</div>`).join('')}</div></div>
-    <div class="btns"><button class="btn" id="coachHere">Coach here</button><button class="btn ghost" id="tdEdit">Rename &amp; recolor</button><button class="btn ghost" id="tdX">Back</button></div>`);
+    <div class="btns cta"><button class="btn" id="coachHere">Coach here</button><button class="btn ghost" id="tdEdit">Edit look</button><button class="btn ghost" id="tdX">Back</button></div>`);
   on('tdX',closeModal);on('tdEdit',()=>openEditor(id,()=>openTeamDetail(id),SETUP.L));
   on('coachHere',()=>startDynasty(id));
 }
@@ -620,7 +620,7 @@ function openPregame(g){
     <div class="grid2 pg-grid"><div class="card"><div class="eyebrow">Keys to the game</div><ol class="pg-keys">${keys.slice(0,3).map(k=>`<li>${esc(k)}</li>`).join('')}</ol></div>
     <div class="card"><div class="eyebrow">Players to watch · ${esc(opp.abbr)}</div><div class="list">${watch.map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${esc(fullName(p))} <small class="note">#${p.num} · ${yrStr(p)}</small></span></span>${ovrTag(p)}</div>`).join('')}</div></div></div>
     <div class="setrow pg-uni"><span class="eyebrow">Uniform</span><div class="seg" id="uniSeg">${UNI_STYLES.map(([k,l])=>`<button data-v="${k}" aria-pressed="${(LG.settings.uniform||'auto')===k}">${l}</button>`).join('')}</div></div>
-    <div class="btns"><button class="btn" id="kickoff">${ICO.play}Kick off</button><button class="btn ghost" id="pgX">Back</button></div>`,true);
+    <div class="btns cta"><button class="btn" id="kickoff">${ICO.play}Kick off</button><button class="btn ghost" id="pgX">Back</button></div>`,true);
   document.querySelectorAll('#uniSeg button').forEach(b=>b.onclick=()=>{LG.settings.uniform=b.dataset.v;document.querySelectorAll('#uniSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));saveNow()});
   on('pgX',closeModal);on('kickoff',()=>{closeModal();startUserGame(g)});
 }
