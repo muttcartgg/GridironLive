@@ -28,7 +28,8 @@ function aimError(d,bullet,lob){
   const qb=Q;if(!qb)return 1;const v=hyp(qb.vx,qb.vy),set=clamp((qb.setT||0)/.45,0,1),mr=maxRange(),strain=clamp((d/mr-.72)/.28,0,1);
   const wx=S.wx==='Rain'?1.15:S.wx==='Snow'?1.12:S.wx==='Wind'&&d>20?1.25:1;
   const plat=1+Math.min(1,v/5.5)*.6*(1.15-.05*qb.pl.agi)+(1-set)*.15;
-  const e=(.3+d*.0074*(6.3-qb.pl.acc))*(1+pressure()*.9)*plat*(1+strain*.6)*(bullet?1.15:lob?.92:1)*wx;
+  const acc=play&&play.dblDone?Math.max(qb.pl.acc,2.8):qb.pl.acc;   // the trick-play passer is the back or receiver who can throw
+  const e=(.3+d*.0074*(6.3-acc))*(1+pressure()*.9)*plat*(1+strain*.6)*(bullet?1.15:lob?.92:1)*wx;
   return e*(qb.user?(focus('passing')?.8:1)/SL('acc'):1.1-S.aiSkill*.2)/coachMod(qb.team,'acc');
 }
 function flightT(d,bullet,lob,thr){let T=(.2+d*.028+d*d*.00028)*(1.1-.035*thr);if(bullet)T*=.72;else if(lob)T=T*1.28+.08;const mr=maxRange();if(d>mr*.8)T*=1+(d/mr-.8)*.8;return Math.max(.28,T)}
@@ -52,7 +53,7 @@ function throwAway(){play.throwAway=true;throwBall(Q.x+10,Q.y<CEN?-4:FW+4,false,
 function aiThrow(r){
   const pl=play,[df,dd]=nearest(DEF,r.x,r.y,o=>o.stun<=0);let d=hyp(r.x-Q.x,r.y-Q.y),bullet=false,lob=false;
   const deep=r.x-S.los>15&&d>20,trail=df&&df.x<r.x-.3;
-  if(deep&&(trail||Math.random()<.3))lob=true;else if(d<18&&dd<2.6&&Math.random()<.6)bullet=true;else if(d<11&&Math.random()<.25)bullet=true;
+  if(deep&&(trail||Math.random()<.3)&&!(pl.dblDone&&dd>3))lob=true;   // a trick passer with a man open lets it go on a lineelse if(d<18&&dd<2.6&&Math.random()<.6)bullet=true;else if(d<11&&Math.random()<.25)bullet=true;
   let T=flightT(d,bullet,lob,Q.pl.thr),tx=r.x,ty=r.y;
   for(let i=0;i<2;i++){tx=r.x+r.vx*T*.92;ty=r.y+r.vy*T*.92;d=hyp(tx-Q.x,ty-Q.y);T=flightT(d,bullet,lob,Q.pl.thr)}
   throwBall(Math.min(tx,119),clamp(ty,.8,FW-.8),bullet,r,lob);
@@ -156,7 +157,7 @@ function resolveCatch(){
   const contested=!!df&&dd<dR+.45&&pl.sep<1.7;pl.contested=contested;
   if(contested){const edge=((df.pl.cov+df.pl.cat)-(rec.pl.cat+rec.pl.str))/2;
     const pB=clamp(PASS.pbu+.12*edge+(dr-dd)*.25+(1.7-pl.sep)*.12+(userSwat?.25:0)+(ball.lob?.05:0)+(dive?.1:0)+(df.user?0:(S.aiSkill-.5)*.1),.05,.75);
-    if(Math.random()<pB)return breakup(df,userSwat?'Swatted away!':'Broken up',PASS.popUp)}
+    if(Math.random()<pB*(pl.dblDone?.8:1))return breakup(df,userSwat?'Swatted away!':'Broken up',PASS.popUp)}   // a trick throw: the defender recovering from the run fake arrives a step late
   /* the receiver's hands */
   const hit=df&&dd<1.9&&hyp(df.vx,df.vy)>4?.06*(df.pl.str/3):0,wx=S.wx==='Rain'?.035:S.wx==='Snow'?.03:0;
   const shortBullet=ball.bullet&&hyp(tx-ball.fx,ty-ball.fy)<15?.05:0;
@@ -228,7 +229,10 @@ function coverageSnap(){
   for(const d of DEF){d.lagT=0;d.bite=0;const cv=d.cov;
     if(d.press&&cv&&cv.type==='man'&&cv.tgt.route&&pl.type==='pass'){const w=cv.tgt,r=(.4*d.pl.str+.4*d.pl.cov+.2*d.pl.agi)-(.35*w.pl.rte+.35*w.pl.agi+.3*w.pl.str)+R(-1,1)*.9;
       if(r>.35)w.jamT=R(.3,.55);else if(r<-.6){d.lagT=R(.3,.5);d.lvx=0;d.lvy=0}else w.jamT=R(.08,.18)}
-    if((pl.pa||pl.flea)&&(d.role==='LB'||d.role==='S')&&cv&&cv.type!=='rush'){const k=clamp(.95-.2*d.pl.awr+(d.role==='LB'?.15:0)-(cv.type==='man'?.2:0)+(d.user?0:.15-.3*S.aiSkill)+R(-.15,.15),0,.75);d.bite=k>.08?.2+k*.9:0}}
+    if((pl.pa||pl.flea)&&(d.role==='LB'||d.role==='S')&&cv&&cv.type!=='rush'){const k=clamp(.95-.2*d.pl.awr+(d.role==='LB'?.15:0)-(cv.type==='man'?.2:0)+(d.user?0:.15-.3*S.aiSkill)+R(-.15,.15),0,.75);d.bite=k>.08?.2+k*.9:0}
+    /* HB pass / double pass: the toss sells a sweep, so the whole back seven (corners in run support too) comes up
+       until the ball carrier pulls up to throw */
+    if(pl.dbl&&cv&&cv.type!=='rush'&&d.role!=='DL'){const k=clamp(1.05-.18*d.pl.awr+(d.role==='LB'?.15:d.role==='CB'?-.1:0)-(cv.type==='man'?.15:0)+(d.user?-.08:-.08-.25*S.aiSkill)+R(-.15,.15),0,.8);d.bite=.5+k*.9}}
 }
 /* a receiver breaks: man defenders on him react late by route running vs coverage */
 function routeBreak(p){

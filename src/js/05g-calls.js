@@ -83,7 +83,7 @@ function rpoThrow(pl,rec){
 function dblTick(pl){
   const h=KP[pl.dbl];if(!h||pl.thrown)return;
   if(!pl.dblPitched&&pl.t>.4&&pl.carrier===Q&&ball.state==='held'){pl.dblPitched=true;ballTo(Q,h.x+h.vx*.25,h.y+h.vy*.25,.34,h);return}
-  if(pl.dblPitched&&!pl.dblDone&&ball.state==='held'&&pl.carrier===h){pl.dblDone=true;pl.handed=false;h.route=null;h.rpath=null;h.cont=null;h.blocker=true;Q=h;pl.nextRead=0;pl.hold=.25;if(uOff())hint('Now throw it · drag back to aim');showActs()}
+  if(pl.dblPitched&&!pl.dblDone&&ball.state==='held'&&pl.carrier===h){pl.dblDone=true;pl.handed=false;h.route=null;h.rpath=null;h.cont=null;h.blocker=true;Q=h;pl.nextRead=0;pl.hold=0;if(uOff())hint('Now throw it · drag back to aim');showActs()}
 }
 /* pass protection slide: the line turns toward one side (those rushers start the rep losing) */
 function slideSnap(pl){if(!uOff()||!S.slide||pl.type!=='pass')return;for(const d of DEF)if(d.cov&&d.cov.type==='rush'&&Math.sign(d.y-S.ballY)===S.slide)d.rep=-.5}
