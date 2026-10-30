@@ -9,6 +9,15 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 14): the 2026 college landscape
+
+- Every FBS team now plays exactly 12 regular-season games (one bye, its league games, rivalries in Rivalry Week, an FCS opponent for many Power 4 teams); FCS teams play 12 (Ivy League 10).
+- 2026 conference formats: 9-game ACC (8 for Boston College, Clemson, Florida State, Georgia Tech and North Carolina), Sun Belt and SWAC divisions, the Pac-12's 7-game round robin plus a flex game; Army–Navy doesn't count in the standings.
+- Conference title games pair the top two (division winners in the Sun Belt and SWAC), with head-to-head, common-opponent and ranking tiebreakers, at real neutral sites or the top seed's stadium.
+- 35 real bowls with conference tie-ins in date order (6 wins needed, topped up with 5–7 teams). CFP quarterfinals at the Fiesta, Peach, Rose and Cotton; semifinals at the Orange and Sugar; the title game in Las Vegas on January 25. 24-team FCS playoff ending in Nashville.
+- Team strengths updated from the 2026 AP poll (48 teams).
+- Existing dynasties pick up the new formats at their next season.
+
 ## Version 7 (part 13): menus and look
 
 - New design across every menu: deep navy panels with light grain, team-color accents and Barlow Condensed headings; sheets slide up from the bottom in portrait.
