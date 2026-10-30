@@ -66,3 +66,5 @@
 .adj-tools button[aria-pressed="true"]{background:var(--team);color:var(--btn-ink);border-color:transparent}
 .adj-tools button:disabled{opacity:.45}
 @media (max-height:480px){#adjMenu{bottom:calc(env(safe-area-inset-bottom,0px) + 72px);max-height:calc(100% - 84px)}.adj-aud{grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* final check: keep the pause button reachable (and above) while the play-call sheets are open */
+#pauseBtn{z-index:14}

@@ -9,6 +9,11 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (final check)
+
+- An independent test pass: full games with strong, weak and FCS teams, six full seasons, imported real rosters, v6.1 saves (including a game in progress) loading and continuing, and every hub and offseason button clicked in portrait and landscape — no errors or stuck screens.
+- Fixed: the replay controls ran off the screen in portrait; far too many juniors declared for the draft (about 110 a year now); Settings › How to play matches the new play-call sheet; the pause button stays reachable while picking a play.
+
 ## Version 7 (part 17): development, awards, draft and simulation
 
 - Player development: small weekly gains for players who play, offseason growth by class year, development trait, potential, coach traits and training; the real 4-game redshirt rule with an auto-redshirt option; slower growth after injuries; targeting suspensions carry into the next game under the 2026 rules.
