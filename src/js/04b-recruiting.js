@@ -145,7 +145,7 @@ function rcJoin(L,P){if(rcIdx(P,L.user)>=0)return;if(P.x.length>=14){let lo=-1;f
 
 /* ---------- one recruiting week for every school ---------- */
 function rcWeek(L,silent,wk){
-  const R=L.recruit,C=rcCtx(L,true),u=L.user,auto=rcAuto(L),n=L.teams.length,cnt=new Int16Array(n),cp=new Int16Array(n*10),ev=[],W=wk!=null?wk:L.week,t0=performance.now();
+  const R=L.recruit,C=rcCtx(L,!silent),u=L.user,auto=rcAuto(L),n=L.teams.length,cnt=new Int16Array(n),cp=new Int16Array(n*10),ev=[],W=wk!=null?wk:L.week,t0=performance.now();
   for(const P of R.p)if(P.m>=0){cnt[P.m]++;cp[P.m*10+P.p]++}
   /* official visits to this week's home game: the result, a rivalry and the hype around the game move him */
   if(!silent){const wkx=L.weeks[W],g=wkx&&wkx.games.find(x=>x.h===u&&!x.neutral&&x.hs!=null);
@@ -393,6 +393,6 @@ function rcSigningHTML(prog){
     <div class="list">${mine.map(P=>`<div class="lrow"><span class="l"><span class="num">${POS_ORDER[P.p]}</span><span>${esc(rcName(P))} ${starStr(rcStars(P.c))}<br><small class="note">${esc(rcHome(P))} · #${rcRanks(R).nat[P.i]} national</small></span></span><span><span class="ovr">${rcTrueOvr(P)}</span> <small class="note">${RC_DEV[P.d]}</small></span></div>`).join('')||'<p class="note">Nobody signed with you.</p>'}</div>
     <p class="note">True ratings are in as they enroll. Open roster spots are filled with walk-ons when the season starts.</p></div>
     <div class="grid2"><div class="card"><div class="eyebrow">Gems and busts</div><div class="list">${s.gems.map(g=>gb(g,'ok')).join('')}${s.busts.map(g=>gb(g,'hot')).join('')||''}${!s.gems.length&&!s.busts.length?'<p class="note">No surprises: everyone is about what your staff expected.</p>':''}</div><p class="note">Expected: what your scouting (or the public projection) said. Scout more to find gems before Signing Day.</p></div>
-    <div class="card"><div class="eyebrow">Top classes</div><div class="list">${s.top.map((c,i)=>`<div class="lrow ${c.id===u?'me':''}"><span class="l"><span class="rank">${i+1}</span>${tcell(T(c.id),T(c.id).city)}</span><span class="note">${c.n} · ${c.s5}/${c.s4} · <b>${c.pts}</b></span></div>`).join('')}</div></div></div>
+    <div class="card"><div class="eyebrow">Top classes</div><div class="list">${s.top.map((c,i)=>`<div class="lrow ${c.id===u?'me':''}"><span class="l"><span class="rank">${i+1}</span>${tcell(T(c.id),T(c.id).city)}</span><span class="note">${c.n} signed · ${c.s5}×5★ ${c.s4}×4★ · <b>${c.pts}</b></span></div>`).join('')}</div></div></div>
     <button class="btn wide" id="offNext">Start the ${L.season+1} season</button>`}
 SETTINGS_EXTRA.push({card:'Recruiting',key:'recAuto',label:'Let my staff handle recruiting',opts:[[1,'On'],[0,'Off']],def:1,bool:true,after:v=>rcSetAuto(LG,v),note:'On: your staff recruits every week so simming never stalls. Off: spend the weekly hours yourself in the Recruiting tab.'});
