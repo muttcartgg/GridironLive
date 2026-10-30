@@ -45,3 +45,19 @@
 .rc-tm b{text-align:right}
 .rc-home .h2 small{font-size:12px;font-weight:600;margin-left:6px}
 @media (max-width:420px){.rc-int{min-width:52px}.rc-int b{font-size:18px}.rc-tm{grid-template-columns:52px 34px}}
+
+/* awards, Heisman ceremony, draft, Hall of Fame, program timeline (04d) */
+.aw-heis{background:linear-gradient(135deg,rgba(201,162,39,.16),rgba(255,255,255,.02))}
+.aw-win{display:flex;align-items:center;gap:12px;margin:8px 0 10px}
+.aw-win b{display:block;font:800 20px/1.1 var(--tv)}.aw-win small{display:block}
+.aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:10px 0}
+.aw-t{padding:10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);min-width:0}
+.aw-t em{display:block;font-style:normal;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.aw-t b{display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aw-t small{color:var(--mute);font-size:11px}
+.aw-t.me,.lrow.me{box-shadow:inset 3px 0 0 var(--team)}
+.tl{list-style:none;margin:0;padding:0;position:relative}
+.tl li{display:grid;grid-template-columns:52px 1fr;gap:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+.tl-y{font:800 15px/1.4 var(--tv);color:var(--mute)}
+.tl li.gold .tl-y{color:var(--gold)}
+.tl .tags{margin-top:4px}

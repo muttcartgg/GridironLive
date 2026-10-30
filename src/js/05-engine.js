@@ -42,7 +42,7 @@ function startUserGame(g,snap){
   Object.assign(S,{tmo:{},ejected:[],otPos:0,otFirst:'home',untimed:false,toDB:[0,0],kickPenA:false,clockHold:0});
   if(snap)Object.assign(S,JSON.parse(JSON.stringify(snap.S)));
   else Object.assign(S,{score:[0,0],q:1,clock:LG.settings.qlen,ot:false,otRound:0,to:[3,3],stats:newGameStats(),ostats:newGameStats(),pst:{},opst:{},dxp:{},clockRun:false,rzActive:false,poss:'home',dirt:{},wear:[],recv2:'away'});
-  S.uHist=[];S.aHist=[];S.defFront='auto';S.gm=null;if(!snap){S.injured=[];S.pbp=[];S.drives=[];S.drive=null;S.fat={};S.snapN=0;initWind()}if(!S.fat){S.fat={};S.snapN=0}if(!S.wind)initWind();applyInjuredDepth();ejectDepth();
+  S.uHist=[];S.aHist=[];S.defFront='auto';S.gm=null;if(!snap){S.injured=[];S.pbp=[];S.drives=[];S.drive=null;S.fat={};S.snapN=0;initWind()}if(!S.fat){S.fat={};S.snapN=0}if(!S.wind)initWind();if(!snap&&typeof suspKick==="function")suspKick();applyInjuredDepth();ejectDepth();
   if(!S.ostats)S.ostats=newGameStats();if(!S.opst)S.opst={};if(!S.dirt)S.dirt={};if(!S.wear)S.wear=[];
   lastScore=S.score.slice();resetRenderCaches();particles=[];
   document.documentElement.style.setProperty('--opp',opp.c1);
@@ -86,7 +86,7 @@ function boundary(cont){
   if(S.q===2)return halftime();
   return endRegulation();
 }
-function halftime(){
+function halftime(){if(typeof suspHalf==="function")suspHalf();   /* half-game targeting suspensions end (04d) */
   S.phase='wait';S.q=3;S.clock=S.qlen;S.to=[3,3];fatRest(30);S.clockRun=false;hideActs();['#call','#opt','#snapBar'].forEach(s=>$(s).hidden=true);
   const go=()=>kickoffTo(S.recv2||'away','Second-half kickoff');
   if(typeof BC!=='undefined'&&LG.settings.halftime!==false)BC.halftime(go);else go();

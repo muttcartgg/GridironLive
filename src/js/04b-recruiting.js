@@ -76,7 +76,7 @@ function rcCtx(L,fresh){
     C.rp[i]=clamp((.55*pr+.25*wp+.2*clamp((qOf(t)-1.5)/3.2,0,1))*(fcs?.45:1)*coachMod(t,'rec')+(L.champ===i?.05:0),0,1);
     C.st[i]=rcTeamSt(L,t);
     const nilT=clamp(.15+.6*pr+.25*clamp((t.cap||40000)/110000,0,1),0,1)*f;
-    C.s[i]=[0,clamp(.45*pr+.35*wp*wp+.2*r+(L.champ===i?.1:0),0,1),clamp((.6*pr+.4*clamp((teamOvr(t)-2)/2.6,0,1))*f,0,1),
+    C.s[i]=[0,clamp(.45*pr+.35*wp*wp+.2*r+(L.champ===i?.1:0),0,1),clamp((.6*pr+.4*clamp((teamOvr(t)-2)/2.6,0,1)+.15*clamp((t.dp||0)/6,0,1))*f,0,1),
       i===u?clamp(.5*nilT+.5*nilPower(L),0,1):nilT,0,
       L.kind==='ncaa'?(aca[t.abbr]||(fcs?.45:.5)):.3+hs*.6,
       i===u?clamp(.7*(L.coach.security||50)/100+.3*Math.min(ten,6)/6,0,1):clamp(.45+.1*(t.prestige-3)+(hs-.5)*.4,.05,.95),

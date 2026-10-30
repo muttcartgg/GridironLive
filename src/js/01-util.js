@@ -39,7 +39,7 @@ const SLOTS=[1,2,3];
    lzB64 is lz-string's compressToBase64 with a hash table instead of string keys: same output, several times faster. */
 const B64='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/',B64I=new Int8Array(128).fill(-1);for(let i=0;i<64;i++)B64I[B64.charCodeAt(i)]=i;
 function lzB64(s){
-  const n=s.length;if(!n)return '';
+  const n=s.length;
   let cap=1<<15,mask=cap-1,kp=new Int32Array(cap).fill(-1),kc=new Uint16Array(cap),kv=new Int32Array(cap),cnt=0;
   const one=new Int32Array(65536).fill(-1),pend=new Uint8Array(65536),out=[];let val=0,pos=0;
   const hs=(p,c)=>(Math.imul(p,0x9E3779B1)^Math.imul(c+1,0x85EBCA6B))>>>0;
@@ -59,64 +59,91 @@ function lzB64(s){
   let r='';for(let i=0;i<out.length;i+=8192)r+=String.fromCharCode.apply(null,out.slice(i,i+8192).map(x=>B64.charCodeAt(x)));
   return r+['','===','==','='][r.length%4];
 }
-/* dense roster codec */
-const SSK=['gp','pa','pc','py','ptd','int','ra','ry','rtd','rec','recy','rectd','tkl','sck','dint','fgm','fga','ff','tfl','pd','sn','xpm','xpa','gs'];
-const PKEYS=new Set(['id','first','last','home','pos','yr','rs','redshirt','tone','num','dev','injNew','ht','wt','xp','ss','cs','cond','inj','injWhy','real','isNew',...ATTR_KEYS_U()]);
+/* dense roster codec: stat keys most-used first (the field mask is a variable-length number) */
+const SSK=['gp','tkl','sck','rec','recy','rectd','ra','ry','rtd','pa','pc','py','ptd','int','dint','ff','fgm','fga','xpm','xpa','tfl','pd','sn','gs'];
+const PKEYS=new Set(['id','first','last','home','pos','yr','rs','redshirt','tone','num','dev','injNew','injW','ht','wt','xp','ss','cs','cond','inj','injWhy','real','isNew','fine','espnId',...ATTR_KEYS_U()]);
 function ATTR_KEYS_U(){return ['spd','agi','str','awr','thr','acc','cat','rte','car','blk','tkl','cov','shd','end']}
 const POSK=['QB','RB','WR','TE','OL','DL','LB','CB','S','K'];
+const vqW=(o,v)=>{v=Math.max(0,Math.round(v));while(v>=32){o.push(B64[32|(v%32)]);v=Math.floor(v/32)}o.push(B64[v])};
+const vqR=(D,I,s)=>{let v=0,m=1,c;do{c=B64I[D[s].charCodeAt(I[s]++)];v+=(c&31)*m;m*=32}while(c&32);return v};
+/* one stream per column (ids, first/last names, hometowns, position, class byte, number, height, weight, flags, each of the 14
+   ratings, stats), joined by '!', so LZ sees runs of similar values instead of interleaved records */
+const NSTR=28;
 function rosterEnc(teams,user){
   const freq=new Map(),bump=s=>freq.set(s,(freq.get(s)||0)+1),AK=ATTR_KEYS_U();
   for(const t of teams)for(const p of t.roster){bump(p.first);bump(p.last);bump(p.home||'');if(p.inj>0)bump(p.injWhy||'')}
   const tab=[...freq.keys()].sort((a,b)=>freq.get(b)-freq.get(a)),ix=new Map(tab.map((s,i)=>[s,i])),X={};
-  const o=[],ch=v=>o.push(B64[v&63]),vq=v=>{v=Math.max(0,Math.round(v));while(v>=32){o.push(B64[32|(v&31)]);v=Math.floor(v/32)}o.push(B64[v])};
+  const O=Array.from({length:NSTR},()=>[]),ch=(s,v)=>O[s].push(B64[v&63]),vq=(s,v)=>vqW(O[s],v);
   const st=s=>{if(!s)return 0;let m=0;for(const k in s){const v=s[k];if(!v)continue;const i=SSK.indexOf(k);if(i<0||!Number.isInteger(v)||v<0)return -1;m|=1<<i}
-    if(!m)return 0;ch(m);ch(m>>6);ch(m>>12);ch(m>>18);for(let i=0;i<SSK.length;i++)if(m>>i&1)vq(s[SSK[i]]);return 1};
+    if(!m)return 0;vq(26,m);for(let i=0;i<SSK.length;i++)if(m>>i&1)vq(26,s[SSK[i]]);return 1};
   let last=0,pn=0;
-  for(const t of teams){o.push('!');for(const p of t.roster){pn++;
-    const d=(p.id|0)-last;last=p.id|0;vq(d>=0?d*2:-d*2-1);vq(ix.get(p.first));vq(ix.get(p.last));vq(ix.get(p.home||''));
+  for(const t of teams){vq(0,t.roster.length);for(const p of t.roster){pn++;
+    const d=(p.id|0)-last;last=p.id|0;vq(0,d>=0?d*2:-d*2-1);vq(1,ix.get(p.first));vq(2,ix.get(p.last));vq(3,ix.get(p.home||''));
     const pi=POSK.indexOf(p.pos),ex={};
     for(const k in p)if(!PKEYS.has(k))ex[k]=p[k];
-    if(pi<0||!Number.isInteger(p.id)){ex.__raw=p}
-    ch(pi<0?0:pi);ch(((p.yr||1)-1)&3|(p.rs?4:0)|(p.redshirt?8:0)|((p.tone|0)&3)<<4);
-    const num=clamp(p.num|0,0,127),dv=p.dev|0;ch(num);ch(num>>6|(dv&3)<<1|(p.injNew?8:0)|(p.real?16:0)|(p.isNew?32:0));
+    if(pi<0||!Number.isInteger(p.id))ex.__raw=p;
+    ch(4,pi<0?0:pi);ch(5,((p.yr||1)-1)&3|(p.rs?4:0)|(p.redshirt?8:0)|((p.tone|0)&3)<<4);
+    const num=clamp(p.num|0,0,127),dv=p.dev|0;ch(6,num);ch(7,num>>6|(dv&3)<<1|(p.injNew?8:0)|(p.real?16:0)|(p.isNew?32:0));
     if(dv>3)ex.dev=p.dev;if(typeof p.num==='number'&&(p.num<0||p.num>127||!Number.isInteger(p.num)))ex.num=p.num;
-    ch(clamp(Math.round(p.ht||0)-50,0,63));const wt=clamp(Math.round(p.wt||0),0,4095);ch(wt);ch(wt>>6);if(p.ht&&(p.ht<50||p.ht>113))ex.ht=p.ht;
-    for(const k of AK){const v=p[k];ch(typeof v==='number'?clamp(Math.round(v*10)-10,0,40):63)}
-    for(const k of AK)if(typeof p[k]==='number'&&(p[k]<1||p[k]>5))ex[k]=p[k];
-    const f=o.length;ch(0);let fl=0;
-    if(t.id===user&&p.xp>0){fl|=1;vq(p.xp*2)}
-    if(p.cond!=null&&p.cond!==100){fl|=2;vq(p.cond*2)}
-    if(p.inj>0){fl|=4;vq(p.inj);vq(ix.get(p.injWhy||''))}
+    ch(8,clamp(Math.round(p.ht||0)-50,0,63));const wt=clamp(Math.round(p.wt||0),0,4095);ch(9,wt);ch(10,wt>>6);if(p.ht&&(p.ht<50||p.ht>113))ex.ht=p.ht;
+    AK.forEach((k,j)=>{const v=p[k];ch(12+j,typeof v==='number'?clamp(Math.round(v*10)-10,0,40):63);if(typeof v==='number'&&(v<1||v>5))ex[k]=v});
+    let fl=0;
+    if(t.id===user&&p.xp>0){fl|=1;vq(26,p.xp*2)}
+    if(p.cond!=null&&p.cond!==100){fl|=2;vq(26,p.cond*2)}
+    if(p.inj>0){fl|=4;vq(26,p.inj);vq(26,ix.get(p.injWhy||''))}
     if(p.ss){const r=st(p.ss);if(r>0)fl|=8;else if(r<0)ex.ss=p.ss}
     if(p.cs){const r=st(p.cs);if(r>0)fl|=16;else if(r<0)ex.cs=p.cs}
-    o[f]=B64[fl];
+    if(p.injW>0){fl|=32;vq(26,p.injW)}
+    ch(11,fl);let f2=0;   /* imported players: the pack's overall offset and ESPN id */
+    if(typeof p.fine==='number'&&p.fine>=-3&&p.fine<=3){f2|=1;vq(26,(p.fine+3)*100)}else if(p.fine!=null)ex.fine=p.fine;
+    if(typeof p.espnId==='string'&&/^[1-9]\d{0,14}$/.test(p.espnId)){f2|=2;vq(26,+p.espnId)}else if(p.espnId!=null)ex.espnId=p.espnId;
+    ch(27,f2);
     for(const k in ex){X[pn]=ex;break}}}
-  return {d:o.join(''),tab,X};
+  return {d:O.map(o=>o.join('')).join('!'),tab,X};
 }
-function rosterDec(teams,d,tab,X){
-  let i=0,last=0,pn=0;const AK=ATTR_KEYS_U();
-  const g=()=>B64I[d.charCodeAt(i++)],vq=()=>{let v=0,m=1,c;do{c=g();v+=(c&31)*m;m*=32}while(c&32);return v};
-  const st=()=>{const m=g()|g()<<6|g()<<12|g()<<18,s={};for(let k=0;k<SSK.length;k++)if(m>>k&1)s[SSK[k]]=vq();return s};
-  let ti=-1;
-  while(i<d.length){if(d[i]==='!'){i++;ti++;teams[ti].roster=[];continue}
-    pn++;const z=vq(),id=last+(z&1?-(z+1)/2:z/2);last=id;
-    const p={id,first:tab[vq()],last:tab[vq()],home:tab[vq()]};
-    p.pos=POSK[g()];const a=g();p.yr=(a&3)+1;p.rs=!!(a&4);p.redshirt=!!(a&8);p.tone=a>>4&3;
-    const n0=g(),n1=g();p.num=n0|(n1&1)<<6;p.dev=n1>>1&3;if(n1&8)p.injNew=true;if(n1&16)p.real=true;if(n1&32)p.isNew=true;
-    p.ht=g()+50;p.wt=g()|g()<<6;
-    for(const k of AK){const v=g();if(v<=40)p[k]=(v+10)/10}
-    const fl=g();p.xp=fl&1?vq()/2:0;p.cond=fl&2?vq()/2:100;p.inj=0;p.injWhy='';if(fl&4){p.inj=vq();p.injWhy=tab[vq()]}
-    p.ss=Object.assign(newSS(),fl&8?st():null);if(fl&16)p.cs=st();
-    const ex=X&&X[pn];if(ex){if(ex.__raw){teams[ti].roster.push(ex.__raw);continue}Object.assign(p,ex)}
-    teams[ti].roster.push(p)}
+function rosterDec(teams,D,tab,X){
+  const I=new Array(NSTR).fill(0),AK=ATTR_KEYS_U();let last=0,pn=0;
+  const g=s=>B64I[D[s].charCodeAt(I[s]++)],vq=s=>vqR(D,I,s);
+  const st=()=>{const m=vq(26),s={};for(let k=0;k<SSK.length;k++)if(m>>k&1)s[SSK[k]]=vq(26);return s};
+  for(const t of teams){const n=vq(0);t.roster=[];
+    for(let j=0;j<n;j++){pn++;const z=vq(0),id=last+(z&1?-(z+1)/2:z/2);last=id;
+      const p={id,first:tab[vq(1)],last:tab[vq(2)],home:tab[vq(3)]};
+      p.pos=POSK[g(4)];const a=g(5);p.yr=(a&3)+1;p.rs=!!(a&4);p.redshirt=!!(a&8);p.tone=a>>4&3;
+      const n0=g(6),n1=g(7);p.num=n0|(n1&1)<<6;p.dev=n1>>1&3;if(n1&8)p.injNew=true;if(n1&16)p.real=true;if(n1&32)p.isNew=true;
+      p.ht=g(8)+50;p.wt=g(9)|g(10)<<6;
+      AK.forEach((k,q)=>{const v=g(12+q);if(v<=40)p[k]=(v+10)/10});
+      const fl=g(11);p.xp=fl&1?vq(26)/2:0;p.cond=fl&2?vq(26)/2:100;p.inj=0;p.injWhy='';if(fl&4){p.inj=vq(26);p.injWhy=tab[vq(26)]}
+      p.ss=Object.assign(newSS(),fl&8?st():null);if(fl&16)p.cs=st();if(fl&32)p.injW=vq(26);const f2=g(27);if(f2&1)p.fine=vq(26)/100-3;if(f2&2)p.espnId=String(vq(26));
+      const ex=X&&X[pn];if(ex){if(ex.__raw){t.roster.push(ex.__raw);continue}Object.assign(p,ex)}
+      t.roster.push(p)}}
 }
+/* arrays of same-shaped records (the recruiting pool), column by column: integers, strings (interned) and integer lists */
+function structEnc(arr){
+  const k0=Object.keys(arr[0]||{}),ks=k0.join(),y=k0.map(k=>{const v=arr[0][k];return Number.isInteger(v)?0:typeof v==='string'?1:Array.isArray(v)?2:-1});
+  if(!k0.length||y.includes(-1))return null;const o=[],t=[],ti=new Map(),z=v=>vqW(o,v<0?-v*2-1:v*2);
+  for(const x of arr)if(!x||Object.keys(x).join()!==ks)return null;
+  for(let j=0;j<k0.length;j++)for(const x of arr){const v=x[k0[j]];
+    if(y[j]===0){if(!Number.isInteger(v)||Math.abs(v)>1e9)return null;z(v)}
+    else if(y[j]===1){if(typeof v!=='string')return null;let i=ti.get(v);if(i==null){i=t.length;t.push(v);ti.set(v,i)}z(i)}
+    else{if(!Array.isArray(v)||!v.every(n=>Number.isInteger(n)&&Math.abs(n)<1e9))return null;z(v.length);v.forEach(z)}}
+  return {m:{k:k0,y,t,n:arr.length},d:o.join('')};
+}
+function structDec(m,d){const D=[d],I=[0],z=()=>{const v=vqR(D,I,0);return v%2?-(v+1)/2:v/2},out=Array.from({length:m.n},()=>({}));
+  for(let j=0;j<m.k.length;j++){const y=m.y[j],k=m.k[j];for(const x of out){if(y===0)x[k]=z();else if(y===1)x[k]=m.t[z()];else{const n=z(),a=[];for(let q=0;q<n;q++)a.push(z());x[k]=a}}}
+  return out}
+/* rankings context (power, résumés) is rebuilt on load instead of saved */
 const pack=L=>{
   if(!L||!Array.isArray(L.teams))return 'Z:'+lzB64(JSON.stringify(L));
-  const ros=L.teams.map(t=>t.roster),{d,tab,X}=rosterEnc(L.teams,L.user);let js;
-  try{L.teams.forEach(t=>t.roster=0);L.__s=tab;L.__x=X;js=JSON.stringify(L)}finally{L.teams.forEach((t,i)=>t.roster=ros[i]);delete L.__s;delete L.__x}
-  return 'Y:'+lzB64(js)+'~'+d};
+  const ros=L.teams.map(t=>t.roster),{d,tab,X}=rosterEnc(L.teams,L.user),Rc=L.recruit,rp=Rc&&Array.isArray(Rc.p)&&Rc.p.length?Rc.p:null,re=rp&&structEnc(rp),keep={rinfo:L.rinfo,power:L.power};let js;
+  try{L.teams.forEach(t=>t.roster=0);L.__s=tab;L.__x=X;if(re)Rc.p={$s:re.m};delete L.rinfo;delete L.power;js=JSON.stringify(L)}
+  finally{L.teams.forEach((t,i)=>t.roster=ros[i]);delete L.__s;delete L.__x;if(re)Rc.p=rp;for(const k in keep)if(keep[k]!==undefined)L[k]=keep[k]}
+  return 'Y:'+lzB64(js)+'~'+lzB64(d+(re?'!'+re.d:''))};
 const unpack=raw=>{if(!raw)return null;
-  if(raw.startsWith('Y:')){const k=raw.indexOf('~'),L=JSON.parse(LZString.decompressFromBase64(raw.slice(2,k)));rosterDec(L.teams,raw.slice(k+1),L.__s,L.__x);delete L.__s;delete L.__x;return L}
+  if(raw.startsWith('Y:')){const k=raw.indexOf('~'),L=JSON.parse(LZString.decompressFromBase64(raw.slice(2,k))),D=LZString.decompressFromBase64(raw.slice(k+1)).split('!');
+    rosterDec(L.teams,D,L.__s,L.__x);delete L.__s;delete L.__x;
+    if(L.recruit&&L.recruit.p&&L.recruit.p.$s)L.recruit.p=structDec(L.recruit.p.$s,D[NSTR]||'');
+    if(!L.rinfo&&typeof rankCtx==='function')try{const C=rankCtx(L);L.power=C.r;resumeCard(L,C)}catch(e){console.error(e)}
+    return L}
   if(raw.startsWith('Z:'))return JSON.parse(LZString.decompressFromBase64(raw.slice(2)));return JSON.parse(raw)};
 const Saves={
   meta(){try{return JSON.parse(KV.get('gl3.meta'))||{slots:{},last:null}}catch(e){return {slots:{},last:null}}},
