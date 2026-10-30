@@ -520,7 +520,7 @@ function hubSettings(){
     <div class="field-row"><label for="dynRename">Dynasty name</label><input type="text" id="dynRename" maxlength="28" value="${esc(LG.name)}"></div>
     <div class="btns"><button class="btn ghost" id="exportSave">Export save code</button><button class="btn ghost" id="toSlots">Switch save slot</button></div></div>
   <div class="card"><div class="h2">How to play</div><p class="note">
-    <b>Play calling:</b> pick a play from the 50-play book (Pass, Run, Special, or Coach's pick), then tap SNAP. Flip mirrors the play.<br>
+    <b>Play calling:</b> pick a play from the ${PLAYBOOK.length}-play book (category tabs, formation chips, or a Coach's pick), then tap SNAP. ADJUST holds audibles, flip, motion, a hard count, slide protection and hot routes.<br>
     <b>Pass:</b> after the snap, drag backward from anywhere and release. The circle shows how accurate the throw will be. A second finger or Bullet throws a fast, low ball. Tap RUN to scramble.<br>
     <b>Run:</b> put a finger down anywhere and drag: it's a floating joystick. Use JUKE, SPIN, TRUCK, HURDLE and DIVE. Jukes keep your speed. A quick flick also jukes or dives.<br>
     <b>Defense:</b> choose a coverage, then drag to move your player (gold ring). TACKLE dives at the ball carrier, or goes for the ball when it's in the air. SWITCH jumps to the defender nearest the ball. Before the snap you can tap any defender to control him.<br>

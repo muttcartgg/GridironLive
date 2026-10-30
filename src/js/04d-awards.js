@@ -113,7 +113,8 @@ const heisVotes=list=>{const w=R(1900,2700),t=list[0]&&list[0].s||1;return list.
 const POS_VAL={QB:6,RB:-2,WR:2,TE:-1,OL:2,DL:4,LB:0,CB:3,S:0,K:-14};
 const draftGrade=p=>ovr99(p)+(POS_VAL[p.pos]||0)+(p.yr<4?1.5:0)+Math.min(4,awProd(p)/25)+(['OL','DL','TE'].includes(p.pos)&&p.ht>=76?1:0);
 const draftEligible=p=>p.yr>=3||(p.yr===2&&p.rs);
-const declareOdds=p=>(p.yr===3||(p.yr===2&&p.rs))?clamp((draftGrade(p)-84)/9,0,.92):0;
+/* only juniors with a real draft grade leave early: ~110 early entrants a year league-wide, ~4–7 at the deepest programs (was ~400, up to 16 a team) */
+const declareOdds=p=>(p.yr===3||(p.yr===2&&p.rs))?clamp((draftGrade(p)-92)/8,0,.85):0;
 function mockBoard(L){const all=[];for(const t of L.teams)for(const p of t.roster)if(draftEligible(p))all.push({p,t,g:draftGrade(p)});return all.sort((a,b)=>b.g-a.g).slice(0,32)}
 function runDraft(L,pool){
   const ord=pool.map(x=>({...x,g:draftGrade(x.p)+R(-2.5,2.5)})).sort((a,b)=>b.g-a.g).slice(0,224),cnt={},first={};

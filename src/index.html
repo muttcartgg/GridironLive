@@ -270,7 +270,7 @@ input[type=color]{width:56px;height:44px;border:1px solid var(--line);border-rad
 #cap.radio{border-left-color:#d7a64a;font-family:Georgia,serif}
 :root.ticker #hint,:root.ticker #actBar,:root.ticker #snapBar{margin-bottom:24px}
 :root.ticker #actBar{bottom:calc(env(safe-area-inset-bottom,0px) + 40px)}
-#replayBar{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);z-index:10;display:flex;gap:6px;background:rgba(8,11,17,.92);border:1px solid var(--line);border-radius:14px;padding:6px}
+#replayBar{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);transform:translateX(-50%);z-index:10;display:flex;flex-wrap:wrap;justify-content:center;gap:6px;width:max-content;max-width:calc(100% - 16px);background:rgba(8,11,17,.92);border:1px solid var(--line);border-radius:14px;padding:6px}
 #replayBar button{padding:9px 12px;border-radius:9px;background:var(--panel2);border:1px solid var(--line);font:800 12px/1 var(--disp);text-transform:uppercase}
 #replayBar button[aria-pressed="true"]{background:var(--gold);color:#111}
 .studio .desk{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
