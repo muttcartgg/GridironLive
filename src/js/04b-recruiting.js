@@ -49,7 +49,7 @@ const rcHt=h=>Math.floor(h/12)+'-'+(h%12);
 const rcAuto=L=>!L.settings||L.settings.recAuto!==false;
 const rcLive=L=>L.phase==='regular'&&L.week<(L.R||13);
 const rcGrade=s=>s>=.9?'A+':s>=.8?'A':s>=.7?'B+':s>=.6?'B':s>=.5?'C+':s>=.4?'C':s>=.3?'D':'F';
-const rcBudget=L=>{const s=L.staff||{},f=L.fac||{};return Math.round(30+3*(((s.oc&&s.oc.r)||2)+((s.dc&&s.dc.r)||2))+2*((f.stadium||1)+(f.training||1)+(f.rehab||1))+(hasTrait('oc','Talent Spotter')?6:0))};
+const rcBudget=L=>{const s=L.staff||{},f=L.fac||{};return Math.round(30+3*(((s.oc&&s.oc.r)||2)+((s.dc&&s.dc.r)||2))+2*((f.stadium||1)+(f.training||1)+(f.rehab||1))+Math.round(coachMod(L.teams[L.user],'hrs')-1))};   /* Recruiter trait, Silver Tongue perk (04c) */
 
 /* ---------- geography ---------- */
 let RC_PX=null,RC_TS=null;
@@ -73,11 +73,11 @@ function rcCtx(L,fresh){
   const aca={};for(const [g,v] of [['A',1],['B',.8]])for(const a of RC_ACA[g].split(' '))aca[a]=v;
   const u=L.user,h=L.history||[];let ten=0;for(let i=h.length-1;i>=0&&h[i].team===u;i--)ten++;
   for(const t of TT){const i=t.id,fcs=isFCS(t),f=fcs?.5:1,g=t.rec?t.rec.w+t.rec.l:0,wp=g?t.rec.w/g:.5,pr=(t.prestige-1)/4,r=rk[i]?(26-rk[i])/25:0,hs=((i+7)*2654435761>>>0)%1000/1000,cf=L.confs[t.conf]||{};
-    C.rp[i]=clamp((.55*pr+.25*wp+.2*clamp((qOf(t)-1.5)/3.2,0,1))*(fcs?.45:1)+(L.champ===i?.05:0),0,1);
+    C.rp[i]=clamp((.55*pr+.25*wp+.2*clamp((qOf(t)-1.5)/3.2,0,1))*(fcs?.45:1)*coachMod(t,'rec')+(L.champ===i?.05:0),0,1);
     C.st[i]=rcTeamSt(L,t);
     const nilT=clamp(.15+.6*pr+.25*clamp((t.cap||40000)/110000,0,1),0,1)*f;
     C.s[i]=[0,clamp(.45*pr+.35*wp*wp+.2*r+(L.champ===i?.1:0),0,1),clamp((.6*pr+.4*clamp((teamOvr(t)-2)/2.6,0,1))*f,0,1),
-      i===u?clamp(.5*nilT+.5*clamp((L.nil||0)/2500,0,1),0,1):nilT,0,
+      i===u?clamp(.5*nilT+.5*nilPower(L),0,1):nilT,0,
       L.kind==='ncaa'?(aca[t.abbr]||(fcs?.45:.5)):.3+hs*.6,
       i===u?clamp(.7*(L.coach.security||50)/100+.3*Math.min(ten,6)/6,0,1):clamp(.45+.1*(t.prestige-3)+(hs-.5)*.4,.05,.95),
       clamp((.55*pr+.25*r+.2*clamp((t.cap||40000)/100000,0,1))*f,0,1),
@@ -267,7 +267,7 @@ function rcAct(L,P,kind,arg){
   const add=v=>{rcJoin(L,P);P.x[rcIdx(P,u)+1]+=Math.round(v)};
   if(kind==='scout'){if((U.sc||0)>=100||U.kw===W)return 'Already scouted this week';U.sc=Math.min(100,(U.sc||0)+(hasTrait('oc','Talent Spotter')?50:34));U.kw=W}
   else if(kind==='contact'){if(U.cw===W)return 'You already reached out this week';add((4+10*(.3+rcFit(P,u,C)))*rcR(.9,1.1));U.cw=W}
-  else if(kind==='pitch'){if(U.pw===W)return 'One pitch a week';const w=P.pr.charCodeAt(arg)-48,s=rcScore(P,u,C,arg);add(24*(w/5)*(s+.2)*rcR(.9,1.1));U.pw=W;U.pk=arg}
+  else if(kind==='pitch'){if(U.pw===W)return 'One pitch a week';const w=P.pr.charCodeAt(arg)-48,s=rcScore(P,u,C,arg);add(24*(w/5)*(s+.2)*rcR(.9,1.1)*(arg===3?nilPitch(L,P):1));U.pw=W;U.pk=arg}   /* an NIL pitch spends budget (04c) */
   else if(kind==='offer'){if(U.o){U.o=0}else{U.o=1;if(!U.og){add(15);U.og=1}}}
   else if(kind==='visit'){if(arg==null){U.v=-1}else{if(U.vd)return 'He has already visited';const n=Object.values(R.u).filter(x=>x.v===arg).length;if(n>=RC_VISITS)return `${RC_VISITS} official visits per game`;rcJoin(L,P);U.v=arg}}
   if(cost)R.hrs-=cost;

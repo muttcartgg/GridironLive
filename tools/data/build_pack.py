@@ -266,6 +266,239 @@ STAR_FLOOR = {('OSU', 'Jeremiah Smith'): 98, ('TEX', 'Arch Manning'): 96, ('OSU'
               ('SC', 'LaNorris Sellers'): 92, ('UGA', 'Gunner Stockton'): 92, ('ALA', 'Keelon Russell'): 92, ('TAMU', 'Marcel Reed'): 92, ('MICH', 'Bryce Underwood'): 91}
 
 
+# ---------- coaches (real names live only in the pack, never in the app) ----------
+# FBS head coaches, 2026 season: Wikipedia "List of current NCAA Division I FBS football coaches" (read Oct 2026).
+FBS_HC = """Army Black Knights|Jeff Monken|2014
+Charlotte 49ers|Tim Albin|2025
+East Carolina Pirates|Blake Harrell|2024
+Florida Atlantic Owls|Zach Kittley|2025
+Memphis Tigers|Charles Huff|2026
+Navy Midshipmen|Brian Newberry|2023
+North Texas Mean Green|Neal Brown|2026
+Rice Owls|Scott Abell|2025
+South Florida Bulls|Brian Hartline|2026
+Temple Owls|K. C. Keeler|2025
+Tulane Green Wave|Will Hall|2026
+Tulsa Golden Hurricane|Tre Lamb|2025
+UAB Blazers|Alex Mortensen|2025
+UTSA Roadrunners|Jeff Traylor|2020
+Boston College Eagles|Bill O'Brien|2024
+California Golden Bears|Tosh Lupoi|2026
+Clemson Tigers|Dabo Swinney|2009
+Duke Blue Devils|Manny Diaz|2024
+Florida State Seminoles|Mike Norvell|2020
+Georgia Tech Yellow Jackets|Brent Key|2022
+Louisville Cardinals|Jeff Brohm|2023
+Miami Hurricanes|Mario Cristobal|2022
+North Carolina Tar Heels|Bill Belichick|2025
+NC State Wolfpack|Dave Doeren|2013
+Pittsburgh Panthers|Pat Narduzzi|2015
+SMU Mustangs|Rhett Lashlee|2022
+Stanford Cardinal|Tavita Pritchard|2026
+Syracuse Orange|Fran Brown|2024
+Virginia Cavaliers|Tony Elliott|2022
+Virginia Tech Hokies|James Franklin|2026
+Wake Forest Demon Deacons|Jake Dickert|2025
+Arizona Wildcats|Brent Brennan|2024
+Arizona State Sun Devils|Kenny Dillingham|2023
+Baylor Bears|Dave Aranda|2020
+BYU Cougars|Kalani Sitake|2016
+Cincinnati Bearcats|Scott Satterfield|2023
+Colorado Buffaloes|Deion Sanders|2023
+Houston Cougars|Willie Fritz|2024
+Iowa State Cyclones|Jimmy Rogers|2026
+Kansas Jayhawks|Lance Leipold|2021
+Kansas State Wildcats|Collin Klein|2026
+Oklahoma State Cowboys|Eric Morris|2026
+TCU Horned Frogs|Sonny Dykes|2022
+Texas Tech Red Raiders|Joey McGuire|2022
+UCF Knights|Scott Frost|2025
+Utah Utes|Morgan Scalley|2026
+West Virginia Mountaineers|Rich Rodriguez|2025
+Illinois Fighting Illini|Bret Bielema|2021
+Indiana Hoosiers|Curt Cignetti|2024
+Iowa Hawkeyes|Kirk Ferentz|1999
+Maryland Terrapins|Mike Locksley|2019
+Michigan Wolverines|Kyle Whittingham|2026
+Michigan State Spartans|Pat Fitzgerald|2026
+Minnesota Golden Gophers|P. J. Fleck|2017
+Nebraska Cornhuskers|Matt Rhule|2023
+Northwestern Wildcats|David Braun|2023
+Ohio State Buckeyes|Ryan Day|2019
+Oregon Ducks|Dan Lanning|2022
+Penn State Nittany Lions|Matt Campbell|2026
+Purdue Boilermakers|Barry Odom|2025
+Rutgers Scarlet Knights|Greg Schiano|2020
+UCLA Bruins|Bob Chesney|2026
+USC Trojans|Lincoln Riley|2022
+Washington Huskies|Jedd Fisch|2024
+Wisconsin Badgers|Luke Fickell|2023
+Delaware Fightin' Blue Hens|Ryan Carty|2022
+Florida International Panthers|Willie Simmons|2025
+Jacksonville State Gamecocks|Charles Kelly|2025
+Kennesaw State Owls|Jerry Mack|2025
+Liberty Flames|Jamey Chadwell|2023
+Middle Tennessee Blue Raiders|Derek Mason|2024
+Missouri State Bears|Casey Woods|2026
+New Mexico State Aggies|Tony Sanchez|2024
+Sam Houston Bearkats|Phil Longo|2025
+Western Kentucky Hilltoppers|Tyson Helton|2019
+Notre Dame Fighting Irish|Marcus Freeman|2022
+UConn Huskies|Jason Candle|2026
+Akron Zips|Joe Moorhead|2022
+Ball State Cardinals|Mike Uremovich|2025
+Bowling Green Falcons|Eddie George|2025
+Buffalo Bulls|Pete Lembo|2024
+Central Michigan Chippewas|Matt Drinkall|2025
+Eastern Michigan Eagles|Chris Creighton|2014
+Kent State Golden Flashes|Mark Carney|2025
+Miami RedHawks|Chuck Martin|2014
+Ohio Bobcats|John Hauser|2025
+Sacramento State Hornets|Alonzo Carter|2026
+Toledo Rockets|Mike Jacobs|2026
+UMass Minutemen|Joe Harasymiak|2025
+Western Michigan Broncos|Lance Taylor|2023
+Air Force Falcons|Troy Calhoun|2007
+Hawaii Rainbow Warriors|Timmy Chang|2022
+Nevada Wolf Pack|Jeff Choate|2024
+New Mexico Lobos|Jason Eck|2025
+North Dakota State Bison|Tim Polasek|2024
+Northern Illinois Huskies|Rob Harley (interim)|2026
+San Jose State Spartans|Ken Niumatalolo|2024
+UNLV Rebels|Dan Mullen|2025
+UTEP Miners|Scotty Walden|2024
+Wyoming Cowboys|Jay Sawvel|2024
+Boise State Broncos|Spencer Danielson|2023
+Colorado State Rams|Jim Mora|2026
+Fresno State Bulldogs|Matt Entz|2025
+Oregon State Beavers|JaMarcus Shephard|2026
+San Diego State Aztecs|Sean Lewis|2024
+Texas State Bobcats|G. J. Kinne|2023
+Utah State Aggies|Bronco Mendenhall|2025
+Washington State Cougars|Kirby Moore|2026
+Alabama Crimson Tide|Kalen DeBoer|2024
+Arkansas Razorbacks|Ryan Silverfield|2026
+Auburn Tigers|Alex Golesh|2026
+Florida Gators|Jon Sumrall|2026
+Georgia Bulldogs|Kirby Smart|2016
+Kentucky Wildcats|Will Stein|2026
+LSU Tigers|Lane Kiffin|2026
+Mississippi State Bulldogs|Jeff Lebby|2024
+Missouri Tigers|Eli Drinkwitz|2020
+Oklahoma Sooners|Brent Venables|2022
+Ole Miss Rebels|Pete Golding|2025
+South Carolina Gamecocks|Shane Beamer|2021
+Tennessee Volunteers|Josh Heupel|2021
+Texas Longhorns|Steve Sarkisian|2021
+Texas A&M Aggies|Mike Elko|2024
+Vanderbilt Commodores|Clark Lea|2021
+Appalachian State Mountaineers|Dowell Loggains|2025
+Arkansas State Red Wolves|Butch Jones|2021
+Coastal Carolina Chanticleers|Ryan Beard|2026
+Georgia Southern Eagles|Clay Helton|2022
+Georgia State Panthers|Dell McGee|2024
+James Madison Dukes|Billy Napier|2026
+Louisiana Ragin' Cajuns|Michael Desormeaux|2022
+Louisiana-Monroe Warhawks|Bryant Vincent|2024
+Louisiana Tech Bulldogs|Sonny Cumbie|2022
+Marshall Thundering Herd|Tony Gibson|2025
+Old Dominion Monarchs|Ricky Rahne|2020
+South Alabama Jaguars|Major Applewhite|2024
+Southern Miss Golden Eagles|Blake Anderson|2025
+Troy Trojans|Gerad Parker|2024"""
+# signature traits (game trait names) and 1-5 ratings for coaches with a clear identity; others get a trait from their
+# school's profile and a rating from program strength
+HC_TRAITS = {'Kirby Smart': (5, 'Recruiter', 'Defensive Mastermind'), 'Ryan Day': (5, 'QB Whisperer', 'Recruiter'), 'Dan Lanning': (5, 'Defensive Mastermind', 'Recruiter'),
+             'Curt Cignetti': (5, 'Portal King', 'Developer'), 'Lane Kiffin': (5, 'Portal King', 'Offensive Guru'), 'Steve Sarkisian': (5, 'QB Whisperer', 'Offensive Guru'),
+             'Kalen DeBoer': (5, 'Offensive Guru', 'QB Whisperer'), 'Marcus Freeman': (5, 'Recruiter', 'Defensive Mastermind'), 'Kyle Whittingham': (5, 'Developer', 'Defensive Mastermind'),
+             'Dabo Swinney': (5, 'Recruiter', 'Motivator'), 'Kirk Ferentz': (4, 'Developer', 'Disciplinarian'), 'Bill Belichick': (4, 'Defensive Mastermind', 'Disciplinarian'),
+             'James Franklin': (4, 'Recruiter', 'Motivator'), 'Matt Campbell': (4, 'Developer', 'Motivator'), 'Lincoln Riley': (4, 'QB Whisperer', 'Offensive Guru'),
+             'Josh Heupel': (4, 'Offensive Guru', 'Air Raid'), 'Brent Venables': (4, 'Defensive Mastermind', 'Pass Rush Guru'), 'Mike Elko': (4, 'Defensive Mastermind'),
+             'Deion Sanders': (3, 'Portal King', 'Motivator'), 'Joey McGuire': (4, 'Portal King', 'Motivator'), 'Kenny Dillingham': (4, 'Offensive Guru', 'Portal King'),
+             'Mario Cristobal': (4, 'Recruiter'), 'Rich Rodriguez': (3, 'Run Game Architect', 'Offensive Guru'), 'Jeff Monken': (4, 'Run Game Architect', 'Disciplinarian'),
+             'Brian Newberry': (3, 'Run Game Architect'), 'Troy Calhoun': (3, 'Run Game Architect', 'Disciplinarian'), 'Lance Leipold': (4, 'Developer'),
+             'Bret Bielema': (3, 'Run Game Architect', 'Disciplinarian'), 'Eli Drinkwitz': (4, 'Recruiter', 'Offensive Guru'), 'Mike Norvell': (3, 'Offensive Guru'),
+             'Jedd Fisch': (3, 'QB Whisperer', 'Portal King'), 'Dan Mullen': (4, 'QB Whisperer', 'Run Game Architect'), 'Sonny Dykes': (4, 'Air Raid', 'Offensive Guru'),
+             'Kalani Sitake': (4, 'Motivator'), 'Rhett Lashlee': (4, 'Offensive Guru', 'Air Raid'), 'Jeff Brohm': (4, 'QB Whisperer', 'Air Raid'),
+             'Jeff Traylor': (4, 'Recruiter'), 'Jamey Chadwell': (4, 'Run Game Architect', 'Offensive Guru'), 'Spencer Danielson': (4, 'Defensive Mastermind', 'Motivator'),
+             'Jon Sumrall': (4, 'Defensive Mastermind', 'Developer'), 'Pete Golding': (3, 'Defensive Mastermind'), 'Clark Lea': (4, 'Motivator', 'Defensive Mastermind'),
+             'Shane Beamer': (3, 'Special Teams Ace', 'Motivator'), 'Tim Polasek': (4, 'Run Game Architect', 'Developer'), 'Alex Golesh': (4, 'Offensive Guru', 'Air Raid'),
+             'Collin Klein': (3, 'QB Whisperer', 'Run Game Architect'), 'Pat Fitzgerald': (3, 'Disciplinarian', 'Defensive Mastermind'), 'Greg Schiano': (3, 'Disciplinarian'),
+             'Bronco Mendenhall': (4, 'Disciplinarian', 'Developer'), 'Manny Diaz': (3, 'Turnover Specialist', 'Defensive Mastermind'), 'Ken Niumatalolo': (4, 'Run Game Architect', 'Disciplinarian'),
+             'Zach Kittley': (3, 'Air Raid', 'QB Whisperer'), 'Willie Fritz': (3, 'Run Game Architect'), 'Pat Narduzzi': (3, 'Defensive Mastermind'), 'Brent Key': (3, 'Motivator', 'Run Game Architect')}
+# coordinators verified for 2026 (team abbreviation as used in the game → role → (name, rating, traits, source))
+COORDS = {('ALA', 'dc'): ('Kane Wommack', 5, ('Turnover Specialist', 'Defensive Mastermind'), 'Alabama defensive coordinator since 2024; still in the role in Oct 2026 (Alabama coverage, Oct 2026)')}
+TRAIT_FALLBACK = ['Motivator', 'Developer', 'Recruiter', 'Offensive Guru', 'Defensive Mastermind', 'Disciplinarian', 'Clock Manager', 'Run Game Architect', 'Portal King', 'QB Whisperer']
+HC_ALIAS = {'hawaii rainbow warriors': "hawaii", 'louisiana monroe warhawks': 'ul monroe', 'florida international panthers': 'fiu', 'miami redhawks': 'miami oh',
+            'san jose state spartans': 'san jose state', 'uconn huskies': 'uconn', 'umass minutemen': 'umass', 'nc state wolfpack': 'nc state'}
+
+
+def coaches_for(progs):
+    """abbr -> {'hc': {...}, 'dc': {...}} for every FBS program the list names (FCS teams keep generated coaches)"""
+    by = {}
+    for g in progs:
+        by[norm(g['school'] + ' ' + g['mascot'])] = g
+        by.setdefault(norm(g['school']), g)
+    out, miss = {}, []
+    for line in FBS_HC.split('\n'):
+        team, name, since = line.split('|')
+        k = norm(team)
+        g = by.get(k) or by.get(HC_ALIAS.get(k, '#')) or next((by[x] for x in by if k.startswith(x + ' ') and len(x) > 4), None)
+        if not g:
+            miss.append(team)
+            continue
+        interim = '(interim)' in name
+        name = name.replace('(interim)', '').strip()
+        known = HC_TRAITS.get(name)
+        if known:
+            rating, traits = known[0], list(known[1:])
+        else:
+            rating = int(max(2, min(4, round(g['q'] - 0.3))))
+            traits = [TRAIT_FALLBACK[int((hrand('hc', name) + 1) / 2 * len(TRAIT_FALLBACK)) % len(TRAIT_FALLBACK)]]
+        c = {'name': name, 'rating': rating, 'traits': traits, 'since': int(since)}
+        if interim:
+            c['interim'] = True
+        out.setdefault(g['abbr'], {})['hc'] = c
+    for (ab, role), (name, rating, traits, src) in COORDS.items():
+        out.setdefault(ab, {})[role] = {'name': name, 'rating': rating, 'traits': list(traits), 'source': src}
+    return out, miss
+
+
+def coaches_only(path):
+    """add coaches to an existing pack (no roster rebuild): python3 build_pack.py --coaches-only [pack.json]"""
+    pk = json.load(open(path, encoding='utf-8'))
+    co, miss = coaches_for(game_programs())
+    n = 0
+    for t in pk['teams']:
+        c = co.get(t.get('abbr'))
+        if c:
+            t['coaches'] = c
+            n += 1
+        else:
+            t.pop('coaches', None)
+    pk['notes'] = pk.get('notes', '').split(' Coaches:')[0] + COACH_NOTE
+    write_pack(path, pk)
+    print(f'coaches added to {n} teams; unmatched: {miss}; size {os.path.getsize(path) / 1e6:.2f} MB')
+
+
+COACH_NOTE = ' Coaches: 2026 FBS head coaches (Wikipedia list of current FBS coaches, Oct 2026) and verified coordinators; traits and ratings are game estimates.'
+
+
+def write_pack(path, pack):
+    teams_out = pack['teams']
+    with open(path, 'w', encoding='utf-8') as f:
+        head = {k: v for k, v in pack.items() if k not in ('teams', 'players')}
+        f.write(json.dumps(head, ensure_ascii=False)[:-1] + ',\n"players":[],\n"teams":[\n')
+        for i, t in enumerate(teams_out):
+            meta = {k: v for k, v in t.items() if k != 'roster'}
+            f.write(json.dumps(meta, ensure_ascii=False, separators=(',', ':'))[:-1] + ',"roster":[\n')
+            f.write(',\n'.join(json.dumps(e, ensure_ascii=False, separators=(',', ':')) for e in t['roster']))
+            f.write('\n]}' + (',' if i < len(teams_out) - 1 else '') + '\n')
+        f.write(']}\n')
+    json.load(open(path, encoding='utf-8'))  # validate
+
+
+
 def main():
     progs = game_programs()
     roster = pd.read_parquet(os.path.join(DATA, 'rosters', 'parquet', 'rosters_2026.parquet'))
@@ -301,6 +534,7 @@ def main():
     used = set(match.values())
     unmatched_ds = [t for t in ds_teams if t not in used]
 
+    coaches, coach_miss = coaches_for(progs)
     stats = merged_stats()
     # population stats for z-scores
     def qb_metrics(s):
@@ -535,6 +769,8 @@ def main():
             team['stadium'] = inf.venue_name
             if pd.notna(inf.get('capacity')) and inf.capacity > 1000:
                 team['capacity'] = int(inf.capacity)
+        if g['abbr'] in coaches:
+            team['coaches'] = coaches[g['abbr']]
         ps.sort(key=lambda p: (POS_ORDER.index(p['pos']), -p['_o'], p['pid']))
         team['roster'] = []
         for p in ps:
@@ -546,25 +782,17 @@ def main():
         teams_out.append(team)
 
     pack = {'format': 'gridiron-live-pack', 'version': 2, 'season': 2026, 'name': 'College football 2026 rosters & logos',
-            'notes': 'Rosters: ESPN via cfbfastR-data (2026 season). Ratings are game estimates from 2025+2026 production, class, size and program strength. Logos are links to the ESPN CDN.',
+            'notes': 'Rosters: ESPN via cfbfastR-data (2026 season). Ratings are game estimates from 2025+2026 production, class, size and program strength. Logos are links to the ESPN CDN.' + COACH_NOTE,
             'teams': teams_out, 'players': []}
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, 'gridiron-live-2026-rosters.json')
-    with open(path, 'w', encoding='utf-8') as f:
-        head = {k: v for k, v in pack.items() if k not in ('teams', 'players')}
-        f.write(json.dumps(head, ensure_ascii=False)[:-1] + ',\n"players":[],\n"teams":[\n')
-        for i, t in enumerate(teams_out):
-            meta = {k: v for k, v in t.items() if k != 'roster'}
-            f.write(json.dumps(meta, ensure_ascii=False, separators=(',', ':'))[:-1] + ',"roster":[\n')
-            f.write(',\n'.join(json.dumps(e, ensure_ascii=False, separators=(',', ':')) for e in t['roster']))
-            f.write('\n]}' + (',' if i < len(teams_out) - 1 else '') + '\n')
-        f.write(']}\n')
-    json.load(open(path, encoding='utf-8'))  # validate
+    write_pack(path, pack)
     write_template(os.path.join(OUT, 'custom-players-template.json'))
 
     nplayers = sum(len(t['roster']) for t in teams_out)
     print(f'wrote {path}  {os.path.getsize(path) / 1e6:.2f} MB  teams {len(teams_out)}  players {nplayers}')
     print('unmatched game programs:', unmatched_game)
+    print('coaches:', sum(1 for t in teams_out if 'coaches' in t), 'teams; head-coach list entries not matched:', coach_miss)
     print('dataset teams not in the game (skipped):', unmatched_ds)
     import statistics as stt
     for div in ('FBS', 'FCS'):
@@ -592,4 +820,7 @@ def write_template(path):
 
 
 if __name__ == '__main__':
-    main()
+    if '--coaches-only' in sys.argv:
+        coaches_only(next((a for a in sys.argv[1:] if a.endswith('.json')), os.path.join('/home/claude/packs', 'gridiron-live-2026-rosters.json')))
+    else:
+        main()

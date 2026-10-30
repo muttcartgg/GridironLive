@@ -73,10 +73,22 @@ function packAddCustom(L,list,keepUser){
     p.custom=true;t.roster.push(p);touched.add(t);n++}
   for(const t of touched){t.dco=null;assignNumbers(t)}return n;
 }
+/* coaches from a pack: teams[].coaches {hc,oc,dc: {name, rating 1–5, traits (names or keys), age?, interim?}} */
+const packTrait=v=>{const s=String(v||'').trim();if(TRAITS[s.toUpperCase()])return s.toUpperCase();const k=Object.keys(TRAITS).find(k=>TRAITS[k].n.toLowerCase()===s.toLowerCase());return k||null};
+function packCoaches(L,t,co,keepUser){
+  if(!co||typeof co!=='object'||!t.staff)return 0;let n=0;
+  for(const role of ['hc','oc','dc']){const e=co[role];if(!e||!e.name)continue;if(L.user===t.id&&(role==='hc'||keepUser))continue;
+    const c=genCoach(role,staffQ(t),{t});c.name=String(e.name).slice(0,40)+(e.interim?' (interim)':'');const r=parseInt(e.rating);if(r>=1&&r<=5){c.r=r;c.sal=coachSalary(role,r,t)}
+    const tr=(Array.isArray(e.traits)?e.traits:[]).map(packTrait).filter(Boolean).slice(0,2);if(tr.length)c.traits=[...new Set(tr)];const a=parseInt(e.age);if(a>=25&&a<=85)c.age=a;
+    if(role==='hc'&&parseInt(e.since)>1950)c.ten=clamp((L.season||2026)-parseInt(e.since),0,40);c.real=true;
+    if(L.user===t.id&&L.staff)L.staff[role]=c;else t.staff[role]=c;n++}
+  return n;
+}
 /* apply a v2 pack to league L. opts: {keepUser, meta (stadium names), logos} → summary */
 function applyRosterPack(L,pk,opts){
-  opts=opts||{};const {pairs,miss}=packMatch(L,pk);let players=0,logos=0;
+  opts=opts||{};const {pairs,miss}=packMatch(L,pk);let players=0,logos=0,coaches=0;ensureCareer(L);
   for(const [t,e] of pairs){
+    if(opts.coaches!==false&&e.coaches)coaches+=packCoaches(L,t,e.coaches,opts.keepUser);
     const lg=safeURL(e.logo),ld=safeURL(e.logoDark);if(opts.logos!==false&&(lg||ld)){t.logo=lg||ld;t.logoDark=ld||lg;logos++}
     if(e.espnId)t.espnId=String(e.espnId);
     if(opts.meta!==false&&e.stadium){t.stadium=String(e.stadium).slice(0,40);const c=parseInt(e.capacity);if(c>=1000&&c<=200000)t.cap=c}
@@ -86,21 +98,21 @@ function applyRosterPack(L,pk,opts){
   if(L.user!=null&&L.teams[L.user]&&Array.isArray(L.captains)){const u=L.teams[L.user];const ids=new Set(u.roster.map(p=>p.id));if(!L.captains.every(id=>ids.has(id)))L.captains=u.roster.filter(p=>p.yr>=3).sort((a,b)=>ovr(b)-ovr(a)).slice(0,2).map(p=>p.id)}
   invalidate();if(typeof updateRankings==='function'&&L.weeks)try{updateRankings(L)}catch(err){console.error(err)}
   L.pack={name:String(pk.name||'Imported pack').slice(0,60),season:pk.season||null,teams:pairs.length};
-  return {teams:pairs.length,miss,players,logos,custom};
+  return {teams:pairs.length,miss,players,logos,custom,coaches};
 }
 /* summary for the preview, without touching the league */
 function packPreview(L,pk){
   if(Array.isArray(pk))pk={players:pk};
   if(!packIsV2(pk)&&Array.isArray(pk.teams))return {v1:true,teams:Math.min(pk.teams.length,L.teams.length)};
-  const {pairs,miss}=packMatch(L,pk);let players=0,logos=0;for(const [,e] of pairs){players+=Array.isArray(e.roster)?e.roster.length:0;if(safeURL(e.logo)||safeURL(e.logoDark))logos++}
+  const {pairs,miss}=packMatch(L,pk);let players=0,logos=0,coaches=0;for(const [,e] of pairs){players+=Array.isArray(e.roster)?e.roster.length:0;if(safeURL(e.logo)||safeURL(e.logoDark))logos++;if(e.coaches)coaches+=['hc','oc','dc'].filter(k=>e.coaches[k]&&e.coaches[k].name).length}
   const cust=(pk.players||[]).filter(e=>e&&packTeamFor(L,e.team)).length;
-  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,custom:cust,customMiss:(pk.players||[]).length-cust};
+  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,coaches,custom:cust,customMiss:(pk.players||[]).length-cust};
 }
 
 /* ---------- saved pack for new dynasties (compressed in KV; only the 60 players each team would use) ---------- */
 function packSave(pk){
   const A=ATTR_KEYS;const enc=e=>{const pos=packPos(e.pos);const a=A.map(k=>{const v=packAttr(e[k]);return v==null?'':Math.round(v*10)}).join('.');return [String(e.name||'').slice(0,40),pos,e.num==null?'':e.num,e.yr==null?'':e.yr,e.ht||'',e.wt||'',e.home||'',a,e.ovr||'',e.rs?1:0,e.espnId||'']};
-  const c={v:2,name:pk.name||'Imported pack',season:pk.season||null,teams:(pk.teams||[]).map(t=>({school:t.school,mascot:t.mascot,abbr:t.abbr,espnId:t.espnId,logo:safeURL(t.logo),logoDark:safeURL(t.logoDark),stadium:t.stadium,capacity:t.capacity,
+  const c={v:2,name:pk.name||'Imported pack',season:pk.season||null,teams:(pk.teams||[]).map(t=>({school:t.school,mascot:t.mascot,abbr:t.abbr,espnId:t.espnId,logo:safeURL(t.logo),logoDark:safeURL(t.logoDark),stadium:t.stadium,capacity:t.capacity,coaches:t.coaches&&typeof t.coaches==='object'?t.coaches:undefined,
     r:Array.isArray(t.roster)?packSelect(t.roster).map(x=>enc(x.e)):[]})),players:(pk.players||[]).slice(0,600)};
   const raw='Z:'+LZString.compressToBase64(JSON.stringify(c));
   if(raw.length>6e6)throw new Error('This pack is too big to keep for new dynasties.');
@@ -122,13 +134,13 @@ function openRosterImport(L,done,opt){
   const render=()=>{
     const p=pv;let prev='';
     if(p&&p.v1)prev=`<div class="ri-prev"><b>Old-style team pack</b><p class="note">${p.teams} schools, matched by their order in the list.</p></div>`;
-    else if(p)prev=`<div class="ri-prev"><div class="kpis"><div><em>Teams matched</em><b>${p.teams}<small>/${p.total}</small></b></div><div><em>Players</em><b>${p.players.toLocaleString()}</b></div><div><em>Logos</em><b>${p.logos}</b></div><div><em>Custom players</em><b>${p.custom}</b></div></div>
+    else if(p)prev=`<div class="ri-prev"><div class="kpis"><div><em>Teams matched</em><b>${p.teams}<small>/${p.total}</small></b></div><div><em>Players</em><b>${p.players.toLocaleString()}</b></div><div><em>Logos</em><b>${p.logos}</b></div><div><em>Coaches</em><b>${p.coaches||0}</b></div><div><em>Custom players</em><b>${p.custom}</b></div></div>
       ${p.miss.length?`<p class="note">Not in this league (skipped): ${esc(p.miss.slice(0,8).join(', '))}${p.miss.length>8?` and ${p.miss.length-8} more`:''}</p>`:''}${p.customMiss?`<p class="note">${p.customMiss} custom player${p.customMiss>1?'s have':' has'} no matching team.</p>`:''}
       ${live?`<label class="ri-opt"><input type="checkbox" id="riCur" ${L.live?'disabled':'checked'}> Apply to this dynasty now${L.live?' (finish the game in progress first)':''}</label>
       <label class="ri-opt"><input type="checkbox" id="riKeep" checked> Keep my team's roster</label>`:''}
       ${p.teams&&(p.pk.teams||[]).length?`<label class="ri-opt"><input type="checkbox" id="riSave" checked> Use for new dynasties</label>`:''}</div>`;
     openModal(`<div class="eyebrow">Rosters &amp; logos</div><div class="h2">Import rosters &amp; logos</div>
-      <p class="note">Choose a roster pack (.json) saved in Files, or paste one below. A pack replaces players, adds custom players and links team logos; school names and colors stay as they are.</p>
+      <p class="note">Choose a roster pack (.json) saved in Files, or paste one below. A pack replaces players and coaching staffs, adds custom players and links team logos; school names and colors stay as they are.</p>
       <div class="btns"><label class="btn light ri-file">Choose file…<input type="file" id="riFile" accept=".json,application/json,text/plain" hidden></label></div>
       <textarea id="riPaste" placeholder='{"format":"gridiron-live-pack","version":2,…}  or a custom players list'></textarea>
       <div class="btns"><button class="btn ghost sm" id="riRead">Read pasted text</button></div>
@@ -144,7 +156,7 @@ function openRosterImport(L,done,opt){
       if(pv.v1){applyTeamPack(L,pk,{regen:opt.regen||L.phase==='regular'&&L.week===0});closeModal();done&&done();return}
       const save=!!($('#riSave')&&$('#riSave').checked),keep=live&&$('#riKeep')&&$('#riKeep').checked;
       const cur=live?!!($('#riCur')&&$('#riCur').checked&&!L.live):!(opt.setup&&save);
-      let msg=[],saved=false;if(cur){const s=applyRosterPack(L,pk,{keepUser:keep});msg.push(`${s.teams} teams updated`+(s.custom?`, ${s.custom} custom players`:''))}
+      let msg=[],saved=false;if(cur){const s=applyRosterPack(L,pk,{keepUser:keep});msg.push(`${s.teams} teams updated`+(s.coaches?`, ${s.coaches} coaches`:'')+(s.custom?`, ${s.custom} custom players`:''))}
       if(save){try{packSave(pk);saved=true;msg.push('saved for new dynasties')}catch(e){msg.push(e.message)}}
       closeModal();toast(msg.join(' · ')||'Nothing to import');done&&done({saved,applied:cur})}catch(e){console.error(e);b.disabled=false;b.textContent='Import';err('Import failed: '+e.message)}},30)});
   };render();

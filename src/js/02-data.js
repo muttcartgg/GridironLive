@@ -136,12 +136,11 @@ const teamName=t=>`${t.city} ${t.name}`;
 const fullName=p=>`${p.first} ${p.last}`;
 const yrStr=p=>(p.rs?'RS ':'')+YR[clamp(p.yr,1,4)-1];
 
-/* ---------- coaching staff ---------- */
-const OC_TRAITS={'Play Caller':'Receivers gain separation faster','QB Guru':'Quarterbacks earn 25% more XP','Talent Spotter':'Recruits arrive with +1 star in a key rating','Motivator':'Morale drops half as much after losses'};
-const DC_TRAITS={'Physio':'Half as many injuries','Ball Hawk':'More takeaways on defense','Run Stopper':'Opponents score less often','Disciplinarian':'Fewer penalties and calmer dilemmas'};
-function genStaff(kind,r){return {name:pick(FIRST)+' '+pick(LAST),r:r||clamp(Math.round(R(1,5.4)),1,5),trait:pick(Object.keys(kind==='oc'?OC_TRAITS:DC_TRAITS))}}
+/* ---------- coaching staff: coaches, signature traits, coachMod() and careers live in 04c-career.js ----------
+   the old OC/DC traits map onto the new ones (OLD_TRAIT), so hasTrait('dc','Ball Hawk') still answers for Turnover Specialist */
+function genStaff(kind,r){return genCoach(kind,r||R(1,5.4),r?{r}:null)}
 const staffCost=s=>s.r*4;
-const hasTrait=(k,t)=>LG&&LG.staff&&LG.staff[k]&&LG.staff[k].trait===t;
+const hasTrait=(k,t)=>{const s=LG&&LG.staff&&LG.staff[k];return !!s&&(s.trait===t||!!(s.traits&&s.traits.includes(OLD_TRAIT[t]||t)))};
 
 /* ---------- league generation ---------- */
 const qOf=t=>t.q||(1.1+t.prestige*.62);

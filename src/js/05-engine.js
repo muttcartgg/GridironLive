@@ -109,7 +109,8 @@ function add(side,role,x,y,pl0,team,key){
   const user=team===S.home,pl=gview(pl0,user?0:1);
   const p={side,role,key,team,user,x,y,vx:0,vy:0,z:0,pl,num:pl.num,spd:speedOf(role,pl,user),acc:ACC[role],route:null,rpath:null,cont:null,wi:0,stop:false,stun:0,bt:0,immune:false,shed:0,cov:null,homeX:x,homeY:y,blocker:false,face:side==='o'?1:-1,phase:Math.random()*6.28,fallen:false,fallP:0,lunge:0,lungeCD:0,stiff:0,throwT:0,react:0,engaged:false,eng:null,tgt:null,dirt:(S.dirt&&S.dirt[pl.id])||0,ovr:ovr99(pl0),settle:0};
   if(!user&&side==='d'&&uOff()&&role!=='DL')p.spd*=Math.sqrt(SL('cov'));
-  if(user&&side==='o'&&LG.staff){const oc=LG.staff.oc;if(['WR','TE','RB'].includes(role))p.spd*=1+.01*(oc.r-3)+(oc.trait==='Play Caller'?.03:0)}
+  if(side==='o'&&['WR','TE','RB'].includes(role))p.spd*=1+(user&&LG.staff?.01*(LG.staff.oc.r-3):0)+(coachMod(team,'sep')-1)+(role==='RB'?coachMod(team,'brk')-1:0);   /* coordinator rating + traits (04c) */
+  if(side==='d'&&role==='DL')p.spd*=coachMod(team,'rush');
   phyInit(p);P.push(p);(side==='o'?OFF:DEF).push(p);return p;
 }
 function setRoute(p,name,inD){
@@ -664,7 +665,7 @@ function otNext(who){
   if(!S.otPos){S.otPos=1;return setTimeout(()=>otPossess(who==='home'?'away':'home'),900)}
   const done=S.score[0]!==S.score[1];setTimeout(()=>{if(done)gameOver();else{S.otRound++;startOT()}},900);
 }
-function oppRating(){return clamp(.5+(offOvr(S.away)-defOvr(S.home))*.22+(S.diffMul-1)*2-(LG.staff.dc.r-3)*.03-(hasTrait('dc','Run Stopper')?.04:0)-(focus('film')?.04:0),.1,.92)}
+function oppRating(){return clamp(.5+(offOvr(S.away)-defOvr(S.home))*.22+(S.diffMul-1)*2-(LG.staff.dc.r-3)*.03-(coachMod(S.home,'stop')-1)+(coachMod(S.away,'off')-1)*.01-(focus('film')?.04:0),.1,.92)}
 function oppOT(){
   S.phase='drive';S.poss='away';hint('');
   const r=oppRating();let res,pts=0;const lines=[];const A=S.away,aq=starters(A,'QB')[0],ar=starters(A,'RB')[0],aw=starters(A,'WR')[0];
@@ -681,7 +682,7 @@ function oppOT(){
 function oppDrive(startDist,why){
   S.phase='drive';S.poss='away';hint('');S.clockRun=false;hideActs();fatRest(6);
   const d=clamp(startDist,1,99),r=oppRating(),close=1-d/100;
-  const pTD=.08+.44*r*close+(d<20?.18:0),pFG=.16+.15*close,pTO=.15-.06*r+(hasTrait('dc','Ball Hawk')?.05:0);
+  const pTD=.08+.44*r*close+(d<20?.18:0),pFG=.16+.15*close,pTO=(.15-.06*r)*coachMod(S.home,'to');
   const roll=Math.random();let res=roll<pTD?'TD':roll<pTD+pFG?'FG':roll<pTD+pFG+pTO?'TO':'PUNT';
   if(res==='PUNT'&&d<33)res='FG';
   let time=R(45,130)*(S.qlen/180);time=Math.min(time,S.clock+S.qlen-10);

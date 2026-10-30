@@ -20,6 +20,8 @@ Logos are links (https or `data:` images), so they need a connection the first t
  "teams":[{"school":"Alabama","mascot":"Crimson Tide","abbr":"ALA","espnId":333,
            "primary":"#9E1B32","secondary":"#FFFFFF","logo":"https://…png","logoDark":"https://…png",
            "stadium":"Bryant-Denny Stadium","capacity":100077,
+           "coaches":{"hc":{"name":"First Last","rating":5,"traits":["Offensive Guru","QB Whisperer"],"since":2024},
+                      "dc":{"name":"First Last","rating":5,"traits":["Turnover Specialist","Defensive Mastermind"]}},
            "roster":[{"name":"First Last","pos":"QB","realPos":"QB","num":12,"yr":"SO","ht":75,"wt":201,
                       "home":"Dallas, TX","espnId":"5141629","spd":3.9,"agi":3.8,"str":3.0,"awr":4.4,"thr":4.9,
                       "acc":4.9,"cat":2.1,"rte":2.0,"car":3.3,"blk":1.6,"tkl":1.0,"cov":1.0,"shd":1.0,"end":4.4,"ovr":97}]}],
@@ -32,6 +34,7 @@ Logos are links (https or `data:` images), so they need a connection the first t
 - **yr** is FR/SO/JR/SR or 1–4. Add `"rs":true`, or write "RS SO", for a redshirt. `num`, `ht` (inches), `wt`, `home` and `espnId` are optional.
 - Each team keeps its best 60 players. Every position gets its minimum first (QB 3, RB 4, WR 6, TE 3, OL 10, DL 8, LB 6, CB 5, S 4, K 2), then the remaining spots go to the best players left. Open spots are filled with walk-ons.
 - **players** (custom players) are always added to the team named in `team` (an abbreviation or school name). If the roster is full, the weakest spare player at that position is dropped.
+- **coaches** (optional) replace a team's head coach (`hc`), offensive coordinator (`oc`) and defensive coordinator (`dc`). `rating` is 1–5, `traits` holds one or two signature traits by name or key: Turnover Specialist (TO), Defensive Mastermind (DM), Pass Rush Guru (PR), QB Whisperer (QBW), Offensive Guru (GURU), Air Raid (AIR), Run Game Architect (RUN), Special Teams Ace (ST), Recruiter (REC), Portal King (PK), Developer (DEV), Motivator (MOT), Clock Manager (CLK), Disciplinarian (DIS), Health First (HLT). `age`, `since` (first season at the school) and `interim` are optional. Your own team keeps you as head coach; when you start a dynasty you inherit the school's coordinators. The game itself only makes up coach names: real ones come only from a pack.
 - Older packs in the `{"conferences":[…],"teams":[…]}` format are still accepted. Their teams are matched by order.
 
 `custom-players-template.json` shows every player field. **Settings → Export my roster (JSON)** writes your team in this format.
@@ -43,3 +46,5 @@ python3 -I tools/data/build_pack.py [outdir]     # default /home/claude/packs
 ```
 
 The builder reads a local clone of `sportsdataverse/cfbfastR-data`: the 2026 rosters, 2025 and 2026 play-level player stats, ESPN team ids, colors and logo links, and the 2026 team info for stadiums. It writes the pack and the template. Ratings come from 2025 and 2026 production (usage, efficiency, TDs and INTs, sacks, PBUs, forced fumbles, FG%), class, size compared with the position norm, and program strength. Each team is then calibrated so its `teamOvr()` follows the generated league's curve for that program's strength. Linemen and punters have no box-score stats, so class, size and team decide their ratings. Output is deterministic.
+
+Coaches: the builder adds `coaches` for every FBS program from the 2026 head-coach list in `build_pack.py` (`FBS_HC`, taken from Wikipedia's list of current FBS coaches in October 2026) and the coordinators in `COORDS` that were verified for 2026 (Kane Wommack, Alabama DC). Ratings and traits are game estimates (`HC_TRAITS`; other coaches get one trait from a fixed hash). FCS teams keep generated coaches. To refresh only the coaches of an existing pack without the roster data: `python3 -I tools/data/build_pack.py --coaches-only [pack.json]`.

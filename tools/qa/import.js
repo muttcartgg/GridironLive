@@ -46,7 +46,10 @@ const rep=await p.evaluate(()=>{const out={};for(const ab of ['ALA','OSU','UGA',
   const bad=sample.filter(t=>!/^https:\/\/a\.espncdn\.com\//.test(t.logo||''));
   const caps=LG.teams.filter(t=>t.roster.length>ROSTER_CAP||POS_ORDER.some(pos=>t.roster.filter(p=>p.pos===pos).length<POS_COUNTS[pos])).map(t=>t.abbr);
   const fields=LG.teams[0].roster.every(p=>ATTR_KEYS.every(k=>typeof p[k]==='number'&&p[k]>=1&&p[k]<=5)&&p.ss&&p.id&&p.ht&&p.wt);
-  return {teams:out,logos:{teamsWithHttpsLogo:withLogo,sampleChecked:sample.length,sampleBad:bad.map(t=>t.abbr)},rosterRuleViolations:caps,allFieldsOk:fields,pack:LG.pack}});
+  const st=t=>staffOf(t)||{};const real=LG.teams.filter(t=>t.id!==LG.user&&t.staff&&t.staff.hc&&t.staff.hc.real).length;
+  const coaches={realHC:real,sample:['OSU','UGA','TEX','LSU','MICH','ND','PSU','NIU'].map(ab=>LG.teams.find(t=>t.abbr===ab)).filter(Boolean).map(t=>`${t.abbr}: ${t.staff.hc.name} [${t.staff.hc.traits}] r${t.staff.hc.r}`),
+    yourDC:`${LG.staff.dc.name} [${LG.staff.dc.traits}] r${LG.staff.dc.r}`,allStaffed:LG.teams.every(t=>t.staff&&t.staff.hc&&t.staff.oc&&t.staff.dc)};
+  return {teams:out,logos:{teamsWithHttpsLogo:withLogo,sampleChecked:sample.length,sampleBad:bad.map(t=>t.abbr)},rosterRuleViolations:caps,allFieldsOk:fields,pack:LG.pack,coaches}});
 /* screenshots: the CDN is unreachable here, so stand-in data: URI marks (a plain circle with the abbreviation, not a logo) show where logos render */
 if(OUT){await p.evaluate(()=>{for(const t of LG.teams){const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="29" fill="${t.c1}" stroke="${t.c2}" stroke-width="5"/><text x="32" y="39" font-family="Arial" font-weight="900" font-size="${t.abbr.length>3?15:19}" text-anchor="middle" fill="${inkOn(t.c1)}">${t.abbr}</text></svg>`;t.logo=t.logoDark='data:image/svg+xml,'+encodeURIComponent(svg)}});
   await p.evaluate(()=>showHub('home'));await p.waitForTimeout(1500);await p.screenshot({path:path.join(OUT,'L-hub.png')});await p.evaluate(()=>showHub('league'));await p.waitForTimeout(1200);await p.screenshot({path:path.join(OUT,'L-league.png')});
@@ -59,7 +62,8 @@ console.log('TEAMOVR before (generated)',JSON.stringify(before));
 console.log('TEAMOVR after  (imported) ',JSON.stringify(after));
 for(const [ab,v] of Object.entries(rep.teams))console.log(ab.padEnd(5),typeof v==='string'?v:`teamOvr ${v.teamOvr} (${v.ovr99}) roster ${v.roster} real ${v.real} | ${v.stadium} | ${v.logo}\n      ${v.top5.join(' · ')}`);
 console.log('LOGOS',JSON.stringify(rep.logos),'ROSTER RULES',rep.rosterRuleViolations.length?rep.rosterRuleViolations:'ok','FIELDS',rep.allFieldsOk?'ok':'MISSING','PACK',JSON.stringify(rep.pack));
-const fail=errs.length||rep.logos.sampleBad.length||rep.rosterRuleViolations.length||!rep.allFieldsOk;
+console.log('COACHES',JSON.stringify(rep.coaches));
+const fail=errs.length||rep.logos.sampleBad.length||rep.rosterRuleViolations.length||!rep.allFieldsOk||!rep.coaches.allStaffed;
 if(netFail)console.log(`(${netFail} logo requests could not reach the CDN from this machine; badges fell back to abbreviations)`);
 console.log('ERRORS',errs.length?errs.slice(0,15):'none');await b.close();
 if(process.env.SKIP_PLAY){process.exit(fail?1:0)}

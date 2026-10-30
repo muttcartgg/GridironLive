@@ -267,6 +267,6 @@ function tackled(c,d){
   pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=fp/.4;
   if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
   const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
-  if(Math.random()<fumP&&spotOf(c)+pl.fp<110)return stFumble(c,d,'Fumble');
+  if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110)return stFumble(c,d,'Fumble');   /* Turnover Specialist (04c) */
   endPlay('tackle');
 }

@@ -211,8 +211,9 @@ function startDynasty(id){
   L.user=id;L.coach.name=st.coach.trim()||'Coach';L.name=st.name.trim()||`${L.teams[id].city} Dynasty`;L.settings.diff=st.diff;L.coach.schools=[id];
   const t=L.teams[id];L.fac={stadium:clamp(t.prestige-1,1,5),training:clamp(t.prestige-1,1,5),rehab:clamp(t.prestige-2,1,5)};
   L.captains=t.roster.filter(p=>p.yr>=3).sort((a,b)=>ovr(b)-ovr(a)).slice(0,2).map(p=>p.id);
-  L.nil=300+t.prestige*120;setHomecoming(L);seedRecords(L);
-  L.news=[{t:`${L.coach.name} is introduced as head coach of ${teamName(t)}. The AD expects ${adTarget(t)}+ wins.`,good:true}];
+  ensureCareer(L);if(t.staff)L.staff={oc:t.staff.oc,dc:t.staff.dc};   /* you inherit the school's coordinators */
+  L.coach.sal=coachSalary('hc',3,t);L.coach.yrs=5;setBudget(L,true);setHomecoming(L);seedRecords(L);
+  L.news=[{t:`${L.coach.name} is introduced as head coach of ${teamName(t)} on a 5-year deal. The AD expects ${adTarget(t)}+ wins. Player budget: ${money(L.budget.total)}.`,good:true}];
   LG=L;SLOT=st.slot;SETUP=null;applyStyle();saveNow(true);showHub('home');
 }
 
@@ -220,12 +221,12 @@ function startDynasty(id){
 const TABS=[['home','Home'],['schedule','Schedule'],['rankings','Rankings'],['playoff','Playoff'],['feed','Feed'],['team','Roster'],['recruit','Recruiting'],['program','Program'],['stats','Stats'],['league','League'],['settings','Settings']];
 function showHub(tab){
   const prev=TAB,wasHidden=$('#hub').hidden;
-  invalidate();hideAll();if(tab)TAB=tab;S.phase='hub';applyStyle();
+  invalidate();hideAll();if(tab)TAB=tab;S.phase='hub';applyStyle();ensureCareer(LG);
   const u=T(LG.user);applyTeamTheme(u);
   const ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null,top=$('#hubTop');top.style.setProperty('--hd',deepC(u));
   top.innerHTML=`<span class="ht-wm" aria-hidden="true">${esc(u.abbr)}</span>${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)} <span>${esc(u.name)}</span></b><small>${esc(LG.coach.name)}</small></div>
     <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div>
-    <div class="pills"><span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL collective">${money(LG.nil)} NIL</span></div>`;
+    <div class="pills"><span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL and revenue-sharing budget left">${money(LG.nil)} NIL</span></div>`;
   $('#tabs').innerHTML=TABS.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${TAB===k}">${k==='home'&&LG.phase==='offseason'?'Offseason':l}${k==='home'&&LG.event?'<span class="dot"></span>':''}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{showHub(b.id.slice(4));$('#hubScroll').scrollTop=0});
   const hb=$('#hubBody');
@@ -269,7 +270,8 @@ function hubHome(){
   const season=`<div class="card sp"><div class="sp-top"><div><div class="eyebrow">${LG.season} season</div><div class="sp-wk">${LG.week<R?`Week ${LG.week+1}<small>of ${R}</small>`:esc(w?w.label:'Postseason')}</div></div>
     <div class="sp-k"><div><em>Record</em><b>${recStr(u)}</b></div>${cpos?`<div><em>${esc(confName(u.conf))}</em><b>${ordinal(cpos)}</b></div>`:''}<div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div></div>
     <div class="sp-track" aria-hidden="true">${track}</div><div class="sp-foot"><span>${u.rec.cw}–${u.rec.cl} in conference</span><span>AD expects ${tgt}+ wins</span></div></div>`;
-  const ad=`<div class="card"><div class="eyebrow">Athletic director</div><div class="kv"><span>Expectation</span><b>${tgt}+ wins</b></div><div class="kv"><span>Job security</span><b class="${sec<30?'res-l':''}">${sec<25?'Hot seat':sec<50?'Uneasy':sec<80?'Stable':'Untouchable'}</b></div>${meterHTML(sec)}
+  const [hsN,hsC]=hotSeat(sec),gp=u.rec.w+u.rec.l,pace=gp?Math.round(u.rec.w/gp*12):null;
+  const ad=`<div class="card"><div class="eyebrow">Athletic director</div><div class="kv"><span>Expectation</span><b>${tgt}+ wins${pace!=null?` · on pace for ${pace}`:''}</b></div><div class="kv"><span>Hot seat</span><b class="${hsC==='hot'?'res-l':''}">${hsN}</b></div>${meterHTML(100-sec,hsC==='hot'?'var(--hot)':hsC==='warn'?'var(--warn)':'var(--ok)')}<div class="kv"><span>Contract</span><b>${LG.coach.yrs} yr${LG.coach.yrs===1?'':'s'} · ${money(LG.coach.sal)}/yr</b></div>
     <div class="kv"><span>Fan approval</span><b>${Math.round(LG.fan)}%</b></div>${meterHTML(LG.fan)}<div class="kv"><span>Locker room</span><b>${Math.round(LG.morale)}%</b></div>${meterHTML(LG.morale)}</div>`;
   const heis=LG.heismanWatch&&LG.heismanWatch.length?`<div class="card"><div class="eyebrow">Heisman watch</div><div class="list">${LG.heismanWatch.map((h,i)=>`<div class="lrow"><span class="l"><span class="rank">${i+1}</span>${badge(T(h.team),'sm')}<span><b>${esc(h.name)}</b> <span class="note">${h.pos}</span><br><small class="note">${esc(h.line)}</small></span></span></div>`).join('')}</div></div>`:'';
   const potw=LG.potw?`<div class="card"><div class="eyebrow">${confName(u.conf)} player of the week</div><div class="tname">${badge(T(LG.potw.team))}<span><b>${esc(LG.potw.name)}</b> · ${LG.potw.pos} · ${esc(T(LG.potw.team).city)}</span></div></div>`:'';
@@ -406,26 +408,20 @@ function hubProgram(){
   const c=LG.coach,u=T(LG.user),f=LG.fac;
   const FAC={stadium:['Stadium','More coaching credits from home games, plus a bonus when fan approval is above 70%.'],training:['Training facility','+20% XP per level for every player.'],rehab:['Rehab center','Faster condition recovery each week and shorter injuries.']};
   const FOCUS={balanced:['Balanced','No special boost.'],passing:['Passing','Tighter QB accuracy and surer hands this week.'],running:['Running','Ball carriers break more tackles; the line blocks longer.'],conditioning:['Conditioning','Players tire 30% slower this week.'],film:['Film study','Your defense reads their offense better this week.']};
-  const staffCard=(k,s)=>`<div class="lrow"><span class="l"><span class="tag">${k.toUpperCase()}</span><span><b>${esc(s.name)}</b> ${`<span class="ovr">${tOvr99(s.r)}</span>`}<br><small class="note">${esc(s.trait)}: ${(k==='oc'?OC_TRAITS:DC_TRAITS)[s.trait]}</small></span></span></div>`;
   return trophyCase()+`<div class="grid2">
-    <div class="card"><div class="eyebrow">Head coach</div><div class="h2">${esc(c.name)}</div>
-      <div class="kv"><span>Career record</span><b>${c.w}–${c.l}</b></div><div class="kv"><span>Seasons</span><b>${c.seasons}</b></div>
-      <div class="kv"><span>National titles</span><b>${c.natties}</b></div><div class="kv"><span>Conference titles</span><b>${c.confs}</b></div><div class="kv"><span>Bowl wins</span><b>${c.bowls}</b></div><div class="kv"><span>Playoff trips</span><b>${c.playoffs}</b></div><div class="kv"><span>Coach of the Year</span><b>${c.coy}</b></div>
-      <div class="kv"><span>Job security</span><b>${Math.round(c.security)}%</b></div>${meterHTML(c.security)}</div>
+    ${careerCoachHTML()}
     <div class="card"><div class="eyebrow">Program pulse</div>
       <div class="kv"><span>Fan approval</span><b>${Math.round(LG.fan)}%</b></div>${meterHTML(LG.fan)}
       <div class="kv"><span>Locker room morale</span><b>${Math.round(LG.morale)}%</b></div>${meterHTML(LG.morale)}
       <p class="note">Morale nudges player speed on game day. Fan approval drives coaching credits and recruiting.</p>
-      <div class="kv"><span>Captains</span><b>${LG.captains.map(id=>{const p=u.roster.find(x=>x.id===id);return p?esc(p.last):''}).filter(Boolean).join(', ')||'None'}</b></div>
-      <div class="kv"><span>NIL collective</span><b>${money(LG.nil)}</b></div><p class="note">NIL money signs transfer-portal players and boosts recruiting in the offseason.</p></div></div>
+      <div class="kv"><span>Captains</span><b>${LG.captains.map(id=>{const p=u.roster.find(x=>x.id===id);return p?esc(p.last):''}).filter(Boolean).join(', ')||'None'}</b></div></div></div>
+  ${careerBudgetHTML()}${careerTreeHTML()}
   <div class="card"><div class="h2">This week's practice</div>
     <div class="seg" id="focusSeg">${Object.entries(FOCUS).map(([k,[l]])=>`<button data-v="${k}" aria-pressed="${LG.focus===k}">${l}</button>`).join('')}</div><p class="note">${FOCUS[LG.focus][1]}</p>
     <div class="setrow"><span class="eyebrow">Training regime</span><div class="seg" id="regSeg">${Object.entries(REGIMES).map(([k,r])=>`<button data-v="${k}" aria-pressed="${LG.regime===k}">${r.label}</button>`).join('')}</div></div>
     <p class="note">${LG.regime==='light'?'Less XP, but players stay fresher and get hurt less.':LG.regime==='hard'?'35% more XP, but players wear down faster and get hurt more.':'Standard XP, wear and injury risk.'}</p></div>
   <div class="card"><div class="h2">Facilities</div>${Object.entries(FAC).map(([k,[n,d]])=>`<div class="setrow"><div style="min-width:0;flex:1"><b>${n}</b><div class="pips">${[1,2,3,4,5].map(i=>`<i class="${i<=f[k]?'on':''}"></i>`).join('')}</div><p class="note">${d}</p></div>${f[k]<5?`<button class="btn sm" id="fac-${k}" ${LG.credits<f[k]*6?'disabled':''}>Upgrade · ${f[k]*6} CC</button>`:'<span class="tag gold">Maxed</span>'}</div>`).join('')}</div>
-  <div class="card"><div class="h2">Coordinators</div><div class="list">${staffCard('oc',LG.staff.oc)}${staffCard('dc',LG.staff.dc)}</div>
-    <div class="eyebrow">Available to hire</div><div class="list">${['oc','dc'].flatMap(k=>LG.pool[k].map((s,i)=>`<div class="lrow"><span class="l"><span class="tag">${k.toUpperCase()}</span><span><b>${esc(s.name)}</b> ${`<span class="ovr">${tOvr99(s.r)}</span>`}<br><small class="note">${esc(s.trait)}: ${(k==='oc'?OC_TRAITS:DC_TRAITS)[s.trait]}</small></span></span><button class="btn sm" id="hire-${k}-${i}" ${LG.credits<staffCost(s)?'disabled':''}>Hire · ${staffCost(s)} CC</button></div>`)).join('')}</div>
-    <p class="note">Offensive coordinator stars help receivers get open. Defensive coordinator stars make your simulated defense stronger.</p></div>
+  ${careerStaffHTML()}
   <div class="card"><div class="h2">Trophy case</div><div class="grid3">
     <div class="kpis"><div><em>National titles</em><b>${u.titles}</b></div></div><div class="kpis"><div><em>Conference titles</em><b>${u.ccTitles}</b></div></div><div class="kpis"><div><em>Bowl wins</em><b>${u.bowlWins}</b></div></div><div class="kpis"><div><em>Playoff trips</em><b>${u.playoffApps||0}</b></div></div></div>
     <div class="kv"><span>${esc(u.trophy)} vs ${esc(T(u.rival).city)}</span><b>${u.holder===u.id?'In your case':'Held by '+esc(T(u.rival).city)}</b></div></div>`;
@@ -532,6 +528,7 @@ function hubSettings(){
     <b>Clock:</b> college rules. The clock keeps running after in-bounds tackles and stops on incompletions, out of bounds, scores and changes of possession. Inside two minutes of each half it stops briefly on first downs. Use TIMEOUT before the snap.</p></div>`;
 }
 function bindHub(){
+  if(TAB==='program')bindCareer();
   on('playGame',()=>{ac();openPregame(userGameThisWeek())});
   on('simGame',()=>{simUserGame(userGameThisWeek())});
   on('resumeGame',()=>{ac();resumeGame()});
@@ -649,9 +646,11 @@ function hubOffseason(){
     return `${prog}<div class="grid2"><div class="card"><div class="h2">Graduating seniors</div><div class="list">${li(d.grads,x=>`<div class="lrow"><span class="l"><span class="num">${x.pos}</span><span>${esc(x.name)}</span></span>${`<span class="ovr">${tOvr99(x.ovr)}</span>`}</div>`)}</div></div>
     <div class="card"><div class="h2">Early NFL declarations</div><div class="list">${li(d.declares,x=>`<div class="lrow"><span class="l"><span class="num">${x.pos}</span><span>${esc(x.name)}</span></span>${`<span class="ovr">${tOvr99(x.ovr)}</span>`}</div>`)}</div></div></div>
     <div class="grid2"><div class="card"><div class="h2">Pro draft picks</div><div class="list">${li(d.drafted,x=>`<div class="lrow"><span class="l"><span class="num">${x.pos}</span><span>${esc(x.name)}</span></span><span class="tag ${x.round===1?'gold':''}">Round ${x.round} · pick ${x.pick}</span></div>`)}</div><p class="note">Draft picks boost your program's reputation with recruits.</p></div>
-    <div class="card"><div class="h2">Entered the transfer portal</div><div class="list">${li(d.portalOut,x=>`<div class="lrow"><span class="l"><span class="num">${x.pos}</span><span>${esc(x.name)}</span></span>${`<span class="ovr">${tOvr99(x.ovr)}</span>`}</div>`)}</div><p class="note">Backups who don't get snaps may leave. Higher morale keeps more of them.</p></div></div>
-    <button class="btn wide" id="offNext">Continue</button>`}
-  if(o.stage==='carousel'){
+    ${d.portalOut.length?`<div class="card"><div class="h2">Entered the transfer portal</div><div class="list">${li(d.portalOut,x=>`<div class="lrow"><span class="l"><span class="num">${x.pos}</span><span>${esc(x.name)}</span></span>${`<span class="ovr">${tOvr99(x.ovr)}</span>`}</div>`)}</div></div>`:`<div class="card"><div class="h2">Next: carousel and portal</div><p class="note">Coaching changes come first. Then the January transfer window: players who want more snaps, more NIL or a fresh start after a coaching change can enter, and you get a chance to keep your best ones. ${esc(PORTAL_RULE)}</p></div>`}</div>
+    <button class="btn wide" id="offNext">Continue to the coaching carousel</button>`}
+  if(o.stage==='carousel')return carouselHTML(prog);
+  if(o.stage==='portal'&&o.pw)return portalHTML(prog);
+  if(o.stage==='carousel-old'){
     return `${prog}<div class="card hero"><div class="eyebrow">Coaching carousel</div><div class="h2">${o.fired?'You have been fired. These programs want to talk.':'Other programs want to hire you.'}</div><div class="list">${o.offers.map(id=>{const t=T(id);return `<div class="lrow"><span class="l">${badge(t)}<span><b>${esc(teamName(t))}</b><br><small class="note">${confName(t.conf)} · ${`Prestige ${t.prestige}/5`} · OVR ${tOvr99(teamOvr(t))}</small></span></span><button class="btn sm" id="offer-${id}">Take the job</button></div>`}).join('')}</div>${o.fired?'':'<button class="btn ghost" id="stayPut">Stay at '+esc(u.city)+'</button>'}</div>`;
   }
   if(o.stage==='portal'){
@@ -680,14 +679,18 @@ function bindOffseason(){
   if(LG.phase!=='offseason')return;const o=LG.off;
   on('offNext',()=>{
     if(o.stage==='recap'){departures(LG);o.stage='departures'}
-    else if(o.stage==='departures'){jobOffers(LG);if(o.offers.length)o.stage='carousel';else{buildPortal(LG);o.stage='portal'}}
+    else if(o.stage==='departures'){runCarousel(LG);o.stage='carousel'}
+    else if(o.stage==='carousel')return;   /* bindCarousel */
+    else if(o.stage==='portal'&&o.pw==='ret')portalOpen(LG);
+    else if(o.stage==='portal'&&o.pw==='open')portalResolve(LG);
     else if(o.stage==='portal'){rcEnsure(LG);o.stage='recruit'}
     else if(o.stage==='recruit'){if(o.recruits){signingDay(LG);LG.recruit=null}else rcSigningDay(LG);o.stage='signing'}
     else if(o.stage==='signing'){const camp=startNewSeason(LG);saveNow();showHub('home');$('#hubScroll').scrollTop=0;banner(LG.season+' season','var(--team)');toast(`Camp: ${camp.length} rating upgrades`);return}
     saveNow();showHub('home');$('#hubScroll').scrollTop=0;
   });
-  if(o.stage==='carousel'){o.offers.forEach(id=>on('offer-'+id,()=>{takeJob(LG,id);buildPortal(LG);o.stage='portal';saveNow();showHub('home')}));on('stayPut',()=>{buildPortal(LG);o.stage='portal';saveNow();showHub('home')})}
-  if(o.stage==='portal')o.portal.forEach((p,i)=>on('tp-'+i,()=>{const u=T(LG.user);const c=portalCost(p);
+  if(o.stage==='carousel')bindCarousel();
+  if(o.stage==='portal'&&o.pw)bindPortal();
+  if(o.stage==='portal'&&!o.pw)o.portal.forEach((p,i)=>on('tp-'+i,()=>{const u=T(LG.user);const c=portalCost(p);
     if(p.signed){p.signed=false;LG.nil+=c;u.roster=u.roster.filter(x=>x.id!==p.id);const src=T(p.from);if(!src.roster.some(x=>x.id===p.id)&&p.from!==LG.user)src.roster.push(stripPortal(p))}
     else{if(LG.nil<c){toast('Not enough NIL');return}if(u.roster.length>=ROSTER_CAP){toast('Roster is full');return}p.signed=true;LG.nil-=c;const src=T(p.from);src.roster=src.roster.filter(x=>x.id!==p.id);u.roster.push(stripPortal(p));assignNumbers(u)}
     saveNow();rerender()}));

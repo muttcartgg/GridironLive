@@ -29,7 +29,7 @@ function aimError(d,bullet,lob){
   const wx=S.wx==='Rain'?1.15:S.wx==='Snow'?1.12:S.wx==='Wind'&&d>20?1.25:1;
   const plat=1+Math.min(1,v/5.5)*.6*(1.15-.05*qb.pl.agi)+(1-set)*.15;
   const e=(.3+d*.0074*(6.3-qb.pl.acc))*(1+pressure()*.9)*plat*(1+strain*.6)*(bullet?1.15:lob?.92:1)*wx;
-  return e*(qb.user?(focus('passing')?.8:1)/SL('acc'):1.1-S.aiSkill*.2);
+  return e*(qb.user?(focus('passing')?.8:1)/SL('acc'):1.1-S.aiSkill*.2)/coachMod(qb.team,'acc');
 }
 function flightT(d,bullet,lob,thr){let T=(.2+d*.028+d*d*.00028)*(1.1-.035*thr);if(bullet)T*=.72;else if(lob)T=T*1.28+.08;const mr=maxRange();if(d>mr*.8)T*=1+(d/mr-.8)*.8;return Math.max(.28,T)}
 function throwBall(tx,ty,bullet,intended,lob){
@@ -144,14 +144,14 @@ function resolveCatch(){
   const userSwat=!!df&&df===S.ctrl&&pl.swat>0,rR=rec?reachOf(rec):0,dR=df?reachOf(df)*.9+(userSwat?.4:0):0;
   pl.sep=rec?nearest(DEF,rec.x,rec.y,d=>d.stun<=0&&!d.fallen)[1]:null;pl.cover=df;pl.arr=[dr,dd];
   if(out||!rec||dr>rR+PASS.dive){
-    if(df&&!out&&dd<dR){if(Math.random()<clamp(.12+.07*(df.pl.cat-3)+(userSwat?.15:0),.1,.65))return pickOff(df,'norec');return breakup(df,'Pass defended',.2)}
+    if(df&&!out&&dd<dR){if(Math.random()<clamp(.12+.07*(df.pl.cat-3)+(userSwat?.15:0),.1,.65)*coachMod(df.team,'int'))return pickOff(df,'norec');return breakup(df,'Pass defended',.2)}
     logPass('X');return endPlay('inc',out?'Sails out of bounds':ball.err<-.6?'Underthrown':ball.err>.6?'Overthrown':'Off target');
   }
   const dive=dr>rR;
   /* a defender who gets there first plays the ball: undercut on short balls, high-point on lobs */
   if(df&&dd<dR&&dd<dr-.6){
     const pI=clamp(.07+.06*(df.pl.cat-3)+.04*(df.pl.cov-3)+(ball.err<-.5?.1:0)+(ball.lob?.05:0)-(ball.bullet?.05:0)+(userSwat?.15:0),.04,.4);
-    if(Math.random()<pI)return pickOff(df,'first');return breakup(df,userSwat?'Swatted away!':'Broken up',.3);
+    if(Math.random()<pI*coachMod(df.team,'int'))return pickOff(df,'first');   /* Turnover Specialist (04c) */return breakup(df,userSwat?'Swatted away!':'Broken up',.3);
   }
   const contested=!!df&&dd<dR+.45&&pl.sep<1.7;pl.contested=contested;
   if(contested){const edge=((df.pl.cov+df.pl.cat)-(rec.pl.cat+rec.pl.str))/2;
