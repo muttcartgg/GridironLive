@@ -58,7 +58,9 @@ function buildSchedule(L){
       ok=(a,b)=>dv[a]!==dv[b]&&!met(a,b)}
     const need={};for(const id of ids)need[id]=Math.max(0,Math.min(m-1,(c.cg||0)-((c.less||[]).includes(id)?1:0))-lg[id]);
     pairUp(ids,need,ok,null,addL,drop);
-    if(c.flex){const fl=shuffle(ids.filter(id=>!games.some(g=>g.fix&&!g.dead&&(g.h===id||g.a===id))));for(let k=0;k+1<fl.length;k+=2)add(fl[k],fl[k+1],{fix:true,tag:c.name+' Flex Week'})}});
+    /* flex week: a rematch, so the league meeting goes early in the season and the flex game is at the other stadium */
+    if(c.flex){const fl=shuffle(ids.filter(id=>!games.some(g=>g.fix&&!g.dead&&(g.h===id||g.a===id))));
+      for(let k=0;k+1<fl.length;k+=2){const [a,b]=[fl[k],fl[k+1]],x=games.find(g=>g.lg&&!g.dead&&(g.h===a||g.a===a)&&(g.h===b||g.a===b));if(x)x.early=true;add(a,b,{fix:true,tag:c.name+' Flex Week',rm:x})}}});
   /* an FCS opponent for most FBS teams (an FCS team plays at most two FBS teams; the Ivy League doesn't) */
   const pool=TT.filter(t=>fcs(t)&&maxG(t)>=11),fbsG={};
   for(const t of shuffle(TT.filter(t=>!fcs(t)))){if(deg[t.id]>=12||isND(L,t)||Math.random()>=(FCS_OPP[cf(t).name]||.7))continue;
@@ -67,8 +69,9 @@ function buildSchedule(L){
   /* non-conference games until every FBS team has 12 (Notre Dame mostly plays Power 4 teams) */
   const fbs=TT.filter(t=>!fcs(t)).map(t=>t.id),nd={};for(const id of fbs)nd[id]=Math.max(0,12-deg[id]);
   pairUp(fbs,nd,(a,b)=>!met(a,b)&&(TT[a].conf!==TT[b].conf||ind(TT[a])),(a,b)=>{const x=TT[a],y=TT[b];return (tier(x)===tier(y)?.6:0)+(isND(L,x)||isND(L,y)?(Math.min(tier(x),tier(y))===2?1.5:-1):0)},(a,b)=>add(a,b,{}),drop);
-  for(const a of fbs)for(let k=0;nd[a]>0&&k<12;k++){const c=pool.filter(f=>deg[f.id]<maxG(f)&&!met(a,f.id));
-    if(c.length){add(a,pick(c).id,{});nd[a]--;continue}
+  /* leftovers: an FCS team (one with no FBS game first), else a non-league game with a league rival that still needs one */
+  for(const a of fbs)for(let k=0;nd[a]>0&&k<12;k++){const c=pool.filter(f=>deg[f.id]<maxG(f)&&!met(a,f.id)),c1=c.filter(f=>!fbsG[f.id]);
+    if(c.length){const f=pick(c1.length?c1:c);add(a,f.id,{});fbsG[f.id]=(fbsG[f.id]||0)+1;nd[a]--;continue}
     const o=fbs.filter(b=>b!==a&&nd[b]>0&&!met(a,b));if(!o.length)break;const b=pick(o);add(a,b,{});nd[a]--;nd[b]--}
   /* FCS non-conference games: 12 where the calendar allows, at least 11 (Ivy League 10) */
   const fc=TT.filter(fcs).map(t=>t.id),nf={};for(const id of fc)nf[id]=Math.max(0,maxG(TT[id])-deg[id]);
@@ -80,13 +83,14 @@ function buildSchedule(L){
     if(tx!==ty&&!g.fix&&Math.random()<(Math.min(tx,ty)===0?1:.85))h=tx>ty?g.h:g.a;
     else h=home[g.h]!==home[g.a]?(home[g.h]<home[g.a]?g.h:g.a):pick([g.h,g.a]);
     if(h!==g.h){g.a=g.h;g.h=h}home[h]++}
+  for(const g of gs)if(g.rm&&g.rm.h===g.h){g.h=g.a;g.a=g.rm.h}
   /* weeks: Rivalry Week fixed, non-conference games take the earliest open week, league games the latest */
   const R=13,up=[...Array(R).keys()],down=up.slice().reverse();let left=[];
   for(let at=0;at<12;at++){
     const S=Array.from({length:n},()=>new Array(R).fill(null)),put=(g,w)=>{g.w=w;S[g.h][w]=S[g.a][w]=g},lift=g=>{S[g.h][g.w]=S[g.a][g.w]=null;g.w=-1};
     for(const g of gs){g.w=-1;if(g.fix)put(g,R-1)}
     const q=shuffle(gs.filter(g=>!g.fix&&!g.lg)).concat(shuffle(gs.filter(g=>!g.fix&&g.lg)));
-    for(let step=0;q.length&&step<30000;step++){const g=q.shift(),wk=g.lg?down:up;
+    for(let step=0;q.length&&step<30000;step++){const g=q.shift(),wk=g.lg&&!g.early?down:up;
       const w=wk.find(k=>!S[g.h][k]&&!S[g.a][k]);if(w!=null){put(g,w);continue}
       if(kempe(S,g,g.h,g.a,R,put,lift)||kempe(S,g,g.a,g.h,R,put,lift))continue;
       const fv=up.filter(k=>!S[g.a][k]&&S[g.h][k]&&!S[g.h][k].fix);if(!fv.length){q.push(g);continue}
@@ -306,7 +310,8 @@ function confStandings(L,c,sub){
    neutral site, or at the top seed's stadium (American, Pac-12, Mountain West, C-USA, Sun Belt, SWAC) */
 function ccgGame(L,i){const c=L.confs[i],s=confStandings(L,i);if(s.length<2)return null;let [a,b]=s;
   if(c.dv&&c.dv.length===2){const w=c.dv.map(d=>confStandings(L,i,s.filter(t=>d.ids.includes(t.id)))[0]);if(w[0]&&w[1])[a,b]=s.indexOf(w[0])<s.indexOf(w[1])?w:[w[1],w[0]]}
-  return postGame(a.id,b.id,{tag:c.name+' Championship',ccg:true,conf:i,neutral:!!c.site,site:c.site||'',date:L.kind==='ncaa'?'Dec 4–5':'',wx:c.site?'Clear':weatherFor(12)})}
+  const site=c.site!=null?c.site:L.kind==='ncaa'&&typeof NCAA!=='undefined'?(NCAA.find(x=>x.name===c.name)||{}).site||'':'';   /* a save from before 2026 formats */
+  return postGame(a.id,b.id,{tag:c.name+' Championship',ccg:true,conf:i,neutral:!!site,site,date:L.kind==='ncaa'?'Dec 4–5':'',wx:site?'Clear':weatherFor(12)})}
 
 /* ---------- postseason: title games, 12-team CFP, bowls, 24-team FCS playoff, Celebration Bowl ---------- */
 /* 12-team CFP field (2026 format) from the final CFP rankings (the AP poll if they don't exist): each Power 4 champion and the
@@ -341,10 +346,10 @@ const MOVING_UP=['NDSU','SAC'];
 function pickBowls(L,taken){
   const TS=L.teams,ord=L.rank.filter(id=>!isFCS(TS[id])&&!taken.has(id)),pos={};ord.forEach((id,i)=>pos[id]=i);
   const reg=[];for(const w of L.weeks)if(w.kind==='reg')reg.push(...w.games);
-  const fbsW=id=>reg.filter(g=>g.hs!=null&&winner(g)===id&&!isFCS(TS[loser(g)])).length;
+  const fbsW=id=>reg.filter(g=>g.hs!=null&&winner(g)===id&&!isFCS(TS[loser(g)])).length,ew=id=>Math.min(reg.filter(g=>g.hs!=null&&winner(g)===id).length,fbsW(id)+1);   /* regular-season wins, one FCS win counts */
   const lineup=L.kind==='ncaa'?BOWLS26:BOWLS.map(n=>[n,'','','*','*',3]);
-  let el=ord.filter(id=>{const t=TS[id];return t.rec.w>=6&&(!MOVING_UP.includes(t.abbr)||fbsW(id)>=5)});
-  if(el.length<lineup.length*2)el=el.concat(ord.filter(id=>TS[id].rec.w===5&&!el.includes(id)&&!MOVING_UP.includes(TS[id].abbr)));
+  let el=ord.filter(id=>ew(id)>=6&&(!MOVING_UP.includes(TS[id].abbr)||fbsW(id)>=5));
+  if(el.length<lineup.length*2)el=el.concat(ord.filter(id=>ew(id)===5&&!el.includes(id)&&!MOVING_UP.includes(TS[id].abbr)));
   el=el.slice(0,lineup.length*2);if(el.length%2)el.pop();
   const cn=id=>isND(L,TS[id])?'ACC':confName(TS[id].conf,L),fits=(id,tie)=>tie==='*'||tie.split('/').includes(cn(id));
   const bowls=lineup.map((b,i)=>({b,i})).sort((x,y)=>x.b[5]-y.b[5]||x.i-y.i).slice(0,el.length/2),left=new Set(el),out=[];
@@ -353,9 +358,11 @@ function pickBowls(L,taken){
     const good=pool.filter(id=>vs==null||(cn(id)!==cn(vs)&&!seen.has(id)));let c=good.filter(id=>fits(id,tie));if(c.length)return c[0];
     const dem={},av={};for(let k=bi+1;k<bowls.length;k++)for(const t of [bowls[k].b[3],bowls[k].b[4]])if(t!=='*')for(const x of t.split('/'))dem[x]=(dem[x]||0)+1;
     for(const id of left)av[cn(id)]=(av[cn(id)]||0)+1;c=good.length?good:pool;const sp=c.filter(id=>av[cn(id)]>(dem[cn(id)]||0));return (sp.length?sp:c)[0]};
-  bowls.forEach(({b,i},bi)=>{if(left.size<2)return;const a=side(b[3],bi,null);left.delete(a);const h=side(b[4],bi,a);left.delete(h);
-    const [x,y]=pos[a]<pos[h]?[a,h]:[h,a];out.push(postGame(x,y,{bowl:true,tag:b[0],date:b[1],site:b[2],bi:i}))});
-  return out.sort((x,y)=>x.bi-y.bi);
+  bowls.forEach(({b,i},bi)=>{if(left.size<2)return;const a=side(b[3],bi,null);left.delete(a);const h=side(b[4],bi,a);left.delete(h);out.push({b,i,t:[a,h]})});
+  /* the last picks can be left with a same-conference pair or a rematch: swap a team with another bowl to fix it */
+  const pk=new Set(reg.map(g=>Math.min(g.h,g.a)*8192+Math.max(g.h,g.a))),bad=(x,y)=>cn(x)===cn(y)||pk.has(Math.min(x,y)*8192+Math.max(x,y));
+  for(const P of out)if(bad(...P.t))for(const Q of out){if(Q===P)continue;const k=[0,1].find(k=>!bad(P.t[0],Q.t[k])&&!bad(Q.t[1-k],P.t[1]));if(k!=null){[P.t[1],Q.t[k]]=[Q.t[k],P.t[1]];break}}
+  return out.map(({b,i,t:[a,h]})=>{const [x,y]=pos[a]<pos[h]?[a,h]:[h,a];return postGame(x,y,{bowl:true,tag:b[0],date:b[1],site:b[2],bi:i})}).sort((x,y)=>x.bi-y.bi);
 }
 function buildPost(L){
   const k=L.week-L.R,cs=L.confs.map((c,i)=>[c,i]),games=[],nc=L.kind==='ncaa',F=nc?FCS26:{};

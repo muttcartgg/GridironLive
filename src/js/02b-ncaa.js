@@ -1,7 +1,8 @@
 /* =========================================================
    02b · NCAA Division I: every FBS and FCS program (2026 alignment)
    Format per school: School|Mascot|ABBR|primary|secondary|strength
-   Strength (1.0–5.0) reflects recent real results and sets roster quality and prestige.
+   Strength (1.0–5.0) reflects recent real results (updated to the 2026 AP poll through Week 9 and the FCS playoff picture,
+   late October 2026) and sets roster quality and prestige.
    Badges use text abbreviations, not official logos. Edit anything with a team pack.
    ========================================================= */
 const NCAA=[
@@ -290,7 +291,7 @@ function genNCAALeague(name){
 function syncNCAAConfs(L){
   const by={};for(const t of L.teams)by[t.abbr]=t;const ci={};L.confs.forEach((c,i)=>ci[c.name]=i);
   NCAA.forEach(c=>{const i=ci[c.name];if(i==null)return;const k=L.confs[i];
-    for(const line of c.t.split('\n')){const t=by[line.split('|')[2]];if(t&&t.conf!==i){t.conf=i;t.div=c.div}}
+    for(const line of c.t.split('\n')){const [sc,,ab]=line.split('|'),t=by[ab];if(t&&t.city===sc&&t.conf!==i){t.conf=i;t.div=c.div}}
     const ids=s=>(s||'').split(' ').map(a=>by[a]).filter(t=>t&&t.conf===i).map(t=>t.id);
     Object.assign(k,{cg:c.cg,ccg:!!c.ccg,less:ids(c.less),flex:!!c.flex,games:c.games||0,site:c.site||'',dv:c.dv?Object.entries(c.dv).map(([n,s])=>({n,ids:ids(s)})):null});
     if(k.dv)for(const t of L.teams)if(t.conf===i&&!k.dv.some(d=>d.ids.includes(t.id)))k.dv.reduce((a,b)=>b.ids.length<a.ids.length?b:a).ids.push(t.id)});
