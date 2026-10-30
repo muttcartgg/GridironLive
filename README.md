@@ -9,6 +9,15 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7 (part 12): playbook and play calling
+
+- 112 plays in 12 formations (Shotgun, Pistol, I-Form, Singleback, Empty, Trips, Bunch, Flexbone, Wildcat, Jumbo and more): RPOs, zone read, triple option and midline, QB power and counter, zone, duo, power, counter, trap, toss, jet sweep, speed option, screens, play-action shots, quick game, dropback concepts, goal line, two-minute plays, Hail Mary and trick plays. Option and RPO reads are real: the QB gives, keeps, pulls or throws based on the read defender. Navy, Army and Air Force run option-heavy offenses.
+- New play-call sheet: category tabs, formation chips, route-art cards, three Coach's picks with a reason, no-huddle; only the play list scrolls.
+- Snap bar: Change · Adjust · SNAP. Adjust holds audibles from the same formation, flip, motion, a hard count (can draw the CPU offside), slide protection and hot routes.
+- Defense: 6 fronts × 13 coverages and blitzes, plus a Coach's call.
+- Smarter CPU: situational calls, team identity, a real two-minute drill, clock-killing and kneels, 4th-down and two-point decisions by the numbers, and starters resting in blowouts.
+- Mismatches look real (a strong team beats a weak one like 45–7, not 63–0); even games: about 4.7 yards per carry, 60–65% completions.
+
 ## Version 7 (part 11): 2026 rules, clock and penalties
 
 - Penalties are called during plays: pre-snap fouls (false start, offside, encroachment, neutral zone, delay of game, illegal formation, illegal motion, too many men) stop the play; live fouls (holding, pass interference — offensive is 10 yards under the 2026 rule — grounding, illegal forward pass, ineligible downfield, roughing the passer, targeting, face mask, late hits, unsportsmanlike conduct, block in the back, kick-catch interference, running into or roughing the kicker) drop the official's flag at the spot and are enforced after the whistle. You choose accept or decline when declining could help you; offsetting fouls replay the down; a penalty on the last play of a half gives an untimed down.
