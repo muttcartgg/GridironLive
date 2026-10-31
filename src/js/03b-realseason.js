@@ -12,7 +12,8 @@ const REAL_KEY='gl.packSeason';
 const realSchedOK=s=>!!(s&&typeof s==='object'&&Array.isArray(s.games)&&s.games.length>0&&s.through>=0);
 /* the small summary packSave keeps beside the saved pack: {season,through,n} (null when the saved pack has no season data) */
 function realSeasonSummary(){try{if(!KV.get(PACK_KEY))return null;const v=KV.get(REAL_KEY);if(!v)return null;const j=JSON.parse(v);return j&&j.n>0?j:null}catch(e){return null}}
-function realSeasonNote(s){s=s||realSeasonSummary();return s?`Start from the real ${s.season||2026} season (week ${Math.min((s.through|0)+1,13)})`:''}
+const realStartWeek=s=>(s.through|0)>=13?'Championship Week':'week '+((s.through|0)+1);
+function realSeasonNote(s){s=s||realSeasonSummary();return s?`Start from the real ${s.season||2026} season (${realStartWeek(s)})`:''}
 
 /* L: a fresh NCAA league with the pack applied and the user's team set (startDynasty). pk: the pack (default: the saved one) */
 function realSeasonStart(L,pk){
@@ -33,7 +34,7 @@ function realSeasonStart(L,pk){
     const H=TT[h],A=TT[a],rival=H.rival===a&&A.rival===h,tag=typeof r[7]==='string'&&r[7]?r[7].slice(0,44):null;
     const g={h,a,hs:null,as:null,wx:done?'Clear':weatherFor(Math.min(w,R-1)),slot:pick(['Noon','Afternoon','Afternoon','Primetime']),tag:rival?(H.trophy||A.trophy||tag):tag,rival};
     if(fl&1)g.neutral=true;
-    if(H.conf===A.conf&&!isInd(L,H)&&!(fl&2))g.nc=true;   /* same league in the game but not a league game (Army–Navy) */
+    if(H.conf===A.conf&&!isInd(L,H)&&(!(fl&2)||NC_RIVAL.has(H.abbr+'|'+A.abbr)))g.nc=true;   /* same league in the game but not a league game (Army–Navy never counts) */
     if(done)g.pre={hs,as};
     if(w>=R){late.push(g);continue}
     /* a future week where one of them already plays (a moved game): the first week ahead both have open */

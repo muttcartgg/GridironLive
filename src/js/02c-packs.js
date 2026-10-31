@@ -184,9 +184,9 @@ function packSetupHTML(st){
 /* the real-season option: only with a saved pack that carries season data, applied to this NCAA setup league */
 const realSetupOn=st=>!!(st&&st.league==='ncaa'&&packSavedOn()&&st.L&&st.L.pack&&realSeasonSummary());
 function realSetupHTML(st){
-  if(!realSetupOn(st))return '';const s=realSeasonSummary(),wk=Math.min((s.through|0)+1,13);
-  return `<div class="setrow"><span class="eyebrow">Season</span><span class="seg" id="realSeg">${[['0','New schedule'],['1',`Real ${s.season||2026} · week ${wk}`]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${!!st.real===(v==='1')}">${l}</button>`).join('')}</span></div>
-    ${st.real?`<p class="note">${esc(realSeasonNote(s))}: the real schedule, with results, standings and polls through week ${s.through}. Your season picks up in week ${wk} on the real remaining schedule, then title games, bowls and the Playoff.</p>`:''}`;
+  if(!realSetupOn(st))return '';const s=realSeasonSummary(),wk=realStartWeek(s);
+  return `<div class="setrow"><span class="eyebrow">Season</span><span class="seg" id="realSeg">${[['0','New schedule'],['1',`Real ${s.season||2026} · ${wk}`]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${!!st.real===(v==='1')}">${l}</button>`).join('')}</span></div>
+    ${st.real?`<p class="note">${esc(realSeasonNote(s))}: the real schedule, with results, standings and polls through week ${s.through}. Your season picks up in ${wk} on the real remaining schedule, then title games, bowls and the Playoff.</p>`:''}`;
 }
 function packSetupBind(st){
   document.querySelectorAll('#realSeg button').forEach(b=>b.onclick=()=>{st.real=b.dataset.v==='1';renderSetupKeep()});
