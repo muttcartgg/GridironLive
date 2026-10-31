@@ -81,7 +81,7 @@ function showSlots(){
   const m=Saves.meta();$('#setup').classList.add('title');
   const card=n=>{const s=m.slots[n];
     if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="sl-et"><span class="h2">New dynasty</span><span class="note">Slot ${n} · empty</span></span></button>`;
-    const t={abbr:s.abbr,c1:s.c1,c2:s.c2,logo:s.logo},wk=/^Week (\d+)$/.exec(s.label||''),bak=KV.get('gl3.bak'+n);
+    const t={abbr:s.abbr,c1:s.c1,c2:s.c2,logo:s.logo},wk=/^Week (\d+)$/.exec(s.label||''),bak=KV.has('gl3.bak'+n);
     return `<div class="slot full" style="--c1:${s.c1};--c2:${s.c2};--d:${deepC(t)}">
       <div class="sl-head"><span class="sl-wm" aria-hidden="true">${esc(s.abbr)}</span>${badge(t,'lg')}<div class="sl-id"><small>Slot ${n}${s.live?' · <i class="sl-live">Game in progress</i>':''}</small><b>${esc(s.team)}</b><span>${esc(s.coach)} · ${esc(s.name)}</span></div></div>
       <div class="sl-stats"><div><em>Record</em><b>${esc(s.rec)}</b></div><div><em>Season</em><b>${s.season}</b></div><div><em>Week</em><b class="${wk?'':'sm'}">${esc(wk?wk[1]:s.label||'—')}</b></div><div><em>Titles</em><b>${s.titles||0}</b></div></div>
@@ -97,13 +97,16 @@ function showSlots(){
     <div class="slots">${SLOTS.map(card).join('')}</div>
     <div class="grid2 ttl-more">
       <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">Any two programs, one game, nothing saved.</p></div><button class="btn" id="quickPlay">Play</button></div>
-      <div class="card ttl-act"><span class="ta-ic">${ICO.code}</span><div><div class="h2">Have a save code?</div><p class="note">Restore a dynasty from Settings › Export save.</p></div><button class="btn ghost" id="importCode">Import</button></div></div>`;
+      <div class="card ttl-act"><span class="ta-ic">${ICO.code}</span><div><div class="h2">Restore a dynasty</div><p class="note">From a backup file or a save code.</p></div><span style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost sm" id="restoreFile">File</button><button class="btn ghost sm" id="importCode">Code</button></span></div></div>`;
+  on('restoreFile',()=>openRestoreFile(showSlots));
   on('quickPlay',()=>{ac();openQuickPlay()});
   on('whatsNew',()=>{openModal(`<div class="eyebrow">Gridiron Live 7</div><div class="h2">What’s new</div><ul class="wn">${WHATS_NEW.map(([h,d])=>`<li><b>${h}</b><span>${d}</span></li>`).join('')}</ul><button class="btn light wide" id="wnX">Let’s play</button>`);on('wnX',closeModal)});
   for(const n of SLOTS){
-    on('slotNew-'+n,()=>showSetup(n));
-    on('slotBak-'+n,()=>{openModal(`<div class="h2">Restore the backup?</div><p class="note">Slot ${n} goes back to the version saved ${timeAgo(+KV.get('gl3.bakt'+n))}. Anything after that is lost.</p><div class="btns"><button class="btn" id="bakYes">Restore</button><button class="btn ghost" id="bakNo">Cancel</button></div>`);on('bakNo',closeModal);on('bakYes',()=>{closeModal();toast(restoreBackup(n)?'Backup restored':'Backup could not be read');showSlots()})});
-    on('slotGo-'+n,()=>{flushSave();const L=Saves.load(n);if(!L){toast('That save could not be opened');return}LG=L;SLOT=n;bumpUID(LG);muted=!!LG.settings.muted;applyStyle();showHub('home')});
+    on('slotNew-'+n,async()=>{await KV.need(typeof PACK_KEY!=='undefined'?[PACK_KEY]:[]);if(S.phase==='menu'&&!LG)showSetup(n)});
+    on('slotBak-'+n,()=>{openModal(`<div class="h2">Restore the backup?</div><p class="note">Slot ${n} goes back to the version saved ${timeAgo(+KV.get('gl3.bakt'+n))}. Anything after that is lost.</p><div class="btns"><button class="btn" id="bakYes">Restore</button><button class="btn ghost" id="bakNo">Cancel</button></div>`);on('bakNo',closeModal);on('bakYes',async()=>{closeModal();await KV.need(['gl3.bak'+n,'gl3.slot'+n]);toast(restoreBackup(n)?'Backup restored':'Backup could not be read');showSlots()})});
+    /* saves the shell did not inject at launch arrive on demand: a brief loading state on the button */
+    on('slotGo-'+n,async()=>{flushSave();const btn=document.getElementById('slotGo-'+n),wait=Saves.keys(n).some(k=>!KV.ready(k));if(wait&&btn){btn.disabled=true;btn.textContent='Loading…'}
+      const L=await Saves.loadAsync(n);if(btn){btn.disabled=false;btn.textContent=Saves.meta().slots[n]&&Saves.meta().slots[n].live?'Resume':'Continue'}if(LG||S.phase!=='menu')return;if(!L){toast('That save could not be opened');return}LG=L;SLOT=n;bumpUID(LG);muted=!!LG.settings.muted;applyStyle();showHub('home')});
     on('slotDel-'+n,()=>{$('#slotConf-'+n).hidden=false});on('slotNo-'+n,()=>{$('#slotConf-'+n).hidden=true});on('slotYes-'+n,()=>{Saves.del(n);showSlots()});
   }
   on('importCode',()=>{
@@ -116,7 +119,8 @@ function showSlots(){
       $('#codeTo').innerHTML=s?`<b style="color:#FF8A96">Replaces slot ${v}:</b> ${esc(s.team)} · ${esc(s.coach)} · ${esc(s.name)}`:`Slot ${v} is empty.`};
     document.querySelectorAll('#codeSlot button').forEach(b=>b.onclick=()=>pickSlot(+b.dataset.v));pickSlot(slot);
     on('codeX',closeModal);
-    on('codeGo',()=>{try{const L=Saves.importCode($('#codeIn').value);if(!L)throw 0;Saves.save(slot,L);closeModal();showSlots();toast('Save imported')}catch(e){$('#codeErr').textContent='That code could not be read. Make sure you copied all of it.'}});
+    on('codeGo',async()=>{let L=null;try{L=Saves.importCode($('#codeIn').value);if(!L)throw 0}catch(e){$('#codeErr').textContent='That code could not be read. Make sure you copied all of it.';return}
+      await KV.need(Saves.keys(slot));Saves.save(slot,L);closeModal();showSlots();toast('Save imported')});
   });
   $('#setup').hidden=false;$('#setup .scroll').scrollTop=0;Stage.run();
 }
@@ -487,7 +491,8 @@ function hubSettings(){
     <div class="setrow"><span class="eyebrow">Opponent drives</span>${seg('setDef',[['ask','Ask each time'],['play','Play defense'],['sim','Sim them']],s.defMode||'ask')}</div>
     <div class="setrow"><span class="eyebrow">Default defender</span>${seg('setDP',[['LB0','Linebacker'],['S0','Safety'],['CB0','Cornerback'],['DL1','D-line']],s.defPlayer||'LB0')}</div>
     <div class="setrow"><span class="eyebrow">Play clock</span>${seg('setPC',[[25,'25 s'],[40,'40 s'],[90,'Relaxed']],s.pclock||25)}</div>
-    <div class="setrow"><span class="eyebrow">Camera zoom</span>${seg('setZ',[[.85,'Wide'],[1,'Normal'],[1.15,'Close']],s.zoom||1)}</div>
+    <div class="setrow"><span class="eyebrow">Camera zoom</span>${seg('setZ',[['auto','Auto'],[.85,'Wide'],[1,'Normal'],[1.15,'Close']],typeof s.zoom==='number'?s.zoom:'auto')}</div>
+    <p class="note" id="zoomNote">Auto fits your iPhone · <b>Optimized for ${esc(devLabel())}</b>. Players keep the same size on every phone and the view fits your screen, its notch or Dynamic Island and the score bug. Wide, Normal and Close adjust from that fit.</p>
     <div class="setrow"><span class="eyebrow">Coin toss</span>${seg('setCoin',[[1,'Call it'],[0,'Automatic']],s.coin===false?0:1)}</div>
     <div class="setrow"><span class="eyebrow">In-game injuries</span>${seg('setInj',[[1,'On'],[0,'Off']],s.injuries===false?0:1)}</div>
     <div class="setrow"><span class="eyebrow">Haptics</span>${seg('setHap',[[1,'On'],[0,'Off']],s.haptics===false?0:1)}</div>
@@ -527,6 +532,7 @@ function hubSettings(){
     <div class="setrow"><span class="eyebrow">Your program</span><button class="btn sm ghost" id="edit-${LG.user}">Edit name &amp; colors</button></div></div>
   <div class="card"><div class="h2">Saves</div><p class="note">Slot ${SLOT} · autosaves after every snap and every menu action.</p>
     <div class="field-row"><label for="dynRename">Dynasty name</label><input type="text" id="dynRename" maxlength="28" value="${esc(LG.name)}"></div>
+    <div class="btns"><button class="btn ghost" id="backupFiles">Back up to Files</button><button class="btn ghost" id="restoreFile2">Restore from file</button></div>
     <div class="btns"><button class="btn ghost" id="exportSave">Export save code</button><button class="btn ghost" id="toSlots">Switch save slot</button></div></div>
   <div class="card"><div class="h2">How to play</div><p class="note">
     <b>Play calling:</b> pick a play from the ${PLAYBOOK.length}-play book (category tabs, formation chips, or a Coach's pick), then tap SNAP. ADJUST holds audibles, flip, motion, a hard count, slide protection and hot routes.<br>
@@ -534,6 +540,7 @@ function hubSettings(){
     <b>Run:</b> put a finger down anywhere and drag: it's a floating joystick. Use JUKE, SPIN, TRUCK, HURDLE and DIVE. Jukes keep your speed. A quick flick also jukes or dives.<br>
     <b>Defense:</b> choose a coverage, then drag to move your player (gold ring). TACKLE dives at the ball carrier, or goes for the ball when it's in the air. SWITCH jumps to the defender nearest the ball. Before the snap you can tap any defender to control him.<br>
     <b>Kick:</b> tap once to lock the direction, then again to lock the power.<br>
+    <b>Controller:</b> pair an Xbox, PlayStation or MFi controller in iPhone Settings › Bluetooth. Left stick moves your runner or defender. A / ✕ snaps, selects and tackles (hurdle with the ball). B / ○ jukes (tilt the stick up or down to pick the side) or switches defenders, and backs out of menus. X / □ spins or toggles a bullet pass, Y / △ trucks or toggles a lob. As the passer, RB / LB pick a receiver (gold ring) and A throws to him; with nobody picked A throws to the open man, a flick of the right stick throws that way, and B scrambles. RB dives with the ball, LB pitches on an option. Start pauses. The d-pad moves through the play-call sheet and every menu (LB / RB switch play tabs).<br>
     <b>Clock:</b> college rules. The clock keeps running after in-bounds tackles and stops on incompletions, out of bounds, scores and changes of possession. Inside two minutes of each half it stops briefly on first downs. Use TIMEOUT before the snap.</p></div>`;
 }
 function bindHub(){
@@ -552,7 +559,7 @@ function bindHub(){
   const seg=(id,f)=>{const e=document.getElementById(id);if(!e)return;e.querySelectorAll('button').forEach(b=>b.onclick=()=>{f(b.dataset.v);saveNow();rerender()})};
   seg('setQ',v=>LG.settings.qlen=+v);seg('setD',v=>LG.settings.diff=+v);seg('setM',v=>{LG.settings.muted=v==='1';muted=LG.settings.muted});seg('setS',v=>{LG.settings.style=v;applyStyle()});
   const S2=(id,k,f)=>seg(id,v=>{LG.settings[k]=f?f(v):v});const B=v=>v==='1';
-  S2('setDef','defMode');S2('setDP','defPlayer');S2('setPC','pclock',v=>+v);S2('setZ','zoom',v=>+v);S2('setCel','celebrate',B);S2('setPre','pregame',B);S2('setHalf','halftime',B);S2('setTk','ticker',B);S2('setPkg','pkg');S2('setGfx','gfx',B);S2('setCoin','coin',B);S2('setInj','injuries',B);S2('setHap','haptics',B);S2('setTap','uiSounds',B);S2('setBig','bigText',B);S2('setCB','cb',B);
+  S2('setDef','defMode');S2('setDP','defPlayer');S2('setPC','pclock',v=>+v);S2('setZ','zoom',v=>v==='auto'?'auto':+v);S2('setCel','celebrate',B);S2('setPre','pregame',B);S2('setHalf','halftime',B);S2('setTk','ticker',B);S2('setPkg','pkg');S2('setGfx','gfx',B);S2('setCoin','coin',B);S2('setInj','injuries',B);S2('setHap','haptics',B);S2('setTap','uiSounds',B);S2('setBig','bigText',B);S2('setCB','cb',B);
   for(const k of ['acc','run','cov','tkl','inj'])seg('sl-'+k,v=>{LG.settings.sl=LG.settings.sl||{};LG.settings.sl[k]=+v});S2('setRp','replay');S2('setLow','lower',B);S2('setWP','wp',v=>v==='0'?false:v);S2('setDB','db',B);S2('setBug','bugPos');S2('setBS','bugSize');S2('setBA','hudAlpha',v=>+v);S2('setCr','crowd');S2('setSt','studentTheme');S2('setSide','sideline',B);S2('setPy','pyro',B);S2('setStar','stars',B);S2('setRt','routes',B);S2('setStk','stickUI',B);S2('setTurf','specialTurf',B);S2('setShk','shake',B);
   for(const [k] of (typeof AUD_EVENTS!=='undefined'?AUD_EVENTS:[])){const sel=document.getElementById('aud-'+k);if(sel)sel.onchange=()=>{LG.settings.audioMap=LG.settings.audioMap||{};LG.settings.audioMap[k]=sel.value;saveNow();ac();BC.sound(k)};
     const f=document.getElementById('audf-'+k);if(f)f.onchange=()=>{const file=f.files[0];if(!file)return;if(file.size>600000){toast('That clip is too big (600 KB max)');return}const rd=new FileReader();rd.onload=()=>{try{KV.set('gl.aud.'+k,rd.result);LG.settings.audioMap=LG.settings.audioMap||{};LG.settings.audioMap[k]='custom';saveNow();toast('Sound saved');rerender()}catch(e){toast('Could not store that clip')}};rd.readAsDataURL(file)}}
@@ -565,6 +572,8 @@ function bindHub(){
   on('exportSave',()=>{const code=Saves.exportCode(LG);openModal(`<div class="eyebrow">Export save</div><div class="h2">Your save code</div><p class="note">Copy this code and keep it somewhere safe. Paste it into Import save code on the start screen to restore this dynasty, even on another device.</p><textarea id="codeOut" readonly>${esc(code)}</textarea><div class="btns"><button class="btn light" id="codeCopy">Copy</button><button class="btn ghost" id="codeX">Done</button></div>`);
     on('codeX',closeModal);on('codeCopy',()=>{const ta=$('#codeOut');navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(ta.value).then(()=>toast('Copied'),()=>{ta.select();toast('Select all and copy')}):(ta.select(),toast('Select all and copy'))})});
   on('toSlots',()=>{saveNow(true);showSlots()});
+  on('backupFiles',()=>openBackupFiles());
+  on('restoreFile2',()=>{saveNow(true);openRestoreFile(()=>showSlots())});
   on('packExport',()=>{const pack={conferences:LG.confs.map(c=>c.name),teams:LG.teams.map(t=>({school:t.city,mascot:t.name,abbr:t.abbr,primary:t.c1,secondary:t.c2,prestige:t.prestige,stadium:t.stadium}))};openModal(`<div class="eyebrow">Team pack</div><div class="h2">Export</div><textarea readonly id="packOut">${esc(JSON.stringify(pack,null,1))}</textarea><div class="btns"><button class="btn light" id="packCopy">Copy</button><button class="btn ghost" id="packX">Done</button></div>`);on('packX',closeModal);on('packCopy',()=>{const ta=$('#packOut');ta.select();try{navigator.clipboard.writeText(ta.value).then(()=>toast('Copied'),()=>{})}catch(e){}})});
   on('packImport',()=>openPackImport(LG,()=>{saveNow();showHub();toast('Team pack applied')}));
   // offseason controls

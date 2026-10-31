@@ -40,29 +40,34 @@ function camDamp(k,tgt,st,dt){const v=k+'v',o=2/st,x=o*dt,e=1/(1+x+.48*x*x+.235*
 const CAM_M={l:4,r:7,t:4.5,b:3};   // framing margins in yards: behind the QB, beyond the target, far side (sprites stand up into it), near side
 const camPad=()=>[Math.max(0,50-topY),58];   // px the overlays cover when framing: scorebug strip on top, hint bar + ticker at the bottom
 const camBox=(b,x,y)=>{if(x<b[0])b[0]=x;if(x>b[1])b[1]=x;if(y<b[2])b[2]=y;if(y>b[3])b[3]=y;return b};
-/* cam.z that fits box b=[x0,x1,y0,y1] plus margins on this screen at the user's zoom; floor about 6 px per yard */
-function camFit(b){const s0=sc*((LG&&LG.settings&&LG.settings.zoom)||1),pd=camPad();
-  return Math.max(Math.min(W/(s0*(b[1]-b[0]+CAM_M.l+CAM_M.r)),Math.max(60,H-topY-pd[0]-pd[1])/(s0*VY*(b[3]-b[2]+CAM_M.t+CAM_M.b))),6.2/s0)}
+/* cam.z that fits box b=[x0,x1,y0,y1] plus margins on this screen at the user's zoom; floor about 6 px per yard, and in landscape
+   never wider than maxYd yards across (the short screen would otherwise back out to the whole field to fit both sidelines) */
+function camFit(b,maxYd){const s0=sc*zoomMul(),pd=camPad(),land=H<=W*1.2;
+  return Math.max(Math.min(W/(s0*(b[1]-b[0]+CAM_M.l+CAM_M.r)),Math.max(60,H-topY-pd[0]-pd[1])/(s0*VY*(b[3]-b[2]+CAM_M.t+CAM_M.b))),6.2/s0,land&&maxYd?W/(maxYd*s0):0)}
 /* camera centre on one axis so [c0,c1] fits a view of size v with margins m0/m1 (bias 0..1 leans toward c1's side being roomier);
    when it cannot fit (zoom still easing out, or at the floor) keep the anchor a inside its margin. Continuous in v. */
 function camPan(c0,c1,a,v,m0,m1,bias){const lo=c1+m1-v/2,hi=c0-m0+v/2;if(lo<=hi)return lo+(hi-lo)*bias;const w=c1>c0?clamp((a-c0)/(c1-c0),0,1):0;return hi+(lo-hi)*w}
 function updateCam(dt){
   dt=Math.min(dt,.05);const retro=LG&&LG.settings.style==='retro';
   let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
-  if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1}
+  if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1;
+    /* frame the formation: the QB, every eligible receiver and your defender stay in view on any phone (hot routes, reads) */
+    if(!retro&&OFF.length){box=[S.los,S.los,S.ballY,S.ballY];if(Q)camBox(box,Q.x,Q.y);for(const o of OFF)if(eligible(o))camBox(box,o.x,o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y);zst=.9}}
   if((S.phase==='live'||S.phase==='dead'||S.phase==='replay')&&ball){z=1;st=.42;const h=(play&&play.carrier)||Q;
     if(ball.state==='air'){const far=hyp(ball.tx-ball.fx,ball.ty-ball.fy),r=play&&play.intended;bx=ball.x;by=ball.y;z=clamp(1.04-.008*far,.8,.95);st=.36;zst=.5;
-      box=camBox([bx,bx,by,by],ball.tx,ball.ty);if(r&&r.side==='o')camBox(box,r.x,r.y);
+      box=camBox([bx,bx,by,by],ball.tx,ball.ty);if(r&&r.side==='o')camBox(box,r.x,r.y);if(!uOff()&&S.ctrl&&!(play&&play.st))camBox(box,S.ctrl.x,S.ctrl.y);
       zbox=camBox(box.slice(),lerp(ball.fx,ball.tx,.2),lerp(ball.fy,ball.ty,.2))}   // hold most of the release framing through the flight
     else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);bx=Q.x;by=Q.y;z=clamp(1.03-.007*d,.82,.97);st=.4;zst=.45;
       box=camBox([bx,bx,by,by],aim.x,aim.y);const [n,nd]=nearest(OFF,aim.x,aim.y,o=>eligible(o)&&!o.blocker);if(n&&nd<8)camBox(box,n.x,n.y)}
     else if(h){bx=h.x;by=h.y;
       if(play&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){let t=null,far=-1e9;
         for(const o of OFF)if(eligible(o)&&!o.blocker){const lx=o.x+clamp((o.vx||0)*.6,0,5);if(lx>far){far=lx;t=o}}
-        far=t?clamp(far,Q.x,Q.x+maxRange()):Q.x+12;z=clamp(1.07-.009*(far-Q.x),.86,.95);st=.5;zst=.6;box=camBox([bx,bx,by,by],far,t?t.y:by)}
-      else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.97:1;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.9;st=.32}}
+        far=t?clamp(far,Q.x,Q.x+maxRange()):Q.x+12;z=clamp(1.07-.009*(far-Q.x),.86,.95);st=.5;zst=.6;box=camBox([bx,bx,by,by],far,t?t.y:by);
+        for(const o of OFF)if(eligible(o)&&!o.blocker)camBox(box,Math.min(o.x,Q.x+maxRange()),o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y)}
+      else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.97:1;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.9;st=.32;
+        if(!retro&&!uOff()&&S.ctrl&&S.ctrl!==h&&!play.st&&S.phase==='live')box=camBox([fx,fx,fy,fy],S.ctrl.x,S.ctrl.y)}}   // your defender stays in the shot
     const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.07}
-  if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box));
+  if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box,S.phase==='presnap'?64:play&&play.type==='pass'&&!play.scramble?80:58));
   camDamp('z',z,zst,dt);
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY),ext=retro?0:7;
   const pd=box?camPad().map(v=>v/(s*VY)):[0,0];   // overlay pads in world yards (framing only)

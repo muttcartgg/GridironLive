@@ -81,6 +81,7 @@ function drawSideline(c,s,now,front){
     c.save();c.fillStyle=host.c2;c.beginPath();c.arc(mx,my-s*2.65,s*.42,0,7);c.fill();c.fillStyle=inkOn(host.c2);c.font=`900 ${s*.38}px -apple-system,system-ui,sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillText(host.abbr.slice(0,3),mx,my-s*2.62);c.restore()}
 }
 function drawStick(c){
+  padDraw(c);
   if(!stick||stick.key||stick.ox==null||LG.settings.stickUI===false)return;
   c.save();c.globalAlpha=.32;c.strokeStyle='#fff';c.lineWidth=2;c.beginPath();c.arc(stick.ox,stick.oy,70,0,7);c.stroke();c.globalAlpha=.55;c.fillStyle='#fff';c.beginPath();c.arc(stick.x,stick.y,22,0,7);c.fill();c.restore();
 }

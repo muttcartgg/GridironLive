@@ -4,8 +4,8 @@
    ========================================================= */
 const cv=$('#field'),ctx=cv.getContext('2d');
 let W=0,H=0,DPR=1,sc=12,topY=80,cam={x:45,y:CEN,z:1};
-const scE=()=>sc*cam.z*((LG&&LG.settings&&LG.settings.zoom)||1);
-const midY=()=>topY+(H-topY)/2;
+const scE=()=>sc*cam.z*zoomMul();
+const midY=()=>topY+(H-topY-SAFE.b*.6)/2;
 const X=x=>(x-cam.x)*scE()+W/2, Y=y=>(y-cam.y)*scE()*VY+midY();
 const toWorld=(sx,sy)=>[(sx-W/2)/scE()+cam.x,(sy-midY())/(scE()*VY)+cam.y];
 function resize(){
@@ -13,7 +13,8 @@ function resize(){
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+'px';cv.style.height=H+'px';
   const sb=$('#sb'),bottomBug=document.documentElement.dataset.bug==='bottom';
   topY=(sb.hidden||bottomBug?20:sb.getBoundingClientRect().bottom)+6;
-  const av=H-topY-(bottomBug&&!sb.hidden?70:0);sc=Math.min(W/30,Math.max(av/(60*VY),W/72));if(H>W*1.2&&!(LG&&LG.settings&&LG.settings.style==='retro'))sc=Math.min(W/24,av/((FW+10)*VY));
+  /* camera scale fitted to this phone (06a): consistent player size, enough field, clear of the notch / Dynamic Island and the HUD */
+  SAFE=safeInsets();const av=H-topY-(bottomBug&&!sb.hidden?70:0);sc=fitScale(av,!!(LG&&LG.settings&&LG.settings.style==='retro'));
   resizeRetro();
 }
 addEventListener('resize',resize);

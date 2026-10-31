@@ -276,3 +276,6 @@
 @keyframes bnFade{0%,100%{opacity:0;transform:none}10%,88%{opacity:1;transform:none}}
 .stv-card .vs b{font:800 italic 17px/1.1 var(--tv);text-transform:uppercase}.stv-card .vs .mid{font:800 italic 16px/1 var(--tv)}
 .stv-card .mbar{font:700 12px/1.2 var(--tv);letter-spacing:.05em;text-transform:uppercase;color:#D5DCE4}
+
+/* game controller focus ring (06b) */
+.padfocus{outline:3px solid #FFD23F!important;outline-offset:2px;box-shadow:0 0 0 6px rgba(255,210,63,.28)!important}

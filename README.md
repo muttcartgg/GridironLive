@@ -7,7 +7,14 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Stadium:** animated crowds that bounce, thin out in blowouts and wear student-section themes, cheerleaders, a mascot, the chain crew, coaches who react, fireworks at night, field storming, rivalry trophy presentations, turf wear, muddy uniforms, snow that builds up, afternoon games that turn into night, and signature turf colors.
 - **Your program:** all 265 Division I programs (138 FBS, 127 FCS) in their 25 conferences for 2026, with FBS and FCS Top 25 polls, conference title games, the 12-team CFP, a full bowl season, the 24-team FCS playoff and the Celebration Bowl. Also rivalry trophies, the Heisman race and awards, the transfer portal, NIL money, Signing Day, redshirts, early draft declarations, coordinators, facilities, XP, injuries, morale, front-office decisions, the coaching carousel, and school records.
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
-- **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
+- **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
+
+## Version 7.3
+
+- Camera fitted to your iPhone: the app reads the model (iPhone SE through the 17 series; unknown models by screen size) and its safe areas, then sizes the field so players stay the same size on every phone: about 32–40 yards across in landscape (more on bigger screens), sideline to sideline in portrait. The presnap shot frames the whole formation, the drop-back frames every receiver, and your defender stays in the shot. Settings › Camera zoom: Auto (default) or Wide / Normal / Close on top of the fit, with the detected model shown.
+- Back up to Files: Settings › Saves › Back up to Files saves this dynasty or all slots as a .json file (iCloud Drive, On My iPhone). Restore from file on the title screen or in Settings puts it in an empty slot or replaces one (the replaced dynasty is kept as that slot's backup).
+- Faster launch: only settings and the last-played dynasty load at startup; other slots, backups, custom sounds and roster packs load on demand or in the background.
+- Bluetooth controllers (Xbox, PlayStation, MFi): left stick moves, A snaps / selects / tackles, B jukes / switches, X spins / bullet, Y trucks / lob, RB / LB pick a receiver and A throws (or flick the right stick), Start pauses, and the d-pad moves a focus ring through the play-call sheet and menus. Full mapping in Settings › How to play.
 
 ## Version 7.2
 

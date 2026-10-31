@@ -126,7 +126,7 @@ function packLoadSaved(){
     return {format:'gridiron-live-pack',version:2,name:c.name,season:c.season,teams:c.teams.map(t=>({...t,roster:(t.r||[]).map(dec)})),players:c.players||[],schedule:c.schedule||null}}
   catch(e){console.error(e);return null}
 }
-const packSavedOn=()=>!!KV.get(PACK_KEY)&&KV.get(PACK_ON)!=='0';
+const packSavedOn=()=>KV.has(PACK_KEY)&&KV.get(PACK_ON)!=='0';
 /* new NCAA dynasties start from the saved pack when it is on */
 function packAutoApply(L){if(!L||L.kind!=='ncaa'||!packSavedOn())return false;const pk=packLoadSaved();if(!pk)return false;try{applyRosterPack(L,pk,{});return true}catch(e){console.error(e);return false}}
 
@@ -177,7 +177,7 @@ function openRosterExport(){
 }
 /* setup screen: the saved pack switch + the import button (rendered inside the League card) */
 function packSetupHTML(st){
-  const has=!!KV.get(PACK_KEY);
+  const has=KV.has(PACK_KEY);
   return `<div class="setrow"><span class="eyebrow">Real rosters &amp; logos</span><span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${has&&st.league==='ncaa'?`<span class="seg" id="packOnSeg">${[['1','On'],['0','Off']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${(KV.get(PACK_ON)!=='0')===(v==='1')}">${l}</button>`).join('')}</span>`:''}<button class="btn sm ghost" id="packImp">Import rosters &amp; logos</button></span></div>
     ${has&&st.league==='ncaa'&&packSavedOn()&&st.L.pack?`<p class="note">Using ${esc(st.L.pack.name)}: ${st.L.pack.teams} teams with imported rosters.</p>`:''}${realSetupHTML(st)}`;
 }
