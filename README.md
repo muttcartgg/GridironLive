@@ -9,6 +9,11 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
+## Version 7.2
+
+- Real player photos for imported rosters: headshots load from ESPN when you're online (links only, nothing is stored in the app) on the roster, player sheet, team pages, stat leaders, in-game player cards, studio shows and award cards; players without a photo, or offline, get a team-color avatar with their number. Settings › Rosters & data › Show real player photos.
+- Five dynasty slots instead of three. Importing a save code picks the first empty slot and warns before replacing one.
+
 ## Version 7.1 (polish)
 
 - "Sim the rest" plays out the remaining points as drives, so the box score, player and season stats, drive chart, play-by-play and linescore are complete (ties go to a simulated overtime).
