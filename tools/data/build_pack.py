@@ -426,8 +426,76 @@ HC_TRAITS = {'Kirby Smart': (5, 'Recruiter', 'Defensive Mastermind'), 'Ryan Day'
              'Collin Klein': (3, 'QB Whisperer', 'Run Game Architect'), 'Pat Fitzgerald': (3, 'Disciplinarian', 'Defensive Mastermind'), 'Greg Schiano': (3, 'Disciplinarian'),
              'Bronco Mendenhall': (4, 'Disciplinarian', 'Developer'), 'Manny Diaz': (3, 'Turnover Specialist', 'Defensive Mastermind'), 'Ken Niumatalolo': (4, 'Run Game Architect', 'Disciplinarian'),
              'Zach Kittley': (3, 'Air Raid', 'QB Whisperer'), 'Willie Fritz': (3, 'Run Game Architect'), 'Pat Narduzzi': (3, 'Defensive Mastermind'), 'Brent Key': (3, 'Motivator', 'Run Game Architect')}
-# coordinators verified for 2026 (team abbreviation as used in the game → role → (name, rating, traits, source))
-COORDS = {('ALA', 'dc'): ('Kane Wommack', 5, ('Turnover Specialist', 'Defensive Mastermind'), 'Alabama defensive coordinator since 2024; still in the role in Oct 2026 (Alabama coverage, Oct 2026)')}
+# coordinators verified for 2026 (team abbreviation as used in the game → role → (name, rating, traits, source)): the AP Top 25 of
+# Oct 25 2026 plus big brands. Sources: ESPN "Tracking all notable coordinator changes at Power 4 programs" (Feb 10 2026), FootballScoop
+# 2025-26 FBS OC and DC change tables (updated Feb 19 / Feb 27 2026), CBS Sports top coordinator hires (Jan 6 2026); a coordinator in
+# neither change table kept his 2025 job; in-season news checked through Oct 26 2026. Ratings and traits are game estimates.
+_CS = {'esp': 'ESPN P4 coordinator tracker, Feb 2026', 'fso': 'FootballScoop 2025-26 FBS OC changes, Feb 2026', 'fsd': 'FootballScoop 2025-26 FBS DC changes, Feb 2026',
+       'cbs': 'CBS Sports coordinator hires, Jan 2026', 'kept': 'in the job in 2025; no change in the ESPN/FootballScoop 2026 trackers',
+       'kept-esp': 'ESPN P4 coordinator tracker, Feb 2026: staff retained'}
+_CO = """ALA|oc|Ryan Grubb|4|Offensive Guru,Air Raid|kept
+ALA|dc|Kane Wommack|5|Turnover Specialist,Defensive Mastermind|kept
+MIA|oc|Shannon Dawson|4|Air Raid,QB Whisperer|kept-esp
+MIA|dc|Corey Hetherman|4|Pass Rush Guru,Defensive Mastermind|kept-esp
+OSU|oc|Arthur Smith|4|Run Game Architect,Offensive Guru|esp
+OSU|dc|Matt Patricia|5|Defensive Mastermind,Disciplinarian|kept
+UGA|oc|Mike Bobo|4|QB Whisperer,Developer|kept
+UGA|dc|Glenn Schumann|4|Defensive Mastermind,Recruiter|kept
+IU|oc|Mike Shanahan|4|Offensive Guru,QB Whisperer|kept-esp
+IU|dc|Bryant Haines|4|Turnover Specialist,Developer|kept-esp
+ND|oc|Mike Denbrock|4|Offensive Guru,QB Whisperer|kept
+ND|dc|Chris Ash|4|Defensive Mastermind,Disciplinarian|kept
+UTAH|oc|Kevin McGiven|3|QB Whisperer,Air Raid|esp
+UTAH|dc|Colton Swan|3|Defensive Mastermind,Developer|fsd
+UCLA|oc|Dean Kennedy|3|Offensive Guru|fso
+UCLA|dc|Colin Hitschler|4|Turnover Specialist,Defensive Mastermind|fsd
+BYU|oc|Aaron Roderick|4|QB Whisperer,Offensive Guru|kept
+BYU|dc|Kelly Poppinga|3|Pass Rush Guru,Special Teams Ace|esp
+UK|oc|Joe Sloan|3|QB Whisperer|cbs
+UK|dc|Jay Bateman|4|Defensive Mastermind,Turnover Specialist|fsd
+TEX|oc|Kyle Flood|3|Run Game Architect,Developer|kept
+TEX|dc|Will Muschamp|5|Defensive Mastermind,Recruiter|esp
+MISS|oc|John David Baker|3|Air Raid,Offensive Guru|esp
+TTU|oc|Mack Leftwich|4|Offensive Guru,Air Raid|kept-esp
+TTU|dc|Shiel Wood|4|Turnover Specialist,Pass Rush Guru|kept-esp
+LSU|oc|Charlie Weis Jr.|4|Offensive Guru,QB Whisperer|esp
+LSU|dc|Blake Baker|4|Defensive Mastermind,Recruiter|fsd
+TENN|oc|Joey Halzle|3|Offensive Guru,QB Whisperer|kept
+TENN|dc|Jim Knowles|5|Defensive Mastermind,Pass Rush Guru|esp
+UF|oc|Buster Faulkner|4|QB Whisperer,Offensive Guru|cbs
+UF|dc|Brad White|4|Pass Rush Guru,Developer|fsd
+HOU|oc|Slade Nagle|3|Run Game Architect|kept
+HOU|dc|Austin Armstrong|3|Pass Rush Guru,Recruiter|kept
+NW|oc|Chip Kelly|4|Offensive Guru,Run Game Architect|esp
+NW|dc|Tim McGarigle|3|Disciplinarian,Defensive Mastermind|kept
+ARIZ|oc|Seth Doege|3|Air Raid,QB Whisperer|kept
+ARIZ|dc|Danny Gonzales|3|Defensive Mastermind,Motivator|kept
+MIZ|oc|Chip Lindsey|3|Offensive Guru,QB Whisperer|fso
+MIZ|dc|Corey Batoon|4|Turnover Specialist,Defensive Mastermind|kept
+OKST|oc|Sean Brophy|3|Air Raid,QB Whisperer|fso
+OKST|dc|Skyler Cassity|3|Turnover Specialist|fsd
+WIS|oc|Jeff Grimes|3|Run Game Architect,Developer|kept
+WIS|dc|Mike Tressel|3|Defensive Mastermind,Disciplinarian|kept
+ORE|dc|Chris Hampton|3|Turnover Specialist,Developer|esp
+PSU|dc|D'Anton Lynn|4|Defensive Mastermind,Turnover Specialist|esp
+MICH|oc|Jason Beck|4|QB Whisperer,Run Game Architect|esp
+MICH|dc|Jay Hill|4|Defensive Mastermind,Disciplinarian|esp
+OU|oc|Ben Arbuckle|4|Air Raid,QB Whisperer|kept
+OU|dc|Zac Alley|4|Pass Rush Guru,Defensive Mastermind|kept
+TAMU|oc|Holmon Wiggins|3|Run Game Architect,Recruiter|esp
+TAMU|dc|Lyle Hemphill|3|Defensive Mastermind|esp
+USC|oc|Luke Huard|3|QB Whisperer|kept
+USC|dc|Gary Patterson|5|Defensive Mastermind,Disciplinarian|fsd
+CLEM|oc|Chad Morris|3|Offensive Guru,Air Raid|esp
+CLEM|dc|Tom Allen|4|Defensive Mastermind,Motivator|kept
+AUB|oc|Joel Gordon|3|Offensive Guru|fso
+AUB|dc|DJ Durkin|4|Defensive Mastermind,Pass Rush Guru|fsd"""
+COORDS = {}
+for _l in _CO.split('\n'):
+    _ab, _role, _nm, _r, _tr, _src = _l.split('|')
+    COORDS[(_ab, _role)] = (_nm, int(_r), tuple(_tr.split(',')), _CS[_src])
+# not verified for 2026 (left generated): SMU OC and DC (both TBA in Feb), Boise State and Wake Forest OC and DC, Ole Miss DC (TBA after
+# Patrick Toney left), Penn State OC, Oregon OC (Drew Mehringer fired Oct 26 2026)
 TRAIT_FALLBACK = ['Motivator', 'Developer', 'Recruiter', 'Offensive Guru', 'Defensive Mastermind', 'Disciplinarian', 'Clock Manager', 'Run Game Architect', 'Portal King', 'QB Whisperer']
 HC_ALIAS = {'hawaii rainbow warriors': "hawaii", 'louisiana monroe warhawks': 'ul monroe', 'florida international panthers': 'fiu', 'miami redhawks': 'miami oh',
             'san jose state spartans': 'san jose state', 'uconn huskies': 'uconn', 'umass minutemen': 'umass', 'nc state wolfpack': 'nc state'}
@@ -528,6 +596,65 @@ def rescale_kickers(kents):
         ent['ovr'] = p['ovr'] = ovr99(ovr(dict(ent, pos='K')))
         n += 1
     print('kickers rescaled:', n, 'of', len(kents))
+
+
+# ---- the real 2026 season (schedules/parquet/cfb_schedules_2026.parquet: every game with an FBS team, CFBD via cfbfastR-data) ----
+# schedule.games rows: [week, home, away, homePts|null, awayPts|null, flags (1 neutral site, 2 conference game, 4 final), 'MM-DD', tag]
+# home/away: the pack team's abbr (matched by ESPN id, then by name like the rosters), or '?Name' for a school not in the game.
+# through: the last week whose games are all final (the game starts a "real season" dynasty in the week after it).
+SLOT_NOTE = re.compile(r'^(FLEX|EARLY|AFTERNOON|NIGHT|LATE|Will be played|TBA|TBD)', re.I)
+
+
+def season_schedule(teams_out):
+    path = next((p for p in (os.path.join(DATA, 'schedules', 'parquet', 'cfb_schedules_2026.parquet'), os.path.join(EXTRA, 'cfb_schedules_2026.parquet')) if os.path.exists(p)), None)
+    if not path:
+        print('no 2026 schedule file: pack has no season data')
+        return None
+    df = pd.read_parquet(path)
+    df = df[df.season_type == 'regular'].sort_values(['week', 'start_date', 'game_id'])
+    by_e = {int(t['espnId']): t['abbr'] for t in teams_out if t.get('espnId')}
+    by_n = {}
+    for t in teams_out:
+        for k in (t.get('dataName'), t['school'], ALIAS.get(t['school'])):
+            if k:
+                by_n.setdefault(norm(k), t['abbr'])
+    unknown = set()
+
+    def key(i, name):
+        ab = (by_e.get(int(i)) if pd.notna(i) else None) or by_n.get(norm(name))
+        if not ab:
+            unknown.add(str(name))
+            return '?' + str(name)[:30]
+        return ab
+    through = 0
+    for w in sorted(df.week.unique()):
+        if w <= 13 and df[df.week == w].completed.all():
+            through = int(w)
+        else:
+            break
+    games, last = [], ''
+    for r in df.itertuples():
+        done = bool(r.completed) and pd.notna(r.home_points) and pd.notna(r.away_points)
+        note = r.notes if isinstance(r.notes, str) and not SLOT_NOTE.match(r.notes) else ''
+        if not note and r.neutral_site and isinstance(r.venue, str):
+            note = r.venue
+        games.append([int(r.week), key(r.home_id, r.home_team), key(r.away_id, r.away_team), int(r.home_points) if done else None, int(r.away_points) if done else None,
+                      (1 if r.neutral_site else 0) | (2 if r.conference_game else 0) | (4 if done else 0), str(r.start_date)[5:10], note.strip()[:44]])
+        if done:
+            last = max(last, str(r.start_date)[:10])
+    print(f'schedule: {len(games)} games, weeks {int(df.week.min())}-{int(df.week.max())}, final through week {through} ({sum(1 for g in games if g[5] & 4)} final, last {last}); '
+          f'not in the game: {sorted(unknown)}')
+    return {'season': 2026, 'through': through, 'weeks': 13, 'updated': last, 'source': 'CFBD schedule via cfbfastR-data (schedules/parquet/cfb_schedules_2026.parquet)', 'games': games}
+
+
+def record_check(sched, abbrs):
+    rec = {a: [0, 0] for a in abbrs}
+    for g in sched['games']:
+        if g[0] <= sched['through'] and g[5] & 4:
+            for a, pf, pa in ((g[1], g[3], g[4]), (g[2], g[4], g[3])):
+                if a in rec:
+                    rec[a][0 if pf > pa else 1] += 1
+    return ' '.join(f'{a} {w}-{l}' for a, (w, l) in rec.items())
 
 
 def main():
@@ -820,6 +947,11 @@ def main():
     pack = {'format': 'gridiron-live-pack', 'version': 2, 'season': 2026, 'name': 'College football 2026 rosters & logos',
             'notes': 'Rosters: ESPN via cfbfastR-data (2026 season). Ratings are game estimates from 2025+2026 production, class, size and program strength. Logos are links to the ESPN CDN.' + COACH_NOTE,
             'teams': teams_out, 'players': []}
+    sched = season_schedule(teams_out)
+    if sched:
+        pack['schedule'] = sched
+        pack['notes'] += f" Schedule: the real 2026 FBS schedule with results through week {sched['through']} (CFBD via cfbfastR-data, games through {sched['updated']})."
+        print('records through week', sched['through'], ':', record_check(sched, ['MIA', 'OSU', 'UGA', 'IU', 'ND', 'UTAH', 'UCLA', 'ALA', 'TEX']))
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, 'gridiron-live-2026-rosters.json')
     write_pack(path, pack)
