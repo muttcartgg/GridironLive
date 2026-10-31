@@ -7,7 +7,7 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Stadium:** animated crowds that bounce, thin out in blowouts and wear student-section themes, cheerleaders, a mascot, the chain crew, coaches who react, fireworks at night, field storming, rivalry trophy presentations, turf wear, muddy uniforms, snow that builds up, afternoon games that turn into night, and signature turf colors.
 - **Your program:** all 265 Division I programs (138 FBS, 127 FCS) in their 25 conferences for 2026, with FBS and FCS Top 25 polls, conference title games, the 12-team CFP, a full bowl season, the 24-team FCS playoff and the Celebration Bowl. Also rivalry trophies, the Heisman race and awards, the transfer portal, NIL money, Signing Day, redshirts, early draft declarations, coordinators, facilities, XP, injuries, morale, front-office decisions, the coaching carousel, and school records.
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
-- **Saves:** 3 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
+- **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, and save codes for backup.
 
 ## Version 7.1 (polish)
 

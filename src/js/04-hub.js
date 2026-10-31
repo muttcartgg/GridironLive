@@ -61,6 +61,8 @@ const Stage={raf:0,
 addEventListener('resize',()=>{const sc=$('#setup');if(sc&&!sc.hidden&&sc.classList.contains('title'))Stage.run()});
 
 const WHATS_NEW=[
+  ['Five dynasty slots','Run up to five dynasties side by side. Empty slots fold into one line on the title screen.'],
+  ['Real player photos','Imported players show their real headshot on the roster, player card, broadcast graphics and award cards (online; Settings › Rosters & data).'],
   ['112-play playbook','12 formations with real RPO and option reads: the QB gives, keeps, pulls or throws off the read defender.'],
   ['New play calling','Category tabs, formation chips, route art, three Coach’s picks, and a snap bar with audibles, motion, hard counts and hot routes.'],
   ['Smarter defense and CPU','6 fronts × 13 coverages and blitzes; the CPU calls by situation, runs a two-minute drill and goes for it by the numbers.'],
@@ -78,7 +80,7 @@ function showSlots(){
   hideAll();S.phase='menu';LG=null;SLOT=null;document.documentElement.dataset.style='modern';
   const m=Saves.meta();$('#setup').classList.add('title');
   const card=n=>{const s=m.slots[n];
-    if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="h2">New dynasty</span><span class="note">Slot ${n} · empty</span></button>`;
+    if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="sl-et"><span class="h2">New dynasty</span><span class="note">Slot ${n} · empty</span></span></button>`;
     const t={abbr:s.abbr,c1:s.c1,c2:s.c2,logo:s.logo},wk=/^Week (\d+)$/.exec(s.label||''),bak=KV.get('gl3.bak'+n);
     return `<div class="slot full" style="--c1:${s.c1};--c2:${s.c2};--d:${deepC(t)}">
       <div class="sl-head"><span class="sl-wm" aria-hidden="true">${esc(s.abbr)}</span>${badge(t,'lg')}<div class="sl-id"><small>Slot ${n}${s.live?' · <i class="sl-live">Game in progress</i>':''}</small><b>${esc(s.team)}</b><span>${esc(s.coach)} · ${esc(s.name)}</span></div></div>
@@ -91,7 +93,7 @@ function showSlots(){
       <h1 class="ttl-word" aria-label="Gridiron Live"><span class="g">Gridiron</span><span class="l"><i></i>Live</span></h1>
       <div class="ttl-sub"><span>265 programs</span><span>2026 season</span></div>
       <button class="ttl-new" id="whatsNew"><i></i>What’s new in version 7</button></header>
-    <div class="eyebrow ttl-h">Your dynasties</div>
+    <div class="eyebrow ttl-h">Your dynasties <span class="ttl-cnt">${SLOTS.filter(n=>m.slots[n]).length} of ${SLOTS.length} slots used</span></div>
     <div class="slots">${SLOTS.map(card).join('')}</div>
     <div class="grid2 ttl-more">
       <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">Any two programs, one game, nothing saved.</p></div><button class="btn" id="quickPlay">Play</button></div>
@@ -106,9 +108,13 @@ function showSlots(){
   }
   on('importCode',()=>{
     openModal(`<div class="eyebrow">Import save</div><div class="h2">Paste your save code</div><textarea id="codeIn" placeholder="GL3:…"></textarea>
-      <div class="setrow"><span class="eyebrow">Into slot</span><div class="seg" id="codeSlot">${SLOTS.map(n=>`<button data-v="${n}" aria-pressed="${n===1}">${n}${m.slots[n]?' (replace)':''}</button>`).join('')}</div></div>
-      <p class="note" id="codeErr"></p><div class="btns"><button class="btn light" id="codeGo">Import</button><button class="btn ghost" id="codeX">Cancel</button></div>`);
-    let slot=1;document.querySelectorAll('#codeSlot button').forEach(b=>b.onclick=()=>{slot=+b.dataset.v;document.querySelectorAll('#codeSlot button').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+      <div class="setrow"><span class="eyebrow">Into slot</span><div class="seg" id="codeSlot">${SLOTS.map(n=>`<button data-v="${n}" class="${m.slots[n]?'full':''}" aria-label="Slot ${n}${m.slots[n]?', in use':', empty'}">${n}</button>`).join('')}</div></div>
+      <p class="note" id="codeTo"></p><p class="note" id="codeErr"></p><div class="btns"><button class="btn light" id="codeGo">Import</button><button class="btn ghost" id="codeX">Cancel</button></div>`);
+    /* five slots: the first empty one is picked; an occupied slot says which dynasty the import replaces */
+    let slot=SLOTS.find(n=>!m.slots[n])||SLOTS[0];
+    const pickSlot=v=>{slot=v;document.querySelectorAll('#codeSlot button').forEach(x=>x.setAttribute('aria-pressed',+x.dataset.v===v));const s=m.slots[v];
+      $('#codeTo').innerHTML=s?`<b style="color:#FF8A96">Replaces slot ${v}:</b> ${esc(s.team)} · ${esc(s.coach)} · ${esc(s.name)}`:`Slot ${v} is empty.`};
+    document.querySelectorAll('#codeSlot button').forEach(b=>b.onclick=()=>pickSlot(+b.dataset.v));pickSlot(slot);
     on('codeX',closeModal);
     on('codeGo',()=>{try{const L=Saves.importCode($('#codeIn').value);if(!L)throw 0;Saves.save(slot,L);closeModal();showSlots();toast('Save imported')}catch(e){$('#codeErr').textContent='That code could not be read. Make sure you copied all of it.'}});
   });
@@ -273,7 +279,7 @@ function hubHome(){
   const [hsN,hsC]=hotSeat(sec),gp=u.rec.w+u.rec.l,pace=gp?Math.round(u.rec.w/gp*12):null;
   const ad=`<div class="card"><div class="eyebrow">Athletic director</div><div class="kv"><span>Expectation</span><b>${tgt}+ wins${pace!=null?` · on pace for ${pace}`:''}</b></div><div class="kv"><span>Hot seat</span><b class="${hsC==='hot'?'res-l':''}">${hsN}</b></div>${meterHTML(100-sec,hsC==='hot'?'var(--hot)':hsC==='warn'?'var(--warn)':'var(--ok)')}<div class="kv"><span>Contract</span><b>${LG.coach.yrs} yr${LG.coach.yrs===1?'':'s'} · ${money(LG.coach.sal)}/yr</b></div>
     <div class="kv"><span>Fan approval</span><b>${Math.round(LG.fan)}%</b></div>${meterHTML(LG.fan)}<div class="kv"><span>Locker room</span><b>${Math.round(LG.morale)}%</b></div>${meterHTML(LG.morale)}</div>`;
-  const heis=LG.heisman&&typeof heisCeremonyHTML==='function'?heisCeremonyHTML(LG.heisman):LG.heismanWatch&&LG.heismanWatch.length?`<div class="card"><div class="eyebrow">Heisman watch</div><div class="list">${LG.heismanWatch.map((h,i)=>`<div class="lrow"><span class="l"><span class="rank">${i+1}</span>${badge(T(h.team),'sm')}<span><b>${esc(h.name)}</b> <span class="note">${h.pos}</span><br><small class="note">${esc(h.line)}</small></span></span></div>`).join('')}</div></div>`:'';
+  const heis=LG.heisman&&typeof heisCeremonyHTML==='function'?heisCeremonyHTML(LG.heisman):LG.heismanWatch&&LG.heismanWatch.length?`<div class="card"><div class="eyebrow">Heisman watch</div><div class="list">${LG.heismanWatch.map((h,i)=>`<div class="lrow"><span class="l"><span class="rank">${i+1}</span>${badge(T(h.team),'sm')}${typeof awPh==='function'?awPh(h,36,''):''}<span><b>${esc(h.name)}</b> <span class="note">${h.pos}</span><br><small class="note">${esc(h.line)}</small></span></span></div>`).join('')}</div></div>`:'';
   const potw=LG.potw?`<div class="card"><div class="eyebrow">${confName(u.conf)} player of the week</div><div class="tname">${badge(T(LG.potw.team))}<span><b>${esc(LG.potw.name)}</b> · ${LG.potw.pos} · ${esc(T(LG.potw.team).city)}</span></div></div>`:'';
   const lw=LG.lastWeek?`<div class="card"><div class="eyebrow">Around the league · ${esc(LG.lastWeek.label)}</div><div class="list">${LG.lastWeek.games.filter(x=>x.h===LG.user||x.a===LG.user||(x.tag&&!/First Round|Second Round/.test(x.tag))||x.upset||((x.rh||x.ra)&&T(x.h).div===u.div)||T(x.h).conf===u.conf).sort((a,b)=>((b.h===LG.user||b.a===LG.user)-(a.h===LG.user||a.a===LG.user))||(!!(b.rh||b.ra)-!!(a.rh||a.ra))).slice(0,14).map(x=>{const hw=x.hs>x.as;return `<div class="lrow"><span class="l">${tcell(T(x.h),(x.rh?'#'+x.rh+' ':'')+T(x.h).city)}<b class="${hw?'res-w':''}">${x.hs}</b><span class="note">–</span><b class="${!hw?'res-w':''}">${x.as}</b>${tcell(T(x.a),(x.ra?'#'+x.ra+' ':'')+T(x.a).city)}</span>${x.upset?'<span class="tag hot">Upset</span>':x.tag?`<span class="note">${esc(x.tag)}</span>`:''}</div>`}).join('')}</div></div>`:'';
   const news=LG.news.length?`<div class="card news"><div class="eyebrow">Top news</div><div class="list">${LG.news.slice(0,4).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${n.good?'<span class="tag ok">Program</span> ':''}${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
@@ -403,7 +409,7 @@ function hubTeam(){
     <p class="note">Tap a player to upgrade ratings with coaching credits, set the depth chart, redshirt, or name captains. ${inj.length?`<b style="color:var(--hot)">${inj.length} unavailable this week.</b>`:''}</p>
     <div class="chips" id="rosChips">${['All',...POS_ORDER].map(p=>`<button class="chipbtn" data-v="${p}" aria-pressed="${ROSTER_FILTER===p}">${p}</button>`).join('')}</div>
     <div class="setrow"><span class="note">Auto-redshirt freshmen buried on the depth chart (players who play four games or fewer keep the year)</span><div class="seg" id="setARS"><button data-v="1" aria-pressed="${LG.settings.autoRS!==false}">On</button><button data-v="0" aria-pressed="${LG.settings.autoRS===false}">Off</button></div></div></div>
-  ${pos.map(ps=>`<div class="card"><div class="eyebrow">${POS_NAME[ps]} · ${STARTERS[ps]} starting</div><div>${depth(u,ps).map((p,i)=>`<button class="rrow" id="pl-${p.id}"><span class="num">${p.num}</span><span class="meta"><b>${esc(fullName(p))} <small>${yrStr(p)}${i<STARTERS[ps]&&p.inj<=0&&!p.redshirt?' · Starter':''}${LG.captains.includes(p.id)?' · C':''}</small> ${p.inj>0?`<span class="tag hot">${esc(p.injWhy||'Injured')} · ${p.inj} wk</span>`:''}${p.redshirt?'<span class="tag blue">Redshirt</span>':''}</b><span class="attrs">${PATTR[p.pos].map(k=>`<span>${attrShort(p.pos,k)} ${`<span class="ovr">${a99(p[k])}</span>`}</span>`).join('')}</span><span style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px;align-items:center;font-size:10.5px;color:var(--mute)"><span>COND</span>${meterHTML(p.cond)}<span>XP</span>${meterHTML(p.xp,'var(--los)')}</span></span>${ovrTag(p)}</button>`).join('')}</div></div>`).join('')}`;
+  ${pos.map(ps=>`<div class="card"><div class="eyebrow">${POS_NAME[ps]} · ${STARTERS[ps]} starting</div><div>${depth(u,ps).map((p,i)=>`<button class="rrow" id="pl-${p.id}">${photoHTML(p,40,'',u)}<span class="meta"><b>${esc(fullName(p))} <small>${yrStr(p)}${i<STARTERS[ps]&&p.inj<=0&&!p.redshirt?' · Starter':''}${LG.captains.includes(p.id)?' · C':''}</small> ${p.inj>0?`<span class="tag hot">${esc(p.injWhy||'Injured')} · ${p.inj} wk</span>`:''}${p.redshirt?'<span class="tag blue">Redshirt</span>':''}</b><span class="attrs">${PATTR[p.pos].map(k=>`<span>${attrShort(p.pos,k)} ${`<span class="ovr">${a99(p[k])}</span>`}</span>`).join('')}</span><span style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px;align-items:center;font-size:10.5px;color:var(--mute)"><span>COND</span>${meterHTML(p.cond)}<span>XP</span>${meterHTML(p.xp,'var(--los)')}</span></span>${ovrTag(p)}</button>`).join('')}</div></div>`).join('')}`;
 }
 function hubProgram(){
   const c=LG.coach,u=T(LG.user),f=LG.fac;
@@ -429,7 +435,7 @@ function hubProgram(){
 }
 function hubStats(){
   const u=T(LG.user),ts=LG.ts,g=Math.max(1,ts.g);
-  const lead=(lab,k,fmt)=>{const p=u.roster.slice().sort((a,b)=>b.ss[k]-a.ss[k])[0];return p&&p.ss[k]>0?`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${lab}: <b>${esc(fullName(p))}</b></span></span><span>${fmt(p)}</span></div>`:''};
+  const lead=(lab,k,fmt)=>{const p=u.roster.slice().sort((a,b)=>b.ss[k]-a.ss[k])[0];return p&&p.ss[k]>0?`<div class="lrow"><span class="l"><span class="num">${p.pos}</span>${photoHTML(p,28,'xs',u)}<span>${lab}: <b>${esc(fullName(p))}</b></span></span><span>${fmt(p)}</span></div>`:''};
   return `${nationalLeaders()}${typeof mockHTML==='function'?mockHTML():''}<div class="card"><div class="h2">${LG.season} team stats</div><div class="kpis">
     <div><em>Points / game</em><b>${(ts.pf/g).toFixed(1)}</b></div><div><em>Allowed / game</em><b>${(ts.pa/g).toFixed(1)}</b></div><div><em>Pass yds / game</em><b>${Math.round(ts.py/g)}</b></div><div><em>Rush yds / game</em><b>${Math.round(ts.ry/g)}</b></div>
     <div><em>3rd down</em><b>${ts.thirdA?pct(ts.thirdC/ts.thirdA):'—'}</b></div><div><em>Red zone TD</em><b>${ts.rzA?pct(ts.rzTD/ts.rzA):'—'}</b></div><div><em>Turnovers</em><b>${ts.to}</b></div><div><em>Penalties</em><b>${ts.pen}</b></div></div>
@@ -567,7 +573,7 @@ function openPlayer(id){
   const u=T(LG.user),p=u.roster.find(x=>x.id===id);if(!p)return;
   const render=()=>{
     const s=p.ss,isCap=LG.captains.includes(p.id),startIdx=depth(u,p.pos).indexOf(p);
-    openModal(`<div class="eyebrow">${POS_NAME[p.pos]} · #${p.num} · ${yrStr(p)} · ${esc(p.home)}</div><div class="h2" style="font-size:26px">${esc(fullName(p))}</div>
+    openModal(`<div class="pl-hd">${photoHTML(p,84,'',u,true)}<div><div class="eyebrow">${POS_NAME[p.pos]} · #${p.num} · ${yrStr(p)} · ${esc(p.home)}</div><div class="h2" style="font-size:26px">${esc(fullName(p))}</div></div></div>
     <div class="setrow"><span>Overall ${ovrTag(p)}</span>${p.inj>0?`<span class="tag hot">${esc(p.injWhy)} · out ${p.inj} wk</span>`:''}</div>
     ${PATTR[p.pos].map(k=>{const c=Math.ceil(p[k])+1;return `<div class="setrow"><span>${attrName(p.pos,k)} ${`<span class="ovr">${a99(p[k])}</span>`}</span>${p[k]<4.95?`<button class="btn sm" id="up-${k}" ${LG.credits<c?'disabled':''}>+${a99(Math.min(5,p[k]+.5))-a99(p[k])} · ${c} CC</button>`:'<span class="tag gold">Max</span>'}</div>`}).join('')}
     <div class="kv"><span>Condition</span><b>${Math.round(p.cond)}%</b></div>${meterHTML(p.cond)}<div class="kv"><span>XP to next upgrade</span><b>${Math.round(p.xp)}/100</b></div>${meterHTML(p.xp,'var(--los)')}
@@ -723,8 +729,8 @@ function openTeamPage(id){
     let body='';
     if(tab==='overview'){const ts=t.rec,g=ts.w+ts.l;body=`<div class="kpis"><div><em>Record</em><b>${recStr(t)}</b></div><div><em>Conference</em><b>${ts.cw}–${ts.cl}</b></div><div><em>Overall</em><b>${tOvr99(teamOvr(t))}</b></div><div><em>Offense</em><b>${tOvr99(offOvr(t))}</b></div><div><em>Defense</em><b>${tOvr99(defOvr(t))}</b></div><div><em>Scheme</em><b>${esc(schemeOf(t))}</b></div><div><em>Points / game</em><b>${g?(ts.pf/g).toFixed(1):'—'}</b></div><div><em>Allowed / game</em><b>${g?(ts.pa/g).toFixed(1):'—'}</b></div><div><em>Power rating</em><b>${pw!=null?(pw>0?'+':'')+pw.toFixed(1):'—'}</b></div></div>
       ${t.trophy&&T(t.rival)?`<p class="note">Rivalry: ${esc(t.trophy)} vs ${esc(T(t.rival).city)}. ${esc(seriesText(t,T(t.rival)).replace(t.trophy+'. ',''))}</p>`:''}
-      <div class="eyebrow">Top players</div><div class="list">${top.slice(0,8).map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span><b>${esc(fullName(p))}</b> <small class="note">#${p.num} · ${['Fr','So','Jr','Sr'][p.yr-1]||''}</small></span></span><span>${ovrTag(p)}</span></div>`).join('')}</div>`}
-    else if(tab==='roster'){body=POS_ORDER.map(pos=>`<div class="eyebrow" style="margin-top:6px">${pos}</div><div class="list">${depth(t,pos).map(p=>`<div class="lrow"><span class="l"><span class="num">${p.num}</span><span>${esc(fullName(p))} <small class="note">${['Fr','So','Jr','Sr'][p.yr-1]||''}${p.inj>0?' · injured':''}</small></span></span><span><small class="note">${esc(statLine(p))}</small> ${ovrTag(p)}</span></div>`).join('')}</div>`).join('')}
+      <div class="eyebrow">Top players</div><div class="list">${top.slice(0,8).map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span>${photoHTML(p,32,'',t)}<span><b>${esc(fullName(p))}</b> <small class="note">#${p.num} · ${['Fr','So','Jr','Sr'][p.yr-1]||''}</small></span></span><span>${ovrTag(p)}</span></div>`).join('')}</div>`}
+    else if(tab==='roster'){body=POS_ORDER.map(pos=>`<div class="eyebrow" style="margin-top:6px">${pos}</div><div class="list">${depth(t,pos).map(p=>`<div class="lrow"><span class="l">${photoHTML(p,34,'',t)}<span>${esc(fullName(p))} <small class="note">${['Fr','So','Jr','Sr'][p.yr-1]||''}${p.inj>0?' · injured':''}</small></span></span><span><small class="note">${esc(statLine(p))}</small> ${ovrTag(p)}</span></div>`).join('')}</div>`).join('')}
     else{body=`<div class="list">${games.map(({g,w})=>{const home=g.h===id,o=T(home?g.a:g.h),done=g.hs!=null,us=home?g.hs:g.as,them=home?g.as:g.hs;return `<div class="lrow"><span class="l"><small class="note" style="min-width:64px">${esc(w.label)}</small>${home?'vs':'@'} ${badge(o,'sm')} ${rankTag(o.id)}${esc(o.city)}</span><span class="${done?(us>them?'res-w':'res-l'):'note'}">${done?(us>them?'W ':'L ')+us+'–'+them:esc(g.tag||'')}</span></div>`}).join('')||'<p class="note">No games yet.</p>'}</div>`}
     openModal(`<div style="display:flex;gap:14px;align-items:center">${badge(t,'xl')}<div style="min-width:0"><div class="eyebrow">${esc(confName(t.conf,L))} · ${t.div}${rk?' · #'+rk:''}</div><div class="h2" style="font-size:24px">${esc(teamName(t))}</div><div class="note">${esc(t.stadium||'')}</div></div></div>
       <div class="seg" id="tpTabs">${[['overview','Overview'],['roster','Roster'],['schedule','Schedule']].map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===tab}">${l}</button>`).join('')}</div>${body}<button class="btn ghost" id="tpClose">Close</button>`,true);

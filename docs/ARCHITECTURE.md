@@ -124,7 +124,7 @@ Everything on the field is drawn into a low-resolution canvas, at about 3.5 art 
 
 ## Version 3 additions
 
-- **Saves.** There are 3 slots (`gl3.slot1..3`) plus a `gl3.meta` summary. The game autosaves at every snap through `snapshot()` → `LG.live`, so a game can be resumed mid-play. Save codes are base64 JSON with a `GL3:` prefix. v1 saves migrate into slot 1.
+- **Saves.** There are 5 slots (`SLOTS`, keys `gl3.slot1..5`, each with `gl3.live<n>` and a `gl3.bak<n>` backup) plus a `gl3.meta` summary. The game autosaves at every snap through `snapshot()` → `LG.live`, so a game can be resumed mid-play. Save codes are base64 JSON with a `GL3:` prefix. v1 saves migrate into slot 1.
 - **Ratings.** Ratings are position-specific (`PATTR`): QB Arm/Accuracy/Speed/Stamina; RB, WR and TE Speed/Strength/Catching/Stamina; defense Tackling/Strength/Speed/Stamina, plus Ball skills for DBs; the kicker has Leg/Accuracy. Strength vs. Tackling decides stiff-arms. Accuracy sets the radius of the throw-error circle.
 - **Postseason.** Conference title games come first. The 12-team playoff takes the 4 conference champions plus the 8 highest-ranked teams, seeded by ranking, with byes for seeds 1–4 and first-round games on campus. Bowls go to other teams with 6+ wins.
 - **Offseason pipeline.** The stages are: recap (awards, AD review) → departures (graduation, early declarations, pro draft, outgoing portal) → coaching carousel → transfer portal (costs NIL) → recruiting board (interest, official visits) → Signing Day → camp (progression, new schedule).

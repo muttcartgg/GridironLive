@@ -1,0 +1,28 @@
+/* 60 · real player photos (02c-packs.js photoHTML): a generated avatar (team colours, silhouette, jersey number) with the
+   lazy ESPN headshot laid over it. .ok = the headshot loaded: silhouette hidden, number becomes a corner chip. */
+.pph{--s:36px;position:relative;flex:none;display:inline-block;width:var(--s);height:var(--s);vertical-align:middle;line-height:0}
+.pph>.pph-c{position:absolute;inset:0;border-radius:50%;overflow:hidden;background:radial-gradient(115% 95% at 50% 6%,color-mix(in srgb,var(--c1) 70%,#fff),var(--c1) 56%,color-mix(in srgb,var(--c1) 62%,#000));box-shadow:0 2px 7px -3px rgba(0,0,0,.7)}
+.pph>.pph-c::after{content:"";position:absolute;inset:0;border-radius:50%;box-shadow:inset 0 0 0 max(1.5px,calc(var(--s)*.045)) var(--c2);pointer-events:none}
+.pph .pph-sil{position:absolute;left:0;top:0;width:100%;height:100%;fill:var(--k);opacity:.2}
+.pph.nn .pph-sil{opacity:.45}
+.pph>.pph-c>img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:50% 0;opacity:0;transition:opacity .25s}
+.pph.ok .pph-sil{display:none}
+.pph.ok>.pph-c>img{opacity:1}
+.pph>.pph-n{position:absolute;inset:0;display:grid;place-items:center;padding-top:calc(var(--s)*.3);font:italic 800 calc(var(--s)*.38)/1 var(--tv);letter-spacing:-.02em;color:var(--k);text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.pph.ok>.pph-n{inset:auto 0 0 auto;display:block;min-width:calc(var(--s)*.42);padding:2px 3px 1px;border-radius:5px;background:var(--c1);box-shadow:0 0 0 1.5px var(--c2);font-size:max(9px,calc(var(--s)*.25));text-align:center;text-shadow:none}
+.pph.xs.ok>.pph-n{display:none}
+/* where avatars sit */
+.lrow .l>.pph{margin-right:-2px}
+.pl-hd{display:flex;align-items:center;gap:14px}
+.pl-hd>div{min-width:0}
+.pr.wph{grid-template-columns:30px 36px auto 1fr;align-items:center}
+.aw-t{display:flex;align-items:center;gap:10px}
+.aw-tx{flex:1;min-width:0}
+.aw-ph{position:relative;flex:none}
+.aw-ph>.badge{position:absolute;left:-6px;bottom:-6px}
+.stv-card .vs .pph{display:block;margin:0 auto 6px}
+/* lower third: the headshot fills the number block */
+#lower .num.ph{position:relative;width:64px;padding:0;overflow:hidden;background:linear-gradient(180deg,color-mix(in srgb,var(--lc,var(--team)) 72%,#fff),var(--lc,var(--team)))}
+#lower .num img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:50% 0;opacity:0;transition:opacity .2s}
+#lower .num.ok img{opacity:1}
+#lower .num.ok span{position:absolute;left:4px;bottom:3px;z-index:1;font-size:13px;text-shadow:0 1px 3px rgba(0,0,0,.7)}

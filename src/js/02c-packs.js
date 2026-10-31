@@ -197,10 +197,26 @@ function teamLogo(t,dark){
 const teamLogoURL=(t,dark)=>logosOn()?logoURL(t,dark):'';
 function logoHTML(t,size,cls){const u=teamLogoURL(t);if(!u)return '';size=size||28;return `<img class="tlogo ${cls||''}" src="${esc(u)}" width="${size}" height="${size}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`}
 
+/* ---------- real player photos (links only: nothing is downloaded or stored in the save) ----------
+   Imported players carry their ESPN id as p.espnId (a digit string; rosterEnc saves it as a number), award snapshots as e.
+   photoHTML always draws the generated avatar (team colours, silhouette, jersey number) and lays the lazy headshot over it:
+   onload marks it .ok (the number moves to a corner chip), onerror removes the <img> so the avatar stays. No crossOrigin:
+   the pictures are only ever shown in the page, never drawn on the canvas. */
+const photosOn=()=>!(typeof LG!=='undefined'&&LG&&LG.settings&&LG.settings.showPhotos===false);
+const espnIdOf=p=>{if(!p)return '';const v=p.espnId!=null&&p.espnId!==''?p.espnId:p.e,s=v==null?'':String(v);return /^[1-9]\d{0,11}$/.test(s)?s:''};
+const playerPhoto=p=>{const id=photosOn()?espnIdOf(p):'';return id?`https://a.espncdn.com/i/headshots/college-football/players/full/${id}.png`:''};
+const PPH_SIL='<svg class="pph-sil" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="15" r="7.4"/><path d="M4.5 41C5 31.4 11.6 26 20 26s15 5.4 15.5 15z"/></svg>';
+/* p: roster player (or {espnId|e, num}); t: the team for the colours; eager: skip loading="lazy" (cards that appear at once) */
+function photoHTML(p,size,cls,t,eager){
+  size=size||36;const c1=(t&&t.c1)||'#33415E',c2=(t&&t.c2)||'#9AA8C2',u=playerPhoto(p),n=p&&p.num!=null&&p.num!==''?String(p.num):'';
+  return `<span class="pph ${cls||''}${n?'':' nn'}" style="--s:${size}px;--c1:${c1};--c2:${c2};--k:${inkOn(c1)}" aria-hidden="true"><i class="pph-c">${PPH_SIL}${u?`<img src="${u}" alt="" width="${size}" height="${size}"${eager?'':' loading="lazy"'} decoding="async" referrerpolicy="no-referrer" onload="(this.closest('.pph')||this).classList.add('ok')" onerror="this.remove()">`:''}</i>${n?`<i class="pph-n">${esc(n)}</i>`:''}</span>`;
+}
+
 /* ---------- settings (registered after the whole script has run: SETTINGS_EXTRA lives in 04-hub.js) ---------- */
 Promise.resolve().then(()=>{
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Rosters pack',button:'Import rosters & logos',id:'impRosters',note:'Load a roster pack (.json) from Files or paste one: real rosters, custom players and team logos.',onClick:()=>openRosterImport(LG,()=>{saveNow();showHub('settings')})});
 SETTINGS_EXTRA.push({card:'Rosters & data',key:'showLogos',label:'Show imported logos',opts:[[1,'On'],[0,'Off']],def:1,bool:true});
+SETTINGS_EXTRA.push({card:'Rosters & data',key:'showPhotos',label:'Show real player photos',opts:[[1,'On'],[0,'Off']],def:1,bool:true,note:'Imported players show their headshot when you are online (loaded from ESPN, never saved). Everyone else, and anyone without a photo, gets a team-colour avatar.'});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Your roster',button:'Export my roster (JSON)',id:'expRoster',onClick:()=>openRosterExport()});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Imported data',button:'Remove imported data',id:'rmPack',note:'New dynasties go back to generated rosters; this dynasty keeps its players and drops the imported logos.',
   onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);for(const t of LG.teams){delete t.logo;delete t.logoDark}delete LG.pack;saveNow();showHub('settings');toast('Imported data removed')}});

@@ -31,7 +31,7 @@ const KV={
     try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,val)}catch(e){}
   }
 };
-const SLOTS=[1,2,3];
+const SLOTS=[1,2,3,4,5];   /* save slots: gl3.slotN / gl3.liveN / gl3.bakN keys and gl3.meta.slots[N] are all keyed by number */
 /* ---------- save format ----------
    'Y:' (v2, Gridiron Live 7 step 16): LZ(JSON of the league without rosters) + '~' + every roster as dense base-64 text
    (names/hometowns interned in a table sorted by use, ratings one character each, season/career stats as a field mask

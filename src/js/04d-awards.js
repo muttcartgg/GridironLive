@@ -80,7 +80,9 @@ const teamF=(L,t)=>{const g=t.rec.w+t.rec.l,r=rankList(L,t).indexOf(t.id);return
 function awScore(L,x,kind){const p=x.p,o=x.o;if((p.ss.gp||0)<6)return o*.3;
   if(kind==='punt')return a99(p.thr)+o*.25;if(kind==='ctr')return o+a99(p.awr)*.4+x.tf;if(kind==='line')return o+x.pr*.5+x.tf*.5;
   if(kind==='prod')return x.pr*1.3+o*.4+x.tf*.5;if(kind==='poy')return x.pr*1.2+o*.5+x.tf;return o*.7+x.pr+x.tf*.6}
-const awEntry=x=>({pid:x.p.id,name:fullName(x.p),pos:x.p.pos,team:x.t.id,yr:yrStr(x.p),line:statLine(x.p)});
+/* e: the ESPN id (a number) of imported players, so award photos outlive the roster spot; generated players add nothing */
+const awE=p=>{const s=typeof espnIdOf==='function'?espnIdOf(p):'';return s?{e:+s}:null};
+const awEntry=x=>({pid:x.p.id,name:fullName(x.p),pos:x.p.pos,team:x.t.id,yr:yrStr(x.p),line:statLine(x.p),...awE(x.p)});
 function seasonAwards(L){
   const u=L.teams[L.user],div=u.div,C=[];
   for(const t of L.teams){if(t.div!==div)continue;const tf=teamF(L,t);for(const p of t.roster)C.push({p,t,o:ovr99(p),pr:awProd(p),tf})}
@@ -156,17 +158,20 @@ function seedExtraRecords(L){if(!L.records)L.records={};for(const k in REC_EXTRA
 
 /* ---------- screens ---------- */
 const tmA=id=>{const t=LG.teams[id];return t?esc(t.abbr||t.city):''};
-const awRow=(x,tag)=>x?`<div class="lrow ${x.team===LG.user?'me':''}"><span class="l"><span class="num">${x.pos}</span><span><b>${esc(x.name)}</b> <small class="note">${tmA(x.team)}${x.yr?' · '+esc(x.yr):''}</small>${x.line?`<br><small class="note">${esc(x.line)}</small>`:''}</span></span>${tag?`<span class="tag gold">${esc(tag)}</span>`:''}</div>`:'';
+/* award snapshot → what photoHTML needs: the live roster player while still on that team (jersey number too), else the saved ESPN id */
+const awPl=x=>{if(!x)return null;const t=LG.teams[x.team],p=t&&x.pid!=null?t.roster.find(q=>q.id===x.pid):null;return p||{e:x.e}};
+const awPh=(x,size,cls)=>photoHTML(awPl(x),size,cls,LG.teams[x.team]);
+const awRow=(x,tag)=>x?`<div class="lrow ${x.team===LG.user?'me':''}"><span class="l"><span class="num">${x.pos}</span>${awPh(x,30,'xs')}<span><b>${esc(x.name)}</b> <small class="note">${tmA(x.team)}${x.yr?' · '+esc(x.yr):''}</small>${x.line?`<br><small class="note">${esc(x.line)}</small>`:''}</span></span>${tag?`<span class="tag gold">${esc(tag)}</span>`:''}</div>`:'';
 function heisCeremonyHTML(h){if(!h)return '';const f=h.finalists||[];
-  return `<div class="card aw-heis"><div class="eyebrow">${h.season} Heisman Trophy ceremony · New York</div><div class="aw-win">${badge(T(h.team),'lg')}<div><b>${esc(h.name)}</b><small>${esc(h.pos)} · ${esc(T(h.team).city)}</small><small class="note">${esc(h.line||'')}</small></div></div>
-  ${f.length?`<div class="list">${f.map((x,i)=>`<div class="lrow ${x.team===LG.user?'me':''}"><span class="l"><span class="num">${i+1}</span><span>${esc(x.name)} <small class="note">${esc(x.pos)} · ${tmA(x.team)}</small></span></span><b>${x.pts?x.pts.toLocaleString()+' pts':''}</b></div>`).join('')}</div>`:''}</div>`}
+  return `<div class="card aw-heis"><div class="eyebrow">${h.season} Heisman Trophy ceremony · New York</div><div class="aw-win"><span class="aw-ph">${awPh(h,78)}${badge(T(h.team),'sm')}</span><div><b>${esc(h.name)}</b><small>${esc(h.pos)} · ${esc(T(h.team).city)}</small><small class="note">${esc(h.line||'')}</small></div></div>
+  ${f.length?`<div class="list">${f.map((x,i)=>`<div class="lrow ${x.team===LG.user?'me':''}"><span class="l"><span class="num">${i+1}</span>${awPh(x,30,'xs')}<span>${esc(x.name)} <small class="note">${esc(x.pos)} · ${tmA(x.team)}</small></span></span><b>${x.pts?x.pts.toLocaleString()+' pts':''}</b></div>`).join('')}</div>`:''}</div>`}
 function awardsHTML(a){
   if(!a)return '<p class="note">No awards yet.</p>';
   const tbl=(l,h)=>l&&l.length?`<div class="card"><div class="h2">${h}</div><div class="list">${l.map(x=>awRow(x)).join('')}</div></div>`:'';
   return `<div class="eyebrow">${a.season} season</div><div class="h2">Awards</div>${heisCeremonyHTML(a.heisman)}
-  <div class="aw-grid">${(a.tro||[]).map(x=>`<div class="aw-t ${x.team===LG.user?'me':''}"><em>${esc(x.n)}</em><b>${esc(x.name)}</b><small>${esc(x.pos)} · ${tmA(x.team)}</small></div>`).join('')}
-    ${a.broyles?`<div class="aw-t ${a.broyles.team===LG.user?'me':''}"><em>Broyles Award</em><b>${esc(a.broyles.name)}</b><small>${esc(a.broyles.role)} · ${tmA(a.broyles.team)}</small></div>`:''}
-    ${a.coy!=null?`<div class="aw-t ${a.coy===LG.user?'me':''}"><em>Coach of the Year</em><b>${a.coy===LG.user?esc(LG.coach.name):esc(((T(a.coy).staff||{}).hc||{}).name||'Head coach')}</b><small>${tmA(a.coy)}</small></div>`:''}</div>
+  <div class="aw-grid">${(a.tro||[]).map(x=>`<div class="aw-t ${x.team===LG.user?'me':''}">${awPh(x,40,'xs')}<div class="aw-tx"><em>${esc(x.n)}</em><b>${esc(x.name)}</b><small>${esc(x.pos)} · ${tmA(x.team)}</small></div></div>`).join('')}
+    ${a.broyles?`<div class="aw-t ${a.broyles.team===LG.user?'me':''}"><div class="aw-tx"><em>Broyles Award</em><b>${esc(a.broyles.name)}</b><small>${esc(a.broyles.role)} · ${tmA(a.broyles.team)}</small></div></div>`:''}
+    ${a.coy!=null?`<div class="aw-t ${a.coy===LG.user?'me':''}"><div class="aw-tx"><em>Coach of the Year</em><b>${a.coy===LG.user?esc(LG.coach.name):esc(((T(a.coy).staff||{}).hc||{}).name||'Head coach')}</b><small>${tmA(a.coy)}</small></div></div>`:''}</div>
   ${a.cpoy&&a.cpoy.length?`<div class="card"><div class="h2">Conference players of the year</div><div class="tw"><table><thead><tr><th>Conference</th><th>Offense</th><th>Defense</th></tr></thead><tbody>${a.cpoy.map(c=>`<tr><td>${esc(confName(c.c))}</td><td>${c.o?esc(c.o.name)+' <small class="note">'+c.o.pos+' · '+tmA(c.o.team)+'</small>':'—'}</td><td>${c.d?esc(c.d.name)+' <small class="note">'+c.d.pos+' · '+tmA(c.d.team)+'</small>':'—'}</td></tr>`).join('')}</tbody></table></div></div>`:''}
   <div class="grid2">${tbl(a.allAm,'All-America · first team')}${tbl(a.aa2,'All-America · second team')}</div>
   <div class="grid2">${tbl(a.allConf,'All-'+esc(confName(T(LG.user).conf))+' · first team')}${tbl(a.frosh,'Freshman All-America')}</div>`;

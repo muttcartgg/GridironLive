@@ -6,6 +6,7 @@ Run from the repo root after `python3 tools/build_web.py`:
 NODE_PATH=$(npm root -g) node tools/qa/smoke.js            # one full game, offense + defense, prints box score + errors
 NODE_PATH=$(npm root -g) node tools/qa/season.js           # full season + offseason + start of next season
 NODE_PATH=$(npm root -g) node tools/qa/shots.js web/index.html /tmp/gl-shots   # screenshots (landscape + portrait)
+NODE_PATH=$(npm root -g) node tools/qa/slots.js web/index.html /tmp/gl-slots   # five save slots (create 4/5, reload, load, backup, code, delete) + player photos
 ```
 
 Each takes an optional path to the built page (default `web/index.html`) and a team abbreviation (default UGA).

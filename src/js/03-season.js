@@ -469,7 +469,8 @@ const statLine=p=>{const s=p.ss;if(p.pos==='QB')return `${s.py} pass yds · ${s.
 function awardHeisman(L){
   const f=heismanTop(L,1,'FCS')[0];if(f){L.fcsPoy={season:L.season,name:fullName(f.p),pos:f.p.pos,team:f.t.id,line:statLine(f.p)};if(f.t.id===L.user){L.fan=clamp(L.fan+8,0,100);L.news.unshift({t:`${fullName(f.p)} is named FCS Player of the Year!`,good:true})}}
   const top=heismanTop(L,4);if(!top.length)return;const w=top[0],votes=typeof heisVotes==='function'?heisVotes(top):[];
-  L.heisman={season:L.season,pid:w.p.id,name:fullName(w.p),pos:w.p.pos,team:w.t.id,line:statLine(w.p),finalists:top.map((x,i)=>({name:fullName(x.p),team:x.t.id,pos:x.p.pos,pts:votes[i]||0}))};
+  const ph=p=>typeof awE==='function'?awE(p):null;   /* ESPN id for the award photos (04d) */
+  L.heisman={season:L.season,pid:w.p.id,name:fullName(w.p),pos:w.p.pos,team:w.t.id,line:statLine(w.p),...ph(w.p),finalists:top.map((x,i)=>({pid:x.p.id,name:fullName(x.p),team:x.t.id,pos:x.p.pos,pts:votes[i]||0,...ph(x.p)}))};
   if(w.t.id===L.user){L.fan=clamp(L.fan+10,0,100);L.morale=clamp(L.morale+8,0,100);L.news.unshift({t:`${fullName(w.p)} wins the Heisman Trophy! Recruits across the country noticed.`,good:true});w.p.heisman=(w.p.heisman||0)+1}
   else L.news.unshift({t:`${fullName(w.p)} (${w.t.city}) wins the Heisman Trophy.`});
 }

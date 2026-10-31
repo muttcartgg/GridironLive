@@ -146,10 +146,13 @@ const BC={
     if(S.los>=90&&!this.rzShown){this.rzShown=true;this.chip(goal?'Goal to go':'Red zone','#E5383B',`${offT().abbr} red zone: ${offT()===S.home?S.stats.rzTD+'/'+S.stats.rzA:S.ostats.rzTD+'/'+S.ostats.rzA} TD`,'rz');return}
   },
   chant(t){this.setRibbon(t,4)},
+  /* the lower third's number block: the jersey number, with the player's real headshot over it when there is one (02c playerPhoto) */
+  lowerNum(el,pl,num){const b=el.querySelector('.num'),u=typeof playerPhoto==='function'?playerPhoto(pl):'';b.className='num'+(u?' ph':'');
+    b.innerHTML=`<span>${esc(String(num==null?'':num))}</span>${u?`<img src="${u}" alt="" decoding="async" referrerpolicy="no-referrer" onload="(this.closest('.num')||this).classList.add('ok')" onerror="(this.closest('.num')||this).classList.remove('ph');this.remove()">`:''}`},
   lower(p){
     const pl=p.pl,t=p.team,hw=(LG.heismanWatch||[]).findIndex(h=>h.pid===pl.id),el=$('#lower');
     el.style.setProperty('--lc',t.c1);el.style.setProperty('--lt',inkOn(t.c1));
-    el.querySelector('.num').textContent=pl.num;
+    this.lowerNum(el,pl,pl.num);
     el.querySelector('.txt').innerHTML=`<b>${esc(fullName(pl))}${hw>=0?`<i class="hw">Heisman #${hw+1}</i>`:''}</b><small>${esc(t.abbr)} ${pl.pos} · ${['Fr','So','Jr','Sr'][pl.yr-1]||''} · OVR ${p.ovr}</small><span class="st">${esc(statLine(pl))}</span>`;
     el.classList.add('on');this.lowT=3.6;
   },
@@ -206,7 +209,7 @@ const BC={
     this.showQ(`${this.cardHead(`Final${S.ot?' · '+(S.otRound>1?S.otRound:'')+'OT':''}`,g.tag?esc(g.tag):esc(hostT().stadium||hostT().city))}${this.linescore(true)}<div class="flead">${this.sides().map(tl).join('')}</div>${pog?`<div class="pog"><span class="tag gold">Player of the game</span><b>${esc(fullName(pog))}</b><small>${pog.pos} · ${esc(S.home.abbr)}</small></div>`:''}`,'qfin',2900);
   },
   leaders(t){const ps=(t===S.home?S.pst:S.opst)||{},ros=t.roster||[];const best=k=>{let b=null,v=0;for(const id in ps){if((ps[id][k]||0)>v){const p=ros.find(x=>x.id==id);if(p){b=p;v=ps[id][k]}}}return b};
-    const q=best('py'),r=best('ry'),w=best('recy'),out=[];if(q)out.push(['PASS',q.last,`${ps[q.id].pc}/${ps[q.id].pa} · ${ps[q.id].py} yds${ps[q.id].ptd?' · '+ps[q.id].ptd+' TD':''}`]);if(r)out.push(['RUSH',r.last,`${ps[r.id].ra} car · ${ps[r.id].ry} yds${ps[r.id].rtd?' · '+ps[r.id].rtd+' TD':''}`]);if(w)out.push(['REC',w.last,`${ps[w.id].rec} rec · ${ps[w.id].recy} yds`]);return out},
+    const q=best('py'),r=best('ry'),w=best('recy'),out=[];if(q)out.push(['PASS',q.last,`${ps[q.id].pc}/${ps[q.id].pa} · ${ps[q.id].py} yds${ps[q.id].ptd?' · '+ps[q.id].ptd+' TD':''}`,q]);if(r)out.push(['RUSH',r.last,`${ps[r.id].ra} car · ${ps[r.id].ry} yds${ps[r.id].rtd?' · '+ps[r.id].rtd+' TD':''}`,r]);if(w)out.push(['REC',w.last,`${ps[w.id].rec} rec · ${ps[w.id].recy} yds`,w]);return out},   // [label, last name, line, player]
   conditions(){
     const wk=LG.week||0,base=84-wk*3.2-(S.slot==='Primetime'?7:S.slot==='Noon'?-3:0)+R(-6,6);
     S.temp=Math.round(S.wx==='Snow'?R(18,31):S.wx==='Rain'?Math.max(38,base-6):base);
@@ -216,7 +219,7 @@ const BC={
   flagCard(m){if(LG.settings.gfx===false)return false;const parts=m.split(' · ');this.card('FLAG',esc(parts[0]),parts.slice(1).join(' · '),'#E8B500',false);$('#rcard').classList.add('flag');return true},
   scoringDrive(t){const d=S.drive;if(!d||!d.plays)return;const tm=(Math.min(S.q,4)-Math.min(d.q,4))*S.qlen+d.clk-S.clock;this.chip('Scoring drive',t.c1,`${d.plays} plays · ${d.yds} yds · ${fmtClock(Math.max(0,tm))}`)},
   toChip(t){const s=S.stats,o=S.ostats,m=(o.int+(o.fumLost||0))-(s.int+(s.fumLost||0));this.chip('Turnover',t.c1,`${S.home.abbr} turnover margin ${m>0?'+':''}${m}`,'to');this.wpShow(4.5)},
-  gameLine(p){if(LG.settings.lower===false)return;const m=p.user?S.pst:S.opst||{},st=m[p.pl.id];if(!st)return;const el=$('#lower');el.style.setProperty('--lc',p.team.c1);el.style.setProperty('--lt',inkOn(p.team.c1));el.querySelector('.num').textContent=p.num;
+  gameLine(p){if(LG.settings.lower===false)return;const m=p.user?S.pst:S.opst||{},st=m[p.pl.id];if(!st)return;const el=$('#lower');el.style.setProperty('--lc',p.team.c1);el.style.setProperty('--lt',inkOn(p.team.c1));this.lowerNum(el,p.pl,p.num);
     const line=st.rec?`${st.rec} rec · ${st.recy} yds${st.rectd?' · '+st.rectd+' TD':''}`:st.ra?`${st.ra} car · ${st.ry} yds${st.rtd?' · '+st.rtd+' TD':''}`:`${st.pc}/${st.pa} · ${st.py} yds`;
     el.querySelector('.txt').innerHTML=`<b>${esc(fullName(p.pl))}</b><small>Today · ${esc(p.team.abbr)} ${p.pl.pos}</small><span class="st">${esc(line)}</span>`;el.classList.add('on');this.lowT=3.4},
   fourth(){this.setRibbon('4TH QUARTER · HOLD UP YOUR FINGERS',8);this.hype=Math.min(1,this.hype+.3);setTimeout(()=>this.chip('Fourth quarter',hostT().c1,`${S.away.abbr} ${S.score[1]} · ${S.home.abbr} ${S.score[0]}`),3500)},
@@ -241,7 +244,7 @@ const BC={
     const row=(lab,uv,ov,fmt,base)=>this.statRow(lab,uv,ov,fmt,base);const st=S.stats,os=S.ostats;
     const side=(t,cls)=>`<div class="sd ${cls}" style="--c:${t.c1};--c2:${t.c2||'#fff'};--k:${inkOn(t.c1)}">${tvLogo(t,'xl')}<div class="tx"><small>${rankTag(t.id)}${recStr(t)}</small><b>${esc(t.city)}</b><em>${esc(t.name)}</em></div></div>`;
     const keys=[[u,keyToGame(u,o)],[o,keyToGame(o,u)]];
-    const perf=t=>{const l=this.leaders(t);return `<div class="perf" style="--c:${t.c1}"><div class="ph">${tvLogo(t,'xs')}<b>${esc(t.abbr)}</b></div>${l.length?l.map(x=>`<div class="pr"><em>${x[0]}</em><b>${esc(x[1])}</b><small>${esc(x[2])}</small></div>`).join(''):'<p class="note">No leaders yet.</p>'}</div>`};
+    const perf=t=>{const l=this.leaders(t);return `<div class="perf" style="--c:${t.c1}"><div class="ph">${tvLogo(t,'xs')}<b>${esc(t.abbr)}</b></div>${l.length?l.map(x=>`<div class="pr wph">${photoHTML(x[3],30,'xs',t,true)}<em>${x[0]}</em><b>${esc(x[1])}</b><small>${esc(x[2])}</small></div>`).join(''):'<p class="note">No leaders yet.</p>'}</div>`};
     $('#studioBody').innerHTML=`<div class="stv-head" style="--a:${A.c1};--b:${Hm.c1}">
         <div class="stv-bar"><span class="net">GLN</span><b>${half?'Halftime report':'Pregame show'}</b><span class="ven">${esc(hostT().stadium||hostT().city)}</span></div>
         <div class="stv-mu">${side(A,'a')}<div class="mid">${half?`<b class="hs">${S.score[ai]}<i>–</i>${S.score[hi]}</b><small>Halftime</small>`:`<b class="at">${S.neutral?'VS':'AT'}</b><small>${esc(S.slot||'')}</small>`}</div>${side(Hm,'b')}</div>
@@ -251,7 +254,7 @@ const BC={
         <div class="card stv-card"><div class="eyebrow">Top performers</div><div class="perfs">${perf(A)}${perf(Hm)}</div></div>`
       :`<div class="stv-grid"><div class="card stv-card"><div class="eyebrow">Tale of the tape</div><div class="tape">${row('Overall',tOvr99(teamOvr(u)),tOvr99(teamOvr(o)),null,45)}${row('Offense',tOvr99(offOvr(u)),tOvr99(offOvr(o)),null,45)}${row('Defense',tOvr99(defOvr(u)),tOvr99(defOvr(o)),null,45)}${row('Points / game',pg(u),pg(o))}${row('Allowed / game',pa(u),pa(o))}</div><p class="note">Schemes: ${esc(schemeOf(A))} vs ${esc(schemeOf(Hm))}</p></div>
         <div class="card stv-card"><div class="eyebrow">Keys to the game</div><div class="keys2">${keys.map(([t,k])=>`<div class="key" style="--c:${t.c1}">${tvLogo(t,'xs')}<p><b>${esc(t.abbr)}</b> ${esc(k)}</p></div>`).join('')}</div></div></div>`}
-      ${spot&&!half?`<div class="card stv-card"><div class="eyebrow">Matchup spotlight</div><div class="vs"><div><b>${esc(fullName(spot.a))}</b><div class="note">${spot.a.pos} · ${esc(u.abbr)} · ${ovrTag(spot.a)}</div></div><div class="mid">vs</div><div><b>${esc(fullName(spot.b))}</b><div class="note">${spot.b.pos} · ${esc(o.abbr)} · ${ovrTag(spot.b)}</div></div></div>${spot.rows.map(r=>`<div class="mbar"><span>${r[0]}</span><div class="b"><i style="width:${r[1]/(r[1]+r[2])*100}%"></i></div><span>${r[2]}</span></div>`).join('')}</div>`:''}
+      ${spot&&!half?`<div class="card stv-card"><div class="eyebrow">Matchup spotlight</div><div class="vs"><div>${photoHTML(spot.a,52,'',u,true)}<b>${esc(fullName(spot.a))}</b><div class="note">${spot.a.pos} · ${esc(u.abbr)} · ${ovrTag(spot.a)}</div></div><div class="mid">vs</div><div>${photoHTML(spot.b,52,'',o,true)}<b>${esc(fullName(spot.b))}</b><div class="note">${spot.b.pos} · ${esc(o.abbr)} · ${ovrTag(spot.b)}</div></div></div>${spot.rows.map(r=>`<div class="mbar"><span>${r[0]}</span><div class="b"><i style="width:${r[1]/(r[1]+r[2])*100}%"></i></div><span>${r[2]}</span></div>`).join('')}</div>`:''}
       ${ser&&!half?`<div class="card stv-card"><div class="eyebrow">Series</div><p>${esc(ser)}</p></div>`:''}
       ${lg?`<div class="card stv-card"><div class="eyebrow">${half?'Around the country · halftime':'Also on the slate today'}</div><div class="list">${lg}</div></div>`:''}
       ${hz||bubble?`<div class="grid2">${hz?`<div class="card stv-card"><div class="eyebrow">Heisman tracker</div><div class="list">${hz}</div></div>`:''}${bubble?`<div class="card stv-card"><div class="eyebrow">Playoff picture</div>${bubble}</div>`:''}</div>`:''}

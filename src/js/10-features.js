@@ -254,7 +254,7 @@ function nationalLeaders(){
   const u=T(LG.user),div=u.div,cats=[['Passing yards','py',p=>p.ss.py],['Rushing yards','ry',p=>p.ss.ry],['Receiving yards','recy',p=>p.ss.recy],['Total TDs','td',p=>p.ss.ptd+p.ss.rtd+p.ss.rectd],['Tackles','tkl',p=>p.ss.tkl],['Sacks','sck',p=>p.ss.sck],['Interceptions','dint',p=>p.ss.dint]];
   const all=[];for(const t of LG.teams){if(t.div!==div)continue;for(const p of t.roster)all.push({p,t})}
   return `<div class="card"><div class="h2">${div} national leaders</div><div class="leaders">${cats.map(([lab,k,f])=>{const top=all.filter(x=>f(x.p)>0).sort((a,b)=>f(b.p)-f(a.p)).slice(0,5);
-    return `<div><div class="eyebrow">${lab}</div><div class="list">${top.map((x,i)=>`<div class="lrow ${x.t.id===LG.user?'me':''}"><span class="l"><span class="num">${i+1}</span><span data-team="${x.t.id}">${esc(fullName(x.p))} <small class="note">${esc(x.t.abbr)}</small></span></span><b>${f(x.p)}</b></div>`).join('')||'<p class="note">No stats yet.</p>'}</div></div>`}).join('')}</div></div>`;
+    return `<div><div class="eyebrow">${lab}</div><div class="list">${top.map((x,i)=>`<div class="lrow ${x.t.id===LG.user?'me':''}"><span class="l"><span class="num">${i+1}</span>${photoHTML(x.p,28,'xs',x.t)}<span data-team="${x.t.id}">${esc(fullName(x.p))} <small class="note">${esc(x.t.abbr)}</small></span></span><b>${f(x.p)}</b></div>`).join('')||'<p class="note">No stats yet.</p>'}</div></div>`}).join('')}</div></div>`;
 }
 function trophyCase(){
   const u=T(LG.user),held=LG.teams.filter(t=>t.rival===u.id&&u.holder===u.id).map(()=>u.trophy).filter(Boolean);
