@@ -549,7 +549,9 @@ function dirty(p){if(!p||!p.pl)return;const k=p.pl.id;S.dirt[k]=Math.min(1,(S.di
 /* ---------- end of play ---------- */
 function endPlay(kind,msg){
   if(play.st)return stEnd(kind==='fum'||kind==='sack'?'tackle':kind,msg);
-  if(play.ended)return;{const cc=play.carrier;if(kind==='tackle'&&cc&&cc.side==='o'&&isRunner()&&spotOf(cc)+(play.fp||0)>=110)kind='td';if(kind==='td'&&cc&&cc.side==='o'){play.tdRaw=spotOf(cc);play.tdY=cc.y}}play.ended=true;S.phase='dead';hint('');touch=null;aim=null;stick=null;$('#bulletBtn').hidden=true;hideActs();
+  if(play.ended)return;{const cc=play.carrier;
+    /* goal line: where the ball really was (the reach the officials can't see in the pile) is kept for the booth (05f) */
+    if(kind==='tackle'&&cc&&cc.side==='o'&&isRunner()){const sp=spotOf(cc)+(play.fp||0);if(sp>=108.6)play.glBall=spotOf(cc)+.45*(play.fp||0)+(TK.behind?R(.15,.6):TK.head?R(0,.2):R(.05,.45));if(sp>=110)kind='td'}if(kind==='td'&&cc&&cc.side==='o'){play.tdRaw=spotOf(cc);play.tdY=cc.y}}play.ended=true;S.phase='dead';hint('');touch=null;aim=null;stick=null;$('#bulletBtn').hidden=true;hideActs();
   deadT=kind==='td'?2.8:kind==='int'||kind==='fum'?2.1:1.35;
   const c=play.carrier||Q;let x=kind==='inc'?S.los:kind==='td'?110:spotOf(c)+(kind==='tackle'?play.fp||0:0);
   if(kind!=='td'&&kind!=='inc'&&kind!=='int')x=Math.min(x,109.9);

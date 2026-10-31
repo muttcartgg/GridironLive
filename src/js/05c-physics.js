@@ -267,6 +267,11 @@ function tackled(c,d){
   pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=fp/.4;
   if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
   const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
-  if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110)return stFumble(c,d,'Fumble');   /* Turnover Specialist (04c) */
+  if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110){   /* Turnover Specialist (04c) */
+    /* the booth's data: when the knee hit vs when the ball came out (a big hit pops it at once; falling forward or
+       being dragged from behind keeps the knee up longer, a gang tackle puts him down sooner) */
+    const kneeT=clamp(.2+.08*pl.fp+(TK.behind?.05:0)-(help?.05:0)+R(-.06,.06),.08,.45),outT=big?R(0,.1):R(0,.24);
+    pl.fumRev={down:kneeT<outT,close:Math.abs(kneeT-outT)<.06,x:Math.min(109.9,spotOf(c)),y:c.y};
+    return stFumble(c,d,'Fumble')}
   endPlay('tackle');
 }

@@ -438,14 +438,24 @@ function stEnd(kind,msg,o){
   if(st.kind==='int'||st.kind==='fum')fatSave();   // kick units are fresh legs: only scrimmage snaps count toward fatigue
 }
 function stReplay(){if(LG.settings.replay==='off'||typeof REC==='undefined'||REC.length<=20)return;if(LG.settings.replay==='auto'){deadT+=.3;setTimeout(()=>{if(S.phase==='dead')startReplay()},700)}else{$('#replayBtn').hidden=false;deadT=Math.max(deadT,3.2);setTimeout(()=>$('#replayBtn').hidden=true,3200)}}
+/* the runner was down before the ball came out: the offense keeps it at the spot of the tackle (the fumble comes off the books) */
+function fumbleOverturn(p0){
+  const pl=play,st=pl.st,r=pl.result,fr=pl.fumRev,c=st.fumBy;
+  st.chg=false;Object.assign(r,{side:'o',team:p0,x:fr.x,y:fr.y,sk:'down',defRec:false,msg:'Down by contact'});
+  if(c)sAdd(c.team,'fum',-1);if(pl.forcer){sAdd(pl.forcer.team,'ff',-1);credit(pl.forcer,'ff',-1,0)}
+  banner('Overturned · down by contact','#5B6672');
+}
 function stOTOver(){S.phase='wait';setTimeout(()=>{if(S.score[0]!==S.score[1])gameOver();else{S.otRound++;startOT()}},900)}
 function stApply(){
   const r=play.result,st=play.st;
   if(S.celebFlag){S.celebFlag=false;flagMsg(`Unsportsmanlike conduct · ${S.home.abbr} · 15 yards on the kickoff`);penStat(S.home,'usc',15);S.kickPen=true}
   S.celebrate=null;S.celebPose=null;S.clockRun=false;S.clockHold=0;S.ctrl=null;if(st.ck)S.ctrlKey=st.ck;
   const team=r.side==='o'?offT():defT(),ui=team===S.home?0:1,p0=st.poss0==='away'?S.away:S.home;
-  /* booth review: fumble or down by contact? (the engine's call is the truth: the ruling stands) */
-  if(st.kind==='fum'&&team!==p0&&!play.revDone&&r.sk!=='td'&&Math.random()<.6){play.revDone=1;return reviewBeat('Fumble · was he down by contact?','confirmed',`Fumble · ${team.abbr} ball`,()=>stApply())}
+  /* booth review: fumble or down by contact? Overturned only when the tackle data (play.fumRev, 05c) has the knee
+     down before the ball came out; otherwise the fumble is confirmed */
+  if(st.kind==='fum'&&team!==p0&&!play.revDone&&r.sk!=='td'){const fr=play.fumRev;
+    if(fr&&fr.down){play.revDone=1;return reviewBeat('Fumble · was he down by contact?','overturned',`Down by contact · ${p0.abbr} ball`,()=>{fumbleOverturn(p0);stApply()})}
+    if(fr&&fr.close||Math.random()<.6){play.revDone=1;return reviewBeat('Fumble · was he down by contact?','confirmed',`Fumble · ${team.abbr} ball`,()=>stApply())}}
   if(r.sk==='td'){S.score[ui]+=6;if(st.kind!=='ko'&&st.kind!=='punt')dres(team===p0?'TD':st.kind==='int'?'INT':'Fumble');if(S.ot&&(team!==p0||S.otPos===1&&S.score[ui]>S.score[1-ui]))return stOTOver();
     if(ui===0){S.poss='home';S.phase='pat';return setTimeout(showPAT,500)}S.poss='away';S.phase='wait';return aiPAT()}
   if(r.sk==='safety'){S.score[1-ui]+=2;fx('safety',{team:ui?S.home:S.away});if(st.kind==='fum'&&team===p0)dres('Safety');if(S.ot)return stOTOver();return boundary(()=>stKickoff(ui?'home':'away','deep',30,'Free kick after the safety'))}

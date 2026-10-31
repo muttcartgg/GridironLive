@@ -78,15 +78,42 @@ function reviewBeat(what,call,res,cb){
   card('Play under review',what);sfx('whistle');
   setTimeout(()=>{const t=call==='overturned'?'Overturned':call==='confirmed'?'Confirmed':'Ruling stands';card(t,res);fx('review',{call,what,res});logPBP(`Replay review · ${what} · ${t}${res?' · '+res:''}`);setTimeout(cb,1100)},1500);
 }
-/* booth reviews of close calls on scrimmage plays: goal line / pylon touchdowns, sideline catches */
+/* booth reviews of close calls on scrimmage plays: goal line / pylon touchdowns, goal-line spots, sideline catches.
+   A call is overturned only when the engine's own data disagrees with it: pl.glBall (where the ball really was at
+   the goal line, 05 endPlay) and pl.toe (the true toe tap vs the official's call, 05d resolveCatch) */
 function reviewCheck(pl){
   pl.revDone=1;const r=pl.result;if(S.conv||!r||pl.st)return false;
   if(r.kind==='td'&&pl.tdRaw!=null&&(pl.tdRaw<110.4||pl.tdY<1.2||pl.tdY>FW-1.2)){
-    const ok=pl.tdRaw>=110||pl.tdRaw+.45*(pl.fp||0)>=110;
+    const ok=pl.tdRaw>=110||(pl.glBall!=null?pl.glBall:pl.tdRaw+.45*(pl.fp||0))>=110;
     reviewBeat('Touchdown · did the ball break the plane?',ok?'confirmed':'overturned',ok?'Touchdown':'Runner down short of the goal line',()=>{if(!ok)overturnTD(pl);applyResult()});return true}
-  if(pl.sideCatch&&(r.kind==='tackle'||r.kind==='oob')&&Math.random()<.5){reviewBeat('Catch at the sideline','stands','Catch · a foot down in bounds',()=>applyResult());return true}
-  if(r.kind==='inc'&&r.msg==='No feet in bounds'&&Math.random()<.6){reviewBeat('Catch at the sideline','stands','Incomplete · no foot down in bounds',()=>applyResult());return true}
+  if(r.kind==='tackle'&&pl.glBall!=null&&r.x>=109&&r.x<110){const td=pl.glBall>=110;
+    if(td||Math.random()<.5){reviewBeat('Goal line · did the ball break the plane?',td?'overturned':'stands',td?'Touchdown · the ball crossed before the knee went down':'Short of the goal line',()=>{if(td)spotTD(pl);applyResult()});return true}}
+  const toe=pl.toe,wrong=!!toe&&toe.call!==toe.inb;
+  if(r.kind==='inc'&&r.msg==='No feet in bounds'&&(wrong||Math.random()<.6)){reviewBeat('Catch at the sideline',wrong?'overturned':'stands',wrong?'Catch · the toe was down in bounds':'Incomplete · no foot down in bounds',()=>{if(wrong)toeCatch(pl);applyResult()});return true}
+  if(pl.caught&&(r.kind==='tackle'||r.kind==='oob')&&(wrong||pl.sideCatch&&Math.random()<.5)){reviewBeat('Catch at the sideline',wrong?'overturned':'stands',wrong?'Incomplete · no foot down in bounds':'Catch · a foot down in bounds',()=>{if(wrong)toeInc(pl);applyResult()});return true}
   return false;
+}
+/* goal-line spot overturned: the ball broke the plane, a touchdown from the previous spot */
+function spotTD(pl){
+  const r=pl.result,c=pl.carrier||Q,st=tstat(),d=Math.round(110-S.los)-Math.round(r.x-S.los);
+  if(pl.caught){st.passTD++;st.passYds+=d;ps(Q).ptd++;ps(Q).py+=d;if(c&&c.pl){ps(c).rectd++;ps(c).recy+=d}}
+  else if(c&&c.pl){st.rushTD++;st.rushYds+=d;ps(c).rtd++;ps(c).ry+=d}
+  r.kind='td';r.x=110;banner('Overturned · touchdown',offT().c1);
+}
+/* sideline catch overturned to a catch: the receiver is down / out at the spot of the catch */
+function toeCatch(pl){
+  const t=pl.toe,rec=t.rec,st=tstat(),td=t.cx>=110,x=td?110:Math.min(t.cx,109.9),g=Math.round(x-S.los);
+  st.comp++;ps(Q).pc++;ps(rec).rec++;st.passYds+=g;ps(Q).py+=g;ps(rec).recy+=g;if(g>=20)st.bigPlays++;if(td){st.passTD++;ps(Q).ptd++;ps(rec).rectd++}
+  const lp=uOff()&&S.stats.passes?S.stats.passes[S.stats.passes.length-1]:null;if(lp&&lp.res==='X'){lp.res='C';lp.yds=g}
+  pl.caught=true;pl.catchX=x;pl.carrier=rec;Object.assign(pl.result,{kind:td?'td':'oob',x,y:t.cy<CEN?0:FW,msg:''});
+  if(td){pl.tdRaw=null;banner('Overturned · touchdown',offT().c1)}else banner('Overturned · catch','#5B6672');
+}
+/* sideline catch overturned to an incompletion: the completion and its yards come off */
+function toeInc(pl){
+  const r=pl.result,rec=pl.carrier,st=tstat(),g=Math.round(r.x-S.los),yac=Math.max(0,Math.round(r.x-pl.catchX));
+  st.comp--;st.passYds-=g;st.yac-=yac;ps(Q).pc--;ps(Q).py-=g;if(rec&&rec.pl){ps(rec).rec--;ps(rec).recy-=g}if(g>=20)st.bigPlays--;
+  const lp=uOff()&&S.stats.passes?S.stats.passes[S.stats.passes.length-1]:null;if(lp&&lp.res==='C'){lp.res='X';lp.yds=0;lp.yac=0}
+  pl.caught=false;Object.assign(r,{kind:'inc',x:S.los,y:S.ballY,msg:'No feet in bounds'});banner('Overturned · incomplete','#5B6672');
 }
 function overturnTD(pl){
   const r=pl.result,c=pl.carrier||Q,st=tstat(),x=clamp(pl.tdRaw+.45*(pl.fp||0),108.6,109.6),d=Math.round(110-S.los)-Math.round(x-S.los);
@@ -115,10 +142,42 @@ function penPre(f,extra){
   fx('flag',{x:S.los+(f.side==='o'?-1.5:1.2),y:S.ballY+R(-3,3),on:f.side,team:f.team,k:f.k});
   let y;if(f.side==='o'){y=Math.min(5,(S.los-10)/2);S.los-=y}else{y=Math.min(5,(110-S.los)/2);S.los+=y;if(S.los>=S.firstDownX){S.down=1;S.firstDownX=Math.min(110,S.los+10)}}
   S.los=Math.round(S.los*2)/2;penStat(f.team,f.k,y);
-  if(S.clockRun)S.clockHold=Math.max(S.clockHold||0,1.6);   // a running clock restarts on the ready signal
+  const ran=!!S.clockRun;if(S.clockRun)S.clockHold=Math.max(S.clockHold||0,1.6);   // a running clock restarts on the ready signal
   penAnnounce(`${PN[f.k]} · ${sideWord(f)} · ${y<5?'half the distance':y+' yards'} · ${ddAt(S.los,S.down,S.firstDownX)}${extra||''}`);
   fx('penalty',{name:PN[f.k],yards:y,on:f.side,team:f.team,accepted:true,k:f.k});
-  setTimeout(()=>{if(S.phase==='wait')toPresnap()},1000);
+  const go=()=>setTimeout(()=>{if(S.phase==='wait')toPresnap()},1000);
+  if(ran&&runoffDue(f))return setTimeout(()=>runoffOffer(f,go),900);
+  go();
+}
+
+/* ---------- NCAA 3-4-4: the 10-second runoff ----------
+   An offensive foul that stops a running clock in the last minute of a half gives the defense the option of a
+   10-second subtraction (scaled to the compressed game clock, like the two-minute timeout). The offense can stop it
+   with a timeout; with less time left than the runoff, the half is over. A declined penalty has no runoff. */
+const lastMin=()=>!S.ot&&(S.q===2||S.q===4)&&S.clock>0&&S.clock<=lateThr()/2+.01;
+const runoffSec=()=>Math.max(3,Math.round(10*lateThr()/120));
+const runoffDue=f=>!!f&&f.side==='o'&&!S.conv&&lastMin();
+function runoffOffer(f,cont){
+  if(!runoffDue(f))return cont();
+  const def=defT(),off=offT(),di=def===S.home?0:1,oi=1-di,lead=S.score[di]-S.score[oi],sec=runoffSec(),left=Math.max(0,S.clock-sec),hw=S.q===2?'half':'game';
+  S.phase='wait';hideActs();$('#toBtn').hidden=true;
+  const doRun=()=>{S.clock=left;S.untimed=false;S.clockRun=left>0;S.clockHold=left>0?1.6:0;
+    penAnnounce(`10-second runoff · ${def.abbr} takes it · ${left>0?fmtClock(left)+' left':'that ends the '+hw}`);fx('runoff',{team:def,sec,left});
+    if(left<=0){S.phase='wait';return setTimeout(()=>boundary(()=>toPresnap()),1100)}
+    cont()};
+  const useTO=()=>{S.to[oi]--;(S.toDB||(S.toDB=[0,0]))[oi]=1;S.clockRun=false;S.clockHold=0;fx('timeout',{team:off});
+    toast(`Timeout ${off.abbr} · no runoff · ${S.to[oi]} left`);logPBP(`${off.abbr} uses a timeout to avoid the 10-second runoff`);cont()};
+  /* the offense may burn a timeout to keep the seconds */
+  const runIt=()=>{
+    if(S.to[oi]<=0)return doRun();
+    if(off===S.home)return showOpt(`<b>10-second runoff</b> · ${esc(def.abbr)} takes it · clock to ${fmtClock(left)}`,[{t:'Call timeout',s:`No runoff · ${S.to[oi]} left`,f:useTO},{t:'Take the runoff',s:left<=0?`Ends the ${hw}`:`Clock to ${fmtClock(left)}`,cls:'alt',f:doRun}]);
+    const need=S.q===4?lead>=0:S.los>=45;   // CPU offense: keep the time when it has to score (or is in range before the half)
+    return need?useTO():doRun()};
+  if(def===S.home){const rec=S.q===2||lead>=0,A={t:'Take the runoff',s:left<=0?`Ends the ${hw}`:`Clock to ${fmtClock(left)}`,f:runIt},D={t:'No runoff',s:`Clock stays at ${fmtClock(S.clock)}`,cls:'alt',f:cont};
+    penAnnounce(`${PN[f.k]} · ${sideWord(f)} · 10-second runoff option`);
+    return showOpt(`<b>🚩 ${esc(PN[f.k])}</b> · inside the last minute · take a 10-second runoff?`,rec?[A,D]:[D,A])}
+  /* CPU defense: protect a lead or a tie, and give nobody extra time before the half */
+  return S.q===2||lead>=0?runIt():cont();
 }
 
 /* ---------- live-ball fouls: scheduled at the snap, flagged at the spot ---------- */
@@ -262,6 +321,8 @@ function penAccept(a){
   if(!S.ot&&S.clock<=0&&!a.lod){S.untimed=true;S.clockRun=false}   // a half can't end on an accepted live-ball foul
   if(S.down>4)return setTimeout(()=>turnoverDowns(S.los),900);
   if(a.first){tstat().firstDowns++;fx('firstDown',{x:S.los,team:offT()})}
+  /* the foul stopped a clock that would have kept running: the 10-second runoff option */
+  if(!pl.st&&playRun(pl.result)&&runoffDue(f))return setTimeout(()=>runoffOffer(f,()=>setTimeout(nextSnap,600)),900);
   setTimeout(nextSnap,1000);
 }
 
