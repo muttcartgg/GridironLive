@@ -156,13 +156,6 @@ function blockAI(p,dt){
   const e=p.eng;
   if(e&&e.engBy===p&&e.engaged){const g=(pl.handed||pl.caught)&&pl.carrier?pl.carrier:pl.type==='run'&&!pl.handed?{x:S.los,y:pl.gapY}:Q;const ddx=g.x-e.x,ddy=g.y-e.y,n=hyp(ddx,ddy)||1;steer(p,e.x+ddx/n*.95,e.y+ddy/n*.95,p.spd,dt,18);return}
   p.eng=null;
-  /* a pulling lineman: drop step, then flat down the line a yard and a half deep to the inside shoulder of his man
-     (kick-out) or to the hole (trap / wrap), then he turns up and blocks */
-  if(p.pull&&!p.pullDone&&pl.type==='run'&&!pl.caught){
-    const L=S.los,side=Math.sign(pl.gapY-S.ballY)||1,t=p.tgt,ay=t&&t.role==='DL'&&!pl.run.trap?t.y-side*.9:pl.gapY;
-    if(Math.abs(p.y-ay)>1.2&&pl.t<1.5){p.pulling=true;steer(p,L-1.6,ay,p.spd,dt,14);return}
-    p.pullDone=true;p.pulling=false;
-  }
   const passPro=(pl.type==='pass'&&!pl.thrown&&!pl.scramble&&pl.carrier===Q&&!pl.screenGo)||(pl.run&&pl.run.delay&&pl.t<pl.run.delay+.25);
   if(passPro&&(p.role==='OL'||p.role==='TE'||p.role==='RB')){
     const t=p.tgt;if(!t||t.immune||t.stun>0||t.beat===p||t.freeT>0||(t.engBy&&t.engBy!==p&&t.engaged))p.tgt=claimRusher(p);
