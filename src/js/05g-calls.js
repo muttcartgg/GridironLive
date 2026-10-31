@@ -35,7 +35,8 @@ function alignFront(fk,cov,D,K){
 function crashRoll(d,base){const cv=d.cov||{};let p=base-.06*((d.pl.awr||3)-3);if(cv.type==='rush'&&d.role!=='DL')p+=.2;if(cv.type==='spy')p-=.35;if(S.cov==='blitz'||S.cov==='agap')p+=.15;return Math.random()<clamp(p,.12,.88)?'crash':'home'}
 function runSnap(pl){
   const r=pl.run,L=S.los,b=S.ballY,side=Math.sign(pl.gapY-b)||1;
-  if(r.pull){const ol=OFF.filter(p=>p.role==='OL').sort((a,c)=>(a.y-c.y)*side);for(let i=0;i<Math.min(2,r.pull);i++){const g=ol[i===0?1:0];if(g)g.pull=true}}
+  /* pullers: the backside guard (and on GT / pin & pull the backside tackle too); on a trap the backside guard traps */
+  if(r.pull||r.trap&&!r.lead){const ol=OFF.filter(p=>p.role==='OL').sort((a,c)=>(a.y-c.y)*side);for(let i=0;i<Math.min(2,r.pull||1);i++){const g=ol[i===0?1:0];if(g)g.pull=true}}
   const keyBy=f=>{let best=null,bv=-1e9;for(const d of DEF){if(d.x>L+3.6||(d.role==='CB'||d.role==='S')&&d.x>L+2.6)continue;const v=f(d);if(v>bv){bv=v;best=d}}return bv>-1e8?best:null};
   let key=null;
   if(r.read)key=r.midline?keyBy(d=>d.role==='DL'&&(d.y-b)*side>.3?-Math.abs(d.y-b):-1e9):r.inv?keyBy(d=>(d.y-b)*side):keyBy(d=>(d.y-b)*-side);
