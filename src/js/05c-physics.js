@@ -156,6 +156,13 @@ function blockAI(p,dt){
   const e=p.eng;
   if(e&&e.engBy===p&&e.engaged){const g=(pl.handed||pl.caught)&&pl.carrier?pl.carrier:pl.type==='run'&&!pl.handed?{x:S.los,y:pl.gapY}:Q;const ddx=g.x-e.x,ddy=g.y-e.y,n=hyp(ddx,ddy)||1;steer(p,e.x+ddx/n*.95,e.y+ddy/n*.95,p.spd,dt,18);return}
   p.eng=null;
+  /* a pulling lineman: drop step, then flat down the line a yard and a half deep to the inside shoulder of his man
+     (kick-out) or to the hole (trap / wrap), then he turns up and blocks */
+  if(p.pull&&!p.pullDone&&pl.type==='run'&&!pl.caught){
+    const L=S.los,side=Math.sign(pl.gapY-S.ballY)||1,t=p.tgt,ay=t&&t.role==='DL'&&!pl.run.trap?t.y-side*.9:pl.gapY;
+    if(Math.abs(p.y-ay)>1.2&&pl.t<1.5){p.pulling=true;steer(p,L-1.6,ay,p.spd,dt,14);return}
+    p.pullDone=true;p.pulling=false;
+  }
   const passPro=(pl.type==='pass'&&!pl.thrown&&!pl.scramble&&pl.carrier===Q&&!pl.screenGo)||(pl.run&&pl.run.delay&&pl.t<pl.run.delay+.25);
   if(passPro&&(p.role==='OL'||p.role==='TE'||p.role==='RB')){
     const t=p.tgt;if(!t||t.immune||t.stun>0||t.beat===p||t.freeT>0||(t.engBy&&t.engBy!==p&&t.engaged))p.tgt=claimRusher(p);
@@ -267,6 +274,11 @@ function tackled(c,d){
   pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=fp/.4;
   if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
   const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
-  if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110)return stFumble(c,d,'Fumble');   /* Turnover Specialist (04c) */
+  if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110){   /* Turnover Specialist (04c) */
+    /* the booth's data: when the knee hit vs when the ball came out (a big hit pops it at once; falling forward or
+       being dragged from behind keeps the knee up longer, a gang tackle puts him down sooner) */
+    const kneeT=clamp(.2+.08*pl.fp+(TK.behind?.05:0)-(help?.05:0)+R(-.06,.06),.08,.45),outT=big?R(0,.1):R(0,.24);
+    pl.fumRev={down:kneeT<outT,close:Math.abs(kneeT-outT)<.06,x:Math.min(109.9,spotOf(c)),y:c.y};
+    return stFumble(c,d,'Fumble')}
   endPlay('tackle');
 }

@@ -355,7 +355,15 @@ function assignRunBlocks(ck){
   const line=OFF.filter(p=>p.blocker&&(p.role==='OL'||p.key==='Y')&&!p.lead).sort((a,b)=>a.y-b.y),taken=new Set();
   const pairs=[];for(const o of line)for(const d of front)pairs.push([Math.abs(d.y-o.y)+(d.role==='LB'?2.4:0)+Math.abs(d.x-o.x)*.25,o,d]);pairs.sort((a,b)=>a[0]-b[0]);
   for(const [,o,d] of pairs){if(o.tgt||taken.has(d))continue;taken.add(d);o.tgt=d;d.claim=o}
-  for(const o of OFF.filter(p=>p.lead)){let best=null,bd=1e9;for(const d of front.concat(back)){if(taken.has(d))continue;const dd=hyp(d.x-S.los,d.y-play.gapY);if(dd<bd){bd=dd;best=d}}if(best){taken.add(best);o.tgt=best;best.claim=o}}
+  /* gap schemes (power / counter / trap): the base fits stand, the next lineman toward the backside blocks back on
+     the puller's man (the center when the tackle pulls too; the backside end is left for the play to outrun), and the
+     puller is the extra hat at the hole: he kicks out or leads up on the first defender who shows there */
+  const pullers=line.filter(p=>p.pull),bs=Math.sign(play.gapY-S.ballY)||1;
+  for(const g of pullers){const v=g.tgt;g.tgt=null;if(!v)continue;taken.delete(v);
+    const near=l=>l.sort((a,c)=>Math.abs(a.y-g.y)-Math.abs(c.y-g.y))[0],nb=near(line.filter(o=>!o.pull&&(o.y-g.y)*bs<0))||near(line.filter(o=>!o.pull&&o.role==='OL'));
+    if(nb){if(nb.tgt)taken.delete(nb.tgt);nb.tgt=v;v.claim=nb;taken.add(v)}}
+  for(const g of pullers)if(!g.tgt)g.lead=true;
+  for(const o of OFF.filter(p=>p.lead&&!p.tgt)){let best=null,bd=1e9;for(const d of front.concat(back)){if(taken.has(d))continue;const dd=hyp(d.x-S.los,d.y-play.gapY);if(dd<bd){bd=dd;best=d}}if(best){taken.add(best);o.tgt=best;best.claim=o}}
   for(const o of OFF.filter(p=>p.blocker&&!p.tgt&&p.key!==ck&&p.role!=='QB')){let best=null,bd=1e9;for(const d of back.concat(front)){if(taken.has(d))continue;const dd=hyp(d.x-o.x,d.y-o.y);if(dd<bd){bd=dd;best=d}}if(best){taken.add(best);o.tgt=best;best.claim=o}}
 }
 function runRoute(p,dt){
@@ -497,7 +505,7 @@ function simulate(dt){
     if(p.side==='d')p.face=p.vx>2.8?1:p.vx<-.3||Math.abs(p.vx)<2.8?-1:p.face;else p.face=p.vx<-2.8?-1:1;}
   /* collisions: blockers give way, defenders are not shoved backwards */
   const hold=pl.carrier;
-  for(let i=0;i<P.length;i++){const a=P[i];if(a===hold||a.fallen)continue;for(let j=i+1;j<P.length;j++){const c=P[j];if(c===hold||c.fallen)continue;const ddx=c.x-a.x,ddy=c.y-a.y,d=hyp(ddx,ddy);if(d<.95&&d>1e-4){const o=(.95-d);let wa=.5,wc=.5;if(a.side!==c.side&&!(ball.state==='air'&&!ball.pitch)){if(a.side==='d'){wa=.2;wc=.8}else{wa=.8;wc=.2}}a.x-=ddx/d*o*wa;a.y-=ddy/d*o*wa;c.x+=ddx/d*o*wc;c.y+=ddy/d*o*wc}}}
+  for(let i=0;i<P.length;i++){const a=P[i];if(a===hold||a.fallen)continue;for(let j=i+1;j<P.length;j++){const c=P[j];if(c===hold||c.fallen||a.side===c.side&&(a.pulling||c.pulling))continue;const ddx=c.x-a.x,ddy=c.y-a.y,d=hyp(ddx,ddy);if(d<.95&&d>1e-4){const o=(.95-d);let wa=.5,wc=.5;if(a.side!==c.side&&!(ball.state==='air'&&!ball.pitch)){if(a.side==='d'){wa=.2;wc=.8}else{wa=.8;wc=.2}}a.x-=ddx/d*o*wa;a.y-=ddy/d*o*wa;c.x+=ddx/d*o*wc;c.y+=ddy/d*o*wc}}}
   const c=pl.carrier;
   if(c&&!pl.ended){
     if(runner||(pl.type==='run'&&!pl.handed&&c===Q&&pl.t>.15)){
@@ -549,7 +557,9 @@ function dirty(p){if(!p||!p.pl)return;const k=p.pl.id;S.dirt[k]=Math.min(1,(S.di
 /* ---------- end of play ---------- */
 function endPlay(kind,msg){
   if(play.st)return stEnd(kind==='fum'||kind==='sack'?'tackle':kind,msg);
-  if(play.ended)return;{const cc=play.carrier;if(kind==='tackle'&&cc&&cc.side==='o'&&isRunner()&&spotOf(cc)+(play.fp||0)>=110)kind='td';if(kind==='td'&&cc&&cc.side==='o'){play.tdRaw=spotOf(cc);play.tdY=cc.y}}play.ended=true;S.phase='dead';hint('');touch=null;aim=null;stick=null;$('#bulletBtn').hidden=true;hideActs();
+  if(play.ended)return;{const cc=play.carrier;
+    /* goal line: where the ball really was (the reach the officials can't see in the pile) is kept for the booth (05f) */
+    if(kind==='tackle'&&cc&&cc.side==='o'&&isRunner()){const sp=spotOf(cc)+(play.fp||0);if(sp>=108.6)play.glBall=spotOf(cc)+.45*(play.fp||0)+(TK.behind?R(.15,.6):TK.head?R(0,.2):R(.05,.45));if(sp>=110)kind='td'}if(kind==='td'&&cc&&cc.side==='o'){play.tdRaw=spotOf(cc);play.tdY=cc.y}}play.ended=true;S.phase='dead';hint('');touch=null;aim=null;stick=null;$('#bulletBtn').hidden=true;hideActs();
   deadT=kind==='td'?2.8:kind==='int'||kind==='fum'?2.1:1.35;
   const c=play.carrier||Q;let x=kind==='inc'?S.los:kind==='td'?110:spotOf(c)+(kind==='tackle'?play.fp||0:0);
   if(kind!=='td'&&kind!=='inc'&&kind!=='int')x=Math.min(x,109.9);

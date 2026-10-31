@@ -30,7 +30,7 @@ function aimError(d,bullet,lob){
   const plat=1+Math.min(1,v/5.5)*.6*(1.15-.05*qb.pl.agi)+(1-set)*.15;
   const acc=play&&play.dblDone?Math.max(qb.pl.acc,2.8):qb.pl.acc;   // the trick-play passer is the back or receiver who can throw
   const e=(.3+d*.0074*(6.3-acc))*(1+pressure()*.9)*plat*(1+strain*.6)*(bullet?1.15:lob?.92:1)*wx;
-  return e*(qb.user?(focus('passing')?.8:1)/SL('acc'):1.1-S.aiSkill*.2)/coachMod(qb.team,'acc');
+  return e*(qb.user?(focus('passing')?.8:1)/SL('acc'):1.6-S.aiSkill*.3)/coachMod(qb.team,'acc');   // CPU passers: a touch less pinpoint than the user's drag-to-aim
 }
 function flightT(d,bullet,lob,thr){let T=(.2+d*.028+d*d*.00028)*(1.1-.035*thr);if(bullet)T*=.72;else if(lob)T=T*1.28+.08;const mr=maxRange();if(d>mr*.8)T*=1+(d/mr-.8)*.8;return Math.max(.28,T)}
 function throwBall(tx,ty,bullet,intended,lob){
@@ -66,21 +66,43 @@ function passWindow(r){
     if(d.x>Q.x+3&&d.x<px-1){const t=clamp(((d.x-Q.x)*(px-Q.x)+(d.y-Q.y)*(py-Q.y))/((px-Q.x)**2+(py-Q.y)**2||1),0,1),lx=Q.x+(px-Q.x)*t,ly=Q.y+(py-Q.y)*t,l=hyp(d.x-lx,d.y-ly);if(l<1.3&&d0<22)w=Math.min(w,l+.4)}}
   return [w,px];
 }
+/* route depth class for the read: 0 checkdown/screen, 1 quick, 2 intermediate, 3 deep breaking, 4 vertical */
+const RDC={check:0,flat:0,swing:0,arrow:0,bubble:0,screen:0,tunnel:0,slip:0,angle:0,hitch:1,stick:1,spot:1,snag:1,qout:1,whip:1,slant:1,shallow:1,drag:1,
+  out:2,curl:2,dig:2,cross:2,sit:2,pop:2,glance:2,flag:2,comeback:2,deepout:3,sail:3,deepcross:3,post:3,corner:3,skinny:3,leak:3,go:4,fade:4,seam:4,wheel:4,postcorner:4,outup:4};
+/* the progression, set once per dropback: quick and intermediate reads first, the deep routes after them and the
+   checkdown last, unless the call or the situation says take a shot (then the deep read comes first) */
+function qbReads(pl){
+  const sit=sitInfo(),tg=S.firstDownX-S.los,blitz=(COV_FAM[S.cov]||'').includes('b');
+  pl.shot=!pl.screen&&!blitz&&(pl.pa&&Math.random()<.35||sit.lastPlay||sit.trailingLate&&S.clock<S.qlen*.12||S.down<=2&&tg<=3&&Math.random()<.25||S.down===1&&Math.random()<.06);
+  pl.blitzRead=blitz;
+  const rk=r=>{const c=RDC[r.rname]!=null?RDC[r.rname]:2;if(pl.screen)return r.key===pl.screen?-1:c;if(blitz)return c<=1?c:c+2;if(pl.shot)return c>=3?-c:c===0?9:c;return c===0?2.6:c};
+  pl.rd=OFF.filter(r=>eligible(r)&&!r.blocker&&r.route).map(r=>[r,rk(r)+R(-.3,.3)]).sort((a,b)=>a[1]-b[1]).map(x=>x[0]);
+}
 function aiQB(dt){
   const pl=play;if(pl.thrown||pl.scramble||pl.carrier!==Q||pl.fleaHold)return;
-  const sk=S.aiSkill,awr=Q.pl.awr,readStart=(pl.screen?.75:pl.pa?1.35:1.05)+(pl.flea?1.2:0)+(pl.screen?0:pl.hold||(pl.hold=R(.2,1.1)));
+  if(!pl.rd)qbReads(pl);
+  const sk=S.aiSkill,awr=Q.pl.awr,readStart=(pl.screen?.75:pl.pa?1.95:pl.blitzRead?.85:pl.pc.quick?1.2:1.75)+(pl.flea?1.2:0)+(pl.screen?0:pl.hold!=null?pl.hold:(pl.hold=pl.blitzRead?R(0,.2):R(0,.45)));
+  /* pocket feel: heat has to last a beat (shorter for a heady QB) before he reacts to it */
+  {const p0=pressure();pl.prT=p0>.3?(pl.prT||0)+dt:Math.max(0,(pl.prT||0)-dt*2)}
   if(pl.t<readStart||pl.t<pl.nextRead)return;pl.nextRead=pl.t+.2;
-  const pr=pressure(),noise=(1.15-.17*awr)*(1.2-sk*.4);
+  const pr=pressure(),noise=(1.15-.17*awr)*(1.2-sk*.4),step=clamp(.56-.04*(awr-3),.4,.68),el=pl.t-readStart;
+  /* how far through the progression he is; heat on him jumps him to the hot / checkdown reads */
+  const ci=Math.floor(el/step),cur=Math.min(ci,pl.rd.length-1),hot=pr>.42&&pl.prT>.5-.05*(awr-3);
   let best=null,bs=-1e9,bo=0;
-  for(const r of OFF){if(!eligible(r)||r.blocker||r.fallen||r.jamT>0)continue;
-    const [w,px]=passWindow(r),depth=px-S.los;
-    let s=w*1.1+Math.min(Math.max(depth,0),20)*.15-Math.max(0,depth-15)*.1+(px>=S.firstDownX?1.3:0)-(depth<1&&!pl.screen?1.2:0)-(depth<-1?1:0)+R(-1,1)*noise;
+  pl.rd.forEach((r,i)=>{if(r.blocker||r.fallen||r.jamT>0||!eligible(r))return;
+    /* on time: the ball comes out as the receiver comes out of his break (a vertical once he is past 9 yards), not mid-stem */
+    if(!(pl.screen&&r.key===pl.screen)&&!(r.brkT!=null&&pl.t-r.brkT>.3||r.wi>=r.route.length||!r.brkT&&r.x-S.los>9))return;
+    const [w,px]=passWindow(r),depth=px-S.los,cl=RDC[r.rname]!=null?RDC[r.rname]:2;
+    /* he throws the read he is on; an earlier read that comes open late, the hot route under heat, or a man running free */
+    if(!(i===cur||i<cur&&w>=4.2||hot&&cl<=1||w>=7.4&&i<=ci+1))return;
+    let s=w*1.1+Math.min(Math.max(depth,0),15)*.1+(px>=S.firstDownX?1.3:0)-(depth<1&&!pl.screen?1.2:0)-(depth<-1?1:0)+(i===cur?.7:0)+R(-1,1)*noise;
+    if(hot)s+=cl<=1?1.4:-1;
     if(pl.screen&&r.key===pl.screen)s+=pl.t<1.6?6:-2;
     if(S.down>=3&&px<S.firstDownX&&!pl.screen)s-=1.1;
-    if(s>bs){bs=s;best=r;bo=w+R(-.6,.6)*noise-Math.max(0,depth-15)*.05}}
-  const need=3.6-(pl.t-readStart)*.75-pr*.9;
+    if(s>bs){bs=s;best=r;bo=w+R(-.6,.6)*noise-(depth>15?pl.shot?.4:1.6:0)}});
+  const need=3.2-el*.45-pr*.5;
   if(best&&(bo>=need||pl.t>4.2)){if(bo<.6&&pl.t>3.4&&Math.random()<.5){throwAway();return}aiThrow(best);return}
-  if(pr>.5&&pl.t>2.1){if(Q.pl.spd>=3.6&&Math.random()<.3){pl.scramble=true;pl.scrT=pl.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}return}if(Math.random()<.18){throwAway();return}}
+  if(pr>.5&&pl.t>2.1){if(Q.pl.spd>=3.6&&Math.random()<.3){pl.scramble=true;pl.scrT=pl.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}return}if(pl.t>2.4&&Math.random()<.1){throwAway();return}}
   if(pl.t>5)throwAway();
 }
 
@@ -170,7 +192,10 @@ function resolveCatch(){
     setAnim(rec,'catch');fx('drop',{p:rec});if(!S.conv)tstat().drops=(tstat().drops||0)+1;return endPlay('inc','Dropped');
   }
   /* sideline / end line: the toe-tap */
-  if(m<.55&&Math.random()>clamp(.35+.55*m/.55+.08*(rec.pl.awr-3)+.05*(rec.pl.agi-3),0,.97)){logPass('X');setAnim(rec,'catch');return endPlay('inc','No feet in bounds')}
+  /* pl.toe keeps the truth for the booth: the covering official misses a bang-bang toe tap now and then (05f reviewCheck) */
+  if(m<.55){const pIn=clamp(.35+.55*m/.55+.08*(rec.pl.awr-3)+.05*(rec.pl.agi-3),0,.97),u=Math.random(),inb=u<=pIn,close=Math.abs(u-pIn)<.06,call=close&&Math.random()<.35?!inb:inb;
+    pl.toe={inb,call,close,cx:clamp(cx,0,119.9),cy:clamp(cy,.1,FW-.1),rec};
+    if(!call){logPass('X');setAnim(rec,'catch');return endPlay('inc','No feet in bounds')}}
   completeTo(rec,clamp(cx,0,119.9),clamp(cy,.1,FW-.1),contested,dive);
 }
 
