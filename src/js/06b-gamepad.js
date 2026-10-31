@@ -50,6 +50,7 @@ function padPoll(){
   const b=st.b,pr=PAD.prev,dn=i=>!!b[i]&&!pr[i],now=performance.now();PAD.prev=b.slice();
   const [lx,ly,rx,ry]=st.a,lm=hyp(lx,ly),rm=hyp(rx,ry);
   if(b.some(v=>v)||lm>.3||rm>.3)PAD.used=now;
+  if(dn(PB.START)){if(S.paused&&padVis($('#pausem')))$('#resume').click();else if(padVis($('#pauseBtn')))$('#pauseBtn').click();return}
   /* menus: whichever layer is on top gets the d-pad (held directions repeat), A clicks, B backs out */
   const L=(S.phase==='live'&&!S.paused)?null:padLayer();
   if(L!==PAD.layer){PAD.layer=L;padFocus(L&&now-PAD.used<60000?padDefault(L):null)}
@@ -61,8 +62,8 @@ function padPoll(){
     if(dn(PB.B)){if(L.id==='modal')closeModal();else if(L.id==='snapBar'||L.id==='adjMenu')$('#snapBack').click();else if(L.id==='hub'&&typeof TAB!=='undefined'&&TAB!=='home')showHub('home')}
     if(L.id==='call'&&(dn(PB.LB)||dn(PB.RB))){const t=[...document.querySelectorAll('#callRow [data-tab]')],i=t.findIndex(x=>x.getAttribute('aria-pressed')==='true');const n=t[(i+(dn(PB.RB)?1:t.length-1))%t.length];if(n){n.click();padFocus(padDefault($('#call')))}}
     if(L.id==='snapBar'&&dn(PB.Y))$('#snapAdj').click();
+    return;   // a press a menu used (A on SNAP) must not also act in the play it starts
   }
-  if(dn(PB.START)){if(S.paused&&padVis($('#pausem')))$('#resume').click();else if(padVis($('#pauseBtn')))$('#pauseBtn').click()}
   if(S.paused)return;
   if(S.phase==='kick'&&dn(PB.A)){kickTap();return}
   if(S.phase==='presnap'&&!uOff()&&dn(PB.B)&&!padVis($('#call')))switchDefender();

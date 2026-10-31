@@ -97,7 +97,7 @@ function showSlots(){
     <div class="slots">${SLOTS.map(card).join('')}</div>
     <div class="grid2 ttl-more">
       <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">Any two programs, one game, nothing saved.</p></div><button class="btn" id="quickPlay">Play</button></div>
-      <div class="card ttl-act"><span class="ta-ic">${ICO.code}</span><div><div class="h2">Restore a dynasty</div><p class="note">From a backup file (Settings › Saves › Back up to Files) or a save code.</p></div><span style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end"><button class="btn ghost" id="restoreFile">File</button><button class="btn ghost" id="importCode">Code</button></span></div></div>`;
+      <div class="card ttl-act"><span class="ta-ic">${ICO.code}</span><div><div class="h2">Restore a dynasty</div><p class="note">From a backup file or a save code.</p></div><span style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost sm" id="restoreFile">File</button><button class="btn ghost sm" id="importCode">Code</button></span></div></div>`;
   on('restoreFile',()=>openRestoreFile(showSlots));
   on('quickPlay',()=>{ac();openQuickPlay()});
   on('whatsNew',()=>{openModal(`<div class="eyebrow">Gridiron Live 7</div><div class="h2">What’s new</div><ul class="wn">${WHATS_NEW.map(([h,d])=>`<li><b>${h}</b><span>${d}</span></li>`).join('')}</ul><button class="btn light wide" id="wnX">Let’s play</button>`);on('wnX',closeModal)});
@@ -488,8 +488,8 @@ function hubSettings(){
     <div class="setrow"><span class="eyebrow">Opponent drives</span>${seg('setDef',[['ask','Ask each time'],['play','Play defense'],['sim','Sim them']],s.defMode||'ask')}</div>
     <div class="setrow"><span class="eyebrow">Default defender</span>${seg('setDP',[['LB0','Linebacker'],['S0','Safety'],['CB0','Cornerback'],['DL1','D-line']],s.defPlayer||'LB0')}</div>
     <div class="setrow"><span class="eyebrow">Play clock</span>${seg('setPC',[[25,'25 s'],[40,'40 s'],[90,'Relaxed']],s.pclock||25)}</div>
-    <div class="setrow"><span class="eyebrow">Camera zoom</span>${seg('setZ',[['auto','Auto (fits your iPhone)'],[.85,'Wide'],[1,'Normal'],[1.15,'Close']],typeof s.zoom==='number'?s.zoom:'auto')}</div>
-    <p class="note" id="zoomNote">Optimized for ${esc(devLabel())}: players keep the same size on every phone and the view fits your screen and its notch or Dynamic Island. Wide, Normal and Close adjust from that fit.</p>
+    <div class="setrow"><span class="eyebrow">Camera zoom</span>${seg('setZ',[['auto','Auto'],[.85,'Wide'],[1,'Normal'],[1.15,'Close']],typeof s.zoom==='number'?s.zoom:'auto')}</div>
+    <p class="note" id="zoomNote">Auto fits your iPhone · <b>Optimized for ${esc(devLabel())}</b>. Players keep the same size on every phone and the view fits your screen, its notch or Dynamic Island and the score bug. Wide, Normal and Close adjust from that fit.</p>
     <div class="setrow"><span class="eyebrow">Coin toss</span>${seg('setCoin',[[1,'Call it'],[0,'Automatic']],s.coin===false?0:1)}</div>
     <div class="setrow"><span class="eyebrow">In-game injuries</span>${seg('setInj',[[1,'On'],[0,'Off']],s.injuries===false?0:1)}</div>
     <div class="setrow"><span class="eyebrow">Haptics</span>${seg('setHap',[[1,'On'],[0,'Off']],s.haptics===false?0:1)}</div>
