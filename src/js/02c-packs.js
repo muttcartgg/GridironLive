@@ -106,7 +106,8 @@ function packPreview(L,pk){
   if(!packIsV2(pk)&&Array.isArray(pk.teams))return {v1:true,teams:Math.min(pk.teams.length,L.teams.length)};
   const {pairs,miss}=packMatch(L,pk);let players=0,logos=0,coaches=0;for(const [,e] of pairs){players+=Array.isArray(e.roster)?e.roster.length:0;if(safeURL(e.logo)||safeURL(e.logoDark))logos++;if(e.coaches)coaches+=['hc','oc','dc'].filter(k=>e.coaches[k]&&e.coaches[k].name).length}
   const cust=(pk.players||[]).filter(e=>e&&packTeamFor(L,e.team)).length;
-  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,coaches,custom:cust,customMiss:(pk.players||[]).length-cust};
+  const sc=realSchedOK(pk.schedule)?{season:pk.schedule.season||pk.season||2026,through:pk.schedule.through|0}:null;
+  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,coaches,custom:cust,customMiss:(pk.players||[]).length-cust,sched:sc};
 }
 
 /* ---------- saved pack for new dynasties (compressed in KV; only the 60 players each team would use) ---------- */
@@ -114,14 +115,15 @@ function packSave(pk){
   const A=ATTR_KEYS;const enc=e=>{const pos=packPos(e.pos);const a=A.map(k=>{const v=packAttr(e[k]);return v==null?'':Math.round(v*10)}).join('.');return [String(e.name||'').slice(0,40),pos,e.num==null?'':e.num,e.yr==null?'':e.yr,e.ht||'',e.wt||'',e.home||'',a,e.ovr||'',e.rs?1:0,e.espnId||'']};
   const c={v:2,name:pk.name||'Imported pack',season:pk.season||null,teams:(pk.teams||[]).map(t=>({school:t.school,mascot:t.mascot,abbr:t.abbr,espnId:t.espnId,logo:safeURL(t.logo),logoDark:safeURL(t.logoDark),stadium:t.stadium,capacity:t.capacity,coaches:t.coaches&&typeof t.coaches==='object'?t.coaches:undefined,
     r:Array.isArray(t.roster)?packSelect(t.roster).map(x=>enc(x.e)):[]})),players:(pk.players||[]).slice(0,600)};
+  const sc=pk.schedule;if(realSchedOK(sc))c.schedule={season:sc.season||pk.season||null,through:sc.through|0,updated:sc.updated||'',games:sc.games.slice(0,4000)};
   const raw='Z:'+LZString.compressToBase64(JSON.stringify(c));
   if(raw.length>6e6)throw new Error('This pack is too big to keep for new dynasties.');
-  KV.set(PACK_KEY,raw);KV.set(PACK_ON,'1');return raw.length;
+  KV.set(PACK_KEY,raw);KV.set(PACK_ON,'1');KV.set(REAL_KEY,c.schedule?JSON.stringify({season:c.schedule.season||2026,through:c.schedule.through,n:c.schedule.games.length}):null);return raw.length;
 }
 function packLoadSaved(){
   try{const raw=KV.get(PACK_KEY);if(!raw)return null;const c=unpack(raw);if(!c||!Array.isArray(c.teams))return null;
     const dec=r=>{const e={name:r[0],pos:r[1],num:r[2]===''?null:r[2],yr:r[3],ht:r[4],wt:r[5],home:r[6],ovr:r[8],rs:!!r[9],espnId:r[10]};String(r[7]).split('.').forEach((v,i)=>{if(v!=='')e[ATTR_KEYS[i]]=v/10});return e};
-    return {format:'gridiron-live-pack',version:2,name:c.name,season:c.season,teams:c.teams.map(t=>({...t,roster:(t.r||[]).map(dec)})),players:c.players||[]}}
+    return {format:'gridiron-live-pack',version:2,name:c.name,season:c.season,teams:c.teams.map(t=>({...t,roster:(t.r||[]).map(dec)})),players:c.players||[],schedule:c.schedule||null}}
   catch(e){console.error(e);return null}
 }
 const packSavedOn=()=>!!KV.get(PACK_KEY)&&KV.get(PACK_ON)!=='0';
@@ -135,7 +137,7 @@ function openRosterImport(L,done,opt){
     const p=pv;let prev='';
     if(p&&p.v1)prev=`<div class="ri-prev"><b>Old-style team pack</b><p class="note">${p.teams} schools, matched by their order in the list.</p></div>`;
     else if(p)prev=`<div class="ri-prev"><div class="kpis"><div><em>Teams matched</em><b>${p.teams}<small>/${p.total}</small></b></div><div><em>Players</em><b>${p.players.toLocaleString()}</b></div><div><em>Logos</em><b>${p.logos}</b></div><div><em>Coaches</em><b>${p.coaches||0}</b></div><div><em>Custom players</em><b>${p.custom}</b></div></div>
-      ${p.miss.length?`<p class="note">Not in this league (skipped): ${esc(p.miss.slice(0,8).join(', '))}${p.miss.length>8?` and ${p.miss.length-8} more`:''}</p>`:''}${p.customMiss?`<p class="note">${p.customMiss} custom player${p.customMiss>1?'s have':' has'} no matching team.</p>`:''}
+      ${p.miss.length?`<p class="note">Not in this league (skipped): ${esc(p.miss.slice(0,8).join(', '))}${p.miss.length>8?` and ${p.miss.length-8} more`:''}</p>`:''}${p.customMiss?`<p class="note">${p.customMiss} custom player${p.customMiss>1?'s have':' has'} no matching team.</p>`:''}${p.sched?`<p class="note">Includes the real ${p.sched.season} schedule with results through week ${p.sched.through}: keep "Use for new dynasties" on, then pick Real ${p.sched.season} on the new-dynasty screen.</p>`:''}
       ${live?`<label class="ri-opt"><input type="checkbox" id="riCur" ${L.live?'disabled':'checked'}> Apply to this dynasty now${L.live?' (finish the game in progress first)':''}</label>
       <label class="ri-opt"><input type="checkbox" id="riKeep" checked> Keep my team's roster</label>`:''}
       ${p.teams&&(p.pk.teams||[]).length?`<label class="ri-opt"><input type="checkbox" id="riSave" checked> Use for new dynasties</label>`:''}</div>`;
@@ -177,9 +179,17 @@ function openRosterExport(){
 function packSetupHTML(st){
   const has=!!KV.get(PACK_KEY);
   return `<div class="setrow"><span class="eyebrow">Real rosters &amp; logos</span><span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${has&&st.league==='ncaa'?`<span class="seg" id="packOnSeg">${[['1','On'],['0','Off']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${(KV.get(PACK_ON)!=='0')===(v==='1')}">${l}</button>`).join('')}</span>`:''}<button class="btn sm ghost" id="packImp">Import rosters &amp; logos</button></span></div>
-    ${has&&st.league==='ncaa'&&packSavedOn()&&st.L.pack?`<p class="note">Using ${esc(st.L.pack.name)}: ${st.L.pack.teams} teams with imported rosters.</p>`:''}`;
+    ${has&&st.league==='ncaa'&&packSavedOn()&&st.L.pack?`<p class="note">Using ${esc(st.L.pack.name)}: ${st.L.pack.teams} teams with imported rosters.</p>`:''}${realSetupHTML(st)}`;
+}
+/* the real-season option: only with a saved pack that carries season data, applied to this NCAA setup league */
+const realSetupOn=st=>!!(st&&st.league==='ncaa'&&packSavedOn()&&st.L&&st.L.pack&&realSeasonSummary());
+function realSetupHTML(st){
+  if(!realSetupOn(st))return '';const s=realSeasonSummary(),wk=Math.min((s.through|0)+1,13);
+  return `<div class="setrow"><span class="eyebrow">Season</span><span class="seg" id="realSeg">${[['0','New schedule'],['1',`Real ${s.season||2026} · week ${wk}`]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${!!st.real===(v==='1')}">${l}</button>`).join('')}</span></div>
+    ${st.real?`<p class="note">${esc(realSeasonNote(s))}: the real schedule, with results, standings and polls through week ${s.through}. Your season picks up in week ${wk} on the real remaining schedule, then title games, bowls and the Playoff.</p>`:''}`;
 }
 function packSetupBind(st){
+  document.querySelectorAll('#realSeg button').forEach(b=>b.onclick=()=>{st.real=b.dataset.v==='1';renderSetupKeep()});
   on('packImp',()=>openRosterImport(st.L,r=>{if(r&&r.saved&&st.league==='ncaa'){st.L=genNCAALeague();packAutoApply(st.L)}renderSetupKeep()},{setup:true}));
   document.querySelectorAll('#packOnSeg button').forEach(b=>b.onclick=()=>{KV.set(PACK_ON,b.dataset.v);st.L=genNCAALeague();if(b.dataset.v==='1')packAutoApply(st.L);renderSetupKeep()});
 }
@@ -219,7 +229,7 @@ SETTINGS_EXTRA.push({card:'Rosters & data',key:'showLogos',label:'Show imported 
 SETTINGS_EXTRA.push({card:'Rosters & data',key:'showPhotos',label:'Show real player photos',opts:[[1,'On'],[0,'Off']],def:1,bool:true,note:'Imported players show their headshot when you are online (loaded from ESPN, never saved). Everyone else, and anyone without a photo, gets a team-colour avatar.'});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Your roster',button:'Export my roster (JSON)',id:'expRoster',onClick:()=>openRosterExport()});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Imported data',button:'Remove imported data',id:'rmPack',note:'New dynasties go back to generated rosters; this dynasty keeps its players and drops the imported logos.',
-  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);for(const t of LG.teams){delete t.logo;delete t.logoDark}delete LG.pack;saveNow();showHub('settings');toast('Imported data removed')}});
+  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);KV.set(REAL_KEY,null);for(const t of LG.teams){delete t.logo;delete t.logoDark}delete LG.pack;saveNow();showHub('settings');toast('Imported data removed')}});
 });
 
 /* ---------- v1 team packs (moved from 02-data.js) ---------- */

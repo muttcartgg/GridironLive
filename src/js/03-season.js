@@ -427,6 +427,7 @@ function buildPost(L){
       L.fcsp={seeds,r1:[],r2:[],qf:[],sf:[],final:null};for(const id of seeds)L.teams[id].playoffApps++;
       for(let j=0;j<8;j++){const hi=seeds[8+j],lo=seeds[23-j];if(hi==null||lo==null){L.fcsp.r1.push(null);continue}const g=postGame(hi,lo,{fcsp:true,neutral:false,tag:`FCS Playoffs · First Round · #${9+j} vs #${24-j}`,date:F.r1,wx:weatherFor(12),slot:'Afternoon'});L.fcsp.r1.push(g);games.push(g)}
     }
+    if(Array.isArray(L.lateGames)){for(const x of L.lateGames)games.push(Object.assign({hs:null,as:null,wx:'Clear',slot:'Afternoon'},x));delete L.lateGames}   /* real-season mode: Army–Navy (03b) */
     L.weeks[L.week]={label:WEEK_NAMES[0],kind:'post0',games};
   }
   if(k===1){

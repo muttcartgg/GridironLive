@@ -220,7 +220,10 @@ function startDynasty(id){
   ensureCareer(L);if(t.staff)L.staff={oc:t.staff.oc,dc:t.staff.dc};   /* you inherit the school's coordinators */
   L.coach.sal=coachSalary('hc',3,t);L.coach.yrs=5;setBudget(L,true);setHomecoming(L);seedRecords(L);
   L.news=[{t:`${L.coach.name} is introduced as head coach of ${teamName(t)} on a 5-year deal. The AD expects ${adTarget(t)}+ wins. Player budget: ${money(L.budget.total)}.`,good:true}];
-  LG=L;SLOT=st.slot;SETUP=null;applyStyle();saveNow(true);showHub('home');
+  LG=L;SLOT=st.slot;SETUP=null;const go=()=>{applyStyle();saveNow(true);showHub('home')};
+  /* real-season mode (03b): replaying the finished weeks takes a few seconds on a phone, so say so first */
+  if(st.real&&typeof realSetupOn==='function'&&realSetupOn(st)){toast('Loading the real season…');setTimeout(()=>{try{realSeasonStart(L)}catch(e){console.error(e);toast('The real season could not be loaded')}go()},60);return}
+  go();
 }
 
 /* ---------- hub ---------- */
