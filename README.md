@@ -16,6 +16,18 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - Faster launch: only settings and the last-played dynasty load at startup; other slots, backups, custom sounds and roster packs load on demand or in the background.
 - Bluetooth controllers (Xbox, PlayStation, MFi): left stick moves, A snaps / selects / tackles, B jukes / switches, X spins / bullet, Y trucks / lob, RB / LB pick a receiver and A throws (or flick the right stick), Start pauses, and the d-pad moves a focus ring through the play-call sheet and menus. Full mapping in Settings › How to play.
 
+## Version 7.3
+
+- Camera fits your iPhone: the app detects your model and its notch or Dynamic Island and sizes the field so players look the same on every phone (Settings › Camera zoom: Auto, plus Wide/Normal/Close).
+- Back up to Files: save one dynasty or all slots to Files/iCloud and restore them later (title screen or Settings).
+- Faster startup: only your last-played save loads at launch; the others load when you open them.
+- Bluetooth controllers (Xbox, PlayStation, MFi): left stick moves, buttons snap, juke, spin, truck, pause; see How to play.
+- Real 2026 season mode (with the roster pack): start a dynasty at the current week with every team's real record and results, then play out the real remaining schedule into the title games, bowls and playoff.
+- The roster pack now has stats through Week 8 and 57 verified 2026 coordinators at 30 top programs, each with traits.
+- CPU quarterbacks read short and intermediate routes first, take deep shots in the right situations and get sacked at a realistic rate (about 29% deep throws and 6% sacks in testing).
+- Replay can overturn fumble, sideline-catch and goal-line calls when the call on the field was wrong.
+- The 10-second runoff late in each half.
+
 ## Version 7.2
 
 - Real player photos for imported rosters: headshots load from ESPN when you're online (links only, nothing is stored in the app) on the roster, player sheet, team pages, stat leaders, in-game player cards, studio shows and award cards; players without a photo, or offline, get a team-color avatar with their number. Settings › Rosters & data › Show real player photos.
