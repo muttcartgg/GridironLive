@@ -4,6 +4,7 @@
 let last=performance.now(),hudAcc=0,lastSbHidden=null;
 function frame(now){
   const real=Math.min(.05,(now-last)/1000);last=now;
+  try{padPoll()}catch(e){console.error(e)}
   if(S.photo){draw(now);requestAnimationFrame(frame);return}
   if(lastSbHidden!==$('#sb').hidden){lastSbHidden=$('#sb').hidden;resize()}
   if(S.slowT>0){S.slowT-=real;S.ts=.32}else S.ts=Math.min(1,S.ts+real*2.5);
@@ -34,5 +35,7 @@ function frame(now){
 }
 addEventListener('pagehide',()=>flushSave());
 document.addEventListener('visibilitychange',()=>{if(document.hidden)flushSave()});
-function boot(){resize();importLegacy();showSlots();requestAnimationFrame(t=>{last=t;frame(t)})}
+function boot(){resize();importLegacy();showSlots();requestAnimationFrame(t=>{last=t;frame(t)});
+  /* iOS: ask the shell for the current safe areas, then pull the saves it did not inject at launch in the background */
+  try{const h=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.device;if(h)h.postMessage('ready')}catch(e){}KV.prefetch()}
 boot();

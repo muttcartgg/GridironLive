@@ -16,7 +16,7 @@ const SK=(()=>{const loB=ST.wall,loT=loB+ST.loN*ST.loH,clT=loT+ST.club,upT=clT+S
 const STAD={key:'',chk:0,ppu:0,T:null,roar:0,hush:0,flashT:0,waveX:-99,msg:'',msgT:0,rb:{},jump:new Map(),lt:0,dots:null};
 const TOWERS=[-6,36,84,126];
 const stadHi=()=>!(LG&&LG.settings.gfxQ==='saver');
-const stadPPU=()=>clamp(Math.round(sc*((LG&&LG.settings.zoom)||1)*DPR),8,44);
+const stadPPU=()=>clamp(Math.round(sc*zoomMul()*DPR),8,44);
 const stadStunt=()=>!!(S.game&&(S.game.rival||S.slot==='Primetime'));
 const stadAway=()=>hostT()===S.home?S.away:S.home;
 const stadAlt=t=>contrasty(t.c1,t.c2)?t.c2:lum(t.c1)>.5?'#1d2129':'#F2F3F5';

@@ -19,18 +19,43 @@ const money=k=>k>=1000?`$${(k/1000).toFixed(k%1000?2:0)}M`:`$${Math.round(k)}K`;
 const pct=x=>Math.round(x*100)+'%';
 const meterHTML=(v,col)=>`<div class="meter"><i style="width:${clamp(v,0,100)}%;background:${col||(v>66?'var(--ok)':v>33?'var(--warn)':'var(--hot)')}"></i></div>`;
 
-/* Key-value storage: the iOS app bridges to UserDefaults; browsers use localStorage */
+/* Key-value storage: the iOS app bridges to UserDefaults; browsers use localStorage.
+   Fast start (iOS): the shell injects only the small keys plus the last-played slot as window.__NATIVE_KV__ and lists every
+   other stored key by name in window.__NATIVE_KV_LAZY__. KV.need(keys) fetches those on demand (messageHandlers.kvget →
+   the shell answers with window.__kvReply(id, {key: value})); KV.prefetch() pulls the rest in the background after boot.
+   A listed key that has not arrived yet reads as null (never a possibly stale localStorage copy); KV.has() still knows it exists. */
 const KV={
+  lazy:new Set(Array.isArray(window.__NATIVE_KV_LAZY__)?window.__NATIVE_KV_LAZY__.filter(k=>typeof k==='string'):[]),
+  waits:{},seq:0,
   get(k){
     try{const n=window.__NATIVE_KV__;if(n&&typeof n[k]==='string'&&n[k])return n[k]}catch(e){}
+    if(this.lazy.has(k))return null;
     try{return localStorage.getItem(k)}catch(e){return null}
   },
+  has(k){return this.lazy.has(k)||!!this.get(k)},
+  ready(k){return !this.lazy.has(k)},
   set(k,v){
-    const val=v==null?'':String(v);
+    const val=v==null?'':String(v);this.lazy.delete(k);
     try{const h=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.kv;if(h){h.postMessage({k,v:val});(window.__NATIVE_KV__=window.__NATIVE_KV__||{})[k]=val}}catch(e){}
     try{if(v==null)localStorage.removeItem(k);else localStorage.setItem(k,val)}catch(e){}
-  }
+  },
+  /* resolves once every listed key is in memory (at once in browsers and for keys already loaded) */
+  need(keys){
+    keys=[...new Set((keys||[]).filter(k=>this.lazy.has(k)))];if(!keys.length)return Promise.resolve();
+    let h=null;try{h=window.webkit.messageHandlers.kvget}catch(e){}
+    if(!h){keys.forEach(k=>this.lazy.delete(k));return Promise.resolve()}
+    const id=++this.seq;
+    return new Promise(res=>{const done=()=>{if(!this.waits[id])return;delete this.waits[id];res()};this.waits[id]=done;
+      try{h.postMessage({id,keys})}catch(e){console.error(e);keys.forEach(k=>this.lazy.delete(k));done();return}
+      setTimeout(()=>{if(this.waits[id]){console.warn('kvget timed out',keys);done()}},10000)});
+  },
+  /* background fill after boot, one key per request so the page stays responsive */
+  prefetch(){if(this._pf||!this.lazy.size)return;this._pf=1;const next=()=>{const k=[...this.lazy][0];if(!k){this._pf=0;return}this.need([k]).then(()=>{this.lazy.delete(k);setTimeout(next,30)})};setTimeout(next,1200)}
 };
+window.__kvReply=(id,vals)=>{
+  try{const n=window.__NATIVE_KV__=window.__NATIVE_KV__||{};vals=vals||{};
+    for(const k of Object.keys(vals))if(KV.lazy.has(k)){if(typeof vals[k]==='string')n[k]=vals[k];KV.lazy.delete(k)}}catch(e){console.error(e)}
+  const w=KV.waits[id];if(w)w()};
 const SLOTS=[1,2,3,4,5];   /* save slots: gl3.slotN / gl3.liveN / gl3.bakN keys and gl3.meta.slots[N] are all keyed by number */
 /* ---------- save format ----------
    'Y:' (v2, Gridiron Live 7 step 16): LZ(JSON of the league without rosters) + '~' + every roster as dense base-64 text
@@ -148,6 +173,8 @@ const unpack=raw=>{if(!raw)return null;
 const Saves={
   meta(){try{return JSON.parse(KV.get('gl3.meta'))||{slots:{},last:null}}catch(e){return {slots:{},last:null}}},
   writeMeta(m){KV.set('gl3.meta',JSON.stringify(m))},
+  keys(slot){return ['gl3.slot'+slot,'gl3.live'+slot]},
+  loadAsync(slot){return KV.need(this.keys(slot).concat([...KV.lazy].filter(k=>k.startsWith('gl.aud.')))).then(()=>this.load(slot))},
   load(slot){
     try{const L=migrate(unpack(KV.get('gl3.slot'+slot)));if(!L)return null;let live=null;try{live=JSON.parse(KV.get('gl3.live'+slot)||'null')}catch(e){}L.live=live&&live.wk===L.week&&L.phase==='regular'?live:null;return L}
     catch(e){console.error(e);return null}

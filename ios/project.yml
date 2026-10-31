@@ -25,6 +25,7 @@ targets:
         LSRequiresIPhoneOS: true
         UILaunchScreen: {}
         UIRequiresFullScreen: true
+        GCSupportsControllerUserInteraction: true
         UIStatusBarHidden: true
         UIViewControllerBasedStatusBarAppearance: true
         UISupportedInterfaceOrientations:
