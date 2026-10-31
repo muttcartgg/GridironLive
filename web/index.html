@@ -2085,7 +2085,8 @@ function packPreview(L,pk){
   if(!packIsV2(pk)&&Array.isArray(pk.teams))return {v1:true,teams:Math.min(pk.teams.length,L.teams.length)};
   const {pairs,miss}=packMatch(L,pk);let players=0,logos=0,coaches=0;for(const [,e] of pairs){players+=Array.isArray(e.roster)?e.roster.length:0;if(safeURL(e.logo)||safeURL(e.logoDark))logos++;if(e.coaches)coaches+=['hc','oc','dc'].filter(k=>e.coaches[k]&&e.coaches[k].name).length}
   const cust=(pk.players||[]).filter(e=>e&&packTeamFor(L,e.team)).length;
-  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,coaches,custom:cust,customMiss:(pk.players||[]).length-cust};
+  const sc=realSchedOK(pk.schedule)?{season:pk.schedule.season||pk.season||2026,through:pk.schedule.through|0}:null;
+  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,coaches,custom:cust,customMiss:(pk.players||[]).length-cust,sched:sc};
 }
 
 /* ---------- saved pack for new dynasties (compressed in KV; only the 60 players each team would use) ---------- */
@@ -2093,14 +2094,15 @@ function packSave(pk){
   const A=ATTR_KEYS;const enc=e=>{const pos=packPos(e.pos);const a=A.map(k=>{const v=packAttr(e[k]);return v==null?'':Math.round(v*10)}).join('.');return [String(e.name||'').slice(0,40),pos,e.num==null?'':e.num,e.yr==null?'':e.yr,e.ht||'',e.wt||'',e.home||'',a,e.ovr||'',e.rs?1:0,e.espnId||'']};
   const c={v:2,name:pk.name||'Imported pack',season:pk.season||null,teams:(pk.teams||[]).map(t=>({school:t.school,mascot:t.mascot,abbr:t.abbr,espnId:t.espnId,logo:safeURL(t.logo),logoDark:safeURL(t.logoDark),stadium:t.stadium,capacity:t.capacity,coaches:t.coaches&&typeof t.coaches==='object'?t.coaches:undefined,
     r:Array.isArray(t.roster)?packSelect(t.roster).map(x=>enc(x.e)):[]})),players:(pk.players||[]).slice(0,600)};
+  const sc=pk.schedule;if(realSchedOK(sc))c.schedule={season:sc.season||pk.season||null,through:sc.through|0,updated:sc.updated||'',games:sc.games.slice(0,4000)};
   const raw='Z:'+LZString.compressToBase64(JSON.stringify(c));
   if(raw.length>6e6)throw new Error('This pack is too big to keep for new dynasties.');
-  KV.set(PACK_KEY,raw);KV.set(PACK_ON,'1');return raw.length;
+  KV.set(PACK_KEY,raw);KV.set(PACK_ON,'1');KV.set(REAL_KEY,c.schedule?JSON.stringify({season:c.schedule.season||2026,through:c.schedule.through,n:c.schedule.games.length}):null);return raw.length;
 }
 function packLoadSaved(){
   try{const raw=KV.get(PACK_KEY);if(!raw)return null;const c=unpack(raw);if(!c||!Array.isArray(c.teams))return null;
     const dec=r=>{const e={name:r[0],pos:r[1],num:r[2]===''?null:r[2],yr:r[3],ht:r[4],wt:r[5],home:r[6],ovr:r[8],rs:!!r[9],espnId:r[10]};String(r[7]).split('.').forEach((v,i)=>{if(v!=='')e[ATTR_KEYS[i]]=v/10});return e};
-    return {format:'gridiron-live-pack',version:2,name:c.name,season:c.season,teams:c.teams.map(t=>({...t,roster:(t.r||[]).map(dec)})),players:c.players||[]}}
+    return {format:'gridiron-live-pack',version:2,name:c.name,season:c.season,teams:c.teams.map(t=>({...t,roster:(t.r||[]).map(dec)})),players:c.players||[],schedule:c.schedule||null}}
   catch(e){console.error(e);return null}
 }
 const packSavedOn=()=>!!KV.get(PACK_KEY)&&KV.get(PACK_ON)!=='0';
@@ -2114,7 +2116,7 @@ function openRosterImport(L,done,opt){
     const p=pv;let prev='';
     if(p&&p.v1)prev=`<div class="ri-prev"><b>Old-style team pack</b><p class="note">${p.teams} schools, matched by their order in the list.</p></div>`;
     else if(p)prev=`<div class="ri-prev"><div class="kpis"><div><em>Teams matched</em><b>${p.teams}<small>/${p.total}</small></b></div><div><em>Players</em><b>${p.players.toLocaleString()}</b></div><div><em>Logos</em><b>${p.logos}</b></div><div><em>Coaches</em><b>${p.coaches||0}</b></div><div><em>Custom players</em><b>${p.custom}</b></div></div>
-      ${p.miss.length?`<p class="note">Not in this league (skipped): ${esc(p.miss.slice(0,8).join(', '))}${p.miss.length>8?` and ${p.miss.length-8} more`:''}</p>`:''}${p.customMiss?`<p class="note">${p.customMiss} custom player${p.customMiss>1?'s have':' has'} no matching team.</p>`:''}
+      ${p.miss.length?`<p class="note">Not in this league (skipped): ${esc(p.miss.slice(0,8).join(', '))}${p.miss.length>8?` and ${p.miss.length-8} more`:''}</p>`:''}${p.customMiss?`<p class="note">${p.customMiss} custom player${p.customMiss>1?'s have':' has'} no matching team.</p>`:''}${p.sched?`<p class="note">Includes the real ${p.sched.season} schedule with results through week ${p.sched.through}: keep "Use for new dynasties" on, then pick Real ${p.sched.season} on the new-dynasty screen.</p>`:''}
       ${live?`<label class="ri-opt"><input type="checkbox" id="riCur" ${L.live?'disabled':'checked'}> Apply to this dynasty now${L.live?' (finish the game in progress first)':''}</label>
       <label class="ri-opt"><input type="checkbox" id="riKeep" checked> Keep my team's roster</label>`:''}
       ${p.teams&&(p.pk.teams||[]).length?`<label class="ri-opt"><input type="checkbox" id="riSave" checked> Use for new dynasties</label>`:''}</div>`;
@@ -2156,9 +2158,17 @@ function openRosterExport(){
 function packSetupHTML(st){
   const has=!!KV.get(PACK_KEY);
   return `<div class="setrow"><span class="eyebrow">Real rosters &amp; logos</span><span style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">${has&&st.league==='ncaa'?`<span class="seg" id="packOnSeg">${[['1','On'],['0','Off']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${(KV.get(PACK_ON)!=='0')===(v==='1')}">${l}</button>`).join('')}</span>`:''}<button class="btn sm ghost" id="packImp">Import rosters &amp; logos</button></span></div>
-    ${has&&st.league==='ncaa'&&packSavedOn()&&st.L.pack?`<p class="note">Using ${esc(st.L.pack.name)}: ${st.L.pack.teams} teams with imported rosters.</p>`:''}`;
+    ${has&&st.league==='ncaa'&&packSavedOn()&&st.L.pack?`<p class="note">Using ${esc(st.L.pack.name)}: ${st.L.pack.teams} teams with imported rosters.</p>`:''}${realSetupHTML(st)}`;
+}
+/* the real-season option: only with a saved pack that carries season data, applied to this NCAA setup league */
+const realSetupOn=st=>!!(st&&st.league==='ncaa'&&packSavedOn()&&st.L&&st.L.pack&&realSeasonSummary());
+function realSetupHTML(st){
+  if(!realSetupOn(st))return '';const s=realSeasonSummary(),wk=realStartWeek(s);
+  return `<div class="setrow"><span class="eyebrow">Season</span><span class="seg" id="realSeg">${[['0','New schedule'],['1',`Real ${s.season||2026} · ${wk}`]].map(([v,l])=>`<button data-v="${v}" aria-pressed="${!!st.real===(v==='1')}">${l}</button>`).join('')}</span></div>
+    ${st.real?`<p class="note">${esc(realSeasonNote(s))}: the real schedule, with results, standings and polls through week ${s.through}. Your season picks up in ${wk} on the real remaining schedule, then title games, bowls and the Playoff.</p>`:''}`;
 }
 function packSetupBind(st){
+  document.querySelectorAll('#realSeg button').forEach(b=>b.onclick=()=>{st.real=b.dataset.v==='1';renderSetupKeep()});
   on('packImp',()=>openRosterImport(st.L,r=>{if(r&&r.saved&&st.league==='ncaa'){st.L=genNCAALeague();packAutoApply(st.L)}renderSetupKeep()},{setup:true}));
   document.querySelectorAll('#packOnSeg button').forEach(b=>b.onclick=()=>{KV.set(PACK_ON,b.dataset.v);st.L=genNCAALeague();if(b.dataset.v==='1')packAutoApply(st.L);renderSetupKeep()});
 }
@@ -2198,7 +2208,7 @@ SETTINGS_EXTRA.push({card:'Rosters & data',key:'showLogos',label:'Show imported 
 SETTINGS_EXTRA.push({card:'Rosters & data',key:'showPhotos',label:'Show real player photos',opts:[[1,'On'],[0,'Off']],def:1,bool:true,note:'Imported players show their headshot when you are online (loaded from ESPN, never saved). Everyone else, and anyone without a photo, gets a team-colour avatar.'});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Your roster',button:'Export my roster (JSON)',id:'expRoster',onClick:()=>openRosterExport()});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Imported data',button:'Remove imported data',id:'rmPack',note:'New dynasties go back to generated rosters; this dynasty keeps its players and drops the imported logos.',
-  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);for(const t of LG.teams){delete t.logo;delete t.logoDark}delete LG.pack;saveNow();showHub('settings');toast('Imported data removed')}});
+  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);KV.set(REAL_KEY,null);for(const t of LG.teams){delete t.logo;delete t.logoDark}delete LG.pack;saveNow();showHub('settings');toast('Imported data removed')}});
 });
 
 /* ---------- v1 team packs (moved from 02-data.js) ---------- */
@@ -2658,6 +2668,7 @@ function buildPost(L){
       L.fcsp={seeds,r1:[],r2:[],qf:[],sf:[],final:null};for(const id of seeds)L.teams[id].playoffApps++;
       for(let j=0;j<8;j++){const hi=seeds[8+j],lo=seeds[23-j];if(hi==null||lo==null){L.fcsp.r1.push(null);continue}const g=postGame(hi,lo,{fcsp:true,neutral:false,tag:`FCS Playoffs · First Round · #${9+j} vs #${24-j}`,date:F.r1,wx:weatherFor(12),slot:'Afternoon'});L.fcsp.r1.push(g);games.push(g)}
     }
+    if(Array.isArray(L.lateGames)){for(const x of L.lateGames)games.push(Object.assign({hs:null,as:null,wx:'Clear',slot:'Afternoon'},x));delete L.lateGames}   /* real-season mode: Army–Navy (03b) */
     L.weeks[L.week]={label:WEEK_NAMES[0],kind:'post0',games};
   }
   if(k===1){
@@ -2919,6 +2930,76 @@ function startNewSeason(L){
 }
 
 /* =========================================================
+   03b · Real season mode: a new NCAA dynasty that starts inside the real 2026 season.
+   A roster pack may carry "schedule" (docs/PACKS.md): every real game with an FBS team, final scores through week `through`.
+   realSeasonStart lays the real schedule over the league (FCS-only games aren't in the data: the generated schedule's FCS vs
+   FCS games fill those weeks, moved where a real game took the slot), then replays the finished weeks with the normal
+   weekly flow (finishWeek with each real final score pre-set as g.pre), so records, standings, team points, player stat
+   lines, rivalry trophies, news and the AP voter model's weekly polls all come from the real results. The dynasty then
+   starts in the next week; the rest of the real schedule is played or simulated, then title games, bowls and the CFP
+   from the normal postseason. Games after Rivalry Week (Army–Navy) are played in Championship Week (L.lateGames).
+   ========================================================= */
+const REAL_KEY='gl.packSeason';
+const realSchedOK=s=>!!(s&&typeof s==='object'&&Array.isArray(s.games)&&s.games.length>0&&s.through>=0);
+/* the small summary packSave keeps beside the saved pack: {season,through,n} (null when the saved pack has no season data) */
+function realSeasonSummary(){try{if(!KV.get(PACK_KEY))return null;const v=KV.get(REAL_KEY);if(!v)return null;const j=JSON.parse(v);return j&&j.n>0?j:null}catch(e){return null}}
+const realStartWeek=s=>(s.through|0)>=13?'Championship Week':'week '+((s.through|0)+1);
+function realSeasonNote(s){s=s||realSeasonSummary();return s?`Start from the real ${s.season||2026} season (${realStartWeek(s)})`:''}
+
+/* L: a fresh NCAA league with the pack applied and the user's team set (startDynasty). pk: the pack (default: the saved one) */
+function realSeasonStart(L,pk){
+  pk=pk||packLoadSaved();const S=pk&&pk.schedule;if(!L||!realSchedOK(S))return false;
+  const {pairs}=packMatch(L,pk),ids={};for(const [t,e] of pairs)if(e.abbr)ids[String(e.abbr).toUpperCase()]=t.id;
+  const tid=k=>{if(typeof k!=='string'||!k||k[0]==='?')return null;const v=ids[k.toUpperCase()];if(v!=null)return v;const t=packTeamFor(L,k);return t?t.id:null};
+  buildSchedule(L);
+  const R=L.R,through=clamp(S.through|0,0,R),TT=L.teams;
+  const weeks=L.weeks.map(w=>({label:w.label,kind:'reg',games:[]})),busy=weeks.map(()=>new Set());
+  const put=(g,w)=>{weeks[w].games.push(g);busy[w].add(g.h);busy[w].add(g.a)};
+  const free=(a,b,from)=>{for(let k=from;k<R;k++)if(!busy[k].has(a)&&!busy[k].has(b))return k;return -1};
+  const late=[],ghost=[];let real=0,skipped=0;
+  for(const r of S.games){if(!Array.isArray(r))continue;
+    const w=(parseInt(r[0])||0)-1,h=tid(r[1]),a=tid(r[2]),hs=parseInt(r[3]),as=parseInt(r[4]),fl=parseInt(r[5])||0;
+    const done=w<through&&(fl&4||r[3]!=null)&&hs>=0&&as>=0&&hs!==as;
+    if(h==null||a==null||h===a){if(done&&(h!=null)!==(a!=null))ghost.push({w,id:h!=null?h:a,pf:h!=null?hs:as,pa:h!=null?as:hs});else skipped++;continue}
+    if(w<0){skipped++;continue}
+    const H=TT[h],A=TT[a],rival=H.rival===a&&A.rival===h,tag=typeof r[7]==='string'&&r[7]?r[7].slice(0,44):null;
+    const g={h,a,hs:null,as:null,wx:done?'Clear':weatherFor(Math.min(w,R-1)),slot:pick(['Noon','Afternoon','Afternoon','Primetime']),tag:rival?(H.trophy||A.trophy||tag):tag,rival};
+    if(fl&1)g.neutral=true;
+    if(H.conf===A.conf&&!isInd(L,H)&&(!(fl&2)||NC_RIVAL.has(H.abbr+'|'+A.abbr)))g.nc=true;   /* same league in the game but not a league game (Army–Navy never counts) */
+    if(done)g.pre={hs,as};
+    if(w>=R){late.push(g);continue}
+    /* a future week where one of them already plays (a moved game): the first week ahead both have open */
+    let wk=w;if(w>=through&&(busy[w].has(h)||busy[w].has(a))){const k=free(h,a,through);if(k>=0)wk=k}
+    put(g,wk);real++}
+  /* the generated schedule's FCS vs FCS games: their week when both teams are open, else the nearest open week */
+  let fcsG=0;
+  for(let w0=0;w0<R;w0++)for(const g of L.weeks[w0].games){if(!isFCS(TT[g.h])||!isFCS(TT[g.a]))continue;
+    let wk=!busy[w0].has(g.h)&&!busy[w0].has(g.a)?w0:-1;
+    for(let d=1;wk<0&&d<R;d++)for(const k of [w0+d,w0-d])if(wk<0&&k>=0&&k<R&&!busy[k].has(g.h)&&!busy[k].has(g.a))wk=k;
+    if(wk<0)continue;put(Object.assign({},g,{hs:null,as:null,wx:weatherFor(wk)}),wk);fcsG++}
+  /* FCS teams that lost generated FBS games: extra FCS non-league games up to their usual count where a week is open */
+  const cnt={},met=new Set(),mk=(a,b)=>a<b?a+'-'+b:b+'-'+a;for(const w of weeks)for(const g of w.games){cnt[g.h]=(cnt[g.h]||0)+1;cnt[g.a]=(cnt[g.a]||0)+1;met.add(mk(g.h,g.a))}
+  const fcs=TT.filter(isFCS),tgt=t=>Math.min(11,(L.confs[t.conf]&&L.confs[t.conf].games)||11);
+  for(const t of shuffle(fcs.slice())){
+    for(const o of shuffle(fcs.slice())){if((cnt[t.id]||0)>=tgt(t))break;if(o===t||(cnt[o.id]||0)>=tgt(o)||met.has(mk(t.id,o.id))||(o.conf===t.conf&&!isInd(L,t)))continue;
+      const k=free(t.id,o.id,0);if(k<0)continue;const [h,a]=Math.random()<.5?[t.id,o.id]:[o.id,t.id];
+      put({h,a,hs:null,as:null,wx:weatherFor(k),slot:pick(['Noon','Afternoon']),tag:null,rival:false,nc:false},k);cnt[h]=(cnt[h]||0)+1;cnt[a]=(cnt[a]||0)+1;met.add(mk(h,a));fcsG++}}
+  for(const w of weeks)for(const g of w.games)if(!g.nc)delete g.nc;
+  L.weeks=weeks;L.lateGames=late.length?late:null;L.week=0;
+  /* homecoming: a home game still to come */
+  if(L.user!=null){const ws=[];weeks.forEach((w,i)=>{if(i>=through&&i<R-1&&w.games.some(g=>g.h===L.user&&!g.neutral))ws.push(i)});L.hcWeek=ws.length?pick(ws):null}
+  /* replay the finished weeks: the real final scores, and simulated results for the generated FCS games */
+  for(let w=0;w<through;w++){
+    for(const x of ghost)if(x.w===w){const t=TT[x.id];t.rec.pf+=x.pf;t.rec.pa+=x.pa;if(x.pf>x.pa)t.rec.w++;else t.rec.l++}
+    finishWeek(L)}
+  L.event=null;
+  L.realSeason={season:S.season||2026,through,games:real,fcs:fcsG,updated:String(S.updated||'').slice(0,10)};
+  const u=L.user!=null?TT[L.user]:null;
+  if(u&&Array.isArray(L.news))L.news.unshift({t:`The real ${L.realSeason.season} season: ${through?`results through week ${through} are in the books and ${teamName(u)} ${u.rec.w+u.rec.l?`is ${recStr(u)}`:'has not played yet'}`:'nothing has been played yet'}. Your season picks up in ${weekLabel(L)}.`,good:true});
+  return true;
+}
+
+/* =========================================================
    04 · Hub UI: save slots, team picker, dynasty hub, offseason
    ========================================================= */
 let TAB='home',SETUP=null,ROSTER_FILTER='All';
@@ -3140,7 +3221,10 @@ function startDynasty(id){
   ensureCareer(L);if(t.staff)L.staff={oc:t.staff.oc,dc:t.staff.dc};   /* you inherit the school's coordinators */
   L.coach.sal=coachSalary('hc',3,t);L.coach.yrs=5;setBudget(L,true);setHomecoming(L);seedRecords(L);
   L.news=[{t:`${L.coach.name} is introduced as head coach of ${teamName(t)} on a 5-year deal. The AD expects ${adTarget(t)}+ wins. Player budget: ${money(L.budget.total)}.`,good:true}];
-  LG=L;SLOT=st.slot;SETUP=null;applyStyle();saveNow(true);showHub('home');
+  LG=L;SLOT=st.slot;SETUP=null;const go=()=>{applyStyle();saveNow(true);showHub('home')};
+  /* real-season mode (03b): replaying the finished weeks takes a few seconds on a phone, so say so first */
+  if(st.real&&typeof realSetupOn==='function'&&realSetupOn(st)){toast('Loading the real season…');setTimeout(()=>{try{realSeasonStart(L)}catch(e){console.error(e);toast('The real season could not be loaded')}go()},60);return}
+  go();
 }
 
 /* ---------- hub ---------- */
