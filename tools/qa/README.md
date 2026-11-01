@@ -13,6 +13,7 @@ NODE_PATH=$(npm root -g) node tools/qa/uniforms.js web/index.html /tmp/gl-uni  #
 NODE_PATH=$(npm root -g) node tools/qa/native.js                               # emulated iOS shell: lazy save loading, Back up to Files / Restore from file, controller
 NODE_PATH=$(npm root -g) node tools/qa/rtg.js                                  # Road to Glory: 4-star WR recruit, visits, commit, one game as only him, season sim (depth-chart move), offseason into year two
 NODE_PATH=$(npm root -g) node tools/qa/rtg2.js                                 # Road to Glory: a game each as QB / RB / CB with scripted input, careers to the draft (declare after junior year; return → senior year)
+NODE_PATH=$(npm root -g) node tools/qa/stadiums.js [stadiums.json] [web/index.html] [outdir]  # real stadium designs: import, new-dynasty copy, setting, 6 stadiums landscape/portrait/kick view, layer timing
 ```
 
 Each takes an optional path to the built page (default `web/index.html`) and a team abbreviation (default UGA).
