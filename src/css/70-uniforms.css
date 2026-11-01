@@ -42,6 +42,7 @@
 .uni-th{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:12px;border:1px solid var(--line);background:radial-gradient(90% 70% at 50% 100%,color-mix(in srgb,var(--team) 22%,transparent),transparent 70%),rgba(255,255,255,.03);color:var(--fg)}
 .uni-th canvas{width:100%;height:112px;display:block}
 .uni-th small{font:700 11px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+@media (max-width:420px){.uni-th small{font-size:9.5px;letter-spacing:.01em}.uni-th canvas{height:96px}}
 .pg-uni{display:flex;flex-direction:column;gap:10px}
 .pg-unis{display:flex;align-items:center;justify-content:center;gap:12px}
 .pg-unis figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:2px}

@@ -300,7 +300,9 @@ function sbApplyTo(x){const s=SB.st,city=s.city.trim()||x.city,ab=(s.abbr.trim()
 function sbCreate(o){
   const s=SB.st,L=SB.L,slotT=L.teams[s.rep];if(!slotT){$('#sbErr').textContent='Pick a team to replace.';return}
   const inDyn=!!(LG&&L===LG),conf=slotT.conf,keep=inDyn&&s.keep;
-  if(slotT.rival!=null){const r=L.teams[slotT.rival];if(r&&r.rival===slotT.id){r.rival=null;r.trophy=''}slotT.rival=null;slotT.trophy=''}
+  if(slotT.rival!=null){const r=L.teams[slotT.rival],tro=slotT.trophy;if(r&&r.rival===slotT.id){r.rival=null;r.trophy=''}slotT.rival=null;slotT.trophy='';
+    /* games still to play stop being trophy games (finished ones keep their history) */
+    if(inDyn)for(const w of L.weeks)for(const g of w.games)if(g.hs==null&&g.rival&&(g.h===slotT.id||g.a===slotT.id)){g.rival=false;if(g.tag===tro)g.tag=null}}
   delete slotT.logo;delete slotT.logoDark;delete slotT.uni;
   if(!keep){const fresh=genTeam(slotT.id,s.city.trim(),s.name.trim(),s.c1,1,conf,{exact:true,div:slotT.div,q:slotT.div==='FCS'?1.2:1.7});Object.assign(slotT,{prestige:1,q:fresh.q,roster:fresh.roster,cap:22000});if(inDyn)for(const p of slotT.roster)p.ss=newSS()}
   sbApplyTo(slotT);slotT.custom=1;UNI_VER++;invalidate();
