@@ -36,7 +36,7 @@ function startUserGame(g,snap){
   const u=T(LG.user),opp=T(g.h===LG.user?g.a:g.h);
   const rk=rankOf(opp.id),boost=rk?(rk<=5?1.05:rk<=10?1.035:1.02):1;
   Object.assign(S,{game:g,home:u,away:opp,userHome:g.h===LG.user&&!g.neutral,neutral:!!g.neutral,qlen:LG.settings.qlen,diffMul:(DIFF[LG.settings.diff]||1)*boost,
-    aiSkill:clamp(.45+(teamOvr(opp)-3)*.13+(boost-1)*4+(LG.settings.diff-1)*.08,.2,.97),wx:g.wx||'Clear',slot:g.slot||'Afternoon',ts:1,slowT:0,shake:0,paused:false,simmed:false,celebrate:null,defCall:'auto',ctrlKey:LG.settings.defPlayer||'LB0'});
+    aiSkill:clamp(.45+(teamOvr(opp)-3)*.13+(boost-1)*4+(LG.settings.diff-1)*.08,.2,.97),wx:(()=>{const h=T(g.h);return !g.neutral&&h&&h.std&&h.std.rf&&LG.settings.realStadiums!==false?'Clear':g.wx||'Clear'})(),slot:g.slot||'Afternoon',ts:1,slowT:0,shake:0,paused:false,simmed:false,celebrate:null,defCall:'auto',ctrlKey:LG.settings.defPlayer||'LB0'});
   muted=!!LG.settings.muted;
   S.dc={u:{},a:{}};for(const pos of POS_ORDER){S.dc.u[pos]=depth(u,pos);S.dc.a[pos]=depth(opp,pos)}
   Object.assign(S,{tmo:{},ejected:[],otPos:0,otFirst:'home',untimed:false,toDB:[0,0],kickPenA:false,clockHold:0,pbp:[],drives:[],drive:null});   // a resumed game brings back its log and drives (snapshot)

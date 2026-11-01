@@ -152,9 +152,10 @@ function drawKick(){
   if(S.home){const kk=stadKey();if(!STAD.T||kk!==STAD.key){STAD.key=kk;buildStadium()}}const T=STAD.T,hz=h*.47;g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';
   /* sky by time slot, end-zone stands (same tiles as the far stands), light towers */
   const sk={day:['#4f7fbf','#a8c4e2'],late:['#5d7fb0','#e2c9a2'],sunset:['#23305c','#ee8a4e'],night:['#02040a','#101a33']}[st]||['#4f7fbf','#a8c4e2'];
-  const sky=g.createLinearGradient(0,0,0,h*.2);sky.addColorStop(0,sk[0]);sky.addColorStop(1,sk[1]);g.fillStyle=sky;g.fillRect(0,0,w,hz);
   const good=k.stage==='flight'&&k.flight>=1&&k.good;
-  if(T){const P=STAD.ppu,f=h*.15/(ST.loN*ST.loH*P),fu=f*.82,tw=ST.tile*P,ex=good?1:0,lo=ex?T.lo1:T.lo0,up=ex?T.up1:T.up0,ub=h*.255,lb=h*.42,cb=lb-ST.wall*0;
+  if(T&&STAD.sd)stdKick(g,w,h,hz,good,now,host);   /* real stadium design: the end being kicked at (08g) */
+  else{const sky=g.createLinearGradient(0,0,0,h*.2);sky.addColorStop(0,sk[0]);sky.addColorStop(1,sk[1]);g.fillStyle=sky;g.fillRect(0,0,w,hz)}
+  if(T&&!STAD.sd){const P=STAD.ppu,f=h*.15/(ST.loN*ST.loH*P),fu=f*.82,tw=ST.tile*P,ex=good?1:0,lo=ex?T.lo1:T.lo0,up=ex?T.up1:T.up0,ub=h*.255,lb=h*.42,cb=lb-ST.wall*0;
     g.fillStyle=night?'#151920':'#4c535d';g.fillRect(0,h*.075,w,h*.03);g.fillStyle=host.c1;g.fillRect(0,h*.095,w,h*.008);
     for(let x=-((now*.01)%1);x<w;x+=tw*fu){const b=ex?Math.abs(Math.sin(now/120+x))*6:0;g.drawImage(up,x,ub-up.height*fu-b,tw*fu+1,up.height*fu)}
     for(let x=0;x<w;x+=tw*f)g.drawImage(T.club,x,ub-2,tw*f+1,ST.club*P*f*.75);
@@ -165,7 +166,7 @@ function drawKick(){
       if(L.glow>.05){g.globalCompositeOperation='lighter';g.globalAlpha=Math.min(1,L.glow*1.2);g.drawImage(T.glow,tx-160,-100,320,230);g.globalAlpha=1;g.globalCompositeOperation='source-over'}}}
   /* turf in perspective: mow bands, yard lines, sidelines, end zone in host colors */
   const vy=hz-h*.9,pz=y=>(y-vy)/(h-vy),fx2=(x,y)=>cx+(x-cx)*pz(y),span=w*.45,postY=h*.5,barY=h*.42,topY2=h*.08,ux=k.width*span;
-  for(let i=0;i<9;i++){const y0=hz+(h-hz)*Math.pow(i/9,1.55),y1=hz+(h-hz)*Math.pow((i+1)/9,1.55);g.fillStyle=i%2?'#2f7f36':'#2a7231';g.fillRect(0,y0,w,y1-y0+1)}
+  const tcol=STAD.sd?turfColors(night):null;for(let i=0;i<9;i++){const y0=hz+(h-hz)*Math.pow(i/9,1.55),y1=hz+(h-hz)*Math.pow((i+1)/9,1.55);g.fillStyle=tcol?tcol[i%2]:i%2?'#2f7f36':'#2a7231';g.fillRect(0,y0,w,y1-y0+1)}
   const ez=hz+(h-hz)*.07;g.fillStyle=host.c1;g.globalAlpha=.85;g.fillRect(0,hz,w,ez-hz);g.globalAlpha=1;g.save();g.translate(cx,(hz+ez)/2);g.scale(1,.32);g.fillStyle=inkOn(host.c1);g.font=`900 italic ${Math.round((ez-hz)*2.4)}px ${FFONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText(String(host.city||host.name).toUpperCase(),0,0);g.restore();
   g.strokeStyle='rgba(255,255,255,.75)';for(let i=0;i<=9;i++){const y=hz+(h-hz)*Math.pow(i/9,1.55);g.lineWidth=1+3*pz(y);g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}
   g.lineWidth=3;g.beginPath();for(const sx of [-1,1]){g.moveTo(fx2(cx+sx*w*.62,hz),hz);g.lineTo(fx2(cx+sx*w*.62,h),h)}g.stroke();

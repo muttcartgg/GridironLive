@@ -98,8 +98,41 @@ function applyRosterPack(L,pk,opts){
   if(L.user!=null&&L.teams[L.user]&&Array.isArray(L.captains)){const u=L.teams[L.user];const ids=new Set(u.roster.map(p=>p.id));if(!L.captains.every(id=>ids.has(id)))L.captains=u.roster.filter(p=>p.yr>=3).sort((a,b)=>ovr(b)-ovr(a)).slice(0,2).map(p=>p.id)}
   invalidate();if(typeof updateRankings==='function'&&L.weeks)try{updateRankings(L)}catch(err){console.error(err)}
   L.pack={name:String(pk.name||'Imported pack').slice(0,60),season:pk.season||null,teams:pairs.length};
-  return {teams:pairs.length,miss,players,logos,custom,coaches};
+  const std=stdList(pk)?applyStadiums(L,stdList(pk)).teams:0;
+  return {teams:pairs.length,miss,players,logos,custom,coaches,std};
 }
+
+/* ---------- real stadiums: {"format":"gridiron-live-stadiums","version":1,"stadiums":[…]} on its own or as "stadiums" in a roster pack ----------
+   Entries match teams like pack teams (espnId, abbr in "team", school). Each match sets t.stadium/t.cap and t.std, the compact
+   design 08g draws: {v:1, sh bowl|horse|u|side, d far-side decks 1–3, L/R end codes (L large, M medium, S small, B hill, X building,
+   O open) as seen from across the press box, bd video-board end 'L'|'R'|'', ft signature features, sc seats ['#s1','#s2']|'metal'|
+   'primary'|null, tf special turf color, gr 1 natural grass, rf 1 dome, cap, el elevation ft}. Saved with the dynasty (team field)
+   and, when chosen, in KV for new dynasties. LG.settings.realStadiums===false draws the generic stadium instead. */
+const STD_KEY='gl.std',STD_ON='gl.stdOn',STD_FT=['hedges','hill','turf','checker','mountains','water','skyline','trees','tower','arches','cards','pyro','dome','board','canopy'];
+const stdList=pk=>pk&&!Array.isArray(pk)&&Array.isArray(pk.stadiums)&&pk.stadiums.length?pk.stadiums:null;
+const stdIsFile=pk=>!!(stdList(pk)&&!(Array.isArray(pk.teams)&&pk.teams.length)&&!(Array.isArray(pk.players)&&pk.players.length));
+function stdCompact(e){
+  const a=e&&e.architecture;if(!a||typeof a!=='object')return null;const v=a.view||{},ends=a.ends||{},hx=/^#[0-9a-f]{6}$/i;
+  const code=x=>({large:'L',medium:'M',small:'S',hill:'B',building:'X',open:'O'})[x]||'M';
+  const ft=(Array.isArray(a.features)?a.features:[]).filter(f=>STD_FT.includes(f)).slice(0,3);
+  const sc=Array.isArray(a.seats)&&a.seats.length===2&&a.seats.every(c=>hx.test(c))?a.seats.slice():a.seats==='metal'||a.seats==='primary'?a.seats:null;
+  return {v:1,sh:['bowl','horse','u','side'].includes(a.shape)?a.shape:'bowl',d:clamp(parseInt(a.decks&&a.decks.pressSide)||2,1,3),L:code(ends[v.left]),R:code(ends[v.right]),
+    bd:a.videoBoard&&a.videoBoard===v.left?'L':a.videoBoard&&a.videoBoard===v.right?'R':'',ft,sc,tf:hx.test(e.turf||'')?e.turf:'',gr:e.surface==='grass'?1:0,
+    rf:e.roof==='dome'||ft.includes('dome')?1:0,cap:clamp(parseInt(e.capacity)||40000,5000,120000),el:clamp(parseInt(e.elevation_ft)||0,0,12000)};
+}
+const stdMatch=(L,list)=>packMatch(L,{teams:list.filter(e=>e&&typeof e==='object').map(e=>({...e,abbr:e.abbr||e.team}))});
+function applyStadiums(L,list){
+  const {pairs,miss}=stdMatch(L,list);let n=0;
+  for(const [t,e] of pairs){const s=stdCompact(e);if(!s)continue;t.std=s;n++;if(e.name)t.stadium=String(e.name).slice(0,40);const c=parseInt(e.capacity);if(c>=1000&&c<=200000)t.cap=c}
+  if(typeof STAD!=='undefined')STAD.key='';if(typeof FLD!=='undefined')FLD.key='';
+  return {teams:n,miss};
+}
+/* kept for new dynasties: only what applyStadiums needs (about 20 KB) */
+function stdSave(list){const c=list.filter(e=>e&&e.architecture).map(e=>({team:e.team||e.abbr,school:e.school,espnId:e.espnId,name:e.name,capacity:e.capacity,turf:e.turf,surface:e.surface,roof:e.roof,elevation_ft:e.elevation_ft,architecture:e.architecture}));
+  KV.set(STD_KEY,JSON.stringify(c));KV.set(STD_ON,'1');return c.length}
+function stdLoadSaved(){try{const raw=KV.get(STD_KEY);const c=raw?JSON.parse(raw):null;return Array.isArray(c)?c:null}catch(e){console.error(e);return null}}
+const stdSavedOn=()=>KV.has(STD_KEY)&&KV.get(STD_ON)!=='0';
+function stdAutoApply(L){if(!L||L.kind!=='ncaa'||!stdSavedOn())return false;const c=stdLoadSaved();if(!c)return false;try{applyStadiums(L,c);return true}catch(e){console.error(e);return false}}
 /* summary for the preview, without touching the league */
 function packPreview(L,pk){
   if(Array.isArray(pk))pk={players:pk};
@@ -107,7 +140,9 @@ function packPreview(L,pk){
   const {pairs,miss}=packMatch(L,pk);let players=0,logos=0,coaches=0;for(const [,e] of pairs){players+=Array.isArray(e.roster)?e.roster.length:0;if(safeURL(e.logo)||safeURL(e.logoDark))logos++;if(e.coaches)coaches+=['hc','oc','dc'].filter(k=>e.coaches[k]&&e.coaches[k].name).length}
   const cust=(pk.players||[]).filter(e=>e&&packTeamFor(L,e.team)).length;
   const sc=realSchedOK(pk.schedule)?{season:pk.schedule.season||pk.season||2026,through:pk.schedule.through|0}:null;
-  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,coaches,custom:cust,customMiss:(pk.players||[]).length-cust,sched:sc};
+  const sl=stdList(pk),sm=sl?stdMatch(L,sl):null;
+  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,coaches,custom:cust,customMiss:(pk.players||[]).length-cust,sched:sc,
+    std:sm?{teams:sm.pairs.length,total:sl.length,miss:sm.miss}:null,stdOnly:stdIsFile(pk)};
 }
 
 /* ---------- saved pack for new dynasties (compressed in KV; only the 60 players each team would use) ---------- */
@@ -118,6 +153,7 @@ function packSave(pk){
   const sc=pk.schedule;if(realSchedOK(sc))c.schedule={season:sc.season||pk.season||null,through:sc.through|0,updated:sc.updated||'',games:sc.games.slice(0,4000)};
   const raw='Z:'+LZString.compressToBase64(JSON.stringify(c));
   if(raw.length>6e6)throw new Error('This pack is too big to keep for new dynasties.');
+  if(stdList(pk))stdSave(stdList(pk));
   KV.set(PACK_KEY,raw);KV.set(PACK_ON,'1');KV.set(REAL_KEY,c.schedule?JSON.stringify({season:c.schedule.season||2026,through:c.schedule.through,n:c.schedule.games.length}):null);return raw.length;
 }
 function packLoadSaved(){
@@ -128,21 +164,28 @@ function packLoadSaved(){
 }
 const packSavedOn=()=>KV.has(PACK_KEY)&&KV.get(PACK_ON)!=='0';
 /* new NCAA dynasties start from the saved pack when it is on */
-function packAutoApply(L){if(!L||L.kind!=='ncaa'||!packSavedOn())return false;const pk=packLoadSaved();if(!pk)return false;try{applyRosterPack(L,pk,{});return true}catch(e){console.error(e);return false}}
+function packAutoApply(L){if(!L||L.kind!=='ncaa')return false;let ok=false;
+  if(packSavedOn()){const pk=packLoadSaved();if(pk)try{applyRosterPack(L,pk,{});ok=true}catch(e){console.error(e)}}
+  stdAutoApply(L);return ok}   /* saved stadiums go on after the pack (their names win over the pack's venue names) */
 
 /* ---------- import UI ---------- */
 function openRosterImport(L,done,opt){
   opt=opt||{};const live=typeof LG!=='undefined'&&LG&&L===LG;let pk=null,pv=null;
   const render=()=>{
     const p=pv;let prev='';
+    const stdK=p&&p.std?`<div><em>Stadiums</em><b>${p.std.teams}<small>/${p.std.total}</small></b></div>`:'';
     if(p&&p.v1)prev=`<div class="ri-prev"><b>Old-style team pack</b><p class="note">${p.teams} schools, matched by their order in the list.</p></div>`;
-    else if(p)prev=`<div class="ri-prev"><div class="kpis"><div><em>Teams matched</em><b>${p.teams}<small>/${p.total}</small></b></div><div><em>Players</em><b>${p.players.toLocaleString()}</b></div><div><em>Logos</em><b>${p.logos}</b></div><div><em>Coaches</em><b>${p.coaches||0}</b></div><div><em>Custom players</em><b>${p.custom}</b></div></div>
+    else if(p&&p.stdOnly)prev=`<div class="ri-prev"><div class="kpis">${stdK}</div><p class="note">Real stadium designs: names, capacities and a drawn version of each stadium (shape, decks, open ends, video board, seats, turf and signature touches). Turn them off any time in Settings › Rosters &amp; data.</p>
+      ${p.std.miss.length?`<p class="note">Not in this league (skipped): ${esc(p.std.miss.slice(0,8).join(', '))}${p.std.miss.length>8?` and ${p.std.miss.length-8} more`:''}</p>`:''}
+      ${live?`<label class="ri-opt"><input type="checkbox" id="riCur" ${L.live?'disabled':'checked'}> Apply to this dynasty now${L.live?' (finish the game in progress first)':''}</label>`:''}
+      ${p.std.teams?`<label class="ri-opt"><input type="checkbox" id="riSave" checked> Use for new dynasties</label>`:''}</div>`;
+    else if(p)prev=`<div class="ri-prev"><div class="kpis"><div><em>Teams matched</em><b>${p.teams}<small>/${p.total}</small></b></div><div><em>Players</em><b>${p.players.toLocaleString()}</b></div><div><em>Logos</em><b>${p.logos}</b></div><div><em>Coaches</em><b>${p.coaches||0}</b></div><div><em>Custom players</em><b>${p.custom}</b></div>${stdK}</div>
       ${p.miss.length?`<p class="note">Not in this league (skipped): ${esc(p.miss.slice(0,8).join(', '))}${p.miss.length>8?` and ${p.miss.length-8} more`:''}</p>`:''}${p.customMiss?`<p class="note">${p.customMiss} custom player${p.customMiss>1?'s have':' has'} no matching team.</p>`:''}${p.sched?`<p class="note">Includes the real ${p.sched.season} schedule with results through week ${p.sched.through}: keep "Use for new dynasties" on, then pick Real ${p.sched.season} on the new-dynasty screen.</p>`:''}
       ${live?`<label class="ri-opt"><input type="checkbox" id="riCur" ${L.live?'disabled':'checked'}> Apply to this dynasty now${L.live?' (finish the game in progress first)':''}</label>
       <label class="ri-opt"><input type="checkbox" id="riKeep" checked> Keep my team's roster</label>`:''}
-      ${p.teams&&(p.pk.teams||[]).length?`<label class="ri-opt"><input type="checkbox" id="riSave" checked> Use for new dynasties</label>`:''}</div>`;
+      ${p.teams&&(p.pk.teams||[]).length||p.std&&p.std.teams?`<label class="ri-opt"><input type="checkbox" id="riSave" checked> Use for new dynasties</label>`:''}</div>`;
     openModal(`<div class="eyebrow">Rosters &amp; logos</div><div class="h2">Import rosters &amp; logos</div>
-      <p class="note">Choose a roster pack (.json) saved in Files, or paste one below. A pack replaces players and coaching staffs, adds custom players and links team logos; school names and colors stay as they are.</p>
+      <p class="note">Choose a roster pack or a stadiums file (.json) saved in Files, or paste one below. A pack replaces players and coaching staffs, adds custom players and links team logos; a stadiums file gives teams their real stadium designs. School names and colors stay as they are.</p>
       <div class="btns"><label class="btn light ri-file">Choose file…<input type="file" id="riFile" accept=".json,application/json,text/plain" hidden></label></div>
       <textarea id="riPaste" placeholder='{"format":"gridiron-live-pack","version":2,…}  or a custom players list'></textarea>
       <div class="btns"><button class="btn ghost sm" id="riRead">Read pasted text</button></div>
@@ -150,16 +193,18 @@ function openRosterImport(L,done,opt){
       <div class="btns">${p?`<button class="btn" id="riGo">${p.v1?'Apply team pack':'Import'}</button>`:''}<button class="btn ghost" id="riX">${p?'Cancel':'Close'}</button></div>`);
     on('riX',closeModal);
     const err=m=>{$('#riErr').textContent=m};
-    const take=txt=>{try{let j=JSON.parse(String(txt).replace(/^﻿/,''));if(Array.isArray(j))j={players:j};if(!j||typeof j!=='object'||!(Array.isArray(j.teams)||Array.isArray(j.players)))throw new Error('shape');pk=j;pv=packPreview(L,j);render()}
-      catch(e){pk=pv=null;err(e.message==='shape'?'That JSON has no "teams" or "players" list.':'That isn’t valid JSON. Check that you copied all of it.')}};
+    const take=txt=>{try{let j=JSON.parse(String(txt).replace(/^﻿/,''));if(Array.isArray(j))j={players:j};if(!j||typeof j!=='object'||!(Array.isArray(j.teams)||Array.isArray(j.players)||stdList(j)))throw new Error('shape');pk=j;pv=packPreview(L,j);render()}
+      catch(e){pk=pv=null;err(e.message==='shape'?'That JSON has no "teams", "players" or "stadiums" list.':'That isn’t valid JSON. Check that you copied all of it.')}};
     const f=$('#riFile');f.onchange=()=>{const file=f.files&&f.files[0];if(!file)return;if(file.size>40e6){err('That file is too big (40 MB max).');return}err('Reading '+file.name+'…');const rd=new FileReader();rd.onload=()=>take(rd.result);rd.onerror=()=>err('That file could not be read.');rd.readAsText(file)};
     on('riRead',()=>{const v=$('#riPaste').value.trim();if(!v){err('Paste a pack first.');return}take(v)});
     on('riGo',()=>{const b=$('#riGo');b.disabled=true;b.textContent='Importing…';setTimeout(()=>{try{
       if(pv.v1){applyTeamPack(L,pk,{regen:opt.regen||L.phase==='regular'&&L.week===0});closeModal();done&&done();return}
       const save=!!($('#riSave')&&$('#riSave').checked),keep=live&&$('#riKeep')&&$('#riKeep').checked;
       const cur=live?!!($('#riCur')&&$('#riCur').checked&&!L.live):!(opt.setup&&save);
-      let msg=[],saved=false;if(cur){const s=applyRosterPack(L,pk,{keepUser:keep});msg.push(`${s.teams} teams updated`+(s.coaches?`, ${s.coaches} coaches`:'')+(s.custom?`, ${s.custom} custom players`:''))}
-      if(save){try{packSave(pk);saved=true;msg.push('saved for new dynasties')}catch(e){msg.push(e.message)}}
+      let msg=[],saved=false;
+      if(cur&&pv.stdOnly){const s=applyStadiums(L,stdList(pk));msg.push(`${s.teams} stadiums`)}
+      else if(cur){const s=applyRosterPack(L,pk,{keepUser:keep});msg.push(`${s.teams} teams updated`+(s.coaches?`, ${s.coaches} coaches`:'')+(s.custom?`, ${s.custom} custom players`:'')+(s.std?`, ${s.std} stadiums`:''))}
+      if(save){try{if(pv.stdOnly)stdSave(stdList(pk));else packSave(pk);saved=true;msg.push('saved for new dynasties')}catch(e){msg.push(e.message)}}
       closeModal();toast(msg.join(' · ')||'Nothing to import');done&&done({saved,applied:cur})}catch(e){console.error(e);b.disabled=false;b.textContent='Import';err('Import failed: '+e.message)}},30)});
   };render();
 }
@@ -227,9 +272,11 @@ Promise.resolve().then(()=>{
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Rosters pack',button:'Import rosters & logos',id:'impRosters',note:'Load a roster pack (.json) from Files or paste one: real rosters, custom players and team logos.',onClick:()=>openRosterImport(LG,()=>{saveNow();showHub('settings')})});
 SETTINGS_EXTRA.push({card:'Rosters & data',key:'showLogos',label:'Show imported logos',opts:[[1,'On'],[0,'Off']],def:1,bool:true});
 SETTINGS_EXTRA.push({card:'Rosters & data',key:'showPhotos',label:'Show real player photos',opts:[[1,'On'],[0,'Off']],def:1,bool:true,note:'Imported players show their headshot when you are online (loaded from ESPN, never saved). Everyone else, and anyone without a photo, gets a team-colour avatar.'});
+SETTINGS_EXTRA.push({card:'Rosters & data',key:'realStadiums',label:'Use real stadium designs',opts:[[1,'On'],[0,'Off']],def:1,bool:true,when:()=>LG.teams.some(t=>t.std)||stdSavedOn(),
+  note:'Teams with an imported stadium design play in a drawn version of their real stadium (import a stadiums file above). Off: everyone gets the standard stadium.',after:()=>{STAD.key='';FLD.key=''}});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Your roster',button:'Export my roster (JSON)',id:'expRoster',onClick:()=>openRosterExport()});
-SETTINGS_EXTRA.push({card:'Rosters & data',label:'Imported data',button:'Remove imported data',id:'rmPack',note:'New dynasties go back to generated rosters; this dynasty keeps its players and drops the imported logos.',
-  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);KV.set(REAL_KEY,null);for(const t of LG.teams){delete t.logo;delete t.logoDark}delete LG.pack;saveNow();showHub('settings');toast('Imported data removed')}});
+SETTINGS_EXTRA.push({card:'Rosters & data',label:'Imported data',button:'Remove imported data',id:'rmPack',note:'New dynasties go back to generated rosters and the standard stadium; this dynasty keeps its players and drops the imported logos and stadium designs.',
+  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);KV.set(REAL_KEY,null);KV.set(STD_KEY,null);KV.set(STD_ON,null);for(const t of LG.teams){delete t.logo;delete t.logoDark;delete t.std}delete LG.pack;STAD.key='';FLD.key='';saveNow();showHub('settings');toast('Imported data removed')}});
 });
 
 /* ---------- v1 team packs (moved from 02-data.js) ---------- */

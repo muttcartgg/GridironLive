@@ -55,3 +55,30 @@ python3 -I tools/data/build_pack.py [outdir]     # default /home/claude/packs
 The builder reads a local clone of `sportsdataverse/cfbfastR-data`: the 2026 rosters, 2025 and 2026 play-level player stats, ESPN team ids, colors and logo links, the 2026 team info for stadiums, and `schedules/parquet/cfb_schedules_2026.parquet` for the real season (`schedule`). Schedule teams are matched by ESPN id, then by name, the same way as the rosters. To refresh the data, update those files in the clone (for example `git checkout origin/HEAD -- <path>` after a fetch, or download them from raw.githubusercontent.com) and rebuild. It writes the pack and the template. Ratings come from 2025 and 2026 production (usage, efficiency, TDs and INTs, sacks, PBUs, forced fumbles, FG%), class, size compared with the position norm, and program strength. Each team is then calibrated so its `teamOvr()` follows the generated league's curve for that program's strength. Linemen and punters have no box-score stats, so class, size and team decide their ratings. Output is deterministic.
 
 Coaches: the builder adds `coaches` for every FBS program from the 2026 head-coach list in `build_pack.py` (`FBS_HC`, taken from Wikipedia's list of current FBS coaches in October 2026) and the coordinators in `COORDS` that were verified for 2026: 57 offensive and defensive coordinators at 30 programs (the AP Top 25 of Oct 25 2026 plus big brands). They were checked against ESPN's Power 4 coordinator tracker, FootballScoop's 2025-26 FBS OC and DC change tables and in-season news through Oct 26 2026, and each entry notes its source. SMU, Boise State and Wake Forest (both coordinators), the Ole Miss DC, the Penn State OC and the Oregon OC (fired Oct 26) couldn't be verified and stay generated. Ratings and traits are game estimates (`HC_TRAITS`; other coaches get one trait from a fixed hash). FCS teams keep generated coaches. To refresh only the coaches of an existing pack without the roster data: `python3 -I tools/data/build_pack.py --coaches-only [pack.json]`.
+
+## Real stadiums (format `gridiron-live-stadiums`, version 1)
+
+A separate personal file, never shipped: `python3 -I tools/data/build_stadiums.py` writes `/home/claude/packs/gridiron-live-2026-stadiums.json`
+(all 138 FBS home stadiums of 2026, about 90 KB). Import it like a pack (Settings › Rosters & data › Import rosters & logos, or the setup
+screen); it can also ride inside a roster pack as a `"stadiums"` list. "Apply to this dynasty now" and "Use for new dynasties" work as for
+packs; **Use real stadium designs** (Settings › Rosters & data) switches the drawn designs off and on; **Remove imported data** drops them.
+
+```json
+{"format":"gridiron-live-stadiums","version":1,"season":2026,"stadiums":[
+ {"team":"UW","school":"Washington","espnId":264,"name":"Husky Stadium","city":"Seattle","state":"WA","capacity":70083,"opened":1920,
+  "surface":"artificial","roof":"open","turf":"#1d4fb0 (only when colored)","elevation_ft":"(only 2,000 ft and up)","approx":"true when guessed",
+  "architecture":{"shape":"horse","axis":"EW","pressBox":"S","decks":{"pressSide":2,"otherSide":2},"ends":{"E":"open","W":"large"},
+   "videoBoard":"W","seats":"primary","features":["water","mountains","canopy"],"view":{"far":"S","left":"E","right":"W"}}}]}
+```
+
+- Matching: `espnId`, then `team` (the game's abbreviation), then `school`, exactly like pack teams. A match sets `t.stadium`, `t.cap` and
+  `t.std` (the compact design 08g draws; see the comment above `STD_KEY` in 02c-packs.js).
+- `shape`: `bowl` (enclosed), `horse` (horseshoe), `u` (sidelines + one end), `side` (two sideline grandstands). `ends` per compass end:
+  `large`/`medium`/`small` stands, `hill` (grass berm), `building`, `open`. `decks.pressSide` (1–3) and the capacity set the far stands' height.
+- `view`: the camera sits across from the press box, so the press-box side is the far stands; `left`/`right` are the ends on screen.
+- `seats`: `team`, `primary`, `metal` or two hex colors. `features` (up to 3): hedges, hill, turf, checker, mountains, water, skyline, trees,
+  tower, arches, cards, pyro, dome, board, canopy. A dome also keeps rain and snow out (the game is played Clear).
+- Neutral-site games keep the standard stadium. Sources: CFBD 2026 schedules (2026 home venue) and team info (city, elevation, roof),
+  Wikipedia's FBS stadium list (capacity, opened, surface). The architecture is a stylized description; 111 of 138 entries are `approx`.
+- QA: `NODE_PATH=$(npm root -g) node tools/qa/stadiums.js [stadiums.json] [web/index.html] [outdir]` (import through Settings, new-dynasty
+  copy, the setting, landscape/portrait/kick-view screenshots of six stadiums, stadium-layer timing).
