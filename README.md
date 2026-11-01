@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 7.4: coach mode and key moments
+
+- Coach mode: you call every play on offense and defense and the AI plays it out with the broadcast camera; 1×/2×/Result speed bar; every decision (PAT, 4th down, penalties, onside) is still yours.
+- Key moments: normal drives are simmed fast behind a play-by-play overlay (tap "Take over now" any time), and you get the ball for the moments that matter — red zone, two-minute drills, a close 4th quarter, overtime, goal-line stands and big 4th downs — with a banner explaining why.
+- Settings › Gameplay › Play style (Full control / Coach mode / Key moments), also switchable from the pause menu mid-game.
+- Fixed: live drives weren't being recorded in the drive chart.
+
 ## Version 7.3
 
 - Camera fitted to your iPhone: the app reads the model (iPhone SE through the 17 series; unknown models by screen size) and its safe areas, then sizes the field so players stay the same size on every phone: about 32–40 yards across in landscape (more on bigger screens), sideline to sideline in portrait. The presnap shot frames the whole formation, the drop-back frames every receiver, and your defender stays in the shot. Settings › Camera zoom: Auto (default) or Wide / Normal / Close on top of the fit, with the detected model shown.
