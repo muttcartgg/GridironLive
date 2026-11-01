@@ -115,7 +115,9 @@ function rtgOffersModal(st){
 function rtgDepth(L,quiet){
   const r=L.rtg,t=L.teams[L.user],me=rtgMe(L);if(!me)return null;
   const others=t.roster.filter(p=>p.pos===me.pos&&p!==me).sort((a,b)=>ovr(b)-ovr(a)),eff=ovr(me)+(r.trust-50)/50*.4;
-  let i=others.findIndex(p=>ovr(p)<eff);if(i<0)i=others.length;
+  /* hysteresis: passing a man who was ahead of him takes a clear edge; he keeps his spot over a man behind him through a small dip */
+  const prev=(t.dco&&t.dco[me.pos])||[],pi=prev.indexOf(me.id),above=new Set(pi>=0?prev.slice(0,pi):[]);
+  const i=others.filter(p=>eff<=ovr(p)+(pi<0?0:above.has(p.id)?.07:-.07)).length;
   const ord=others.map(p=>p.id);ord.splice(i,0,me.id);t.dco=t.dco||{};t.dco[me.pos]=ord;
   if(me.inj>0||me.redshirt)return r.depth;
   const di=depth(t,me.pos).indexOf(me);
@@ -180,7 +182,7 @@ function rtgGameDone(L,g,info,before){
 /* ---------- in the game: who's on the field, sideline fast-forward, the snap ---------- */
 const rtgOn=()=>!!(LG&&LG.rtg&&S.home&&RTG_G.ev&&playStyle()==='rtg');
 function rtgGameInit(){AUTO.exempt=LG.rtg.pid;S.rtgSwap=null;RTG_G.ev={snaps:0,tgt:0,drops:0,bt:0,mt:0,alw:0,pd:0,fum:0,tda:0,sk:0};RTG_G.alw=null;rtgFF(rtgSideTxt())}
-function rtgSideTxt(){const me=rtgMe(),r=LG.rtg;if(!me)return 'On the sideline';if(me.inj>0)return `Injured · ${me.injWhy||'out this week'}`;
+function rtgSideTxt(){const me=rtgMe(),r=LG.rtg;if(!me)return 'On the sideline';if(me.inj>0||(S.injured||[]).includes(me.id))return `Injured · ${me.injWhy||'out for the game'}`;
   if(rtgOffP(me.pos)!==uOff())return `${uOff()?'Offense':'Defense'} on the field · you're on the sideline`;
   return `On the sideline · #${(r.depth==null?0:r.depth)+1} on the ${me.pos} depth chart`}
 function rtgFF(txt){kmResume();const e=$('#kmOv .km-eye');if(e)e.innerHTML='<i></i>'+esc(txt);const t=$('#kmTake');if(t)t.hidden=true}
