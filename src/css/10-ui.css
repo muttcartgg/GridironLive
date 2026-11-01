@@ -148,7 +148,7 @@
 .wh{display:flex;align-items:center;justify-content:space-between;gap:6px;min-height:15px;margin-bottom:4px;font:700 10px/1 var(--tv);letter-spacing:.14em;text-transform:uppercase;color:var(--mute)}
 .wh .sw{font:800 italic 12px/1 var(--tv);letter-spacing:.02em;color:#fff;background:color-mix(in srgb,var(--g) 75%,#000);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);padding:2px 5px;border-radius:3px;white-space:nowrap;animation:swIn .5s cubic-bezier(.2,.8,.2,1)}
 @keyframes swIn{from{transform:scale(.5);opacity:0}}
-.wr{display:flex;justify-content:space-between;align-items:center;font:700 12.5px/1 var(--tv);letter-spacing:.03em;text-transform:uppercase}
+.wr{display:flex;justify-content:space-between;align-items:center;gap:8px;white-space:nowrap;font:700 12.5px/1 var(--tv);letter-spacing:.03em;text-transform:uppercase}
 .wr b{display:flex;align-items:center;gap:4px;font-weight:700}
 .wr em{font:800 italic 15px/1 var(--tv);margin-left:2px}.wr .r em{margin:0 2px 0 0;opacity:.7}
 .wpbar,#wpG .bar,.wpcard .bar{position:relative;height:6px;border-radius:3px;margin:5px 0 4px;background:var(--o);overflow:hidden}
@@ -158,7 +158,7 @@
 .spk polyline{fill:none;stroke-width:3.5;stroke-linejoin:round;stroke-linecap:round;vector-effect:non-scaling-stroke;opacity:.6}
 .spk polyline.hi{stroke:#fff;stroke-width:1.3;opacity:.95}
 .wpcard{background:var(--panel2);border-radius:12px;padding:10px 12px 8px;box-shadow:inset 0 0 0 1px var(--line)}.wpcard .spk{height:36px}.wpcard .wr{font-size:14px}.wpcard .wr em{font-size:18px}
-@media (max-width:540px){#wpG{top:calc(env(safe-area-inset-top,0px) + 128px);width:162px}}
+@media (max-width:540px){#wpG{top:calc(env(safe-area-inset-top,0px) + 128px);width:184px}}
 :root[data-bug="bottom"] #wpG{top:calc(env(safe-area-inset-top,0px) + 56px)}
 
 /* ---------- decibel meter (only when the crowd gets loud), replay, hint, watermark, ticker ---------- */

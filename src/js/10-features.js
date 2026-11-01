@@ -127,15 +127,15 @@ function simDriveLog(d,yds,plays,label,time){
 function driveChartHTML(){
   const ds=S.drives||[];if(!ds.length)return '';
   const X=v=>(10+clamp(+v||0,0,100))/1.2,pc=v=>v.toFixed(2)+'%';
-  const axis=[10,20,30,40,50,60,70,80,90].map(v=>`<span style="left:${pc(X(v))}">${v>50?100-v:v}</span>`).join('');
+  const axis=[10,20,30,40,50,60,70,80,90].map(v=>`<span class="${v===20||v===50||v===80?'':'mn'}" style="left:${pc(X(v))}">${v>50?100-v:v}</span>`).join('');
   return `<div class="card"><div class="h2">Drive chart</div><div class="dchart"><div class="drow dax" aria-hidden="true"><span></span><div class="axis"><span class="ez" style="left:${pc(X(0)/2)}">G</span>${axis}<span class="ez" style="left:${pc(100-X(0)/2)}">G</span></div><span></span></div>${ds.map(d=>{const t=d.team==='home'?S.home:S.away,a=clamp(+d.start||0,0,100),b=clamp(d.end!=null?+d.end:a,0,100),good=/TD|FG/.test(d.res)&&!/Missed/.test(d.res),net=Math.round(b-a);
-    return `<div class="drow"><span class="ab">${esc(t.abbr)}</span><div class="lane"><i class="${b<a?'bk':''}" style="left:${pc(X(Math.min(a,b)))};width:${pc(Math.max(.8,Math.abs(b-a)/1.2))};--c:${tvCol(t)}"></i></div><span class="res ${good?'ok':''}"><b>${esc(d.res)}${d.sim?' *':''}</b><small>${d.plays||0} pl · ${net>0?'+':''}${net} yds</small></span></div>`}).join('')}</div><p class="note">Each team drives left to right, from its own goal line (G) toward the opponent's. Bars run from the first snap to the final spot. * simulated drive.</p></div>`;
+    return `<div class="drow${d.team==='home'?'':' op'}"><span class="ab">${esc(t.abbr)}</span><div class="lane"><i class="${b<a?'bk':''}" style="left:${pc(X(Math.min(a,b)))};width:${pc(Math.max(.8,Math.abs(b-a)/1.2))};--c:${tvCol(t)}"></i></div><span class="res ${good?'ok':''}"><b>${esc(d.res)}${d.sim?' *':''}</b><small>${d.plays||0} pl · ${net>0?'+':''}${net} yds</small></span></div>`}).join('')}</div><p class="note">Each team drives left to right, from its own goal line (G) toward the opponent's. Bars run from the first snap to the final spot; striped bars are ${esc(S.away.abbr)}. * simulated drive.</p></div>`;
 }
 
 /* box score for the pause menu and the post-game screen */
 function boxScoreHTML(){
   const s=S.stats,o=S.ostats||newGameStats(),u=S.home,a=S.away;
-  const row=(lab,x,y)=>`<tr><td>${lab}</td><td class="n">${x}</td><td class="n">${y}</td></tr>`;
+  const row=(lab,x,y)=>`<tr${/^&nbsp;·/.test(lab)?' class="sub"':''}><td>${lab}</td><td class="n">${x}</td><td class="n">${y}</td></tr>`;
   const lead=(t,m)=>{const out=[];const best=k=>{let b=null,bv=0;for(const id in m){if(m[id][k]>bv){bv=m[id][k];b=id}}return b};const f=id=>{const p=t.roster.find(x=>x.id==id);return p?p.last:'?'};
     const q=best('pa'),r=best('ra'),w=best('recy');if(q)out.push(`${f(q)} ${m[q].pc}/${m[q].pa}, ${m[q].py} yds, ${m[q].ptd} TD`);if(r)out.push(`${f(r)} ${m[r].ra} car, ${m[r].ry} yds`);if(w)out.push(`${f(w)} ${m[w].rec} rec, ${m[w].recy} yds`);return out.join(' · ')||'No live plays yet'};
   return `${typeof BC!=='undefined'?BC.linescore():''}

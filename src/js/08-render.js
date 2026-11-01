@@ -103,7 +103,8 @@ function drawModern(now){
   drawPylons(c,s);drawGoalposts(c,s,now);
   // routes
   if(uOff()&&LG.settings.routes!==false&&(S.phase==='presnap'||(S.phase==='live'&&play&&play.type==='pass'&&!play.thrown&&!play.scramble))){
-    c.save();c.strokeStyle=S.home.c1;c.fillStyle=S.home.c1;c.lineWidth=Math.max(1.5,s*.16);c.setLineDash([s*.7,s*.45]);c.globalAlpha=.6;c.lineJoin='round';
+    c.save();c.strokeStyle=c.fillStyle=tvCol(S.home);c.lineWidth=Math.max(1.5,s*.16);   /* TV-safe colour: a navy or black team's routes stay visible on the turf */
+    c.setLineDash([s*.7,s*.45]);c.globalAlpha=.6;c.lineJoin='round';
     for(const p of OFF){if(!p.rpath||(play&&play.type==='run'))continue;const pts=p.rpath.slice();if(p.cont){const a=pts[pts.length-1],b=p.cont,d=hyp(b[0]-a[0],b[1]-a[1])||1;pts.push([a[0]+(b[0]-a[0])/d*5,a[1]+(b[1]-a[1])/d*5])}
       c.beginPath();c.moveTo(X(pts[0][0]),Y(pts[0][1]));for(let i=1;i<pts.length;i++)c.lineTo(X(pts[i][0]),Y(pts[i][1]));c.stroke();
       const e=pts[pts.length-1],f=pts[pts.length-2],ang=Math.atan2(Y(e[1])-Y(f[1]),X(e[0])-X(f[0]));c.save();c.setLineDash([]);c.translate(X(e[0]),Y(e[1]));c.rotate(ang);c.beginPath();c.moveTo(s*.6,0);c.lineTo(-s*.4,s*.4);c.lineTo(-s*.4,-s*.4);c.closePath();c.fill();c.restore()}

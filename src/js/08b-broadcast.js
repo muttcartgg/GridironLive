@@ -191,8 +191,8 @@ const BC={
   sheetUp(){return ['#call','#opt','#kick','#pausem','#studio'].some(s=>{const e=$(s);return e&&!e.hidden})},
   showQ(html,cls,ms,waited){clearTimeout(this.qWait);
     if(this.sheetUp()||S.phase==='live'||S.phase==='kick'){if((waited||0)<20000)this.qWait=setTimeout(()=>this.showQ(html,cls,Math.min(ms||3400,2800),(waited||0)+250),250);return}
+    $('#lower').classList.remove('on');$('#rcard').classList.remove('on');this.lowT=0;   // one centre graphic at a time
     const el=$('#qcard');el.className=cls||'';el.innerHTML=html;void el.offsetWidth;el.classList.add('on');clearTimeout(this.qT);this.qT=setTimeout(()=>el.classList.remove('on'),ms||3400)},
-  clearCards(){clearTimeout(this.qWait);clearTimeout(this.qT);$('#qcard').classList.remove('on');$('#rcard').classList.remove('on');$('#lower').classList.remove('on');this.lowT=0},
   /* tale-of-the-tape row, visitor on the left: each bar is that team's share of the total (0 when it has none), drawn
      out from the shared centre label; fixed grid columns in 10-ui.css keep every row's bars on one axis */
   statRow(lab,a,b,fmt,base){base=base||0;a=+a||0;b=+b||0;const [[L0,li],[R0]]=this.sides(),la=li===0?a:b,lb=li===0?b:a,ea=Math.max(0,la-base),eb=Math.max(0,lb-base),tot=ea+eb,
