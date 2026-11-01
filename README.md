@@ -9,6 +9,14 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 7.6: Road to Glory
+
+- A player career mode inside a normal league (generated or imported real rosters): create a recruit (QB, RB, WR, TE, LB, CB or S; home state; 2–5 stars; archetype), see your senior-year recap, weigh 5–8 offers, take up to three official visits and commit.
+- In games you control only your player — the AI plays everyone else, the camera follows you, and snaps you sit out (and special teams) are fast-forwarded with a sideline overlay.
+- Earn the job: game grades, practice evaluations and coach trust move you up the depth chart; XP buys skill points; NIL deals unlock as your profile grows; national awards and the Heisman are in play.
+- Declare for the NFL draft after your junior season or come back for your senior year; the career ends at the draft with a career summary.
+- The career hub replaces the coach hub in this mode (player card, ratings, depth chart spot, next game, goals, NIL, grades, draft projection).
+
 ## Version 7.5: uniform and team builder
 
 - Uniform editor (Program tab or any team page): Home, Away, Alternate and Throwback sets — helmet color and finish (matte, gloss, chrome), facemask, decal style, helmet stripes, jersey, numbers and outline, sleeve stripes, pants and stripe, socks — with a live, turning preview. Used in games, replays, photo mode and retro style.
