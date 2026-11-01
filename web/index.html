@@ -1145,6 +1145,24 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
 .tl li.gold .tl-y{color:var(--gold)}
 .tl .tags{margin-top:4px}
 
+/* ---------- Road to Glory (05i): career hub, grades, recruit creator ---------- */
+.rtg-card{background:linear-gradient(135deg,color-mix(in srgb,var(--c1,#22324d) 34%,transparent),transparent 62%),var(--panel)}
+.rtg-id{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.rtg-nm{flex:1;min-width:0}.rtg-nm .h1{line-height:1.02;overflow-wrap:anywhere}
+.rtg-ovr{flex:none;display:flex;flex-direction:column;align-items:center;padding:8px 12px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
+.rtg-ovr b{font:800 34px/1 var(--tv)}.rtg-ovr small{font:700 10px/1 var(--tv);letter-spacing:.16em;color:var(--mute)}
+.rtg-attrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:10px 0}
+.rtg-at{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.rtg-at span{flex:1;min-width:0;font-size:12px;color:var(--mute)}.rtg-at b{font:800 18px/1 var(--tv)}.rtg-at .btn.sm{padding:5px 8px;font-size:11px}
+.rtg-g{flex:none;display:inline-grid;place-items:center;min-width:38px;height:30px;padding:0 6px;border-radius:8px;font:800 17px/1 var(--tv);color:#0B1220;background:#8D99AD}
+.rtg-g.ga{background:#5BD38C}.rtg-g.gb{background:#7FB6FF}.rtg-g.gc{background:#E6B33C}.rtg-g.gf{background:#FF6B5E}.rtg-g.gn{background:rgba(255,255,255,.12);color:var(--mute);font-size:12px}
+.rtg-g.big{min-width:76px;height:64px;font-size:38px;border-radius:14px}
+.rtg-post{display:flex;align-items:center;gap:16px}
+.rtg-nil .btns{flex:none;gap:6px}
+.rtg-off .badge{flex:none}
+@media (max-width:540px){.rtg-attrs{grid-template-columns:1fr 1fr}.rtg-ovr b{font-size:28px}}
+.rtg-off .btns{flex:none;align-self:center}.rtg-off .btns .btn{flex:none}
+
 /* 50 · roster & logo packs (02c-packs.js): import modal, logo badges, scorebug logos */
 .ri-file{position:relative;cursor:pointer}
 .ri-prev{display:flex;flex-direction:column;gap:8px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:rgba(255,255,255,.03)}
@@ -2869,11 +2887,12 @@ function finishWeek(L){
   if(w.kind==='post0')awardHeisman(L);
   for(const g of w.games)if(g.upset&&L.news.length<40){const wt=L.teams[winner(g)],lt=L.teams[loser(g)];L.news.unshift({t:`Upset: ${wt.city} beats ${rk(lt.id)?'#'+rk(lt.id)+' ':''}${lt.city}, ${Math.max(g.hs,g.as)}–${Math.min(g.hs,g.as)}.`})}
   if(typeof rcOnWeek==='function')try{rcOnWeek(L,w)}catch(e){console.error(e)}   /* season-long recruiting (04b) */
+  if(L.rtg&&typeof rtgWeek==='function')try{rtgWeek(L,w)}catch(e){console.error(e)}   /* Road to Glory (05i): practice, trust, depth chart, NIL */
   L.news=L.news.slice(0,30);
   L.week++;
   if(L.week>=L.R&&L.week<=L.R+4)buildPost(L);
   if(L.week>L.R+4)return startOffseason(L);
-  if(L.week<L.R&&Math.random()<.4)L.event=genEvent(L);
+  if(L.week<L.R&&!L.rtg&&Math.random()<.4)L.event=genEvent(L);   /* front-office dilemmas are the coach's, not in Road to Glory */
 }
 function pickPOTW(L,w){
   const u=L.teams[L.user];const conf=u.conf;let best=null;
@@ -2901,7 +2920,7 @@ const REGIMES={light:{x:.75,c:-4,i:.6,label:'Light'},normal:{x:1,c:0,i:1,label:'
 function addXP(p,x,list){p.xp+=x;let n=0;while(p.xp>=100&&n<4){n++;p.xp-=100;const ks=PATTR[p.pos].filter(k=>p[k]<5);if(!ks.length){p.xp=0;break}ks.sort((a,b)=>p[a]-p[b]);const k=Math.random()<.6?ks[0]:pick(ks);p[k]=r1(p[k]+R(.25,.45));list&&list.push({id:p.id,name:fullName(p),pos:p.pos,attr:attrName(p.pos,k),to:a99(p[k])})}}
 const gameXP=s=>s?Math.min(80,s.py/8+s.ptd*12+s.ry/5+s.rtd*12+s.recy/5+s.rectd*12+s.rec*2):0;
 function processUserGame(L,g,info){
-  const u=L.teams[L.user],opp=L.teams[g.h===L.user?g.a:g.h],home=g.h===L.user&&!g.neutral,wi=L.week;
+  const u=L.teams[L.user],opp=L.teams[g.h===L.user?g.a:g.h],home=g.h===L.user&&!g.neutral,wi=L.week,rb=L.rtg&&typeof rtgSS==='function'?rtgSS(L):null;
   let cc=info.won?3:1;if(home)cc+=L.fac.stadium-1+(L.fan>70?1:0);if(info.won&&rankOf(opp.id))cc+=1;L.credits+=cc;
   let fan=info.won?4:-5;if(info.won&&rankOf(opp.id)&&rankOf(opp.id)<=10)fan+=4;if(g.rival)fan+=info.won?6:-6;if(home&&wi===L.hcWeek)fan+=info.won?3:-2;if(info.storm)fan+=8;L.fan=clamp(L.fan+fan,0,100);
   let mor=info.won?5:-Math.max(2,Math.round(6*(2-coachMod(u,'mor'))));coachXP(L,info.won?12:4);if(captainsHealthy(L))mor+=info.won?1:2;L.morale=clamp(L.morale+mor,0,100);
@@ -2920,6 +2939,7 @@ function processUserGame(L,g,info){
   if(info.simmed&&typeof simTargeting==='function')simTargeting(L,g);
   const ts=L.ts,s=info.stats||{};ts.g++;ts.pf+=info.us;ts.pa+=info.them;ts.py+=s.passYds||0;ts.ry+=s.rushYds||0;ts.thirdA+=s.thirdA||0;ts.thirdC+=s.thirdC||0;ts.rzA+=s.rzA||0;ts.rzTD+=s.rzTD||0;ts.to+=(s.int||0);ts.pen+=s.pen||0;
   updateGameRecords(L,info,opp);
+  if(rb)try{rtgGameDone(L,g,info,rb)}catch(e){console.error(e)}   /* Road to Glory (05i): his game grade */
   return {cc,fan,mor,lev,inj};
 }
 function seedRecords(L){
@@ -2963,7 +2983,7 @@ function departures(L){
     const keep=[];
     for(const p of t.roster){
       const leave=p.yr>=4&&!(p.ss.gp<=4&&!p.rs);   /* the 4-game rule: a senior who played four games or fewer and never redshirted gets a fifth year */
-      const declare=!leave&&Math.random()<(typeof declareOdds==='function'?declareOdds(p):p.yr===3&&ovr(p)>=4.2?.55:0);
+      const mine=L.rtg&&p.id===L.rtg.pid,declare=!leave&&(mine?L.rtg.decl==='declare':Math.random()<(typeof declareOdds==='function'?declareOdds(p):p.yr===3&&ovr(p)>=4.2?.55:0));   /* Road to Glory: you decide */
       const portal=false;   /* transfers: portalStart (04c), after the coaching carousel */
       if(leave||declare){draftPool.push({p,t,declare});if(t.id===L.user){(declare?out.declares:out.grads).push({name:fullName(p),pos:p.pos,ovr:ovr(p)});if(typeof hofCheck==='function'&&hofCheck(L,p))(out.hof||(out.hof=[])).push(fullName(p))}}
       else if(portal){if(t.id===L.user)out.portalOut.push({name:fullName(p),pos:p.pos,ovr:ovr(p)});L.off.portalPool.push({...p,from:t.id})}
@@ -2972,7 +2992,7 @@ function departures(L){
     t.roster=keep;
     if(t.dco)for(const pos in t.dco)t.dco[pos]=t.dco[pos].filter(id=>keep.some(p=>p.id===id));
   }
-  if(typeof runDraft==='function')runDraft(L,draftPool).forEach(d=>{if(d.x.t.id===L.user)out.drafted.push({name:fullName(d.x.p),pos:d.x.p.pos,round:d.round,pick:d.pick,overall:d.overall})});
+  if(typeof runDraft==='function'){const dr=runDraft(L,draftPool);dr.forEach(d=>{if(d.x.t.id===L.user)out.drafted.push({name:fullName(d.x.p),pos:d.x.p.pos,round:d.round,pick:d.pick,overall:d.overall})});if(L.rtg&&typeof rtgDrafted==='function')rtgDrafted(L,draftPool,dr)}
   else{draftPool.sort((a,b)=>ovr(b.p)-ovr(a.p));draftPool.slice(0,7*32).forEach((x,i)=>{if(x.t.id===L.user)out.drafted.push({name:fullName(x.p),pos:x.p.pos,round:Math.floor(i/32)+1,pick:i+1})})}
   L.captains=L.captains.filter(id=>user.roster.some(p=>p.id===id));
   L.off.dep=out;
@@ -3267,20 +3287,21 @@ function renderSetup(){
   const st=SETUP,L=st.L;invalidate();
   const confs=L.confs.map((c,i)=>[c,i]).filter(([c])=>st.div==='all'||c.div===st.div);
   $('#setupBody').innerHTML=`
-    <div class="su-head"><div><div class="eyebrow">New dynasty · slot ${st.slot}</div><div class="h1">Pick your program</div></div><button class="btn ghost sm" id="setBack">‹ Saves</button></div>
+    <div class="su-head"><div><div class="eyebrow">New dynasty · slot ${st.slot}</div><div class="h1">${st.mode==='rtg'?'Road to Glory':'Pick your program'}</div></div><button class="btn ghost sm" id="setBack">‹ Saves</button></div>
+    <div class="card"><div class="setrow"><span class="eyebrow">Mode</span><div class="seg" id="modeSeg"><button data-v="coach" aria-pressed="${st.mode!=='rtg'}">Coach a program</button><button data-v="rtg" id="modeRtg" aria-pressed="${st.mode==='rtg'}">Road to Glory</button></div></div></div>
     <div class="card su-opts"><div class="grid2 su-names">
       <div class="field-row"><label for="coachName">Coach name</label><input type="text" id="coachName" maxlength="24" placeholder="Coach Merchant" value="${esc(st.coach)}"></div>
       <div class="field-row"><label for="dynName">Dynasty name</label><input type="text" id="dynName" maxlength="28" placeholder="My Dynasty" value="${esc(st.name)}"></div></div>
       <div class="setrow"><span class="eyebrow">Difficulty</span><div class="seg" id="setDiff">${[[0,'Rookie'],[1,'Varsity'],[2,'All-American'],[3,'Heisman']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${v===st.diff}">${l}</button>`).join('')}</div></div></div>
     <div class="card"><div class="setrow"><span class="eyebrow">League</span><div class="seg" id="leagueSeg">${[['ncaa','All FBS & FCS'],['original','Original schools'],['pack','Load a team pack']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.league===v}">${l}</button>`).join('')}</div></div>
       <p class="note">${st.league==='ncaa'?`All ${L.teams.length} Division I programs: ${L.teams.filter(t=>t.div==='FBS').length} FBS and ${L.teams.filter(isFCS).length} FCS, in their ${L.confs.length} conferences for 2026, with team colors, real rivalries and strength based on recent results. Badges use abbreviations, not official logos. ${st.L.pack?`Rosters from ${esc(st.L.pack.name)}.`:'Players are generated; import real rosters any time.'}`:st.league==='pack'?'Your team pack is loaded.':'Thirty-two original schools you can rename and recolor.'}</p>${typeof packSetupHTML==='function'?packSetupHTML(st):''}</div>
-    <div class="su-filter">
+    ${st.mode==='rtg'?rtgCreateHTML(st):`<div class="su-filter">
       <div class="su-q"><input type="search" id="teamQ" placeholder="Search schools, mascots, stadiums" value="${esc(st.q)}" autocomplete="off" aria-label="Search schools"></div>
       ${L.teams.some(isFCS)?`<div class="chips" id="divChips">${[['FBS','FBS'],['FCS','FCS'],['all','All Division I']].map(([v,l])=>`<button class="chipbtn" data-v="${v}" aria-pressed="${st.div===v}">${l}</button>`).join('')}</div>`:''}
       <div class="chips scrollx" id="confChips"><button class="chipbtn" data-v="all" aria-pressed="${st.conf==='all'}">All conferences</button>${confs.map(([c,i])=>`<button class="chipbtn" data-v="${i}" aria-pressed="${String(i)===st.conf}">${esc(c.name)}</button>`).join('')}</div>
       <div class="setrow"><span class="eyebrow" id="teamCount"></span><div class="seg" id="sortSeg">${[['prestige','Prestige'],['ovr','Overall'],['name','A–Z']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.sort===v}">${l}</button>`).join('')}</div></div></div>
     <div class="teampick" id="teamGrid"></div>
-    <button class="btn ghost wide" id="customProg">Build a custom program from scratch</button>`;
+    <button class="btn ghost wide" id="customProg">Build a custom program from scratch</button>`}`;
   renderTeamGrid();
   on('setBack',showSlots);
   $('#coachName').oninput=e=>st.coach=e.target.value;$('#dynName').oninput=e=>st.name=e.target.value;
@@ -3289,6 +3310,8 @@ function renderSetup(){
     if(v==='original'){st.L=genLeague();st.league=v;st.conf='all';st.div='all';renderSetupKeep()}
     else if(v==='ncaa'){st.L=genNCAALeague();if(typeof packAutoApply==='function')packAutoApply(st.L);st.league=v;st.conf='all';st.div='FBS';renderSetupKeep()}
     else openPackImport(st.L,()=>{st.league='pack';renderSetupKeep()},true)});
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>{st.mode=b.dataset.v;renderSetupKeep()});
+  if(st.mode==='rtg'){rtgSetupBind(st);if(typeof packSetupBind==='function')packSetupBind(st);return}   /* Road to Glory (05i) */
   document.querySelectorAll('#divChips button').forEach(b=>b.onclick=()=>{st.div=b.dataset.v;st.conf='all';renderSetupKeep()});
   document.querySelectorAll('#confChips button').forEach(b=>b.onclick=()=>{st.conf=b.dataset.v;renderSetupKeep()});
   document.querySelectorAll('#sortSeg button').forEach(b=>b.onclick=()=>{st.sort=b.dataset.v;renderSetupKeep()});
@@ -3333,13 +3356,14 @@ function startDynasty(id){
 const TABS=[['home','Home'],['schedule','Schedule'],['rankings','Rankings'],['playoff','Playoff'],['feed','Feed'],['team','Roster'],['recruit','Recruiting'],['program','Program'],['stats','Stats'],['league','League'],['settings','Settings']];
 function showHub(tab){
   const prev=TAB,wasHidden=$('#hub').hidden;
-  invalidate();hideAll();if(tab)TAB=tab;S.phase='hub';applyStyle();ensureCareer(LG);
+  invalidate();hideAll();if(tab)TAB=tab;if(LG.rtg&&(TAB==='recruit'||TAB==='program'))TAB='home';S.phase='hub';applyStyle();ensureCareer(LG);
   const u=T(LG.user);applyTeamTheme(u);
   const ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null,top=$('#hubTop');top.style.setProperty('--hd',deepC(u));
-  top.innerHTML=`<span class="ht-wm" aria-hidden="true">${esc(u.abbr)}</span>${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)} <span>${esc(u.name)}</span></b><small>${esc(LG.coach.name)}</small></div>
+  top.innerHTML=`<span class="ht-wm" aria-hidden="true">${esc(u.abbr)}</span>${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)} <span>${esc(u.name)}</span></b><small>${LG.rtg&&typeof rtgMe==='function'&&rtgMe()?esc(fullName(rtgMe()))+' · #'+rtgMe().num+' '+rtgMe().pos+' · coach '+esc(LG.coach.name):esc(LG.coach.name)}</small></div>
     <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div>
-    <div class="pills"><span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL and revenue-sharing budget left">${money(LG.nil)} NIL</span></div>`;
-  $('#tabs').innerHTML=TABS.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${TAB===k}">${k==='home'&&LG.phase==='offseason'?'Offseason':l}${k==='home'&&LG.event?'<span class="dot"></span>':''}</button>`).join('');
+    <div class="pills">${LG.rtg?`<span class="pill" title="Skill points">${LG.rtg.sp} SP</span><span class="pill" title="Your NIL earnings">${money(LG.rtg.nil.cash)} NIL</span>`:`<span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL and revenue-sharing budget left">${money(LG.nil)} NIL</span>`}</div>`;
+  const tabs=LG.rtg?TABS.filter(([k])=>k!=='recruit'&&k!=='program'):TABS;   /* Road to Glory: the coach-only screens are the CPU coach's */
+  $('#tabs').innerHTML=tabs.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${TAB===k}">${k==='home'&&LG.rtg?'Career':k==='home'&&LG.phase==='offseason'?'Offseason':l}${k==='home'&&LG.event?'<span class="dot"></span>':''}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{showHub(b.id.slice(4));$('#hubScroll').scrollTop=0});
   const hb=$('#hubBody');
   hb.innerHTML=({home:hubHome,schedule:hubSchedule,rankings:hubRankings,playoff:hubPlayoff,feed:hubFeed,team:hubTeam,recruit:hubRecruit,program:hubProgram,stats:hubStats,league:hubLeague,settings:hubSettings})[TAB]();
@@ -3365,6 +3389,7 @@ function gameHero(g,wi,extra,link){
     ${extra||''}</div>`;
 }
 function hubHome(){
+  if(LG.rtg)return rtgHome();   /* Road to Glory career hub (05i) */
   if(LG.phase==='offseason')return hubOffseason();
   const u=T(LG.user),w=LG.weeks[LG.week],g=userGameThisWeek();
   let main='';
@@ -3681,10 +3706,12 @@ function bindHub(){
   on('packImport',()=>openPackImport(LG,()=>{saveNow();showHub();toast('Team pack applied')}));
   // offseason controls
   bindOffseason();if(typeof bindRecruit==='function')bindRecruit();
+  if(LG.rtg&&typeof rtgBind==='function')rtgBind();
 }
 
 /* ---------- modals ---------- */
 function openPlayer(id){
+  if(LG.rtg&&typeof rtgOpenPlayer==='function')return rtgOpenPlayer(id);   /* read-only in Road to Glory */
   const u=T(LG.user),p=u.roster.find(x=>x.id===id);if(!p)return;
   const render=()=>{
     const s=p.ss,isCap=LG.captains.includes(p.id),startIdx=depth(u,p.pos).indexOf(p);
@@ -3789,7 +3816,7 @@ function hubOffseason(){
   return '';
 }
 function bindOffseason(){
-  if(LG.phase!=='offseason')return;const o=LG.off;
+  if(LG.phase!=='offseason'||LG.rtg)return;const o=LG.off;
   on('offNext',()=>{
     if(o.stage==='recap'){departures(LG);o.stage='departures'}
     else if(o.stage==='departures'){runCarousel(LG);o.stage='carousel'}
@@ -4434,6 +4461,7 @@ function portalStart(L){
     for(const pos of POS_ORDER){sq[pos]=startQ(t,pos);for(const p of starters(t,pos))st.add(p.id)}
     const keep=[];
     for(const p of t.roster){
+      if(L.rtg&&p.id===L.rtg.pid){keep.push(p);continue}   /* Road to Glory: your player stays put */
       const s=st.has(p.id),o9=ovr99(p),pt=!s&&ovr(p)>=sq[p.pos]-.25,star=o9>=80&&pw<.45;
       let pe=(s?.025:.06)+(pt?.14:0)+(!s&&p.ss.gp<3?.04:0)+(star?.16:0)+mor;
       pe*=(ch?1.9:1)*(1.15-.3*pw)*(p.redshirt?.5:1);
@@ -4843,7 +4871,7 @@ function startDefDrive(los,why){S.poss='away';fatRest(2);if(typeof BC!=='undefin
 function oppPossession(dist,why){
   S.phase='wait';S.rzActive=false;S.clockRun=false;S.poss='away';hideActs();
   /* Key moments plays every opponent snap on the engine (simmed, or handed to you when it matters) */
-  const mode=playStyle()==='km'?'play':LG.settings.defMode||'ask',go=m=>m==='play'?startDefDrive(110-dist,why):oppDrive(dist,why);
+  const mode=playStyle()==='km'||playStyle()==='rtg'?'play':LG.settings.defMode||'ask',go=m=>m==='play'?startDefDrive(110-dist,why):oppDrive(dist,why);
   if(mode==='ask')showOpt(`<b>${esc(S.away.abbr)} ball</b>${why?' · '+esc(why):''} · ${esc(spotLabelFor(110-dist,'away'))}`,[{t:'Play defense',s:'Control a defender',f:()=>go('play')},{t:'Sim the drive',s:'Play-by-play ticker',cls:'alt',f:()=>go('sim')}]);
   else go(mode);
 }
@@ -4877,8 +4905,10 @@ function toPresnap(){
   if(!S.conv&&!S.rzActive&&S.los>=90){S.rzActive=true;tstat().rzA++}
   S.motion=null;$('#hotBar').hidden=true;adjClose();S.flip=Math.random()<.5?1:-1;S.covLock=null;S.frontLock=null;S.readCov=null;S.dcPick=null;S.hard=false;S.slide=0;gameMeans();CALL_TAB=S.down===4&&!S.conv?'special':CALL_TAB==='special'?'pass':CALL_TAB;
   /* Key moments (05h kmCheck) may hand the user the ball here, or resume simming (S.ff: the AI calls it, no sheets) */
-  if(uOff()){kmCheck(null);setupFormation(null,S.flip);if(!S.ff)showCall()}
-  else{const pc=aiChoosePlay();S.aiPlay=pc;kmCheck(pc);if(pc.special){S.phase='wait';return aiSpecial(pc.special)}if(S.ff){S.defCall='auto';S.defFront='auto'}setupFormation(pc,S.flip);if(!S.ff)showDefCall()}
+  /* Road to Glory (05i rtgCheck/rtgSnap): the AI calls both sides; snaps without the user's player are simmed */
+  const rtg=playStyle()==='rtg';
+  if(uOff()){kmCheck(null);setupFormation(null,S.flip);if(!S.ff)rtg?rtgSnap():showCall()}
+  else{const pc=aiChoosePlay();S.aiPlay=pc;kmCheck(pc);if(pc.special){S.phase='wait';return aiSpecial(pc.special)}if(S.ff||rtg){S.defCall='auto';S.defFront='auto'}setupFormation(pc,S.flip);if(!S.ff)rtg?rtgSnap():showDefCall()}
   snapshot();
   $('#toBtn').hidden=!(S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0);
 }
@@ -4958,7 +4988,7 @@ $('#snapAdj').onclick=()=>{ac();if(S.phase==='presnap'&&S.pc)adjToggle()};
 $('#snapBack').onclick=()=>{ac();if(S.phase==='presnap'){$('#snapBar').hidden=true;adjClose();S.pc=null;setupFormation(null,S.flip);showCall()}};
 function showOpt(head,opts){
   /* simming (Key moments): the AI answers for the user, the option marked ai (else the recommended first one) */
-  if(S.ff){const o=opts.find(x=>x.ai)||opts[0];$('#opt').hidden=true;setTimeout(()=>o.f(),0);return}
+  if(S.ff||playStyle()==='rtg'){const o=opts.find(x=>x.ai)||opts[0];$('#opt').hidden=true;setTimeout(()=>o.f(),0);return}   // Road to Glory: the CPU head coach decides
   $('#optHead').innerHTML=head;const row=$('#optRow');row.innerHTML='';
   opts.forEach(o=>{const b=document.createElement('button');b.className='play '+(o.cls||'');b.innerHTML=`<b>${o.t}</b><small>${o.s||''}</small>`;b.onclick=()=>{ac();$('#opt').hidden=true;o.f()};row.appendChild(b)});
   $('#opt').hidden=false;
@@ -5020,7 +5050,7 @@ $('#bulletBtn').onclick=()=>{S.bullet=!S.bullet;$('#bulletBtn').setAttribute('ar
 function showDefCall(){renderDefCall()}
 function switchDefender(target){
   if(play&&play.st&&S.phase==='live')return stSwitch(target);
-  if(uOff())return;let best=target||null;
+  if(uOff()||S.auto&&AUTO.exempt!=null)return;   // Road to Glory: you stay with your playerlet best=target||null;
   if(!best){const fx=ball.state==='air'?ball.tx:(play&&play.carrier?play.carrier.x:S.los),fy=ball.state==='air'?ball.ty:(play&&play.carrier?play.carrier.y:S.ballY);let bd=1e9;for(const d of DEF){if(d===S.ctrl)continue;const dd=hyp(d.x-fx,d.y-fy);if(dd<bd){bd=dd;best=d}}}
   if(best){S.ctrl=best;S.ctrlKey=best.key;sfx('cut');if(S.phase==='presnap'&&!$('#call').hidden)defHead()}
 }
@@ -5271,6 +5301,8 @@ function simulate(dt){
     if(pl.type==='run'&&p.key===pl.ckey&&!pl.handed){carrierPre(p,dt);continue}
     if(pl.flea&&p===RB&&!pl.fleaDone){steer(p,L-1.8,p.y,5.5,dt);continue}
     if(pl.pitchMan===p&&!pl.pitched){steer(p,Q.x-1.6,Q.y+Math.sign(pl.gapY-S.ballY||1)*3.6,p.spd*.85,dt);continue}
+    /* Road to Glory (05i): your receiver adjusts his route with the stick; let go and he runs it (and tracks the ball) */
+    if(!p.blocker&&stick&&stick.m>12&&S.auto&&userCtl(p)&&uOff()&&p!==Q){steer(p,p.x+stick.dx*3,p.y+stick.dy*3,p.spd,dt,12);continue}
     if(p.blocker)blockAI(p,dt);else if(p.route&&(p!==RB||pl.t>.4))runRoute(p,dt);else steer(p,p.x,p.y,0,dt);
     if(ball.state==='air'&&!ball.pitch&&eligible(p)&&!p.blocker&&(ball.tip||ball.t>.2)&&(p===pl.intended||hyp(p.x-ball.tx,p.y-ball.ty)<6))steer(p,ball.tx,ball.ty,p.spd,dt,13);
   }
@@ -5439,7 +5471,7 @@ function otSetBall(){if(S.otRound>=3){S.conv=true;S.los=107;S.firstDownX=110}els
 function otPossess(side){
   const lab=(S.otRound>1?S.otRound:'')+'OT';
   if(side==='home'){S.poss='home';otSetBall();toPresnap();banner(S.otRound>=3?lab+' · two-point play':lab,S.home.c1);return}
-  S.phase='wait';const mode=playStyle()==='km'?'play':LG.settings.defMode||'ask';
+  S.phase='wait';const mode=playStyle()==='km'||playStyle()==='rtg'?'play':LG.settings.defMode||'ask';
   const live=()=>{S.poss='away';otSetBall();toPresnap()};
   if(mode==='sim')return oppOT();if(mode==='play')return live();
   showOpt(`<b>${esc(S.away.abbr)} ${lab} ${S.otRound>=3?'two-point play':'possession'}</b>`,[{t:'Play defense',s:'Control a defender',f:live},{t:'Sim it',s:'See the result',cls:'alt',f:oppOT}]);
@@ -5648,12 +5680,13 @@ function slowMo(d){S.slowT=Math.max(S.slowT,d);S.ts=.32}
 function hideActs(){const a=$('#actBar');if(a)a.hidden=true}
 function showActs(){
   const a=$('#actBar');if(!a||!play)return;if(S.auto&&!autoSprite()){a.hidden=true;return}if(play.st)return stActs();
-  const userRunner=uOff()&&isRunner()&&play.carrier.user,userQB=uOff()&&!play.thrown&&play.type==='pass'&&!play.scramble;
+  /* Road to Glory: only your player's buttons (no QB buttons for a receiver, no jukes for a teammate, no SWITCH) */
+  const ex=S.auto?autoSprite():null,userRunner=uOff()&&isRunner()&&play.carrier.user&&(!ex||play.carrier===ex),userQB=uOff()&&!play.thrown&&play.type==='pass'&&!play.scramble&&(!ex||ex===Q);
   let html='';
-  if(!uOff())html=`<button data-a="tackle" class="big">TACKLE</button><button data-a="switch">SWITCH</button>`;
+  if(!uOff())html=`<button data-a="tackle" class="big">TACKLE</button>${ex?'':'<button data-a="switch">SWITCH</button>'}`;
   else if(userQB)html=`<button data-a="bullet" aria-pressed="${!!S.bullet}">BULLET</button><button data-a="lob" aria-pressed="${!!S.lob}">LOB</button><button data-a="scramble" class="big">RUN</button>`;
   else if(play.type==='run'&&!play.handed&&!play.caught)html='';
-  if(uOff()&&(userRunner||play.type==='run')){html=`<button data-a="juke-1">JUKE ▲</button><button data-a="juke1">JUKE ▼</button><button data-a="spin">SPIN</button><button data-a="truck">TRUCK</button><button data-a="hurdle">HURDLE</button><button data-a="dive">DIVE</button>${play.pitchMan&&!play.pitched&&!(play.run&&play.run.triple&&!play.qbCarry)?'<button data-a="pitch" class="big">PITCH</button>':''}`}
+  if(uOff()&&(userRunner||play.type==='run'&&(!ex||KP[play.ckey]===ex))){html=`<button data-a="juke-1">JUKE ▲</button><button data-a="juke1">JUKE ▼</button><button data-a="spin">SPIN</button><button data-a="truck">TRUCK</button><button data-a="hurdle">HURDLE</button><button data-a="dive">DIVE</button>${play.pitchMan&&!play.pitched&&!(play.run&&play.run.triple&&!play.qbCarry)?'<button data-a="pitch" class="big">PITCH</button>':''}`}
   a.innerHTML=html;a.hidden=!html;
   a.querySelectorAll('[data-a]').forEach(b=>b.onpointerdown=e=>{e.preventDefault();e.stopPropagation();ac();const k=b.dataset.a;
     if(k==='bullet'||k==='lob'){if(k==='bullet'){S.bullet=!S.bullet;S.lob=false}else{S.lob=!S.lob;S.bullet=false}haptic('light');updateAim();showActs();return}
@@ -5664,7 +5697,7 @@ function showActs(){
 /* ---------- post-game ---------- */
 const ncaaRating=s=>s.att?((8.4*s.passYds)+(330*s.passTD)+(100*s.comp)-(200*s.int))/s.att:0;
 function gameOver(){
-  if(S.phase==='over')return;S.phase='over';hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);
+  if(S.phase==='over')return;S.phase='over';if(S.ff)kmStopFF();   // a game that ends while simming stops the fast-forward right away (no frame race)hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);
   if(typeof BC!=='undefined')BC.stop();
   const g=S.game,[us,them]=S.score,won=us>them,s=S.stats,os=S.ostats||newGameStats(),rate=ncaaRating(s),u=S.home,opp=S.away;
   const storm=won&&S.userHome&&rankOf(opp.id)&&rankOf(opp.id)<=10&&(!rankOf(u.id)||rankOf(u.id)>rankOf(opp.id)+5);
@@ -5710,6 +5743,7 @@ function gameOver(){
     ${driveChartHTML()}
     ${stam?`<div class="card"><div class="h2">Stamina at the final whistle</div><p class="note">Speed drops steadily through a game. Higher stamina means less drop-off; condition carries over week to week.</p>${stam}</div>`:''}
     <button class="btn wide" id="postGo">Continue</button>`;
+  if(LG.rtg&&typeof rtgPost==='function')rtgPost();
   const show=()=>{$('#post').hidden=false;$('#post .scroll').scrollTop=0;if(won)sfx('roar');if(storm){for(let i=0;i<6;i++)setTimeout(()=>sfx('roar'),i*300)}};
   const fin=()=>{if((storm||trophy)&&!S.simmed&&typeof startStorm==='function'){startStorm(storm,trophy);setTimeout(show,storm?3600:2600)}else show()};
   if(!S.simmed&&typeof finalGraphic==='function'&&LG.settings.gfx!==false){finalGraphic(won,pog,g);setTimeout(fin,3000)}else fin();
@@ -6460,7 +6494,7 @@ function completeTo(rec,cx,cy,contested,dive){
   OFF.forEach(o=>{if(o===rec||o===Q)return;if(o.role==='OL'||hyp(o.x-cx,o.y-cy)<9){o.blocker=true;o.tgt=null}else{o.route=null;o.cont=null}});
   rec.x=cx;rec.y=cy;pl.catchX=rec.x;setAnim(rec,dive?'dive':'catch');{const k=dive?.35:contested?.5:.62;rec.vx*=k;rec.vy*=k;pl.slowT=Math.max(pl.slowT,.3)}
   if(contested){toast('Contested catch!');slowMo(.3)}
-  if(rec.user)hint('Drag to steer · JUKE / SPIN / TRUCK buttons');showActs();
+  if(rec.user&&userCtl(rec))hint('Drag to steer · JUKE / SPIN / TRUCK buttons');showActs();
   fx('catch',{p:rec,contested:!!contested});
   if(typeof BC!=='undefined')BC.say('catch',{p:rec,contested});
 }
@@ -7735,8 +7769,9 @@ function adjRender(){
      overlay) and hands you the game at high-leverage moments (kmWhy), then resumes once that drive is over.
    ========================================================= */
 const AUTO={exempt:null,speed:1,m0:false,shown:false};
-const playStyle=()=>(LG&&LG.settings&&LG.settings.playStyle)||'full';
-const STYLE_N={full:'Full control',coach:'Coach mode',km:'Key moments'};
+/* Road to Glory (05i): while the player's college career runs, every game is played in the 'rtg' style */
+const playStyle=()=>LG&&LG.rtg&&LG.rtg.stage==='college'?'rtg':(LG&&LG.settings&&LG.settings.playStyle)||'full';
+const STYLE_N={full:'Full control',coach:'Coach mode',km:'Key moments',rtg:'Road to Glory'};
 function autoSprite(){if(AUTO.exempt==null)return null;for(const p of P)if(p.user&&p.pl&&p.pl.id===AUTO.exempt)return p;return null}
 const userCtl=p=>!!p&&!!p.user&&(!S.auto||AUTO.exempt!=null&&!!p.pl&&p.pl.id===AUTO.exempt);
 function autoOn(){S.auto=true;autoSync()}
@@ -7800,7 +7835,7 @@ function coachSnap(pc){setTimeout(()=>{if(S.auto&&!S.ff&&S.phase==='presnap'&&S.
 /* ---------- speed bar while the autopilot plays ---------- */
 function autoSkip(){if(!play||S.phase!=='live')return;for(let i=0;i<6000&&S.phase==='live';i++)simulate(1/120);if(S.phase==='dead')deadT=Math.min(deadT,.45)}
 function apBarTick(force){
-  const b=$('#apBar');if(!b)return;const show=!!S.auto&&!S.ff&&!S.paused&&(S.phase==='live'||S.phase==='dead')&&!!play;
+  const b=$('#apBar');if(!b)return;const show=!!S.auto&&!S.ff&&!S.paused&&(S.phase==='live'||S.phase==='dead')&&!!play&&playStyle()!=='rtg';
   if(show===AUTO.shown&&!force)return;AUTO.shown=show;b.hidden=!show;
   if(show)b.querySelectorAll('[data-sp]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.sp===String(AUTO.speed))));
 }
@@ -7809,7 +7844,7 @@ $('#apBar').querySelectorAll('[data-sp]').forEach(b=>b.onclick=e=>{e.stopPropaga
 function modeTag(){const st=playStyle(),t=st==='km'?(S.km?'Key moment · '+S.km.why:'Key moments'):STYLE_N[st]||'Full control';return ` · <span class="tag ap-mode ap-${st}">${esc(t)}</span>`}
 
 /* ---------- play style: game start, switching mid-game ---------- */
-function styleInit(){S.km=null;S.kmTake=false;S.ff=false;AUTO.speed=1;const st=playStyle();S.auto=st!=='full';if(st==='km')kmResume()}
+function styleInit(){S.km=null;S.kmTake=false;S.ff=false;AUTO.speed=1;S.rtgCall=null;const st=playStyle();S.auto=st!=='full';AUTO.exempt=null;if(st==='km')kmResume();if(st==='rtg')rtgGameInit()}
 function setPlayStyle(v){
   LG.settings.playStyle=v;if(typeof saveNow==='function')saveNow();
   if(!S.home||['hub','over','boot','menu'].includes(S.phase))return;
@@ -7818,7 +7853,7 @@ function setPlayStyle(v){
   if(v==='km')S.kmArm=true;
   autoSync();if(S.phase==='presnap'&&!S.paused)toPresnap();
 }
-function pauseModeHTML(){const st=playStyle(),dm=LG.settings.defMode||'ask',seg=(id,o,v)=>`<div class="seg" id="${id}">${o.map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===v}">${l}</button>`).join('')}</div>`;
+function pauseModeHTML(){if(playStyle()==='rtg')return `<div class="setrow"><span class="eyebrow">Road to Glory</span><span class="note">You play only your player; the AI plays the rest and sims the snaps you sit out.</span></div>`;const st=playStyle(),dm=LG.settings.defMode||'ask',seg=(id,o,v)=>`<div class="seg" id="${id}">${o.map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===v}">${l}</button>`).join('')}</div>`;
   return `<div class="setrow"><span class="eyebrow">Play style</span>${seg('pmStyle',[['full','Full control'],['coach','Coach'],['km','Key moments']],st)}</div><div class="setrow"><span class="eyebrow">Opponent drives</span>${seg('pmDef',[['ask','Ask'],['play','Play D'],['sim','Sim']],dm)}</div>`}
 function pauseModeRender(){const box=$('#pmMode');if(!box||!LG)return;box.innerHTML=pauseModeHTML();
   box.querySelectorAll('#pmStyle [data-v]').forEach(b=>b.onclick=()=>{ac();const v=b.dataset.v;S.paused=false;setPlayStyle(v);S.paused=true;pauseModeRender();toast(STYLE_N[v])});
@@ -7848,6 +7883,7 @@ function kmWhy(pc){
 }
 /* called by toPresnap in Key moments: drop the user in, keep control through the drive, or resume simming */
 function kmCheck(pc){
+  if(playStyle()==='rtg')return rtgCheck(pc);
   if(playStyle()!=='km'||!S.home)return;
   if(S.kmArm){S.kmArm=false;const w=kmWhy(pc);if(w)return kmStart(w);return kmResume()}
   if(S.ff){const w=kmWhy(pc);if(w)kmStart(w);return}
@@ -7869,6 +7905,7 @@ function kmStart(why){
 }
 function kmResume(){
   S.km=null;S.auto=true;if(S.ff)return;S.ff=true;AUTO.m0=muted;muted=true;document.body.classList.add('ff');
+  if(playStyle()!=='rtg'){const e=$('#kmOv .km-eye');if(e)e.innerHTML='<i></i>Key moments · simming';$('#kmTake').hidden=false}
   ['#call','#opt','#snapBar','#kick','#celebBtn','#celebSheet','#toBtn','#bulletBtn','#apBar','#kmBan'].forEach(s=>{const e=$(s);if(e)e.hidden=true});hideActs();hint('');
   $('#kmOv').hidden=false;AUTO.pbpN=-1;kmOverlay();
 }
@@ -7894,7 +7931,7 @@ function ffRunoff(){
   if(S.clock<=0){S.phase='wait';boundary(()=>toPresnap());return true}return false}
 function ffPresnap(){
   if(uOff()){
-    if(!S.pc){const c=apChoosePlay();if(ffRunoff())return true;
+    if(!S.pc){const c=S.rtgCall||apChoosePlay();S.rtgCall=null;if(ffRunoff())return true;
       if(c.special){if(c.special==='kneel'&&S.clockRun&&!S.ot)S.clock=Math.max(0,S.clock-Math.min(S.clock,26));callSpecial(c.special);return true}
       pickPlay(c)}
     if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}return true}
@@ -7921,6 +7958,334 @@ function autoIdle(){if(S.ff&&!S.paused)kmStopFF();if(AUTO.shown)apBarTick(true);
 
 SETTINGS_EXTRA.push({card:'Gameplay',key:'playStyle',label:'Play style',opts:[['full','Full control'],['coach','Coach mode'],['km','Key moments']],def:'full',
   note:'<b>Full control</b>: you play every snap. <b>Coach mode</b>: you call every play on offense and defense (and make every decision: 4th downs, tries, kickoffs, penalties) while the AI plays it out; 1×, 2× or skip to the result. <b>Key moments</b>: normal drives are simmed in seconds with a live play-by-play, and you are dropped in for the red zone, two-minute drills, one-score fourth quarters, overtime, goal-line stands and big 4th downs. Opponent drives (Game settings) still decides whether you play defense. Switch any time from the pause menu.'});
+
+/* =========================================================
+   05i · Road to Glory (v7.5): a player career inside a normal league.
+   SETUP  "Road to Glory" on the new-dynasty screen: create a recruit (name, position, archetype, 2–5 stars, home state),
+          a senior-year recap, 5–8 offers from real schools in the league (04b's recruiting model: recruiting power vs
+          his level, need at his position, fit, distance from home), up to 3 official visits, commit.
+   SEASON the league runs as normal with a CPU head coach (events off, recruiting/portal/carousel automated). LG.user is
+          his school. In his games the autopilot (05h) plays everyone but him (AUTO.exempt): snaps he's on the field for
+          are live, every other snap (and all special teams) is fast-forwarded with a sideline overlay (rtgCheck).
+   CAREER per-game grade (A+…F, rtgQ) from his plays (fx listeners: targets, drops, broken / missed tackles, coverage),
+          weekly practice evaluation, coach trust → his spot on the depth chart (rtgDepth sets t.dco for his position),
+          XP → skill points (+1 rating step each), goals, NIL deals that unlock with his profile, draft projection,
+          declare-or-return after his junior year, the draft result (03 departures → rtgDrafted), a career summary.
+   LG.rtg = {pid,pos,arch,stars,st,team,trust,sp,xp,depth,grades[],last,prac,nil{cash,deals,offer,got},hist[],goals[],
+             decl,result,moves[],stage:'college'|'done',pl (snapshot when he leaves),proj}
+   ========================================================= */
+const RTG_POS=['QB','RB','WR','TE','LB','CB','S'];
+const RTG_ARCH={QB:[['Pocket passer',{thr:.45,acc:.4,spd:-.3}],['Dual threat',{spd:.5,agi:.45,acc:-.2}],['Field general',{awr:.55,acc:.35,thr:-.15}]],
+  RB:[['Power back',{str:.5,car:.45,agi:-.2}],['Elusive back',{agi:.5,spd:.4,str:-.25}],['Receiving back',{cat:.5,rte:.45,str:-.2}]],
+  WR:[['Deep threat',{spd:.55,agi:.3,str:-.2}],['Possession',{cat:.5,rte:.4,spd:-.15}],['Slot',{agi:.5,rte:.4,str:-.25}]],
+  TE:[['Vertical threat',{spd:.45,cat:.4,blk:-.3}],['Blocker',{blk:.55,str:.4,rte:-.25}],['Possession',{cat:.45,rte:.4,spd:-.15}]],
+  LB:[['Run stopper',{tkl:.5,str:.4,cov:-.25}],['Coverage',{cov:.5,spd:.35,str:-.2}],['Pass rusher',{shd:.5,spd:.35,cov:-.25}]],
+  CB:[['Man cover',{cov:.5,spd:.35,tkl:-.2}],['Zone',{awr:.5,cov:.35,spd:-.15}],['Ball hawk',{cat:.55,awr:.3,tkl:-.2}]],
+  S:[['Enforcer',{tkl:.5,str:.4,cov:-.2}],['Center fielder',{cov:.5,spd:.35,str:-.2}],['Box safety',{tkl:.4,awr:.4,spd:-.15}]]};
+const RTG_LVL={2:2.0,3:2.8,4:3.55,5:4.2},RTG_COMP={2:7850,3:8450,4:9350,5:9870};
+const RTG_GR=['F','D','C-','C','C+','B-','B','B+','A-','A','A+'];
+const RTG_E={QB:12,RB:12,WR:10,TE:8,LB:6.5,CB:5,S:5.5};
+const RTG_NIL=[[16,'Hometown pizza place',3],[28,'Local car dealership',10],[40,'Regional sports drink',25],[52,'Trading card deal',50],[64,'National shoe brand',120],[78,'National apparel campaign',300]];
+const RTG_G={ev:null,snapAt:0,alw:null};
+const rtgOffP=pos=>['QB','RB','WR','TE'].includes(pos);
+function rtgMe(L){L=L||LG;const r=L&&L.rtg;if(!r||L.user==null)return null;const t=L.teams[L.user];return t&&t.roster.find(p=>p.id===r.pid)||null}
+const rtgMine=p=>!!p&&!!S.auto&&AUTO.exempt!=null&&!!p.user&&!!p.pl&&p.pl.id===AUTO.exempt;
+const rtgCost=v=>v>=4.5?3:v>=4?2:1;
+const rtgStarter=(r,me)=>r.depth!=null&&r.depth<STARTERS[me.pos]&&me.inj<=0;
+
+/* ---------- the recruit ---------- */
+const rtgBase=(o,k)=>RTG_LVL[o.stars]+((BIAS[o.pos]||{})[k]||0)*.6+((RTG_ARCH[o.pos][o.arch]||RTG_ARCH[o.pos][0])[1][k]||0)+(k==='awr'?-.35:0);
+function rtgMakePlayer(o){
+  const p=genPlayer(o.pos,RTG_LVL[o.stars],1),S0=RC_STATES[o.st]||RC_STATES[0];
+  for(const k of ATTR_KEYS)p[k]=r1(rtgBase(o,k)+R(-.2,.2));
+  Object.assign(p,{first:o.first,last:o.last,home:S0.c[o.ci||0]+', '+S0.st,xp:0,num:0,redshirt:false,rs:false});return sizeFor(p);
+}
+/* senior year at his high school: a stat line by position and stars */
+function rtgHS(o){const f=.55+o.stars*.22,n=v=>Math.round(v*f).toLocaleString(),w=Math.min(14,Math.round(7+o.stars*1.3+R(-1,1)));
+  const line={QB:`${n(2300)} pass yds · ${n(22)} TD · ${Math.max(2,Math.round(11/f))} INT · ${n(380)} rush yds`,RB:`${n(1250)} rush yds · ${n(15)} TD · ${n(22)} catches`,
+    WR:`${n(58)} catches · ${n(950)} yds · ${n(11)} TD`,TE:`${n(41)} catches · ${n(560)} yds · ${n(7)} TD`,LB:`${n(92)} tackles · ${n(6)} sacks · ${n(9)} TFL`,
+    CB:`${n(4)} INT · ${n(12)} pass breakups · ${n(38)} tackles`,S:`${n(71)} tackles · ${n(4)} INT · ${n(7)} pass breakups`}[o.pos];
+  const hon=o.stars>=5?['All-American Bowl','All-State first team','State Player of the Year finalist']:o.stars>=4?['All-State first team','Elite camp MVP']:o.stars>=3?['All-Region','All-District first team']:['All-District'];
+  const rk=o.stars>=5?rint(1,32):o.stars>=4?rint(33,360):o.stars>=3?rint(361,1450):rint(1451,1600);
+  return {line,hon,rec:`${w}–${14-w>0?Math.max(0,14-w-rint(0,2)):0}`,rk,team:RC_STATES[o.st].c[o.ci||0]+' High'}}
+/* offers: schools whose recruiting power is near his level, by fit, need at his position and distance (04b rcCtx) */
+function rtgOffers(L,o){
+  const C=rcCtx(L,true),pi=POS_ORDER.indexOf(o.pos),P={c:RTG_COMP[o.stars],p:pi,st:o.st,pr:'433343333'},lvl=clamp((P.c/1e4-.7)/.3,0,1);
+  const me=rtgMakePlayer(o),mo=ovr(me),sc=[];
+  for(const t of L.teams){const i=t.id;if(o.stars>=4&&isFCS(t))continue;const gap=C.rp[i]-lvl,need=Math.min(1,C.np[i][pi]/2),prox=rcProx(o.st,C.st[i]);
+    sc.push([i,rcFit(P,i,C)*.6+need*.35+prox*.5-(gap>0?gap*2.4:-gap*1.3)+Math.random()*.35,need,prox])}
+  sc.sort((a,b)=>b[1]-a[1]);
+  return sc.slice(0,rint(5,8)).map(([i,s,need,prox])=>{const t=L.teams[i],ahead=t.roster.filter(p=>p.pos===o.pos&&ovr(p)>mo).length;
+    const pit=[[rcScore(P,i,C,0),'Playing time'],[C.s[i][1],'Contender'],[C.s[i][2],'Pro potential'],[C.s[i][3],'NIL'],[prox,'Close to home'],[C.s[i][7],'Brand exposure']].sort((a,b)=>b[0]-a[0]).slice(0,3).map(x=>x[1]);
+    return {t:i,int:clamp(Math.round(48+s*24+R(-6,6)),30,98),dep:ahead+1,pit,nil:Math.max(2,Math.round((4+o.stars*o.stars*3.5)*(.35+C.s[i][3]))),v:0,need:Math.round(need*100)}}).sort((a,b)=>b.int-a.int);
+}
+function rtgStartCareer(off){
+  const st=SETUP,L=st.L,o=st.rtg,t=L.teams[off.t],p=rtgMakePlayer(o);
+  if(t.roster.length>=ROSTER_CAP){const same=t.roster.filter(x=>x.pos===o.pos).sort((a,b)=>ovr(a)-ovr(b)),pool=same.length>POS_COUNTS[o.pos]?same:t.roster.slice().sort((a,b)=>ovr(a)-ovr(b));t.roster=t.roster.filter(x=>x!==pool[0])}
+  t.roster.push(p);assignNumbers(t);L.user=t.id;
+  L.rtg={v:1,pid:p.id,pos:o.pos,arch:o.arch,stars:o.stars,st:o.st,team:t.id,trust:26+o.stars*3+(off.v?8:0),sp:2,xp:0,depth:null,grades:[],last:null,prac:null,
+    nil:{cash:off.nil,deals:[{n:teamName(t)+' collective',amt:off.nil,season:L.season}],offer:null,got:[]},hist:[],goals:[],decl:null,result:null,moves:[],stage:'college',hs:o.hs,proj:null};
+  st.coach=(t.staff&&t.staff.hc&&t.staff.hc.name)||'Head coach';if(!st.name.trim())st.name=`${fullName(p)} · Road to Glory`;
+  rtgDepth(L,true);rtgGoals(L);
+  startDynasty(t.id);
+  const hc=T(LG.user).staff&&T(LG.user).staff.hc;if(hc&&hc.name&&LG.coach.name==='Head coach')LG.coach.name=hc.name;
+  LG.settings.recAuto=true;LG.news.unshift({t:`${o.stars}★ ${o.pos} ${fullName(p)} (${p.home}) signs with ${teamName(t)} and opens fall camp #${LG.rtg.depth+1} on the depth chart.`,good:true});
+  saveNow(true);showHub('home');
+}
+
+/* ---------- setup screen: create a recruit, senior year, offers, visits, commit ---------- */
+function rtgCreateHTML(st){
+  const o=st.rtg||(st.rtg={first:'',last:'',pos:'WR',arch:0,stars:4,st:0,ci:0});
+  return `<div class="card rtg-new"><div class="eyebrow">Road to Glory · create your recruit</div><div class="h2">One player, one career</div>
+    <p class="note">You play only your player. The head coach calls the plays and sets the depth chart; earn his trust in practice and on Saturdays, climb from backup to starter, chase the Heisman and the NFL Draft.</p>
+    <div class="grid2 su-names"><div class="field-row"><label for="rtgFirst">First name</label><input type="text" id="rtgFirst" maxlength="14" placeholder="Jaxson" value="${esc(o.first)}"></div>
+      <div class="field-row"><label for="rtgLast">Last name</label><input type="text" id="rtgLast" maxlength="16" placeholder="Merchant" value="${esc(o.last)}"></div></div>
+    <div class="setrow"><span class="eyebrow">Position</span><div class="seg" id="rtgPos">${RTG_POS.map(p=>`<button data-v="${p}" aria-pressed="${o.pos===p}">${p}</button>`).join('')}</div></div>
+    <div class="setrow"><span class="eyebrow">Archetype</span><div class="seg" id="rtgArch">${RTG_ARCH[o.pos].map(([n],i)=>`<button data-v="${i}" aria-pressed="${o.arch===i}">${n}</button>`).join('')}</div></div>
+    <div class="setrow"><span class="eyebrow">Recruit rating</span><div class="seg" id="rtgStars">${[2,3,4,5].map(s=>`<button data-v="${s}" aria-pressed="${o.stars===s}">${s}★</button>`).join('')}</div></div>
+    <div class="field-row"><label for="rtgState">Home state</label><select id="rtgState">${RC_STATES.map((s,i)=>`<option value="${i}" ${i===o.st?'selected':''}>${s.st} · ${esc(s.c[0])}</option>`).join('')}</select></div>
+    <div class="rtg-attrs">${PATTR[o.pos].map(k=>`<div class="rtg-at"><span>${attrName(o.pos,k)}</span><b>${a99(rtgBase(o,k))}</b></div>`).join('')}</div>
+    <p class="note">${o.stars>=5?'Five stars: blue-blood offers and a real shot at playing as a freshman.':o.stars>=4?'Four stars: Power-conference offers; expect to compete for snaps.':o.stars>=3?'Three stars: solid programs; you will have to earn the job.':'Two stars: smaller schools and FCS programs. The long road.'}</p>
+    <button class="btn wide" id="rtgGo">Play your senior season · see your offers</button></div>`;
+}
+function rtgSetupBind(st){
+  const o=st.rtg,rd=()=>{o.first=$('#rtgFirst').value.trim();o.last=$('#rtgLast').value.trim();o.st=+$('#rtgState').value};
+  const seg=(id,f)=>document.querySelectorAll(id+' button').forEach(b=>b.onclick=()=>{rd();f(b.dataset.v);renderSetupKeep()});
+  seg('#rtgPos',v=>{o.pos=v;o.arch=0});seg('#rtgArch',v=>o.arch=+v);seg('#rtgStars',v=>o.stars=+v);
+  $('#rtgState').onchange=()=>rd();
+  on('rtgGo',()=>{rd();if(!o.first)o.first=pick(FIRST);if(!o.last)o.last=pick(LAST);o.ci=rint(0,RC_STATES[o.st].c.length-1);o.hs=rtgHS(o);o.offers=rtgOffers(st.L,o);rtgOffersModal(st)});
+}
+function rtgOffersModal(st){
+  const o=st.rtg,L=st.L,h=o.hs,vis=o.offers.filter(x=>x.v).length;
+  openModal(`<div class="eyebrow">Senior season · ${esc(h.team)} · ${esc(RC_STATES[o.st].c[o.ci||0])}, ${RC_STATES[o.st].st}</div><div class="h2">${esc(o.first)} ${esc(o.last)} · ${starStr(o.stars)}</div>
+    <p class="note"><b>${h.rec}</b> · ${esc(h.line)}. National rank #${h.rk} · ${o.pos} · ${esc(RTG_ARCH[o.pos][o.arch][0])}.</p><div class="tags">${h.hon.map(x=>`<span class="tag gold">${esc(x)}</span>`).join('')}</div>
+    <div class="setrow"><div class="h2">Scholarship offers · ${o.offers.length}</div><span class="pill">${vis}/3 official visits</span></div>
+    <p class="note">An official visit shows you the depth chart and the NIL offer, and gives you a head start with that staff (coach trust). Commit when you are ready.</p>
+    <div class="list">${o.offers.map((f,i)=>{const t=L.teams[f.t],dc=f.v?t.roster.filter(p=>p.pos===o.pos).sort((a,b)=>ovr(b)-ovr(a)).slice(0,3).map(p=>`${esc(p.last)} ${ovr99(p)}`).join(' · '):'';
+      return `<div class="rrow rtg-off ${f.v?'sel':''}" style="--c1:${t.c1}">${badge(t)}<span class="meta"><b>${esc(teamName(t))} ${starStr(t.prestige)}</b><small>${esc(confName(t.conf,L))} · OVR ${tOvr99(teamOvr(t))} · projected #${f.dep} ${o.pos}${f.v?` · NIL ${money(f.nil)}`:''}</small>
+        <span style="display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:11px;color:var(--mute)"><span>Interest</span>${meterHTML(f.int)}<b>${f.int}%</b></span>
+        <span class="tags">${f.pit.map(x=>`<span class="tag">${esc(x)}</span>`).join('')}</span>${f.v?`<small class="note">Depth chart: ${dc||'wide open'}</small>`:''}</span>
+        <span class="btns" style="flex-direction:column;gap:6px"><button class="btn sm" id="rtgCom-${i}">Commit</button>${f.v?'<span class="tag ok">Visited</span>':`<button class="btn sm ghost" id="rtgVis-${i}" ${vis>=3?'disabled':''}>Visit</button>`}</span></div>`}).join('')}</div>
+    <button class="btn ghost wide" id="rtgBack">Back</button>`,true);
+  on('rtgBack',closeModal);
+  o.offers.forEach((f,i)=>{on('rtgVis-'+i,()=>{if(o.offers.filter(x=>x.v).length>=3)return;f.v=1;f.int=Math.min(99,f.int+rint(4,10));rtgOffersModal(st)});on('rtgCom-'+i,()=>{closeModal();rtgStartCareer(f)})});
+}
+
+/* ---------- depth chart, practice, XP, goals, NIL ---------- */
+/* he sits on his position's depth chart by rating plus coach trust (±0.4 of a rating point); the CPU coach orders the rest */
+function rtgDepth(L,quiet){
+  const r=L.rtg,t=L.teams[L.user],me=rtgMe(L);if(!me)return null;
+  const others=t.roster.filter(p=>p.pos===me.pos&&p!==me).sort((a,b)=>ovr(b)-ovr(a)),eff=ovr(me)+(r.trust-50)/50*.4;
+  let i=others.findIndex(p=>ovr(p)<eff);if(i<0)i=others.length;
+  const ord=others.map(p=>p.id);ord.splice(i,0,me.id);t.dco=t.dco||{};t.dco[me.pos]=ord;
+  if(me.inj>0||me.redshirt)return r.depth;
+  const di=depth(t,me.pos).indexOf(me);
+  if(r.depth!=null&&di!==r.depth&&!quiet){r.moves.push({s:L.season,w:L.week,from:r.depth,to:di});const up=di<r.depth,ns=STARTERS[me.pos];
+    L.news.unshift({t:`Depth chart: ${fullName(me)} moves ${up?'up':'down'} to #${di+1} ${me.pos}${up&&di<ns&&r.depth>=ns?' and into the starting lineup':!up&&di>=ns&&r.depth<ns?' and loses his starting job':''}.`,good:up})}
+  r.depth=di;return di;
+}
+function rtgPractice(L,me){const r=L.rtg,d=Math.round(clamp((me.awr-3)*1.6+(me.end-3)*.8+R(-2.5,4.5),-4,7));
+  const notes=d>=5?['Lit up the scout team all week','Coaches singled him out in the film room','Best practice week of the season']:d>=2?['Sharp and assignment-sound','A good week of reps','Coaches like his preparation']:d>=0?['A quiet, steady week','Solid but unspectacular']:['Missed assignments in walkthrough','Coaches want more consistency','A sloppy week of practice'];
+  r.prac={s:L.season,w:L.week,d,t:pick(notes)};r.trust=clamp(r.trust+d,0,100);r.xp+=10+Math.max(0,d)*3}
+function rtgSPtick(r){let n=0;while(r.xp>=100&&n<20){r.xp-=100;r.sp++;n++}}
+function rtgSpend(k){const r=LG.rtg,me=rtgMe();if(!me||!PATTR[me.pos].includes(k))return false;const c=rtgCost(me[k]);if(r.sp<c||me[k]>=4.95)return false;
+  r.sp-=c;me[k]=r1(Math.min(5,me[k]+.1));invalidate();r.proj=null;return true}
+function rtgGoals(L){const r=L.rtg,me=rtgMe(L);if(!me)return;const st=rtgStarter(r,me);
+  const tg={QB:[['py',st?2400:500,'passing yards'],['ptd',st?20:4,'passing TDs']],RB:[['ry',st?900:250,'rushing yards'],['rtd',st?8:2,'rushing TDs']],WR:[['recy',st?700:200,'receiving yards'],['rectd',st?6:2,'receiving TDs']],
+    TE:[['recy',st?450:120,'receiving yards'],['rec',st?35:10,'catches']],LB:[['tkl',st?70:20,'tackles'],['sck',st?4:1,'sacks']],CB:[['tkl',st?40:12,'tackles'],['dint',st?3:1,'interceptions']],S:[['tkl',st?55:15,'tackles'],['dint',st?2:1,'interceptions']]}[me.pos];
+  r.goals=[{k:'start',t:st?'Keep your starting job':'Earn a starting job'},...tg.map(([k,v,l])=>({k,v,t:`${v.toLocaleString()} ${l}`})),{k:'grade',v:6,t:'Average a B or better'}]}
+function rtgGoalDone(L,g){const r=L.rtg,me=rtgMe(L);if(!me)return false;if(g.k==='start')return rtgStarter(r,me);if(g.k==='grade')return rtgAvg(r)>=g.v;return (me.ss[g.k]||0)>=g.v}
+const rtgAvg=r=>{const l=r.grades.filter(x=>x.q!=null);return l.length?sum(l.map(x=>x.q))/l.length:-1};
+const rtgAvgL=r=>{const a=rtgAvg(r);return a<0?'—':RTG_GR[clamp(Math.round(a),0,10)]};
+function rtgProfile(L,me){const r=L.rtg,t=L.teams[L.user];let v=r.stars*6+t.prestige*3+(rtgStarter(r,me)?14:0)+Math.min(30,prodScore(me)*.35)+(me.hon||[]).length*8;
+  const hw=(L.heismanWatch||[]).findIndex(h=>h.pid===me.id);if(hw>=0)v+=20-hw*2;if(rankOf(t.id))v+=6;return clamp(Math.round(v),0,100)}
+function rtgNil(L,me){const n=L.rtg.nil;n.got=n.got||[];if(n.offer)return;const pf=rtgProfile(L,me),i=RTG_NIL.findIndex((x,j)=>pf>=x[0]&&!n.got.includes(j));if(i<0)return;
+  n.got.push(i);n.offer={i,n:RTG_NIL[i][1],amt:Math.round(RTG_NIL[i][2]*(1+.15*(me.yr-1)))}}
+function rtgNilAns(yes){const r=LG.rtg,n=r.nil,o=n.offer;if(!o)return;n.offer=null;
+  if(yes){n.cash+=o.amt;n.deals.push({n:o.n,amt:o.amt,season:LG.season});LG.morale=clamp(LG.morale+1,0,100);toast(`Signed: ${o.n} · ${money(o.amt)}`)}
+  else{r.trust=clamp(r.trust+1,0,100);toast('Declined · the coaches like your focus')}saveNow();rerender()}
+/* draft stock: his draft grade (04d) against every draft-eligible player in the country (about 45% of them enter) */
+function rtgProj(){const r=LG.rtg,me=rtgMe();if(!me)return {txt:'—',short:'—',note:''};const k=LG.season+':'+LG.week+':'+ovr(me);if(r.proj&&r.proj.k===k)return r.proj;
+  const g=draftGrade(me);let n=0;for(const t of LG.teams)for(const p of t.roster)if(p!==me&&draftEligible(p)&&draftGrade(p)>g)n++;
+  const pick=Math.round(n*.45)+1,rd=Math.floor((pick-1)/32)+1,ud=pick>224;
+  return r.proj={k,pick,rd:ud?0:rd,txt:ud?'Undrafted free agent':`Round ${rd}${rd===1?' · pick ~'+pick:''}`,short:ud?'UDFA':'Rd '+rd,
+    note:me.yr>=4?'Senior: you enter the draft after this season.':draftEligible(me)||me.yr>=3?'Eligible after this season: declare or return.':'Draft eligible after your junior season.'}}
+
+/* ---------- the week and the game grade (03 finishWeek / processUserGame call these) ---------- */
+function rtgWeek(L,w){const r=L.rtg;if(!r||r.stage!=='college')return;const me=rtgMe(L);if(!me)return;
+  rtgPractice(L,me);rtgSPtick(r);rtgDepth(L);rtgNil(L,me);r.proj=null}
+function rtgSS(L){const me=rtgMe(L);return me?{...me.ss}:null}
+function rtgPts(pos,d,ev,snaps){const g=k=>d[k]||0,e=k=>(ev&&ev[k])||0;
+  if(pos==='QB')return g('py')/20+g('ptd')*4-g('int')*5+g('ry')/10+g('rtd')*5+(g('pa')?(g('pc')/g('pa')-.6)*12:0)-e('sk')*.6-e('fum')*4;
+  if(pos==='RB')return g('ry')/8+g('rtd')*5+g('rec')+g('recy')/10+g('rectd')*5+e('bt')*.8-e('fum')*5+snaps*.05;
+  if(pos==='WR'||pos==='TE')return g('rec')*1.2+g('recy')/9+g('rectd')*5-e('drops')*3-e('fum')*5+e('bt')*.5+snaps*.1;
+  return g('tkl')*1.1+g('sck')*4+g('dint')*6+e('pd')*2.5-e('mt')*2-e('alw')*1.3-e('tda')*3+snaps*(pos==='LB'?.04:.09)}
+/* per 30 snaps against the position's B-level output; 10 pseudo-snaps of C-level play pull small samples toward a C */
+function rtgQ(pos,d,ev,snaps,live){const E=RTG_E[pos],s=rtgPts(pos,d,ev,snaps)+(live?0:R(-1.5,2.5)),r=(s+10*.55*E/30)/(snaps+10)*30/E,cut=[.25,.38,.5,.65,.8,.95,1.15,1.35,1.6,2];let i=0;while(i<cut.length&&r>=cut[i])i++;return i}
+function rtgLine(pos,d,ev){const g=k=>d[k]||0,e=k=>(ev&&ev[k])||0;
+  if(pos==='QB')return `${g('pc')}/${g('pa')} · ${g('py')} yds · ${g('ptd')} TD · ${g('int')} INT${g('ry')?` · ${g('ry')} rush`:''}`;
+  if(pos==='RB')return `${g('ry')} rush yds · ${g('rtd')} TD · ${g('rec')} rec${e('bt')?` · ${e('bt')} broken tackles`:''}`;
+  if(pos==='WR'||pos==='TE')return `${g('rec')} rec · ${g('recy')} yds · ${g('rectd')} TD${ev?` · ${e('tgt')} targets${e('drops')?` · ${e('drops')} drop${e('drops')>1?'s':''}`:''}`:''}`;
+  return `${g('tkl')} tkl${g('sck')?` · ${g('sck')} sck`:''}${g('dint')?` · ${g('dint')} INT`:''}${e('pd')?` · ${e('pd')} PBU`:''}${ev&&(e('mt')||e('alw'))?` · ${e('mt')} missed · ${e('alw')} allowed`:''}`}
+function rtgGameDone(L,g,info,before){
+  const r=L.rtg,me=rtgMe(L);if(!r||r.stage!=='college'||!me||!before)return;
+  const d={};for(const k in me.ss)d[k]=(me.ss[k]||0)-(before[k]||0);
+  const live=!info.simmed&&!!RTG_G.ev&&S.game===g,ev=live?RTG_G.ev:null,st=rtgStarter(r,me);
+  const snaps=live?ev.snaps:(me.inj>0||me.redshirt?0:st?rint(45,62):(d.rec||d.ra||d.tkl||d.pa)||r.depth-STARTERS[me.pos]<2?rint(8,22):rint(0,8));
+  if(live&&snaps>0&&!d.gp){me.ss.gp++;d.gp=1}
+  const ent={s:L.season,w:L.week,opp:g.h===L.user?g.a:g.h,snaps,line:rtgLine(me.pos,d,ev),live,q:null,g:'DNP'};
+  if(snaps>=3){ent.q=rtgQ(me.pos,d,ev,snaps,live);ent.g=RTG_GR[ent.q];r.trust=clamp(r.trust+[-6,-4,-2,-1,0,1,2,3,5,7,9][ent.q],0,100);r.xp+=20+ent.q*8+Math.min(30,snaps*.5)}else r.xp+=8;
+  r.grades.push(ent);r.last=ent;rtgSPtick(r);
+}
+
+/* ---------- in the game: who's on the field, sideline fast-forward, the snap ---------- */
+const rtgOn=()=>!!(LG&&LG.rtg&&S.home&&RTG_G.ev&&playStyle()==='rtg');
+function rtgGameInit(){AUTO.exempt=LG.rtg.pid;S.rtgSwap=null;RTG_G.ev={snaps:0,tgt:0,drops:0,bt:0,mt:0,alw:0,pd:0,fum:0,tda:0,sk:0};RTG_G.alw=null;rtgFF(rtgSideTxt())}
+function rtgSideTxt(){const me=rtgMe(),r=LG.rtg;if(!me)return 'On the sideline';if(me.inj>0)return `Injured · ${me.injWhy||'out this week'}`;
+  if(rtgOffP(me.pos)!==uOff())return `${uOff()?'Offense':'Defense'} on the field · you're on the sideline`;
+  return `On the sideline · #${(r.depth==null?0:r.depth)+1} on the ${me.pos} depth chart`}
+function rtgFF(txt){kmResume();const e=$('#kmOv .km-eye');if(e)e.innerHTML='<i></i>'+esc(txt);const t=$('#kmTake');if(t)t.hidden=true}
+function rtgLive(){const was=S.ff;kmStopFF();S.auto=true;S.km=null;AUTO.speed=1;
+  if(was){const me=rtgMe(),b=$('#kmBan');if(!me||!b)return;b.innerHTML=`<b>YOU'RE IN</b><span>#${me.num} ${esc(me.last)} · ${me.pos}</span><small>${S.ot?'Overtime':ordQ(S.q)+' · '+fmtClock(S.clock)} · ${S.score[0]}–${S.score[1]}</small>`;
+    b.hidden=false;b.classList.remove('show');void b.offsetWidth;b.classList.add('show');clearTimeout(rtgLive.t);rtgLive.t=setTimeout(()=>{b.classList.remove('show');setTimeout(()=>{b.hidden=true},400)},2200);haptic('light')}}
+/* toPresnap → kmCheck → here: line up the call (the AI's for both sides) and see whether he is in the formation */
+function rtgCheck(pc){
+  if(!S.home)return;S.rtgCall=null;let on=false,spec=false;rtgUnswap();
+  const me=rtgMe(),side=me&&rtgOffP(me.pos)===uOff();if(side&&rtgRot(me))rtgSwap(me);
+  if(uOff()){const c=apChoosePlay();S.rtgCall=c;spec=!!c.special;if(!spec){setupFormation(c,S.flip);on=!!autoSprite()}}
+  else if(pc){spec=!!pc.special;if(!spec){setupFormation(pc,S.flip);on=!!autoSprite();S.dcPick=[S.front,S.cov]}}
+  if(!on)rtgUnswap();
+  if(on)rtgLive();else rtgFF(spec?'Special teams · simmed':rtgSideTxt());
+}
+/* the CPU coach rotates backups in: the next man up a good share of snaps, deeper backups now and then, everyone in a
+   blowout; for that snap he swaps places with the last starter on the game's depth list (S.dc.u) */
+function rtgRot(me){const r=LG.rtg,ns=STARTERS[me.pos],di=r.depth;if(di==null||di<ns||me.inj>0||me.redshirt)return false;
+  const m=Math.abs(S.score[0]-S.score[1]),bl=!S.ot&&(m>=21&&S.q>=4||m>=28&&S.q>=3),base=me.pos==='QB'?.02:[.32,.18,.09][di-ns]||.03;
+  return Math.random()<(bl?.6:base*(.7+r.trust/100*.6))}
+function rtgSwap(me){const l=S.dc&&S.dc.u[me.pos];if(!l)return;const i=l.indexOf(me),j=rint(0,STARTERS[me.pos]-1);if(i<=j||j<0)return;const o=l[j];l[j]=me;l[i]=o;S.rtgSwap=[me.pos,me,o]}
+function rtgUnswap(){const w=S.rtgSwap;if(!w)return;S.rtgSwap=null;const l=S.dc&&S.dc.u[w[0]],i=l?l.indexOf(w[1]):-1,j=l?l.indexOf(w[2]):-1;if(i>=0&&j>=0&&i<j){l[i]=w[2];l[j]=w[1]}}
+const rtgHint=me=>me.side==='d'?`You are #${me.num} ${me.pl.last} · drag to move · tap to dive at the ball carrier`:me===Q?'Drag back to aim · release to throw · tap the field to scramble':
+  me.role==='RB'?'Take the handoff · drag to steer · swipe to juke':'Drag to adjust your route · the QB reads the field · catch it and run';
+/* the snap when he is on the field: no call sheets, the AI's call goes in and snaps on its own */
+function rtgSnap(){
+  $('#toBtn').hidden=true;$('#call').hidden=true;
+  if(uOff()){const c=S.rtgCall;S.rtgCall=null;if(!c||c.special)return rtgFF('Special teams · simmed');pickPlay(c);$('#snapBar').hidden=true;RTG_G.snapAt=performance.now()}
+  else{S.defCall='auto';S.defFront='auto';aiSnapT=1.4;const ex=autoSprite();if(ex){S.ctrl=ex;S.ctrlKey=ex.key}if(typeof BC!=='undefined')BC.presnap()}
+  const me=autoSprite();hint(me?rtgHint(me):'');
+}
+/* every live frame (09): kicks and returns are simmed; a stalled snap goes anyway */
+function rtgFrame(){
+  if(playStyle()!=='rtg')return;
+  if(S.phase==='kick'||(S.phase==='live'&&play&&play.st))return rtgFF('Special teams · simmed');
+  if(S.phase==='presnap'&&uOff()&&S.pc&&performance.now()-RTG_G.snapAt>2600){$('#snapBar').hidden=true;startPlay(S.pc)}
+}
+/* his plays, from the fx bus (01b) */
+onFx('snap',()=>{if(rtgOn()&&autoSprite())RTG_G.ev.snaps++});
+onFx('drop',e=>{if(rtgOn()&&rtgMine(e.p))RTG_G.ev.drops++});
+onFx('deflect',e=>{if(rtgOn()&&rtgMine(e.p))RTG_G.ev.pd++});
+onFx('brokenTackle',e=>{if(!rtgOn())return;if(rtgMine(e.d))RTG_G.ev.mt++;if(rtgMine(e.c))RTG_G.ev.bt++});
+onFx('catch',e=>{if(!rtgOn()||!e.p||e.p.user)return;const me=autoSprite();if(!me||me.side!=='d')return;const [n,nd]=nearest(DEF,e.p.x,e.p.y);if(n===me&&nd<4){RTG_G.ev.alw++;RTG_G.alw=play}});
+onFx('dead',e=>{if(!rtgOn())return;const me=autoSprite();if(!me)return;const ev=RTG_G.ev;if(play&&play.intended===me)ev.tgt++;if(e.kind==='fum'&&e.p===me)ev.fum++;if(e.kind==='sack'&&me===Q)ev.sk++;if(e.kind==='td'&&RTG_G.alw&&RTG_G.alw===play)ev.tda++});
+/* the post-game screen: his grade on top */
+function rtgPost(){const r=LG&&LG.rtg,l=r&&r.last,me=rtgMe();if(!l||!me||l.s!==LG.season)return;const pb=$('#postBody');if(!pb)return;
+  const c=l.q==null?'n':l.q>=8?'a':l.q>=5?'b':l.q>=3?'c':'f';
+  pb.insertAdjacentHTML('afterbegin',`<div class="card hero rtg-post"><span class="rtg-g big g${c}">${l.g}</span><div><div class="eyebrow">Your game · #${me.num} ${esc(fullName(me))}</div><div class="h2">${esc(l.line)}</div>
+    <p class="note">${l.snaps} snaps · coach trust ${Math.round(r.trust)} · #${(r.depth==null?0:r.depth)+1} on the ${me.pos} depth chart · ${r.sp} skill point${r.sp===1?'':'s'} to spend</p></div></div>`)}
+
+/* ---------- career hub ---------- */
+const rtgGC=l=>l.q==null?'n':l.q>=8?'a':l.q>=5?'b':l.q>=3?'c':'f';
+function rtgHome(){
+  const r=LG.rtg;if(r.stage==='done')return rtgSummaryHTML();
+  if(LG.phase==='offseason')return rtgOffHTML();
+  const u=T(LG.user),me=rtgMe();if(!me)return '<div class="card"><p class="note">Your player is no longer on the roster.</p></div>';
+  const w=LG.weeks[LG.week],g=userGameThisWeek();let main='';
+  if(LG.live&&g){const o=T(LG.live.opp);main=`<div class="card hero lvc"><div class="eyebrow"><i class="onair"></i>Game in progress · ${esc(w?w.label:'')}</div><div class="lvs">${badge(u,'lg')}<b>${LG.live.score[0]}</b><span>${LG.live.ot?'OT':qName(LG.live.q)+' · '+fmtClock(LG.live.clock)}</span><b>${LG.live.score[1]}</b>${badge(o,'lg')}</div>
+    <div class="btns"><button class="btn" id="resumeGame">Resume game</button><button class="btn ghost" id="abandonGame">Sim the rest</button></div></div>`}
+  else if(g)main=gameHero(g,LG.week,`<div class="btns ng-act"><button class="btn" id="playGame">${ICO.play}Play game</button><button class="btn ghost" id="simGame">Sim game</button></div>`,true);
+  else if(w)main=`<div class="card bye"><div class="eyebrow">${esc(w.label)}</div><div class="h2">${LG.week>=LG.R?`${esc(u.city)}'s season is over. The postseason goes on.`:'Bye week'}</div><button class="btn" id="advWeek">Sim ${esc(w.label)}</button></div>`;
+  return rtgCardHTML(me,u)+main+`<div class="grid2">${rtgWeekHTML(me)}${rtgGoalsHTML()}</div><div class="grid2">${rtgStatsHTML(me)}${rtgNilHTML(me)}</div>`;
+}
+function rtgCardHTML(me,u){
+  const r=LG.rtg,di=r.depth==null?0:r.depth,pj=rtgProj(),stt=me.inj>0?`<span class="tag hot">${esc(me.injWhy||'Injured')} · ${me.inj} wk</span>`:rtgStarter(r,me)?'<span class="tag ok">Starter</span>':'<span class="tag">Backup</span>';
+  return `<div class="card hero rtg-card" style="--c1:${u.c1};--c2:${u.c2}"><div class="rtg-id">${photoHTML(me,92,'',u,true)}<div class="rtg-nm"><div class="eyebrow">${esc(u.city)} ${esc(u.name)} · #${me.num} · ${yrStr(me)} · ${esc(me.home||'')}</div><div class="h1">${esc(fullName(me))}</div>
+    <div class="tags"><span class="tag gold">${me.pos} · ${esc((RTG_ARCH[me.pos][r.arch]||RTG_ARCH[me.pos][0])[0])}</span>${starStr(r.stars)}${stt}</div></div><div class="rtg-ovr"><b>${ovr99(me)}</b><small>OVR</small></div></div>
+    <div class="kpis"><div><em>Depth chart</em><b>#${di+1} ${me.pos}</b></div><div><em>Coach trust</em><b>${Math.round(r.trust)}</b></div><div><em>Season grade</em><b>${rtgAvgL(r)}</b></div><div><em>Skill points</em><b>${r.sp}</b></div><div><em>Draft stock</em><b>${pj.short}</b></div><div><em>NIL earned</em><b>${money(r.nil.cash)}</b></div></div>
+    <div class="kv"><span>Coach trust</span><b>${Math.round(r.trust)}/100</b></div>${meterHTML(r.trust,'var(--ok)')}
+    <div class="rtg-attrs">${PATTR[me.pos].map(k=>`<div class="rtg-at"><span>${attrName(me.pos,k)}</span><b>${a99(me[k])}</b>${me[k]<4.95?`<button class="btn sm ${r.sp>=rtgCost(me[k])?'':'ghost'}" id="rtgUp-${k}" ${r.sp>=rtgCost(me[k])?'':'disabled'}>+ ${rtgCost(me[k])} SP</button>`:'<span class="tag gold">Max</span>'}</div>`).join('')}</div>
+    <div class="kv"><span>XP to the next skill point</span><b>${Math.round(r.xp)}/100</b></div>${meterHTML(r.xp,'var(--los)')}</div>`;
+}
+function rtgWeekHTML(me){const r=LG.rtg,l=r.last&&r.last.s===LG.season?r.last:null,p=r.prac&&r.prac.s===LG.season?r.prac:null,mv=r.moves.filter(m=>m.s===LG.season).slice(-1)[0],pj=rtgProj();
+  return `<div class="card"><div class="eyebrow">This week</div><div class="list">
+    ${l?`<div class="lrow"><span class="l"><span class="rtg-g g${rtgGC(l)}">${l.g}</span><span>Last game vs ${esc(T(l.opp).city)}<br><small class="note">${esc(l.line)} · ${l.snaps} snaps</small></span></span></div>`:'<p class="note">No games yet this season.</p>'}
+    ${p?`<div class="lrow"><span><b>Practice</b> · ${esc(p.t)}<br><small class="note">Coach trust ${p.d>=0?'+':''}${p.d}</small></span></div>`:''}
+    ${mv?`<div class="lrow"><span><b>Depth chart</b> · moved ${mv.to<mv.from?'up':'down'} to #${mv.to+1} ${me.pos}<br><small class="note">Week ${mv.w+1} · from #${mv.from+1}</small></span></div>`:''}
+    <div class="lrow"><span><b>Draft projection</b> · ${esc(pj.txt)}<br><small class="note">${esc(pj.note)}</small></span></div></div></div>`}
+function rtgGoalsHTML(){const r=LG.rtg;return `<div class="card"><div class="eyebrow">${LG.season} goals · +1 skill point each</div><div class="list">${r.goals.map(g=>{const ok=rtgGoalDone(LG,g);return `<div class="lrow"><span>${esc(g.t)}</span><span class="tag ${ok?'ok':''}">${ok?'Done':'Open'}</span></div>`}).join('')}</div></div>`}
+function rtgStatsHTML(me){const r=LG.rtg,gs=r.grades.filter(x=>x.s===LG.season).slice(-6).reverse(),hw=(LG.heismanWatch||[]).findIndex(h=>h.pid===me.id);
+  return `<div class="card"><div class="eyebrow">${LG.season} season · ${me.ss.gp} game${me.ss.gp===1?'':'s'}</div><div class="h2">${esc(statLine(me))}</div>${hw>=0?`<span class="tag gold">Heisman watch #${hw+1}</span>`:''}
+    <div class="list">${gs.map(x=>`<div class="lrow"><span class="l"><span class="rtg-g g${rtgGC(x)}">${x.g}</span><span>${x.w>=LG.R?'Postseason':'Week '+(x.w+1)} · vs ${esc(T(x.opp).city)}<br><small class="note">${esc(x.line)}</small></span></span><small class="note">${x.live?'played':'simmed'}</small></div>`).join('')||'<p class="note">Game grades show up here.</p>'}</div></div>`}
+function rtgNilHTML(me){const n=LG.rtg.nil,o=n.offer;return `<div class="card"><div class="setrow"><div class="eyebrow">NIL · profile ${rtgProfile(LG,me)}/100</div><span class="pill gold">${money(n.cash)}</span></div>
+  ${o?`<div class="lrow rtg-nil"><span><b>${esc(o.n)}</b> wants you · ${money(o.amt)}<br><small class="note">Deals unlock as your profile grows: starting, stats, awards, Heisman buzz.</small></span><span class="btns"><button class="btn sm" id="rtgNilY">Sign</button><button class="btn sm ghost" id="rtgNilN">Pass</button></span></div>`:''}
+  <div class="list">${n.deals.slice().reverse().slice(0,5).map(d=>`<div class="lrow"><span>${esc(d.n)} <small class="note">${d.season}</small></span><b>${money(d.amt)}</b></div>`).join('')}</div>
+  ${o?'':'<p class="note">The next deal unlocks with a bigger profile.</p>'}</div>`}
+function rtgBind(){
+  if(!LG||!LG.rtg)return;const me=rtgMe();
+  if(me)PATTR[me.pos].forEach(k=>on('rtgUp-'+k,()=>{if(rtgSpend(k)){saveNow();rerender();toast(`${attrName(me.pos,k)} ${a99(me[k])}`)}}));
+  on('rtgNilY',()=>rtgNilAns(true));on('rtgNilN',()=>rtgNilAns(false));
+  on('rtgNext',rtgOffNext);on('rtgSlots',()=>{saveNow(true);showSlots()});
+  document.querySelectorAll('#rtgDecl button').forEach(b=>b.onclick=()=>{LG.rtg.decl=b.dataset.v;saveNow();rerender()});
+}
+function rtgOpenPlayer(id){const u=T(LG.user),p=u.roster.find(x=>x.id===id);if(!p)return;
+  openModal(`<div class="pl-hd">${photoHTML(p,84,'',u,true)}<div><div class="eyebrow">${POS_NAME[p.pos]} · #${p.num} · ${yrStr(p)} · ${esc(p.home||'')}</div><div class="h2" style="font-size:26px">${esc(fullName(p))}${p.id===LG.rtg.pid?' <span class="tag gold">You</span>':''}</div></div></div>
+    <div class="setrow"><span>Overall ${ovrTag(p)}</span>${p.inj>0?`<span class="tag hot">${esc(p.injWhy)} · out ${p.inj} wk</span>`:''}</div>
+    ${PATTR[p.pos].map(k=>`<div class="kv"><span>${attrName(p.pos,k)}</span><b>${a99(p[k])}</b></div>`).join('')}
+    <div class="kv"><span>Season</span><b>${esc(statLine(p))}</b></div><p class="note">Road to Glory: the head coach sets the depth chart and makes the roster moves.</p><button class="btn light wide" id="closeP">Done</button>`);
+  on('closeP',closeModal)}
+
+/* ---------- offseason: recap, declare or return, then the CPU runs the program's offseason ---------- */
+function rtgArchive(){const r=LG.rtg,me=rtgMe();if(!me||r.archS===LG.season)return;r.archS=LG.season;
+  const done=r.goals.filter(g=>rtgGoalDone(LG,g)).length;r.sp+=done;
+  r.hist.push({s:LG.season,yr:yrStr(me),gp:me.ss.gp,line:statLine(me),g:rtgAvgL(r),depth:r.depth,rec:recStr(T(LG.user)),goals:done,hon:(me.hon||[]).filter(x=>x.startsWith(LG.season+' ')).map(x=>x.slice(5)),heis:!!(LG.heisman&&LG.heisman.pid===me.id)})}
+const rtgLeaves=me=>me.yr>=4&&!(me.ss.gp<=4&&!me.rs);
+function rtgOffHTML(){
+  rtgArchive();const r=LG.rtg,me=rtgMe(),u=T(LG.user),h=LG.history[LG.history.length-1]||{},e=r.hist[r.hist.length-1]||{},pj=rtgProj();
+  if(!me)return rtgSummaryHTML();
+  const senior=rtgLeaves(me),elig=!senior&&draftEligible(me);
+  return `<div class="card hero"><div class="eyebrow">${LG.season} season recap · ${esc(u.city)} ${h.w}–${h.l}${h.rank?' · final #'+h.rank:''}</div><div class="h1">${esc(e.line||statLine(me))}</div>
+    <div class="tags"><span class="tag gold">Season grade ${esc(e.g||'—')}</span><span class="tag">${e.gp||0} games · ${e.yr||yrStr(me)}</span><span class="tag">#${(r.depth||0)+1} ${me.pos}</span>${(e.hon||[]).map(x=>`<span class="tag gold">${esc(x)}</span>`).join('')}${e.heis?'<span class="tag gold">Heisman Trophy</span>':''}</div>
+    <p class="note">Goals met: ${e.goals||0} (+${e.goals||0} skill point${e.goals===1?'':'s'}). Heisman: ${esc(h.heisman||'—')}. National champion: ${esc(h.champName||'—')}.</p></div>
+    ${elig?`<div class="card"><div class="h2">The NFL Draft</div><p class="note">You are draft eligible. Projection: <b>${esc(pj.txt)}</b>. Declare now, or come back for another season and raise your stock.</p>
+      <div class="seg" id="rtgDecl"><button data-v="return" aria-pressed="${r.decl!=='declare'}">Return to school</button><button data-v="declare" aria-pressed="${r.decl==='declare'}">Declare for the draft</button></div></div>`:''}
+    ${senior?`<div class="card"><div class="h2">Your last college season is in the books</div><p class="note">Projection: <b>${esc(pj.txt)}</b>. The draft decides where the road goes next.</p></div>`:''}
+    <button class="btn wide" id="rtgNext">${senior||r.decl==='declare'?'Go to the NFL Draft':`On to the ${LG.season+1} season`}</button>`;
+}
+function rtgOffNext(){
+  const L=LG,o=L.off,r=L.rtg;if(!o||L.phase!=='offseason')return;rtgArchive();
+  if(o.stage==='recap'){L.coach.security=Math.max(L.coach.security||0,70);departures(L);o.stage='departures'}
+  if(!rtgMe(L)){r.stage='done';const x=r.result;L.news.unshift({t:x&&!x.undrafted?`${r.pl?fullName(r.pl):'Your player'} is taken in round ${x.round} (No. ${x.overall}) of the NFL Draft.`:'Your player goes undrafted.',good:!!x&&!x.undrafted});saveNow(true);showHub('home');return}
+  if(o.stage==='departures'){runCarousel(L);o.stage='carousel';finishCarousel(L,null)}   /* the CPU head coach stays put */
+  if(o.stage==='portal'){if(o.pw==='ret'){for(const x of o.risk)x.keep=1;portalOpen(L)}if(o.pw==='open')portalResolve(L);rcEnsure(L);o.stage='recruit'}
+  if(o.stage==='recruit'){if(o.recruits){signingDay(L);L.recruit=null}else rcSigningDay(L);o.stage='signing'}
+  if(o.stage==='signing'){startNewSeason(L);rtgNewSeason(L);banner(L.season+' season','var(--team)')}
+  saveNow(true);showHub('home');$('#hubScroll').scrollTop=0;
+}
+function rtgNewSeason(L){const r=L.rtg,me=rtgMe(L);if(!me)return;me.redshirt=false;r.grades=[];r.last=null;r.prac=null;r.decl=null;r.proj=null;r.trust=clamp(r.trust*.8+12,0,100);
+  rtgDepth(L);rtgGoals(L);L.news.unshift({t:`${fullName(me)} opens his ${yrStr(me)} season #${r.depth+1} on the ${me.pos} depth chart.`,good:true})}
+/* 03 departures: he left (graduated or declared); the draft result */
+function rtgDrafted(L,pool,dr){const r=L.rtg;if(!r)return;const x=pool.find(x=>x.p.id===r.pid);if(!x)return;r.pl=JSON.parse(JSON.stringify(x.p));
+  const d=dr&&dr.find(d=>d.x.p.id===r.pid);r.result=d?{round:d.round,pick:d.pick,overall:d.overall,early:!!x.declare,season:L.season}:{undrafted:true,early:!!x.declare,season:L.season}}
+function rtgSummaryHTML(){
+  const r=LG.rtg,p=r.pl||rtgMe()||{first:'',last:'',pos:r.pos,ss:{},cs:{}},u=T(r.team),x=r.result,c=p.cs||{},g=k=>(c[k]||0).toLocaleString();
+  const head=x&&!x.undrafted?`Round ${x.round} · pick ${x.pick} (No. ${x.overall})`:x?'Undrafted free agent':'Career complete';
+  const tot=rtgOffP(p.pos)?(p.pos==='QB'?`${g('py')} pass yds · ${g('ptd')} TD · ${g('int')} INT`:p.pos==='RB'?`${g('ry')} rush yds · ${g('rtd')} TD`:`${g('rec')} rec · ${g('recy')} yds · ${g('rectd')} TD`):`${g('tkl')} tackles · ${g('sck')} sacks · ${g('dint')} INT`;
+  return `<div class="card hero rtg-card" style="--c1:${u.c1};--c2:${u.c2}"><div class="eyebrow">Road to Glory · career summary</div><div class="rtg-id">${photoHTML(p,92,'',u,true)}<div class="rtg-nm"><div class="h1">${esc(fullName(p))}</div>
+    <div class="tags"><span class="tag gold">${p.pos}</span>${starStr(r.stars)}<span class="tag">${esc(teamName(u))}</span></div></div></div>
+    <div class="h2">${esc(head)}${x&&x.early?' · early entry':''}</div><p class="note">${esc(tot)} · NIL earned ${money(r.nil.cash)} · ${r.moves.length} depth-chart move${r.moves.length===1?'':'s'}</p>
+    <div class="tags">${(p.hon||[]).map(h=>`<span class="tag gold">${esc(h)}</span>`).join('')}</div></div>
+    <div class="card"><div class="h2">Season by season</div><div class="tw"><table><thead><tr><th>Season</th><th>Class</th><th class="n">GP</th><th>Stats</th><th class="n">Grade</th><th class="n">Depth</th></tr></thead><tbody>
+    ${r.hist.map(h=>`<tr><td>${h.s}</td><td>${esc(h.yr)}</td><td class="n">${h.gp}</td><td>${esc(h.line)}${h.hon.length?' · '+esc(h.hon.join(', ')):''}</td><td class="n">${esc(h.g)}</td><td class="n">#${(h.depth||0)+1}</td></tr>`).join('')}</tbody></table></div></div>
+    <button class="btn wide" id="rtgSlots">Back to your saves</button>`;
+}
 
 /* =========================================================
    05w · Win probability (v7)
@@ -8025,7 +8390,9 @@ cv.addEventListener('pointerdown',e=>{
   if(touch)return;
   try{cv.setPointerCapture(e.pointerId)}catch(_){}
   const t={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,ox:e.clientX,oy:e.clientY,t0:performance.now(),moved:0};
+  const ex=S.auto?autoSprite():null;   // Road to Glory: a receiver / back steers himself, the QB stays AI
   if(!uOff())t.mode='dstick';
+  else if(ex&&ex!==Q)t.mode='stick';
   else if(play.type==='pass'&&!play.thrown&&!play.scramble&&play.carrier===Q)t.mode='aim?';
   else if(isRunner())t.mode='stick';else return;
   touch=t;
@@ -8045,7 +8412,7 @@ function up(e){
   if(t.mode==='aim'&&aim&&!play.thrown){if(hyp(aim.x-Q.x,aim.y-Q.y)>2.5)throwBall(aim.x,aim.y,S.bullet);aim=null;return}
   if(t.mode==='aim?'&&!play.thrown){play.scramble=true;play.scrT=play.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}hint('Scramble! Drag to steer · JUKE / SPIN / TRUCK');$('#bulletBtn').hidden=true;aim=null;hideActs();showActs();return}
   const dtm=performance.now()-t.t0,ddx=t.x-t.sx,ddy=t.y-t.sy;
-  if(t.mode==='stick'&&isRunner()&&dtm<230&&t.moved>34){if(Math.abs(ddx)>Math.abs(ddy)&&ddx>0)doDive();else if(Math.abs(ddy)>=Math.abs(ddx))doJuke(Math.sign(ddy)||1)}
+  if(t.mode==='stick'&&isRunner()&&(!S.auto||userCtl(play.carrier))&&dtm<230&&t.moved>34){if(Math.abs(ddx)>Math.abs(ddy)&&ddx>0)doDive();else if(Math.abs(ddy)>=Math.abs(ddx))doJuke(Math.sign(ddy)||1)}
   if(t.mode==='dstick'&&dtm<220&&t.moved<12){const d=defenderAt(t.x,t.y);if(d&&d!==S.ctrl)switchDefender(d);else userTackle()}
 }
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
@@ -8398,6 +8765,7 @@ function updateCam(dt){
       else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.97:1;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.9;st=.32;
         if(!retro&&!uOff()&&S.ctrl&&S.ctrl!==h&&!play.st&&S.phase==='live')box=camBox([fx,fx,fy,fy],S.ctrl.x,S.ctrl.y)}}   // your defender stays in the shot
     const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.07}
+  {const ex=S.auto&&AUTO.exempt!=null&&(S.phase==='presnap'||S.phase==='live')?autoSprite():null;if(ex&&ex.side==='o'&&!retro){if(!box)box=[fx,fx,fy,fy];camBox(box,ex.x,ex.y)}}   // Road to Glory: your player stays in the shot
   if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box,S.phase==='presnap'?64:play&&play.type==='pass'&&!play.scramble?80:58));
   camDamp('z',z,zst,dt);
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY),ext=retro?0:7;
@@ -8455,7 +8823,7 @@ function drawModern(now){
   for(const p of sorted){
     if(passLive&&eligible(p)){const [,nd]=nearest(DEF,p.x,p.y);const col=openCol(nd);c.save();c.strokeStyle=col;c.shadowColor=col;c.shadowBlur=10;c.lineWidth=2.5;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*.85,s*.85*VY,0,0,7);c.stroke();c.restore()}
     if(play&&p===play.carrier&&isRunner()){c.save();c.strokeStyle='rgba(255,255,255,.75)';c.lineWidth=2;const pr=s*(.9+.12*Math.sin(now/120));c.beginPath();c.ellipse(X(p.x),Y(p.y),pr,pr*VY,0,0,7);c.stroke();if(play.jukeT>0||play.hurdle>0){c.strokeStyle=S.home.c1;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),pr*1.3,pr*1.3*VY,0,0,7);c.stroke()}c.restore()}
-    if(p===S.ctrl&&ctrlRing(p)&&S.phase!=='dead'){c.save();c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=12;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*1.05,s*1.05*VY,0,0,7);c.stroke();c.beginPath();c.moveTo(X(p.x),Y(p.y)-s*3.6);c.lineTo(X(p.x)-s*.45,Y(p.y)-s*4.3);c.lineTo(X(p.x)+s*.45,Y(p.y)-s*4.3);c.closePath();c.fillStyle='#FFD23F';c.fill();c.restore()}
+    if((p===S.ctrl&&ctrlRing(p)||rtgMine(p)&&p.side==='o')&&S.phase!=='dead'){c.save();c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=12;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*1.05,s*1.05*VY,0,0,7);c.stroke();c.beginPath();c.moveTo(X(p.x),Y(p.y)-s*3.6);c.lineTo(X(p.x)-s*.45,Y(p.y)-s*4.3);c.lineTo(X(p.x)+s*.45,Y(p.y)-s*4.3);c.closePath();c.fillStyle='#FFD23F';c.fill();c.restore()}
     drawAthlete(c,p,now);
   }
   drawSideline(c,s,now,true);drawStick(c);
@@ -9941,6 +10309,7 @@ function frame(now){
   const dt=real*S.ts;
   const active=!S.paused&&!['hub','boot','over','menu'].includes(S.phase);
   /* Key moments (05h): while simming, the engine fast-forwards with no field rendering */
+  if(active&&!S.ff&&LG&&LG.rtg)rtgFrame();   // Road to Glory (05i): special teams are simmed
   if(active&&S.ff){kmPump(real);hudAcc+=real;if(hudAcc>.1){hudAcc=0;hud()}requestAnimationFrame(frame);return}
   if(!active&&(S.phase==='over'||S.phase==='hub'&&!S.home)&&(S.ff||AUTO.shown))autoIdle();
   if(active){
