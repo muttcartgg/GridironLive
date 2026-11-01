@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 7.5: uniform and team builder
+
+- Uniform editor (Program tab or any team page): Home, Away, Alternate and Throwback sets — helmet color and finish (matte, gloss, chrome), facemask, decal style, helmet stripes, jersey, numbers and outline, sleeve stripes, pants and stripe, socks — with a live, turning preview. Used in games, replays, photo mode and retro style.
+- Auto-rotation rules per team (home, road, rivalry, primetime, bowl/playoff) or pick before each game; the pregame screen shows both teams' uniforms side by side.
+- Create a school (new-dynasty setup or League tab): name, colors, a badge designer, seat colors, end-zone design, turf and midfield badge; it replaces a team you choose with a valid schedule.
+- Share codes for a uniform set or a whole school.
+
 ## Version 7.4: coach mode and key moments
 
 - Coach mode: you call every play on offense and defense and the AI plays it out with the broadcast camera; 1×/2×/Result speed bar; every decision (PAT, 4th down, penalties, onside) is still yours.

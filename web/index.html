@@ -1189,6 +1189,58 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
 #lower .num.ok img{opacity:1}
 #lower .num.ok span{position:absolute;left:4px;bottom:3px;z-index:1;font-size:13px;text-shadow:0 1px 3px rgba(0,0,0,.7)}
 
+/* =========================================================
+   70 · Uniform editor, school builder, badge designer (10c). Touch-first: 36px swatches, segmented buttons,
+   one scrolling sheet; the live preview stays pinned while you scroll (beside the controls when there is room).
+   ========================================================= */
+.ue,.sb{display:flex;flex-direction:column;gap:14px;min-width:0}
+.ue-head{display:flex;gap:12px;align-items:center}
+.ue-head .h2{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#modal .ue-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+#modal .ue-tabs button{padding:0 4px}
+.ue-grid{display:grid;gap:12px;grid-template-columns:minmax(0,1fr);align-items:start}
+.ue-prev{position:sticky;top:-12px;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 8px;border-radius:16px;border:1px solid var(--m-line2);
+  background:radial-gradient(90% 80% at 50% 100%,color-mix(in srgb,var(--team) 30%,transparent),transparent 70%),linear-gradient(180deg,#152038,#0C1320);box-shadow:0 10px 24px rgba(0,0,0,.45)}
+.ue-prev canvas{display:block;max-width:100%}
+#modal .ue-prev .seg button{min-height:32px;padding:0 12px;font-size:12px}
+@media (min-width:640px){.ue-grid{grid-template-columns:minmax(250px,330px) minmax(0,1fr)}.ue-prev{top:0}}
+@media (orientation:landscape) and (max-height:500px){.ue-grid{grid-template-columns:minmax(220px,290px) minmax(0,1fr)}.ue-prev{top:0}}
+.ue-ctl{display:flex;flex-direction:column;min-width:0}
+.ue-sec{display:flex;flex-direction:column;gap:12px;padding:12px 0 14px;border-top:1px solid var(--line)}
+.ue-sec:first-child{border-top:0;padding-top:2px}
+.ue-sec .h3{font:800 16px/1 var(--tv,var(--disp));letter-spacing:.08em;text-transform:uppercase;color:#fff}
+.ue-row{display:flex;flex-direction:column;gap:7px;min-width:0}
+.ue-sw{display:flex;flex-wrap:wrap;gap:7px}
+.ue-sw button,.ue-sw .cust{width:36px;height:36px;flex:none;border-radius:50%;padding:0;border:2px solid rgba(255,255,255,.2);background:var(--c);position:relative;cursor:pointer;box-shadow:inset 0 -3px 6px rgba(0,0,0,.25)}
+.ue-sw button[aria-pressed="true"],.ue-sw .cust[aria-pressed="true"]{outline:3px solid #fff;outline-offset:2px;border-color:#0C1320}
+.ue-sw button.auto{width:auto;border-radius:18px;padding:0 12px;background:rgba(255,255,255,.07);color:#DCE4F0;font:700 12px/1 var(--body);letter-spacing:.04em;text-transform:uppercase;box-shadow:none}
+.ue-sw .cust{background:var(--c,conic-gradient(#ff4d4d,#ffd23f,#3bd98a,#4ea3ff,#b06bff,#ff4d4d))}
+.ue-sw .cust::after{content:"+";position:absolute;inset:0;display:grid;place-items:center;font:800 18px/1 var(--body);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.ue-sw .cust input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+#modal .ue-seg{max-width:100%}
+#modal .ue-seg button{padding:0 11px}
+.ue-rotc .ue-row{gap:6px}
+.badge.bd{background:none;border:0;clip-path:none;padding:0}
+.badge.bd img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.sb-top{display:flex;gap:16px;align-items:center}
+.sb-top canvas{width:108px;height:119px;flex:none;filter:drop-shadow(0 6px 12px rgba(0,0,0,.4))}
+.sb-id{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+#sbField{display:block;border-radius:10px;max-width:100%}
+.sb .card{display:flex;flex-direction:column;gap:12px}
+@media (max-width:420px){.sb-top{align-items:flex-start}.sb-top canvas{width:84px;height:92px}}
+.uni-card .btns{margin:0}
+.uni-thumbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.uni-th{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:12px;border:1px solid var(--line);background:radial-gradient(90% 70% at 50% 100%,color-mix(in srgb,var(--team) 22%,transparent),transparent 70%),rgba(255,255,255,.03);color:var(--fg)}
+.uni-th canvas{width:100%;height:112px;display:block}
+.uni-th small{font:700 11px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+@media (max-width:420px){.uni-th small{font-size:9.5px;letter-spacing:.01em}.uni-th canvas{height:96px}}
+.pg-uni{display:flex;flex-direction:column;gap:10px}
+.pg-unis{display:flex;align-items:center;justify-content:center;gap:12px}
+.pg-unis figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+.pg-unis canvas{width:132px;height:104px;display:block}
+.pg-unis figcaption{font:800 13px/1 var(--tv,var(--disp));letter-spacing:.08em;color:var(--mute)}
+.pg-unis .vs{font:800 14px/1 var(--tv,var(--disp));color:var(--mute)}
+
 </style>
 </head>
 <body>
@@ -3069,7 +3121,7 @@ function realSeasonStart(L,pk){
    ========================================================= */
 let TAB='home',SETUP=null,ROSTER_FILTER='All';
 /* team badge: the generated shield, or the imported logo on a light shield once it loads (02c-packs.js) */
-const badge=(t,cls='')=>{const u=typeof teamLogoURL==='function'?teamLogoURL(t):'';return `<span class="badge ${cls}${u?' hl':''}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"><span class="ab">${esc(t.abbr)}</span>`:esc(t.abbr)}</span>`};
+const badge=(t,cls='')=>{if(t.bdg&&typeof bdgURL==='function')return `<span class="badge bd ${cls}"><img src="${bdgURL(t)}" alt="${esc(t.abbr)}" decoding="async"></span>`;const u=typeof teamLogoURL==='function'?teamLogoURL(t):'';return `<span class="badge ${cls}${u?' hl':''}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"><span class="ab">${esc(t.abbr)}</span>`:esc(t.abbr)}</span>`};
 const recStr=t=>`${t.rec.w}–${t.rec.l}`;
 const tcell=(t,label)=>`<div class="tname" data-team="${t.id}" style="cursor:pointer">${badge(t,'sm')}<span>${esc(label||rankTag(t.id)+t.city)}</span></div>`;
 function applyTeamTheme(t){const r=document.documentElement.style;r.setProperty('--team',t.c1);r.setProperty('--team2',t.c2);r.setProperty('--btn-ink',inkOn(t.c1))}
@@ -3261,27 +3313,8 @@ function openTeamDetail(id){
   on('tdX',closeModal);on('tdEdit',()=>openEditor(id,()=>openTeamDetail(id),SETUP.L));
   on('coachHere',()=>startDynasty(id));
 }
-function openCustomProgram(){
-  const L=SETUP.L;
-  openModal(`<div class="eyebrow">Build from scratch</div><div class="h2">Create your program</div><p class="note">Your new school starts at one-star prestige with a thin roster. It takes a spot in the conference you choose.</p>
-    <div class="field-row"><label for="cpCity">School</label><input type="text" id="cpCity" maxlength="22" placeholder="Riverside State"></div>
-    <div class="field-row"><label for="cpName">Mascot</label><input type="text" id="cpName" maxlength="16" placeholder="Thunder"></div>
-    <div class="field-row"><label for="cpAbbr">Abbreviation</label><input type="text" id="cpAbbr" maxlength="4" placeholder="RSU" style="text-transform:uppercase"></div>
-    <div class="colors"><div class="field-row"><label for="cpC1">Primary</label><input type="color" id="cpC1" value="#6A1B9A"></div><div class="field-row"><label for="cpC2">Secondary</label><input type="color" id="cpC2" value="#F2C230"></div></div>
-    <div class="field-row"><label for="cpConf">Conference</label><select id="cpConf">${L.confs.map((c,i)=>c.ind?'':`<option value="${i}">${esc(c.name)} · ${c.div}</option>`).join('')}</select></div>
-    <p class="note" id="cpErr"></p>
-    <div class="btns"><button class="btn" id="cpGo">Create &amp; coach</button><button class="btn ghost" id="cpX">Cancel</button></div>`);
-
-  on('cpX',closeModal);
-  on('cpGo',()=>{
-    const city=$('#cpCity').value.trim(),name=$('#cpName').value.trim();if(!city||!name){$('#cpErr').textContent='Give your school a name and a mascot.';return}
-    const conf=+$('#cpConf').value;const slotT=L.teams.filter(t=>t.conf===conf).sort((a,b)=>qOf(a)-qOf(b))[0];
-    const fresh=genTeam(slotT.id,city,name,$('#cpC1').value,1,conf,{exact:true,div:slotT.div,q:slotT.div==='FCS'?1.2:1.7});
-    if(slotT.rival!=null){const r=L.teams[slotT.rival];r.rival=null;slotT.rival=null}
-    Object.assign(slotT,{city,name,abbr:($('#cpAbbr').value.trim()||city.slice(0,3)).toUpperCase().slice(0,4),c1:$('#cpC1').value,c2:$('#cpC2').value,prestige:1,q:fresh.q,roster:fresh.roster,stadium:city+' Stadium',cap:22000});
-    invalidate();resetRecords(L);buildSchedule(L);updateRankings(L);startDynasty(slotT.id);
-  });
-}
+/* create-a-school (10c school builder): name, colors, badge, stadium style, and the team it replaces */
+function openCustomProgram(){openSchoolBuilder({mode:'create',L:SETUP.L})}
 function startDynasty(id){
   const st=SETUP,L=st.L;closeModal();
   L.user=id;L.coach.name=st.coach.trim()||'Coach';L.name=st.name.trim()||`${L.teams[id].city} Dynasty`;L.settings.diff=st.diff;L.coach.schools=[id];
@@ -3504,7 +3537,8 @@ function hubProgram(){
   ${careerStaffHTML()}
   <div class="card"><div class="h2">Trophy case</div><div class="grid3">
     <div class="kpis"><div><em>National titles</em><b>${u.titles}</b></div></div><div class="kpis"><div><em>Conference titles</em><b>${u.ccTitles}</b></div></div><div class="kpis"><div><em>Bowl wins</em><b>${u.bowlWins}</b></div></div><div class="kpis"><div><em>Playoff trips</em><b>${u.playoffApps||0}</b></div></div></div>
-    <div class="kv"><span>${esc(u.trophy)} vs ${esc(T(u.rival).city)}</span><b>${u.holder===u.id?'In your case':'Held by '+esc(T(u.rival).city)}</b></div></div>`;
+    ${u.rival!=null&&T(u.rival)&&u.trophy?`<div class="kv"><span>${esc(u.trophy)} vs ${esc(T(u.rival).city)}</span><b>${u.holder===u.id?'In your case':'Held by '+esc(T(u.rival).city)}</b></div>`:''}</div>
+  ${uniCardHTML(u)}`;
 }
 function hubStats(){
   const u=T(LG.user),ts=LG.ts,g=Math.max(1,ts.g);
@@ -3527,7 +3561,9 @@ function hubLeague(){
     <div class="field-row"><label for="leagueConf">Conference</label><select id="leagueConf">${groups}</select></div></div>
   <div class="card"><div class="eyebrow">${esc(confName(c))}${LG.confs[c].ind?'':' standings'}</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th><th class="n">OVR</th><th></th></tr></thead><tbody>${confStandings(LG,c).map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t,rankTag(t.id)+teamName(t))}</td><td class="n">${LG.confs[c].ind?'—':t.rec.cw+'–'+t.rec.cl}</td><td class="n">${recStr(t)}</td><td class="n">${tOvr99(teamOvr(t))}</td><td class="n"><button class="linkbtn" id="edit-${t.id}">Edit</button></td></tr>`).join('')}</tbody></table></div></div>
   <div class="card"><div class="h2">Team pack</div><p class="note">Rename and recolor the whole league at once, or paste real rosters. Export the current list, edit it, then import it back. Teams are matched by their order in the list.</p>
-    <div class="btns"><button class="btn ghost" id="packExport">Export team pack</button><button class="btn ghost" id="packImport">Import team pack</button></div></div>`;
+    <div class="btns"><button class="btn ghost" id="packExport">Export team pack</button><button class="btn ghost" id="packImport">Import team pack</button></div></div>
+  <div class="card"><div class="h2">Create a school</div><p class="note">Design a new program (name, colors, badge, stadium and uniforms) and put it in any conference in place of a CPU team. The schedule stays valid. Paste a school code to bring in a shared design.</p>
+    <div class="btns"><button class="btn ghost" id="newSchool">Create a school</button></div></div>`;
 }
 /* v7 settings registry: any module can add a setting or a button to the Settings tab without editing hubSettings.
    SETTINGS_EXTRA.push({card:'Realism',key:'penalties',label:'Penalties',opts:[['normal','Normal'],['low','Fewer'],['off','Off']],def:'normal'})
@@ -3610,7 +3646,8 @@ function hubSettings(){
     <b>Clock:</b> college rules. The clock keeps running after in-bounds tackles and stops on incompletions, out of bounds, scores and changes of possession. Inside two minutes of each half it stops briefly on first downs. Use TIMEOUT before the snap.</p></div>`;
 }
 function bindHub(){
-  if(TAB==='program')bindCareer();
+  if(TAB==='program'){bindCareer();bindUniCard()}
+  on('newSchool',()=>openSchoolBuilder({mode:'create',L:LG,done:rerender}));
   on('playGame',()=>{ac();openPregame(userGameThisWeek())});
   on('simGame',()=>{simUserGame(userGameThisWeek())});
   on('resumeGame',()=>{ac();resumeGame()});
@@ -3669,20 +3706,8 @@ function openPlayer(id){
   };
   render();
 }
-function openEditor(id,done,L){
-  L=L||LG;const t=L.teams[id];
-  openModal(`<div class="eyebrow">Edit program</div><div style="display:flex;gap:12px;align-items:center" id="edPrev">${badge(t,'lg')}<b class="h2">${esc(teamName(t))}</b></div>
-    <div class="field-row"><label for="edCity">School</label><input type="text" id="edCity" maxlength="22" value="${esc(t.city)}"></div>
-    <div class="field-row"><label for="edName">Mascot</label><input type="text" id="edName" maxlength="16" value="${esc(t.name)}"></div>
-    <div class="field-row"><label for="edAbbr">Abbreviation (2–4 letters)</label><input type="text" id="edAbbr" maxlength="4" value="${esc(t.abbr)}" style="text-transform:uppercase"></div>
-    <div class="field-row"><label for="edStad">Stadium</label><input type="text" id="edStad" maxlength="30" value="${esc(t.stadium)}"></div>
-    <div class="colors"><div class="field-row"><label for="edC1">Primary</label><input type="color" id="edC1" value="${t.c1}"></div><div class="field-row"><label for="edC2">Secondary</label><input type="color" id="edC2" value="${t.c2}"></div></div>
-    <div class="btns"><button class="btn light" id="edSave">Save</button><button class="btn ghost" id="edCancel">Cancel</button></div>`);
-  const prev=()=>{const tmp={...t,city:$('#edCity').value||t.city,name:$('#edName').value||t.name,abbr:($('#edAbbr').value||t.abbr).toUpperCase(),c1:$('#edC1').value,c2:$('#edC2').value};$('#edPrev').innerHTML=`${badge(tmp,'lg')}<b class="h2">${esc(teamName(tmp))}</b>`};
-  ['edCity','edName','edAbbr','edC1','edC2'].forEach(i=>$('#'+i).oninput=prev);
-  on('edSave',()=>{t.city=$('#edCity').value.trim()||t.city;t.name=$('#edName').value.trim()||t.name;t.abbr=($('#edAbbr').value.trim()||t.abbr).toUpperCase().slice(0,4);t.stadium=$('#edStad').value.trim()||t.stadium;t.c1=$('#edC1').value;t.c2=$('#edC2').value;closeModal();done&&done()});
-  on('edCancel',()=>{closeModal();done&&done()});
-}
+/* edit a school: name, mascot, abbreviation, stadium, colors, badge designer and stadium style (10c) */
+function openEditor(id,done,L){openSchoolBuilder({mode:'edit',id,L:L||LG,done})}
 function openEvent(){
   const e=LG.event;if(!e)return;const ev=EVENTS[e.k],p=T(LG.user).roster.find(x=>x.id===e.pid);if(!p){LG.event=null;return}
   openModal(`<div class="eyebrow">Front office · decision</div><div class="h2">${esc(ev.text(p))}</div><div class="btns">${ev.opts.map((o,i)=>`<button class="btn ${i?'ghost':''}" id="evo-${i}">${esc(o[0])}</button>`).join('')}</div>`);
@@ -3702,9 +3727,9 @@ function openPregame(g){
     ${gameHero(g,LG.week)}
     <div class="grid2 pg-grid"><div class="card"><div class="eyebrow">Keys to the game</div><ol class="pg-keys">${keys.slice(0,3).map(k=>`<li>${esc(k)}</li>`).join('')}</ol></div>
     <div class="card"><div class="eyebrow">Players to watch · ${esc(opp.abbr)}</div><div class="list">${watch.map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${esc(fullName(p))} <small class="note">#${p.num} · ${yrStr(p)}</small></span></span>${ovrTag(p)}</div>`).join('')}</div></div></div>
-    <div class="setrow pg-uni"><span class="eyebrow">Uniform</span><div class="seg" id="uniSeg">${UNI_STYLES.map(([k,l])=>`<button data-v="${k}" aria-pressed="${(LG.settings.uniform||'auto')===k}">${l}</button>`).join('')}</div></div>
+    ${uniPregameHTML(g)}
     <div class="btns cta"><button class="btn" id="kickoff">${ICO.play}Kick off</button><button class="btn ghost" id="pgX">Back</button></div>`,true);
-  document.querySelectorAll('#uniSeg button').forEach(b=>b.onclick=()=>{LG.settings.uniform=b.dataset.v;document.querySelectorAll('#uniSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));saveNow()});
+  bindPregameUni(g);
   on('pgX',closeModal);on('kickoff',()=>{closeModal();startUserGame(g)});
 }
 function simUserGame(g){
@@ -3811,8 +3836,9 @@ function openTeamPage(id){
     else if(tab==='roster'){body=POS_ORDER.map(pos=>`<div class="eyebrow" style="margin-top:6px">${pos}</div><div class="list">${depth(t,pos).map(p=>`<div class="lrow"><span class="l">${photoHTML(p,34,'',t)}<span>${esc(fullName(p))} <small class="note">${['Fr','So','Jr','Sr'][p.yr-1]||''}${p.inj>0?' · injured':''}</small></span></span><span><small class="note">${esc(statLine(p))}</small> ${ovrTag(p)}</span></div>`).join('')}</div>`).join('')}
     else{body=`<div class="list">${games.map(({g,w})=>{const home=g.h===id,o=T(home?g.a:g.h),done=g.hs!=null,us=home?g.hs:g.as,them=home?g.as:g.hs;return `<div class="lrow"><span class="l"><small class="note" style="min-width:64px">${esc(w.label)}</small>${home?'vs':'@'} ${badge(o,'sm')} ${rankTag(o.id)}${esc(o.city)}</span><span class="${done?(us>them?'res-w':'res-l'):'note'}">${done?(us>them?'W ':'L ')+us+'–'+them:esc(g.tag||'')}</span></div>`}).join('')||'<p class="note">No games yet.</p>'}</div>`}
     openModal(`<div style="display:flex;gap:14px;align-items:center">${badge(t,'xl')}<div style="min-width:0"><div class="eyebrow">${esc(confName(t.conf,L))} · ${t.div}${rk?' · #'+rk:''}</div><div class="h2" style="font-size:24px">${esc(teamName(t))}</div><div class="note">${esc(t.stadium||'')}</div></div></div>
-      <div class="seg" id="tpTabs">${[['overview','Overview'],['roster','Roster'],['schedule','Schedule']].map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===tab}">${l}</button>`).join('')}</div>${body}<button class="btn ghost" id="tpClose">Close</button>`,true);
+      <div class="seg" id="tpTabs">${[['overview','Overview'],['roster','Roster'],['schedule','Schedule']].map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===tab}">${l}</button>`).join('')}</div>${body}<div class="btns"><button class="btn ghost" id="tpUni">Uniforms</button><button class="btn ghost" id="tpEdit">Edit school</button><button class="btn ghost" id="tpClose">Close</button></div>`,true);
     $('#tpTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.v;render()});on('tpClose',closeModal);
+    on('tpUni',()=>openUniEditor(id,()=>openTeamPage(id)));on('tpEdit',()=>openEditor(id,()=>openTeamPage(id)));
   };render();
 }
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-team]');if(!el||!LG)return;if(!$('#hub').hidden||!$('#modal').hidden){e.stopPropagation();openTeamPage(+el.dataset.team)}},true);
@@ -8501,9 +8527,9 @@ function pxText(c,str,x,y,s,col,vertical){str=String(str).toUpperCase();c.fillSt
 const pxW=(str,s)=>String(str).length*4*s-s;
 const SPR={stand:["..HHH..",".HHHHH.",".HHHFM.","..JJJ..",".JJJJJ.",".SNNNS.","..PPP..","..P.P..","..P.P..",".KK.KK."],run1:["..HHH..",".HHHHH.",".HHHFM.","..JJJ..",".JJJJJ.","SJNNNJ.","..PPP..",".P...P.","P.....P","K.....K"],run2:["..HHH..",".HHHHH.",".HHHFM.","..JJJ..",".JJJJJ.",".JNNNJS","..PPP..","..PP...","..P.P..","..KK..."],down:[".......",".......",".......",".......",".......","..HHH..","JJJHHFM","JNNJHHH","PPPKK..","......."]};
 function sprite(team,side,tone,frame,flip){
-  const key=team.id+side+tone+frame+flip+team.c1+team.c2;let c=spriteCache.get(key);if(c)return c;
+  const U=S.home&&(team===S.home||team===S.away)?uniColorsC(team):null,key=team.id+side+tone+frame+flip+team.c1+team.c2+(U?U.h+U.j+U.n+U.p+U.m:'');let c=spriteCache.get(key);if(c)return c;
   const rows=SPR[frame];c=document.createElement('canvas');c.width=9;c.height=12;const g=c.getContext('2d');const home=side==='o';
-  const pal={H:team.c1,J:home?team.c1:'#F4F4F2',N:home?(contrasty(team.c1,team.c2)?team.c2:'#FFFFFF'):team.c1,P:home?team.c2:'#DADAD6',K:'#14161A',F:TONES[tone],S:TONES[tone],M:'#C9CED6'};
+  const pal=U?{H:U.h,J:U.j,N:U.n,P:U.p,K:'#14161A',F:TONES[tone],S:TONES[tone],M:U.m}:{H:team.c1,J:home?team.c1:'#F4F4F2',N:home?(contrasty(team.c1,team.c2)?team.c2:'#FFFFFF'):team.c1,P:home?team.c2:'#DADAD6',K:'#14161A',F:TONES[tone],S:TONES[tone],M:'#C9CED6'};
   const fill=new Set();rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(ch!=='.')fill.add(((flip?6-x:x)+1)+','+(y+1))}));
   g.fillStyle='rgba(6,14,8,.75)';for(const k of fill){const [x,y]=k.split(',').map(Number);for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]])if(!fill.has((x+a)+','+(y+b)))g.fillRect(x+a,y+b,1,1)}
   rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(ch==='.')return;g.fillStyle=pal[ch];g.fillRect((flip?6-x:x)+1,y+1,1,1)}));spriteCache.set(key,c);return c;
@@ -8907,7 +8933,7 @@ function feedWeek(L,prevRank){
 const hostT=()=>S.neutral?S.home:(S.userHome?S.home:S.away);
 const isNight=()=>S.slot==='Primetime'||(S.slot==='Afternoon'&&progress()>.66);
 const SPECIAL_TURF={BOIS:['#1d4fb0','#1a46a0'],EWU:['#b3262d','#9e2127'],CCU:['#1b8f8c','#177d7a'],UCA:['#6d6f76','#4f2d7f']};
-function turfColors(night){const t=hostT(),sp=LG.settings.specialTurf!==false&&SPECIAL_TURF[t.abbr];if(sp)return night?[shade(sp[0],-.15),shade(sp[1],-.15)]:sp;return night?['#2c7432','#25652c']:['#3a8a3d','#2e7633']}
+function turfColors(night){const t=hostT(),cu=t.stad&&t.stad.turf,sp=LG.settings.specialTurf!==false&&(cu?[cu,shade(cu,-.1)]:SPECIAL_TURF[t.abbr]);if(sp)return night?[shade(sp[0],-.15),shade(sp[1],-.15)]:sp;return night?['#2c7432','#25652c']:['#3a8a3d','#2e7633']}
 function crowdTheme(){const t=LG.settings.studentTheme||'auto';if(t!=='auto')return t;const g=S.game;if(!g)return 'none';if(g.rival)return 'stripe';if(S.slot==='Primetime')return (hostT().id%2)?'black':'white';return 'none'}
 function crowdEmpty(){
   const dens=LG.settings.crowd==='low'?.25:0;let e=dens;if(!S.home||S.ot)return e;
@@ -9086,29 +9112,36 @@ function athXf(c,x,y,kx,rot){const A=ATH.a,D=ATH.d;
 const athReset=c=>c.setTransform(ATH.a,ATH.b,ATH.c,ATH.d,ATH.e,ATH.ff);
 function athTint(s){const m=/rgba?\(([^)]+)\)/.exec(s||'');if(!m)return null;const v=m[1].split(',').map(Number);return [v[0],v[1],v[2],(v.length>3?v[3]:1)*.7]}
 function athMix(h,T){if(!T||!h||h[0]!=='#'||h.length<7)return h;const n=parseInt(h.slice(1,7),16),a=T[3],f=(x,y)=>Math.round(x+(y-x)*a);return '#'+((1<<24)+(f(n>>16,T[0])<<16)+(f(n>>8&255,T[1])<<8)+f(n&255,T[2])).toString(16).slice(1)}
+/* draw-ready colours from a resolved uniform set U (10c field names), m = tint mapper; used by athCols and the editor preview */
+function athMake(team,U,m){const j=U.j,n=U.n,gl=lum(j)>.8?team.c1:contrasty(n,j)?n:inkOn(j);
+  return {j:m(j),jD:m(shade(j,-.28)),jH:m(shade(j,.22)),p:m(U.p),pD:m(shade(U.p,-.3)),ps:m(U.pc),pn:U.ps|0,h:m(U.h),hD:m(shade(U.h,-.4)),hs:m(U.hc),hn:U.hs|0,dc:m(U.dc),dk:U.d||'L',
+    s:m(U.k),sD:m(shade(U.k,-.3)),mask:m(U.m),gl:m(gl),glD:m(shade(gl,-.3)),num:n,numO:U.no||(lum(n)>.55?'rgba(0,0,0,.55)':'rgba(255,255,255,.65)'),
+    fin:U.hf||'g',matte:U.hf==='m',sl:U.sl|0,sc:m(U.sc),scD:m(shade(U.sc,-.28)),dec:null,decK:'',lgF:-1,lg:null,decN:null}}
 function athCols(team){
-  const st=uniStyle(team);let e=ATH.cols.get(team);
-  if(e&&e.st===st&&e.c1===team.c1&&e.c2===team.c2&&e.tn===ATH.tn)return e;
-  const U=uniColors(team),T=athTint(ATH.tn),m=h=>athMix(h,T),j=U.j,t=U.t;
-  const gl=lum(j)>.8?team.c1:contrasty(t,j)?t:inkOn(j),num=contrasty(t,j)?t:inkOn(j);
-  const hs=contrasty(t,U.h)?t:contrasty(team.c2,U.h)?team.c2:inkOn(U.h),ps=contrasty(t,U.p)?t:contrasty(team.c1,U.p)?team.c1:inkOn(U.p);
-  e={st,c1:team.c1,c2:team.c2,tn:ATH.tn,j:m(j),jD:m(shade(j,-.28)),jH:m(shade(j,.22)),p:m(U.p),pD:m(shade(U.p,-.3)),ps:m(ps),h:m(U.h),hD:m(shade(U.h,-.4)),hs:m(hs),
-    s:m(U.s),sD:m(shade(U.s,-.3)),mask:m(U.mask),gl:m(gl),glD:m(shade(gl,-.3)),num,numO:lum(num)>.55?'rgba(0,0,0,.55)':'rgba(255,255,255,.65)',matte:(team.id|0)%3===0,dec:null,decLg:-1,lgF:-1,lg:null};
+  const st=uniStyle(team),o=S.home&&S.away?(team===S.home?S.away:S.home).id*2+(hostT()===team?1:0):-1;let e=ATH.cols.get(team);
+  if(e&&e.st===st&&e.v===UNI_VER&&e.o===o&&e.c1===team.c1&&e.c2===team.c2&&e.tn===ATH.tn)return e;
+  const T=athTint(ATH.tn);e=athMake(team,uniColors(team),h=>athMix(h,T));Object.assign(e,{st,v:UNI_VER,o,c1:team.c1,c2:team.c2,tn:ATH.tn});
   ATH.cols.set(team,e);return e;
 }
 function athNum(e,num){const k=e.num+e.numO+num;let cv=ATH.nums.get(k);if(cv)return cv;
   cv=document.createElement('canvas');cv.width=72;cv.height=52;const g=cv.getContext('2d'),t=String(num);
   g.font='900 44px -apple-system,system-ui,"Helvetica Neue",Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=7;g.strokeStyle=e.numO;g.strokeText(t,36,28);g.fillStyle=e.num;g.fillText(t,36,28);ATH.nums.set(k,cv);return cv}
-/* helmet decal: an imported logo when the user loaded one (teamLogo, 02c), else a generated mark (letter, star or bolt) */
-function athDecal(team,e){
-  if(e.lgF!==ATH.f){e.lgF=ATH.f;e.lg=typeof teamLogo==='function'?teamLogo(team):null}
-  const has=e.lg?1:0;if(e.dec&&e.decLg===has)return e.dec;
-  const cv=e.dec||document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.clearRect(0,0,64,64);e.decLg=has;e.dec=cv;
-  if(e.lg){const w=e.lg.naturalWidth||1,h=e.lg.naturalHeight||1,k=58/Math.max(w,h);try{g.drawImage(e.lg,32-w*k/2,32-h*k/2,w*k,h*k)}catch(_){}return cv}
-  const kind=(team.id|0)%5;g.fillStyle=e.hs;g.strokeStyle=e.hD;g.lineWidth=5;g.lineJoin='round';
-  if(kind===3){g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?12:28;g.lineTo(32+Math.cos(a)*r,34+Math.sin(a)*r)}g.closePath();g.stroke();g.fill()}
-  else if(kind===4){g.beginPath();g.moveTo(40,3);g.lineTo(13,37);g.lineTo(30,37);g.lineTo(23,61);g.lineTo(51,25);g.lineTo(34,25);g.closePath();g.stroke();g.fill()}
-  else{g.font='900 52px -apple-system,system-ui,"Helvetica Neue",Arial,sans-serif';g.textAlign='center';g.textBaseline='middle';const t=(team.abbr||'U')[0];g.strokeText(t,32,35);g.fillText(t,32,35)}
+/* helmet decal by the set's style: G imported logo (teamLogo, 02c; a letter until it loads), M the team's badge
+   (10c badge designer, generated shield otherwise), N the player's number, L letter, S star, B bolt, X none */
+function athDecal(team,e,num){
+  let k=e.dk;if(k==='X')return null;
+  if(k==='G'){if(e.lgF!==ATH.f){e.lgF=ATH.f;e.lg=typeof teamLogo==='function'?teamLogo(team):null}if(!e.lg)k='L'}
+  const font='900 52px -apple-system,system-ui,"Helvetica Neue",Arial,sans-serif';
+  if(k==='N'){const mp=e.decN||(e.decN=new Map());let cv=mp.get(num);if(cv)return cv;cv=document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d'),t=String(num==null?'':num);
+    g.font=t.length>1?'900 40px -apple-system,system-ui,"Helvetica Neue",Arial,sans-serif':font;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=5;g.strokeStyle=e.hD;g.fillStyle=e.dc;g.strokeText(t,32,35);g.fillText(t,32,35);mp.set(num,cv);return cv}
+  if(e.dec&&e.decK===k)return e.dec;
+  const cv=e.dec||document.createElement('canvas');cv.width=cv.height=64;const g=cv.getContext('2d');g.clearRect(0,0,64,64);e.decK=k;e.dec=cv;
+  if(k==='G'){const w=e.lg.naturalWidth||1,h=e.lg.naturalHeight||1,s=58/Math.max(w,h);try{g.drawImage(e.lg,32-w*s/2,32-h*s/2,w*s,h*s)}catch(_){}return cv}
+  if(k==='M'&&typeof bdgCanvas==='function'){const b=bdgCanvas(team,64,true);g.drawImage(b,32-27,2,54,60);return cv}
+  g.fillStyle=e.dc;g.strokeStyle=e.hD;g.lineWidth=5;g.lineJoin='round';
+  if(k==='S'){g.beginPath();for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,r=i%2?12:28;g.lineTo(32+Math.cos(a)*r,34+Math.sin(a)*r)}g.closePath();g.stroke();g.fill()}
+  else if(k==='B'){g.beginPath();g.moveTo(40,3);g.lineTo(13,37);g.lineTo(30,37);g.lineTo(23,61);g.lineTo(51,25);g.lineTo(34,25);g.closePath();g.stroke();g.fill()}
+  else{g.font=font;g.textAlign='center';g.textBaseline='middle';const t=(team.abbr||'U')[0];g.strokeText(t,32,35);g.fillText(t,32,35)}
   return cv;
 }
 /* body scale from BUILD (position) and the player's real height/weight; accessories hashed from the player id */
@@ -9271,28 +9304,32 @@ function athPose(p,now){
 }
 
 /* ---------- drawing ---------- */
-function athLegP(c,k,hh,bw,pc,sc,stc,wc,spat){const J=ATJ,kx=k?J.k1x:J.k0x,ky=k?J.k1y:J.k0y,fx=k?J.f1x:J.f0x,fy=k?J.f1y:J.f0y;
+function athLegP(c,k,hh,bw,pc,sc,stc,wc,spat,pn){const J=ATJ,kx=k?J.k1x:J.k0x,ky=k?J.k1y:J.k0y,fx=k?J.f1x:J.f0x,fy=k?J.f1y:J.f0y;
   athSeg(c,J.hx,J.hy,kx,ky,hh*.148*bw,pc);
-  if(stc)athSeg(c,J.hx+(kx-J.hx)*.08,J.hy+(ky-J.hy)*.08,kx,ky,Math.max(1,hh*.026),stc);
+  if(stc&&pn){const ax=J.hx+(kx-J.hx)*.08,ay=J.hy+(ky-J.hy)*.08,w=Math.max(1,hh*.026);
+    if(pn===1)athSeg(c,ax,ay,kx,ky,w,stc);else{const dx=kx-ax,dy=ky-ay,l=Math.sqrt(dx*dx+dy*dy)||1,ox=-dy/l*w*1.25,oy=dx/l*w*1.25;for(let i=0;i<pn;i++){const f=i-(pn-1)/2;athSeg(c,ax+ox*f,ay+oy*f,kx+ox*f,ky+oy*f,w*.7,stc)}}}
   athSeg(c,kx,ky,fx,fy,hh*.096*bw,sc);
   if(spat)athSeg(c,fx+(kx-fx)*.2,fy+(ky-fy)*.2,fx,fy,hh*.09*bw,k?'#f1f3f6':'#c3c7cf');
   c.fillStyle=wc?(k?'#eef0f3':'#bfc3ca'):(k?'#1a1c21':'#0b0c0f');c.beginPath();c.ellipse(fx+hh*.035,fy,hh*.062,hh*.03,0,0,TAU2);c.fill()}
-function athArmP(c,k,hh,bw,jc,ac,fc,gc){const J=ATJ,ex=k?J.e1x:J.e0x,ey=k?J.e1y:J.e0y,wx=k?J.w1x:J.w0x,wy=k?J.w1y:J.w0y;
+function athArmP(c,k,hh,bw,jc,ac,fc,gc,sl,scol){const J=ATJ,ex=k?J.e1x:J.e0x,ey=k?J.e1y:J.e0y,wx=k?J.w1x:J.w0x,wy=k?J.w1y:J.w0y;
   athSeg(c,J.sx,J.sy,ex,ey,hh*.094*bw,ac);
   athSeg(c,J.sx,J.sy,J.sx+(ex-J.sx)*.6,J.sy+(ey-J.sy)*.6,hh*.118*bw,jc);
+  if(sl&&hh>=16){const dx=ex-J.sx,dy=ey-J.sy;c.lineCap='butt';for(let i=0;i<sl;i++){const a=.4+i*.075;athSeg(c,J.sx+dx*a,J.sy+dy*a,J.sx+dx*(a+.042),J.sy+dy*(a+.042),hh*.122*bw,scol)}c.lineCap='round'}
   athSeg(c,ex,ey,wx,wy,hh*.076*bw,fc);
   c.fillStyle=gc;c.beginPath();c.arc(wx,wy,hh*.05*Math.min(1.15,bw),0,TAU2);c.fill()}
 function athTorso(c,hh,bw,fill,hi,ol){const J=ATJ,ln=ATP.lean,nx=Math.cos(ln),ny=Math.sin(ln),hw=hh*.1*bw,cw=hh*.132*bw;
   c.fillStyle=fill;c.beginPath();c.moveTo(J.hx-nx*hw,J.hy-ny*hw);c.lineTo(J.sx-nx*cw,J.sy-ny*cw);c.lineTo(J.sx+nx*cw,J.sy+ny*cw);c.lineTo(J.hx+nx*hw,J.hy+ny*hw);c.closePath();if(ol){c.strokeStyle=ol;c.lineWidth=Math.max(1,hh*.022);c.stroke()}c.fill();
   if(hi){/* shoulder pads under the jersey */const sn=Math.sin(ln),cs=Math.cos(ln),px=J.sx-sn*hh*.012,py=J.sy+cs*hh*.012;
     c.beginPath();c.ellipse(px,py,cw*1.32,hh*.074,ln,0,TAU2);if(ol)c.stroke();c.fill();c.fillStyle=hi;c.beginPath();c.ellipse(px+sn*hh*.03,py-cs*hh*.03,cw*.95,hh*.032,ln,0,TAU2);c.fill()}}
-function athHelmet(c,hh,e,skin,team,vis,fs){const J=ATJ,x=J.nx,y=J.ny,r=hh*.138;
+const athStripe=(c,x,y,r,k,w)=>{c.lineWidth=r*w;c.beginPath();c.arc(x,y,r*k,1.06*Math.PI,1.8*Math.PI);c.stroke()};
+function athHelmet(c,hh,e,skin,team,vis,fs,num){const J=ATJ,x=J.nx,y=J.ny,r=hh*.138,hn=e.hn;
   c.fillStyle=skin;c.beginPath();c.arc(x+r*.3,y+r*.2,r*.62,0,TAU2);c.fill();
   c.fillStyle=e.hD;c.beginPath();c.arc(x,y,r,.4*Math.PI,1.93*Math.PI);c.lineTo(x+r*.32,y+r*.16);c.closePath();c.fill();
   c.fillStyle=e.h;c.beginPath();c.arc(x+r*.03,y-r*.07,r*.89,.43*Math.PI,1.93*Math.PI);c.lineTo(x+r*.3,y+r*.1);c.closePath();c.fill();
-  c.strokeStyle=e.hs;c.lineWidth=r*.24;c.beginPath();c.arc(x,y,r*.84,1.06*Math.PI,1.8*Math.PI);c.stroke();
-  if(r>=4.2){const d=athDecal(team,e),ds=r*1.02,cx=x-r*.16,cy=y+r*.1;c.translate(cx,cy);c.scale(fs,1);c.drawImage(d,-ds/2,-ds/2,ds,ds);c.scale(fs,1);c.translate(-cx,-cy)}
-  c.fillStyle=e.matte?'rgba(255,255,255,.16)':'rgba(255,255,255,.5)';c.beginPath();c.ellipse(x-r*.1,y-r*.56,r*.38,r*.15,-.3,0,TAU2);c.fill();
+  if(e.fin==='c'){/* chrome: a bright band over the crown, a dark reflection low */c.fillStyle='rgba(255,255,255,.34)';c.beginPath();c.ellipse(x-r*.06,y-r*.3,r*.72,r*.2,-.25,0,TAU2);c.fill();c.fillStyle='rgba(0,0,0,.24)';c.beginPath();c.ellipse(x-r*.12,y+r*.42,r*.6,r*.16,-.15,0,TAU2);c.fill()}
+  if(hn){c.strokeStyle=e.hs;if(hn===1)athStripe(c,x,y,r,.84,.24);else if(hn===2){athStripe(c,x,y,r,.88,.1);athStripe(c,x,y,r,.68,.1)}else{athStripe(c,x,y,r,.79,.14);athStripe(c,x,y,r,.94,.055);athStripe(c,x,y,r,.62,.055)}}
+  if(r>=4.2){const d=athDecal(team,e,num);if(d){const ds=r*1.02,cx=x-r*.16,cy=y+r*.1;c.translate(cx,cy);c.scale(fs,1);c.drawImage(d,-ds/2,-ds/2,ds,ds);c.scale(fs,1);c.translate(-cx,-cy)}}
+  c.fillStyle=e.matte?'rgba(255,255,255,.16)':e.fin==='c'?'rgba(255,255,255,.85)':'rgba(255,255,255,.5)';c.beginPath();c.ellipse(x-r*.1,y-r*.56,r*.38,r*.15,-.3,0,TAU2);c.fill();
   if(ATH.glow){c.strokeStyle=ATH.glow;c.lineWidth=r*.12;c.beginPath();c.arc(x,y,r*.97,1.15*Math.PI,1.75*Math.PI);c.stroke()}
   if(vis){c.fillStyle='rgba(18,20,30,.85)';c.beginPath();c.moveTo(x+r*.52,y-r*.1);c.lineTo(x+r*1.04,y-r*.04);c.lineTo(x+r*1.02,y+r*.32);c.lineTo(x+r*.56,y+r*.3);c.closePath();c.fill()}
   c.strokeStyle=e.mask;c.lineWidth=Math.max(.8,r*.15);c.beginPath();
@@ -9311,8 +9348,8 @@ function drawAthlete(c,p,now){
   const vis=(acc%9)<((p.role==='WR'||p.role==='CB'||p.role==='S'||p.role==='RB')?3:1);
   const aN=slv===1?'#16181d':slv===2?'#eef0f3':sk[0],aD=slv===1?'#0c0d10':slv===2?'#c3c7cf':sk[1];
   /* far side (shaded) */
-  athLegP(c,0,hh,bw,e.pD,e.sD,'',wc,spat);
-  athArmP(c,0,hh,bw,e.jD,aD,aD,e.glD);
+  athLegP(c,0,hh,bw,e.pD,e.sD,'',wc,spat,0);
+  athArmP(c,0,hh,bw,e.jD,aD,aD,e.glD,e.sl,e.scD);
   /* torso, pads, seat of the pants, number */
   athTorso(c,hh,bw,e.j,e.jH,e.jD);
   {const ln=A.lean,nx=Math.cos(ln),ny=Math.sin(ln),hw=hh*.095*bw;athSeg(c,J.hx-nx*hw,J.hy-ny*hw,J.hx+nx*hw,J.hy+ny*hw,hh*.13,e.p)}
@@ -9320,12 +9357,12 @@ function drawAthlete(c,p,now){
     c.translate(cx,cy);c.rotate(ln);c.scale(fs,1);c.drawImage(p._nsp,-nw/2,-nh/2,nw,nh);c.scale(fs,1);c.rotate(-ln);c.translate(-cx,-cy)}
   if(A.carry===2){athBallAt(c,0,hh);athSeg(c,J.e0x,J.e0y,J.w0x,J.w0y,hh*.068*bw,aD);c.fillStyle=e.glD;c.beginPath();c.arc(J.w0x,J.w0y,hh*.045,0,TAU2);c.fill()}
   /* near side */
-  athLegP(c,1,hh,bw,e.p,e.s,hh>=20?e.ps:'',wc,spat);
+  athLegP(c,1,hh,bw,e.p,e.s,hh>=20?e.ps:'',wc,spat,e.pn);
   if(p.dirt>.05){const lv=Math.min(6,Math.round(p.dirt*6)),mx=(J.hx+J.k1x)/2,my=(J.hy+J.k1y)/2,tx=J.hx*.6+J.sx*.4,ty=J.hy*.6+J.sy*.4;c.fillStyle=ATH.dirtS[S.wx==='Snow'?1:0][lv];c.beginPath();
     c.moveTo(mx+hh*.05,my);c.ellipse(mx,my,hh*.05,hh*.035,0,0,TAU2);c.moveTo(tx+hh*.045,ty);c.ellipse(tx,ty,hh*.045,hh*.03,.4,0,TAU2);c.moveTo(J.k1x+hh*.03,J.k1y);c.ellipse(J.k1x,J.k1y,hh*.03,hh*.025,0,0,TAU2);c.fill()}
-  athHelmet(c,hh,e,sk[0],team,vis,fs);
+  athHelmet(c,hh,e,sk[0],team,vis,fs,p.num);
   if(A.carry===1)athBallAt(c,1,hh);
-  athArmP(c,1,hh,bw,e.j,aN,aN,e.gl);
+  athArmP(c,1,hh,bw,e.j,aN,aN,e.gl,e.sl,e.sc);
   if(hh>=44&&p._nsp){const ex=J.sx+(J.e1x-J.sx)*.3,ey=J.sy+(J.e1y-J.sy)*.3,nh=hh*.055;c.translate(ex,ey);c.scale(fs,1);c.drawImage(p._nsp,-nh*.7,-nh/2,nh*1.4,nh);c.scale(fs,1);c.translate(-ex,-ey)}
   if(A.ball==='hold')drawFootball(c,(J.w0x+J.w1x)/2+hh*.01,(J.w0y+J.w1y)/2-hh*.01,hh*.095,-.35,0);
   else if(A.ball==='cock')drawFootball(c,J.w1x,J.w1y,hh*.092,-.9,0);
@@ -9513,7 +9550,7 @@ function sceneLight(){
 }
 const fieldPPY=()=>Math.min(Math.floor(4096/(FLD.x1-FLD.x0)),Math.max(8,Math.ceil(sc*1.2*DPR)));
 function fieldKey(){const t=hostT(),lg=typeof teamLogo==='function'&&teamLogo(t)?1:0;
-  return [t.id,t.abbr,t.city,t.c1,t.c2,S.home.id,S.away.id,LG.settings.specialTurf!==false?1:0,wxKind(),lightStage(),fieldPPY(),lg].join('|')}
+  return [t.id,t.abbr,t.city,t.c1,t.c2,S.home.id,S.away.id,LG.settings.specialTurf!==false?1:0,wxKind(),lightStage(),fieldPPY(),lg,UNI_VER].join('|')}
 function ensureField(){if(FLD.cv&&(++FLD.chk%10))return;if(FLD.cv&&S.phase==='live')return;const k=fieldKey();if(k!==FLD.key){FLD.key=k;buildField()}}
 function grainTile(){
   if(FLD.grain)return FLD.grain;const n=document.createElement('canvas');n.width=n.height=256;const g=n.getContext('2d'),r=fRng(99);
@@ -9526,7 +9563,7 @@ function fieldDigits(g,ds){/* two-digit yard number centered on 0,0 in yards, 2 
 function buildField(){
   const t=hostT(),{x0,y0,x1,y1}=FLD,ppy=fieldPPY(),pv=ppy*VY,Wc=Math.ceil((x1-x0)*ppy),Hc=Math.ceil((y1-y0)*pv);
   const cv=FLD.cv||(FLD.cv=document.createElement('canvas'));if(cv.width!==Wc||cv.height!==Hc){cv.width=Wc;cv.height=Hc}
-  const g=cv.getContext('2d'),st=lightStage(),wk=wxKind(),night=st==='night',art=!!(LG.settings.specialTurf!==false&&SPECIAL_TURF[t.abbr]),tf=turfColors(false),r=fRng(t.id*7919+17);
+  const g=cv.getContext('2d'),st=lightStage(),wk=wxKind(),night=st==='night',art=!!(LG.settings.specialTurf!==false&&(SPECIAL_TURF[t.abbr]||stadOf(t).turf)),tf=turfColors(false),r=fRng(t.id*7919+17);
   FLD.ppy=ppy;FLD.art=art;
   const WS=()=>g.setTransform(ppy,0,0,pv,-x0*ppy,-y0*pv),PX=(x,y)=>g.setTransform(1,0,0,VY,(x-x0)*ppy,(y-y0)*pv);
   g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.clearRect(0,0,Wc,Hc);WS();
@@ -9538,7 +9575,7 @@ function buildField(){
   /* team areas behind the sidelines */
   g.globalAlpha=.3;g.fillStyle=S.home.c1;g.fillRect(35,FW+2,50,5);g.fillStyle=S.away.c1;g.fillRect(35,-6,50,4);g.globalAlpha=1;
   /* end zones in the host's colors */
-  const ez=EZ_STYLE[t.abbr]||'',lt=contrasty(t.c1,t.c2)?t.c2:inkOn(t.c1),ol=lum(lt)>.5?shade(t.c1,-.55):'#FFFFFF',name=String(t.city||t.name||t.abbr).toUpperCase();
+  const sez=stadOf(t).ez,ez=sez?(sez==='solid'?'':sez):EZ_STYLE[t.abbr]||'',lt=contrasty(t.c1,t.c2)?t.c2:inkOn(t.c1),ol=lum(lt)>.5?shade(t.c1,-.55):'#FFFFFF',name=String(t.city||t.name||t.abbr).toUpperCase();
   for(const ex of [0,110]){
     WS();g.fillStyle=t.c1;g.fillRect(ex,0,10,FW);
     if(ez==='check'){g.fillStyle=lt;for(let i=0;i<3;i++)for(let j=0;j<16;j++)if((i+j)%2)g.fillRect(ex+i*10/3,j*FW/16,10/3,FW/16)}
@@ -9583,8 +9620,11 @@ function bakeLight(g,st,wk,Wc,Hc){
   g.globalCompositeOperation='source-over';g.globalAlpha=1;
 }
 function fieldBadge(g,t){
-  const {x0,y0,ppy}=FLD,pv=ppy*VY,img=typeof teamLogo==='function'?teamLogo(t):null;
+  const {x0,y0,ppy}=FLD,pv=ppy*VY,img=t.bdg?null:typeof teamLogo==='function'?teamLogo(t):null;
+  if(stadOf(t).mid===0)return;
   g.setTransform(ppy,0,0,pv,(60-x0)*ppy,(CEN-y0)*pv);
+  /* a badge from the badge designer (10c) */
+  if(t.bdg&&typeof bdgCanvas==='function'){const b=bdgCanvas(t,256),bh=9.4,bw=bh/1.1;g.globalAlpha=.95;g.drawImage(b,-bw/2,-bh/2,bw,bh);g.globalAlpha=1;return}
   if(img){try{const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,k=Math.min(11/iw,8.5/ih);g.globalAlpha=.95;g.drawImage(img,-iw*k/2,-ih*k/2,iw*k,ih*k);g.globalAlpha=1;return}catch(e){g.globalAlpha=1}}
   /* generated monogram shield (never a real logo) */
   const r=4.1,sh=k=>{g.beginPath();g.moveTo(-r*k,-r*.9*k);g.quadraticCurveTo(0,-r*1.1*k,r*k,-r*.9*k);g.lineTo(r*k,r*.15*k);g.quadraticCurveTo(r*.92*k,r*.82*k,0,r*1.18*k);g.quadraticCurveTo(-r*.92*k,r*.82*k,-r*k,r*.15*k);g.closePath()};
@@ -9682,7 +9722,7 @@ const stadAway=()=>hostT()===S.home?S.away:S.home;
 const stadAlt=t=>contrasty(t.c1,t.c2)?t.c2:lum(t.c1)>.5?'#1d2129':'#F2F3F5';
 const stadCv=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(w));c.height=Math.max(1,Math.ceil(h));return c};
 const stadH01=i=>{const v=Math.sin(i*127.1+311.7)*43758.5453;return v-Math.floor(v)};
-function stadKey(){const h=hostT(),a=stadAway();return [h.id,h.c1,h.c2,h.city,a.id,a.c1,a.c2,crowdTheme(),Math.round(crowdEmpty()*10),lightStage(),wxKind(),stadPPU(),stadStunt()?1:0,uniColors(S.home).j,uniColors(S.away).j].join('|')}
+function stadKey(){const h=hostT(),a=stadAway();return [h.id,h.c1,h.c2,h.city,a.id,a.c1,a.c2,crowdTheme(),Math.round(crowdEmpty()*10),lightStage(),wxKind(),stadPPU(),stadStunt()?1:0,uniColors(S.home).j,uniColors(S.away).j,UNI_VER].join('|')}
 function ensureStadium(){if(STAD.T&&(++STAD.chk%15))return;if(STAD.T&&S.phase==='live')return;const k=stadKey();if(k!==STAD.key||!STAD.T){STAD.key=k;buildStadium()}}
 function buildStadium(){
   STAD.ppu=stadPPU();const T={},lit=sceneLight().glow>.25,r=fRng(hostT().id*31+7);
@@ -9708,7 +9748,7 @@ function crowdTile(deck,mode,up){
   const P=STAD.ppu,lo=deck==='lo',n=lo?ST.loN:ST.upN,rh=(lo?ST.loH:ST.upH)*P,hr=.6*P,W0=Math.round(ST.tile*P),H0=Math.ceil(n*rh+hr),cv=stadCv(W0,H0),g=cv.getContext('2d');
   const h=hostT(),a=stadAway(),r=fRng(h.id*131+a.id*7+(lo?11:23)+mode.length*101),th=crowdTheme(),em=crowdEmpty(),st=lightStage(),night=st==='night',sw=.6*P,alt=stadAlt(h);
   if(lo&&mode==='main'&&stadStunt())mode='stunt';
-  const sA=shade(h.c1,-.5),sB=lum(h.c2)>.8?'#555b66':shade(h.c2,-.45),con=night?'#232a35':'#646b76',conD=night?'#141921':'#40464f';
+  const hs=h.stad||{},sA=hs.s1||shade(h.c1,-.5),sB=hs.s2||(lum(h.c2)>.8?'#555b66':shade(h.c2,-.45)),con=night?'#232a35':'#646b76',conD=night?'#141921':'#40464f';
   const mix=[h.c1,h.c1,h.c1,h.c1,h.c1,h.c2,alt,'#F2F3F5','#F2F3F5','#23272f','#2f3541','#6b7380',a.c1,'#3b5b8a','#8a3b3b','#c9b48a'],neon=['#39ff88','#ff3cac','#2de2ff',h.c1],tones=[...TONES,'#5C3A21'];
   const pickC=(b,q,j)=>mode==='vis'?(b<.55?a.c1:b<.75?stadAlt(a):mix[b*16|0])
     :mode==='stu'?(th==='white'?(b<.93?'#F2F3F5':h.c1):th==='black'?(b<.93?'#121418':h.c1):th==='stripe'?(b<.92?(j%2?h.c1:alt):'#F2F3F5'):th==='neon'?neon[b*4|0]:(b<.8?h.c1:alt))
@@ -10099,36 +10139,43 @@ function pausePanel(k){
   box.dataset.k=k;box.innerHTML=k==='box'?boxScoreHTML():k==='pbp'?pbpHTML():driveChartHTML()||'<p class="note">No completed drives yet.</p>';box.hidden=false;
 }
 
-/* uniforms: the host wears colors and the visitor white, unless you pick something else */
-const UNI_STYLES=[['auto','Traditional'],['color','Home colors'],['white','Road whites'],['alt','Alternate dark'],['rush','Color rush']];
-function uniStyle(team){
-  const pick=(LG.settings.uniform||'auto');
-  const userStyle=pick==='auto'?(hostT()===S.home?'color':'white'):pick;
-  if(team===S.home)return userStyle;
-  return userStyle==='white'?'color':'white';
+/* uniforms: four sets per team (10c: t.uni, uniSet). The set for a game is your pregame pick (g.uni), else the
+   team's rotation (postseason, rivalry, primetime, then home / road); x = game context {g,a,b,host,slot}, from S by default */
+const UNI_STYLES=[['auto','Auto'],['H','Home'],['A','Away'],['L','Alternate'],['T','Throwback']];
+const uniCtxS=()=>({g:S.game,a:S.home,b:S.away,host:S.home?hostT():null,slot:S.slot});
+function uniStyle(team,x){
+  x=x||uniCtxS();const g=x.g,u=!!(LG&&team&&team.id===LG.user&&(team===x.a||team===x.b));
+  if(u&&g&&g.uni&&UNI_IDS.includes(g.uni))return g.uni;
+  if(u&&UNI_LEGACY[LG.settings.uniform])return UNI_LEGACY[LG.settings.uniform];   /* older saves: the old global pick */
+  const r=uniRot(team);
+  if(g&&(g.bowl||g.cfp||g.fcsp||g.ccg)&&r.po)return r.po;
+  if(g&&g.rival&&r.rv)return r.rv;
+  if(x.slot==='Primetime'&&r.pt)return r.pt;
+  return !x.host||team===x.host?r.hm:r.rd;
 }
 /* colour distance 0..1 (weighted "redmean" RGB) */
 const uniRGB=h=>{const n=parseInt(String(h).slice(1),16)||0;return [n>>16,n>>8&255,n&255]};
 function uniDist(a,b){const [r1,g1,b1]=uniRGB(a),[r2,g2,b2]=uniRGB(b),rm=(r1+r2)/2,dr=r1-r2,dg=g1-g2,db=b1-b2;return Math.sqrt((2+rm/256)*dr*dr+4*dg*dg+(2+(255-rm)/256)*db*db)/765}
-/* teams always read differently: when the road team's jersey or helmet is too close to the host's (Georgia at
-   Fresno State: both red helmets; a silver team in colors vs a white road set), the road team switches to a
-   contrasting set: the dark alternate (or whites against a dark host) for a jersey clash, a contrasting helmet and
-   darker trim for a helmet clash */
-function uniColors(team){
-  const u=uniBase(team);if(!S.home||!S.away||(team!==S.home&&team!==S.away)||team===hostT())return u;
-  const o=uniBase(team===S.home?S.away:S.home);
-  if(uniDist(u.j,o.j)<.2){if(lum(o.j)>.35)return {j:'#17191f',t:team.c1,p:'#17191f',h:'#17191f',s:'#17191f',mask:team.c1};const k=shade(team.c1,-.45);return {j:'#F1F2F4',t:k,p:'#D7DAE0',h:k,s:k,mask:'#C7CCD4'}}
-  if(uniDist(u.h,o.h)<.2||uniDist(u.h,o.j)<.12){
-    let h=u.h,bd=-1;for(const c of [team.c2,shade(team.c1,-.55),'#17191f','#F1F2F4']){if(!c)continue;const d=Math.min(uniDist(c,o.h),uniDist(c,o.j)*1.3,uniDist(c,u.j)*2);if(d>bd){bd=d;h=c}}
-    const t=lum(u.j)>.8?(lum(h)<.6?h:shade(team.c1,-.45)):u.t;return {...u,h,t,s:lum(u.j)>.8?t:u.s}}
-  return u;
+/* teams always read differently (Georgia at Fresno State: both red helmets; a silver team in colors vs a white road
+   set): when the road team's jersey is too close to the host's it changes into another of its own sets that reads
+   clearly (or, failing that, a generated dark / white set); a helmet clash recolors the helmet and its trim.
+   Returns the resolved set (10c field names plus the old j,t,p,h,s,mask) */
+function uniColors(team,x){
+  x=x||uniCtxS();const k=uniStyle(team,x),u=uniSet(team,k);
+  if(!x.a||!x.b||(team!==x.a&&team!==x.b)||team===x.host)return u;
+  const oT=team===x.a?x.b:x.a,o=uniSet(oT,uniStyle(oT,x));
+  if(uniDist(u.j,o.j)<.2){
+    let best=null,bd=-1;for(const s of UNI_IDS){if(s===k)continue;const v=uniSet(team,s),dj=uniDist(v.j,o.j);if(dj<.2)continue;const d=dj+.5*Math.min(.2,uniDist(v.h,o.h));if(d>bd){bd=d;best=v}}
+    if(best)return uniHelm(team,best,o);
+    const c1=team.c1,dk=shade(c1,-.45),keep={hf:u.hf,d:u.d,hs:u.hs,sl:u.sl,ps:u.ps,set:k};
+    return uniHelm(team,uniAl(lum(o.j)>.35?uniMk(team,'#17191F',c1,'#17191F','#17191F','#17191F',c1,keep):uniMk(team,'#F1F2F4',dk,'#D7DAE0',dk,dk,'#C7CCD4',keep)),o);
+  }
+  return uniHelm(team,u,o);
 }
-function uniBase(team){
-  const st=uniStyle(team),c1=team.c1,c2=team.c2,ct=contrasty(c1,c2);
-  if(st==='white')return {j:'#F1F2F4',t:c1,p:'#D7DAE0',h:c1,s:c1,mask:'#C7CCD4'};
-  if(st==='alt')return {j:'#17191f',t:c1,p:'#17191f',h:'#17191f',s:'#17191f',mask:c1};
-  if(st==='rush'){const j=lum(c2)>.85?shade(c1,-.35):c2;return {j,t:c1,p:j,h:j,s:j,mask:c1}}
-  return {j:c1,t:ct?c2:'#FFFFFF',p:ct?c2:'#E6E6E6',h:c1,s:ct?c2:'#FFFFFF',mask:'#C7CCD4'};
+function uniHelm(team,u,o){
+  if(uniDist(u.h,o.h)>=.2&&uniDist(u.h,o.j)>=.12)return u;
+  let h=u.h,bd=-1;for(const c of [team.c2,shade(team.c1,-.55),'#17191F','#F1F2F4']){if(!c)continue;const d=Math.min(uniDist(c,o.h),uniDist(c,o.j)*1.3,uniDist(c,u.j)*2);if(d>bd){bd=d;h=c}}
+  const tr=c=>contrasty(c,h)?c:inkOn(h);return Object.assign({},u,{h,hc:tr(u.hc),dc:tr(u.dc),t:u.n,s:u.k,mask:u.m});
 }
 /* body types by position */
 const BUILD={OL:[1.22,1.02],DL:[1.17,1.02],LB:[1.08,1],TE:[1.08,1.01],RB:[1.03,.97],WR:[.92,1.01],CB:[.92,.99],S:[.96,1],QB:[1,1.01],K:[.9,.97]};
@@ -10293,6 +10340,341 @@ function restorePick(e,done){
     $('#rfTo').innerHTML=s?`<b style="color:#FF8A96">Replaces slot ${v}:</b> ${esc(s.team)} · ${esc(s.coach)} · ${esc(s.name)}. It is kept as that slot's backup.`:`Slot ${v} is empty.`};
   document.querySelectorAll('#rfSlot button').forEach(b=>b.onclick=()=>pick(+b.dataset.v));pick(slot);on('rfX',closeModal);
   on('rfGo',async()=>{const b=$('#rfGo');b.disabled=true;b.textContent='Restoring…';try{await restoreEntry(e,slot);closeModal();toast(`Restored into slot ${slot}`);done&&done()}catch(err){console.error(err);b.disabled=false;b.textContent='Restore';toast('That backup could not be restored')}});
+}
+
+/* =========================================================
+   10c · Uniform & team builder: four uniform sets per team (Home, Away, Alternate, Throwback), game-day
+   rotation, a live preview, a badge designer, stadium style, create-a-school and share codes.
+   Everything is drawn from shapes, letters and colors the user picks: never a real logo or trademarked uniform.
+   Storage (every key optional; missing → the generated look from the team colors, so old saves load as before):
+     t.uni  = {H:{..},A:{..},L:{..},T:{..}  only the fields that differ from the generated set
+               rot:{hm,rd,rv,pt,po}  set for home / road / rivalry / primetime / postseason ('' = no override)
+               ask:1  pick before each game in the pregame show}
+       set fields: h helmet · hf finish m|g|c · m facemask · d decal L(etter) N(umber) S(tar) B(olt) M(onogram shield)
+                   G(imported logo) X(none) · dc decal color · hs helmet stripes 0-3 · hc stripe color · j jersey ·
+                   n numbers · no number outline ('' auto) · sl sleeve stripes 0-3 · sc sleeve stripe color · p pants ·
+                   ps pants stripes 0-3 · pc pants stripe color · k socks
+     t.bdg  = {sh shield|circle|diamond|hex, tx letters, bg, rim, fg, dec none|stars|stripe|stripes|ring, dc}
+     t.stad = {s1,s2 seat colors, ez solid|diag|check end zones, turf color ('' natural), mid 0 hides the midfield badge}
+   uniStyle / uniColors (10-features) pick the set for a game and run the clash check; 08d draws it.
+   ========================================================= */
+const UNI_SETS=[['H','Home'],['A','Away'],['L','Alternate'],['T','Throwback']],UNI_IDS=['H','A','L','T'];
+const UNI_KEYS=['h','hf','m','d','dc','hs','hc','j','n','no','sl','sc','p','ps','pc','k'];
+const UNI_ROT0={hm:'H',rd:'A',rv:'',pt:'',po:''},UNI_LEGACY={color:'H',white:'A',alt:'L',rush:'T'};
+let UNI_VER=1;   /* bumped on every uniform / badge / stadium change: the player, field and stadium caches compare it */
+const uniHex=v=>/^#[0-9a-f]{6}$/i.test(String(v||''))?String(v).toUpperCase():null;
+const uniRot=t=>Object.assign({},UNI_ROT0,t&&t.uni&&t.uni.rot);
+/* one generated set: trims follow the old look (numbers / stripes contrast with what they sit on) */
+function uniMk(t,j,tr,p,h,k,m,x){
+  const c1=t.c1||'#33415E',c2=t.c2||'#FFFFFF',n=contrasty(tr,j)?tr:inkOn(j),hc=contrasty(tr,h)?tr:contrasty(c2,h)?c2:inkOn(h),pc=contrasty(tr,p)?tr:contrasty(c1,p)?c1:inkOn(p);
+  const id=t.id|0,dk=id%5,d=typeof teamLogoURL==='function'&&teamLogoURL(t)?'G':dk===3?'S':dk===4?'B':'L';
+  return Object.assign({h,hf:id%3===0?'m':'g',m,d,dc:hc,hs:1,hc,j,n,no:'',sl:0,sc:n,p,ps:1,pc,k},x);
+}
+function uniGen(t){
+  const c1=t.c1||'#33415E',c2=t.c2||'#FFFFFF',ct=contrasty(c1,c2),rj=lum(c2)>.85?shade(c1,-.35):c2;
+  return {H:uniMk(t,c1,ct?c2:'#FFFFFF',ct?c2:'#E6E6E6',c1,ct?c2:'#FFFFFF','#C7CCD4'),
+    A:uniMk(t,'#F1F2F4',c1,'#D7DAE0',c1,c1,'#C7CCD4'),
+    L:uniMk(t,'#17191F',c1,'#17191F','#17191F','#17191F',c1),
+    T:uniMk(t,rj,c1,'#EDE6D6',rj,c1,'#C7CCD4',{hf:'m',d:'N',sl:3,ps:2})};
+}
+/* the resolved set k for team t (stored edits over the generated look) + the old field names (t trim, s socks, mask) */
+const uniAl=s=>{s.t=s.n;s.s=s.k;s.mask=s.m;return s};
+function uniSet(t,k){const g=uniGen(t),s=g[k]||g.H,o=t&&t.uni&&t.uni[k];if(o)for(const f of UNI_KEYS)if(o[f]!=null)s[f]=o[f];s.set=k;return uniAl(s)}
+function uniClean(f,v){
+  if(f==='hf')return ['m','g','c'].includes(v)?v:null;
+  if(f==='d')return typeof v==='string'&&v.length===1&&'LNSBMGX'.includes(v)?v:null;
+  if(f==='hs'||f==='sl'||f==='ps'){v=+v;return v>=0&&v<=3?v|0:null}
+  if(f==='no'&&v==='')return '';
+  return uniHex(v);
+}
+/* uniColors cached per team for the current matchup / pick / edits (retro sprites ask every frame) */
+const UNI_CC=new Map();
+function uniColorsC(team){const o=team===S.home?S.away:S.home,k=uniStyle(team)+UNI_VER+'|'+(o?o.id:'')+'|'+hostT().id+(S.game?S.game.uni:'')+team.c1+team.c2;let e=UNI_CC.get(team);if(e&&e.k===k)return e.u;const u=uniColors(team);UNI_CC.set(team,{k,u});return u}
+const uniArr=U=>UNI_KEYS.map(f=>U[f]);
+function uniFromArr(a){if(!Array.isArray(a))return null;const o={};UNI_KEYS.forEach((f,i)=>{const v=uniClean(f,a[i]);if(v!=null)o[f]=v});return Object.keys(o).length?o:null}
+function uniRotClean(r){const o={};if(r&&typeof r==='object')for(const k in UNI_ROT0){const v=r[k];if(v===''&&(k!=='hm'&&k!=='rd'))o[k]='';else if(UNI_IDS.includes(v))o[k]=v}return o}
+/* store only what differs from the generated look */
+function uniCommit(t,sets,rot,ask){
+  const gen=uniGen(t),u={};
+  for(const k of UNI_IDS){const d={};for(const f of UNI_KEYS){const a=sets[k][f],b=gen[k][f];if(String(a).toUpperCase()!==String(b).toUpperCase())d[f]=a}if(Object.keys(d).length)u[k]=d}
+  const r={};for(const x in UNI_ROT0)if(rot[x]!==UNI_ROT0[x])r[x]=rot[x];if(Object.keys(r).length)u.rot=r;if(ask)u.ask=1;
+  if(Object.keys(u).length)t.uni=u;else delete t.uni;UNI_VER++;
+}
+
+/* ---------- share codes (LZString, like save codes) ---------- */
+const uniEnc=(tag,o)=>tag+':'+LZString.compressToEncodedURIComponent(JSON.stringify(o));
+function uniDec(code){const m=/^(GLU1|GLS1):(.+)$/.exec(String(code||'').trim().replace(/\s+/g,''));if(!m)return null;
+  try{const o=JSON.parse(LZString.decompressFromEncodedURIComponent(m[2]));return o?{kind:m[1],o}:null}catch(e){return null}}
+const uniStr=(v,n)=>String(v==null?'':v).replace(/[<>]/g,'').trim().slice(0,n);
+function schoolCode(t){return uniEnc('GLS1',{c:t.city,n:t.name,a:t.abbr,c1:t.c1,c2:t.c2,st:t.stadium,b:t.bdg||null,s:t.stad||null,u:Object.fromEntries(UNI_IDS.map(k=>[k,uniArr(uniSet(t,k))])),r:t.uni&&t.uni.rot||null,k:t.uni&&t.uni.ask?1:0})}
+function schoolFromCode(o){
+  if(!o||typeof o!=='object')return null;const c1=uniHex(o.c1),c2=uniHex(o.c2);if(!c1||!c2||!uniStr(o.c,22))return null;
+  const sets={};if(o.u&&typeof o.u==='object')for(const k of UNI_IDS){const s=uniFromArr(o.u[k]);if(s)sets[k]=s}
+  return {city:uniStr(o.c,22),name:uniStr(o.n,16)||'Tigers',abbr:uniStr(o.a,4).toUpperCase()||uniStr(o.c,3).toUpperCase(),c1,c2,stadium:uniStr(o.st,30),bdg:bdgClean(o.b),stad:stadClean(o.s),sets,rot:uniRotClean(o.r),ask:!!o.k};
+}
+
+/* ---------- badge designer: an original generated mark (shape + letters + stars / stripes) ---------- */
+const BDG_SH=[['shield','Shield'],['circle','Circle'],['diamond','Diamond'],['hex','Hexagon']],BDG_DEC=[['none','None'],['stars','Stars'],['stripe','Stripe'],['stripes','Pinstripes'],['ring','Ring']];
+function bdgClean(b){if(!b||typeof b!=='object')return null;const o={};
+  if(BDG_SH.some(([k])=>k===b.sh))o.sh=b.sh;if(BDG_DEC.some(([k])=>k===b.dec))o.dec=b.dec;if(b.tx!=null)o.tx=uniStr(b.tx,4).toUpperCase().replace(/[^A-Z0-9&]/g,'');
+  for(const k of ['bg','rim','fg','dc']){const v=uniHex(b[k]);if(v)o[k]=v}return o}
+function bdgOf(t){const b=t.bdg||{},c1=t.c1||'#33415E',c2=t.c2||'#FFFFFF',ink=contrasty(c1,c2)?c2:inkOn(c1);
+  return {sh:b.sh||'shield',tx:(b.tx!=null&&b.tx!==''?b.tx:String(t.abbr||'').toUpperCase()).slice(0,4),bg:b.bg||c1,rim:b.rim||c2,fg:b.fg||ink,dec:b.dec||'stars',dc:b.dc||ink}}
+/* path of a badge shape in a w × 1.1w box, scaled k around its center */
+function bdgPath(g,sh,w,k){const cx=w*.5,cy=w*.55,P=(x,y)=>[cx+(x*w-cx)*k,cy+(y*w-cy)*k];g.beginPath();
+  if(sh==='circle'){g.arc(cx,cy,w*.47*k,0,TAU2);return}
+  if(sh==='diamond'){for(const [x,y] of [[.5,.03],[.97,.55],[.5,1.07],[.03,.55]])g.lineTo(...P(x,y));g.closePath();return}
+  if(sh==='hex'){for(let i=0;i<6;i++){const a=-Math.PI/2+i*Math.PI/3;g.lineTo(...P(.5+Math.cos(a)*.48,.55+Math.sin(a)*.5))}g.closePath();return}
+  g.moveTo(...P(.07,.1));g.quadraticCurveTo(...P(.5,-.01),...P(.93,.1));g.lineTo(...P(.93,.56));g.quadraticCurveTo(...P(.91,.93),...P(.5,1.08));g.quadraticCurveTo(...P(.09,.93),...P(.07,.56));g.closePath();
+}
+function bdgPaint(g,b,w,txt){
+  const sh=b.sh,cy=sh==='shield'?.6:.57;g.save();g.lineJoin='round';
+  bdgPath(g,sh,w,1);g.fillStyle=b.rim;g.fill();
+  bdgPath(g,sh,w,.84);g.fillStyle=b.bg;g.fill();g.save();g.clip();
+  g.fillStyle=b.dc;g.strokeStyle=b.dc;
+  if(b.dec==='stars')for(const [x,y] of sh==='shield'?[[.3,.26],[.5,.21],[.7,.26]]:[[.32,.3],[.5,.24],[.68,.3]])starPath(g,x*w,y*w,w*.06);
+  else if(b.dec==='stripe'){g.globalAlpha=.9;g.fillRect(w*.44,0,w*.12,w*1.1)}
+  else if(b.dec==='stripes'){g.globalAlpha=.85;g.fillRect(w*.27,0,w*.05,w*1.1);g.fillRect(w*.68,0,w*.05,w*1.1)}
+  else if(b.dec==='ring'){g.lineWidth=w*.035;bdgPath(g,sh,w,.68);g.stroke()}
+  g.globalAlpha=1;
+  const gr=g.createLinearGradient(0,0,0,w*.7);gr.addColorStop(0,'rgba(255,255,255,.2)');gr.addColorStop(1,'rgba(255,255,255,0)');g.fillStyle=gr;g.fillRect(0,0,w,w*.6);g.restore();
+  const s=txt!=null?txt:b.tx,n=s.length||1;let fs=w*(n<=1?.5:n===2?.42:n===3?.32:.26);g.font=`italic 900 ${fs}px ${FFONT}`;const mw=g.measureText(s).width,mx=w*.64;if(mw>mx){fs*=mx/mw;g.font=`italic 900 ${fs}px ${FFONT}`}
+  g.textAlign='center';g.textBaseline='middle';g.lineWidth=fs*.12;g.strokeStyle=lum(b.fg)>.5?shade(b.bg,-.6):'rgba(255,255,255,.9)';
+  const y=w*(cy+(b.dec==='stars'?.05:0));if(s){g.strokeText(s,w*.5,y);g.fillStyle=b.fg;g.fillText(s,w*.5,y)}
+  g.restore();
+}
+const BDG_CV=new Map();
+/* cached canvas (w × 1.1w) of a team's badge; mono: one or two letters (helmet decal size) */
+function bdgCanvas(t,w,mono){const b=bdgOf(t),tx=mono?(b.tx.length>2&&typeof monoOf==='function'?monoOf(t):b.tx.slice(0,2)):b.tx,k=JSON.stringify(b)+w+tx;let cv=BDG_CV.get(k);if(cv)return cv;
+  if(BDG_CV.size>48)BDG_CV.clear();cv=document.createElement('canvas');cv.width=w;cv.height=Math.ceil(w*1.1);bdgPaint(cv.getContext('2d'),b,w,tx);BDG_CV.set(k,cv);return cv}
+const BDG_URL=new Map();
+/* object URL of the badge picture for the HTML badge() (short URLs keep long lists light) */
+function bdgURL(t){const k=JSON.stringify(bdgOf(t));let u=BDG_URL.get(k);if(u)return u;
+  try{const d=bdgCanvas(t,120).toDataURL('image/png'),bin=atob(d.split(',')[1]),a=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)a[i]=bin.charCodeAt(i);u=URL.createObjectURL(new Blob([a],{type:'image/png'}))}catch(e){u=bdgCanvas(t,120).toDataURL()}
+  if(BDG_URL.size>60){for(const v of BDG_URL.values())if(String(v).startsWith('blob:'))try{URL.revokeObjectURL(v)}catch(_){}BDG_URL.clear()}BDG_URL.set(k,u);return u}
+
+/* ---------- stadium style ---------- */
+const STAD_EZ=[['solid','Solid'],['diag','Stripes'],['check','Checker']];
+function stadClean(s){if(!s||typeof s!=='object')return null;const o={};for(const k of ['s1','s2','turf']){const v=uniHex(s[k]);if(v)o[k]=v}if(STAD_EZ.some(([k])=>k===s.ez))o.ez=s.ez;if(s.mid===0)o.mid=0;return o}
+const stadOf=t=>(t&&t.stad)||{};
+
+/* ---------- preview renderer: a front / back view that turns, plus the in-game helmet in profile ---------- */
+const UNI_SKIN='#B98457';
+function uniFig(g,U,team,cx,base,s,th,num){
+  const co=Math.cos(th),sx=Math.max(.05,Math.abs(co)),back=co<0,gl=lum(U.j)>.8?team.c1:contrasty(U.n,U.j)?U.n:inkOn(U.j);
+  const poly=(a,col)=>{g.fillStyle=col;g.beginPath();for(let i=0;i<a.length;i+=2)g.lineTo(a[i],a[i+1]);g.closePath();g.fill()};
+  const rect=(x,y,w,h,col)=>{g.fillStyle=col;g.fillRect(x,y,w,h)},ell=(x,y,rx,ry,col)=>{g.fillStyle=col;g.beginPath();g.ellipse(x,y,rx,ry,0,0,TAU2);g.fill()};
+  const lp=(P,Q,t)=>[P[0]+(Q[0]-P[0])*t,P[1]+(Q[1]-P[1])*t];
+  g.save();g.translate(cx,base);ell(0,0,s*.21,s*.03,'rgba(0,0,0,.3)');g.scale(sx*s,s);
+  rect(-.118,-.255,.078,.24,U.k);rect(.04,-.255,.078,.24,U.k);rect(-.118,-.255,.078,.03,shade(U.k,-.18));rect(.04,-.255,.078,.03,shade(U.k,-.18));
+  ell(-.08,-.014,.056,.022,'#14161b');ell(.08,-.014,.056,.022,'#14161b');
+  poly([-.155,-.5,.155,-.5,.162,-.238,.03,-.238,0,-.34,-.03,-.238,-.162,-.238],U.p);rect(-.155,-.507,.31,.022,shade(U.p,-.3));
+  for(let i=0;i<(U.ps|0);i++){const o=.008+i*.02;rect(-.16+o,-.485,.011,.245,U.pc);rect(.149-o,-.485,.011,.245,U.pc)}
+  g.lineCap='round';for(const d of [-1,1]){g.strokeStyle=UNI_SKIN;g.lineWidth=.05;g.beginPath();g.moveTo(d*.272,-.66);g.lineTo(d*.292,-.5);g.stroke();ell(d*.294,-.477,.034,.037,gl)}
+  for(const d of [-1,1]){const A=[d*.19,-.818],B=[d*.31,-.7],C=[d*.265,-.624],D=[d*.168,-.703];poly([...A,...B,...C,...D],U.j);
+    for(let i=0;i<(U.sl|0);i++){const t0=.52+i*.15,t1=t0+.085;poly([...lp(A,B,t0),...lp(A,B,t1),...lp(D,C,t1),...lp(D,C,t0)],U.sc)}}
+  poly([-.2,-.818,.2,-.818,.152,-.49,-.152,-.49],U.j);ell(0,-.812,.214,.042,U.j);poly([.07,-.83,.2,-.818,.152,-.49,.06,-.49],'rgba(0,0,0,.12)');
+  if(!back){rect(-.036,-.88,.072,.075,UNI_SKIN);poly([-.055,-.836,.055,-.836,0,-.79],shade(U.j,-.32))}else rect(-.04,-.875,.08,.06,UNI_SKIN);
+  {g.save();g.scale(1/s,1/s);const t=String(num==null?'':num),fs=(back?.2:.14)*s;g.font=`900 ${fs}px ${FFONT}`;g.textAlign='center';g.textBaseline='middle';g.lineJoin='round';g.lineWidth=fs*.14;
+    g.strokeStyle=U.no||(lum(U.n)>.55?'rgba(0,0,0,.55)':'rgba(255,255,255,.65)');const y=(back?-.665:-.655)*s;g.strokeText(t,0,y);g.fillStyle=U.n;g.fillText(t,0,y);g.restore()}
+  g.save();g.beginPath();g.ellipse(0,-.935,.098,.106,0,0,TAU2);g.fillStyle=U.h;g.fill();g.clip();
+  const hs=U.hs|0;if(hs===1)rect(-.019,-1.05,.038,.26,U.hc);else if(hs===2){rect(-.036,-1.05,.017,.26,U.hc);rect(.019,-1.05,.017,.26,U.hc)}else if(hs===3){rect(-.013,-1.05,.026,.26,U.hc);rect(-.045,-1.05,.01,.26,U.hc);rect(.035,-1.05,.01,.26,U.hc)}
+  if(U.hf==='c'){ell(-.02,-.975,.085,.03,'rgba(255,255,255,.42)');ell(.01,-.875,.09,.024,'rgba(0,0,0,.22)')}
+  ell(-.035,-.99,.036,.02,`rgba(255,255,255,${U.hf==='m'?.14:U.hf==='c'?.85:.48})`);rect(-.11,-.86,.22,.04,'rgba(0,0,0,.18)');g.restore();
+  if(!back){ell(0,-.893,.052,.05,UNI_SKIN);g.strokeStyle=U.m;g.lineWidth=.012;g.beginPath();g.moveTo(-.066,-.905);g.lineTo(.066,-.905);g.moveTo(-.058,-.872);g.lineTo(.058,-.872);g.moveTo(0,-.93);g.lineTo(0,-.85);g.moveTo(-.066,-.905);g.lineTo(-.05,-.85);g.lineTo(.05,-.85);g.lineTo(.066,-.905);g.stroke()}
+  g.restore();
+}
+function uniHelmetSide(g,U,team,x,y,r,num,e){const sv=ATH.glow;e=e||athMake(team,U,h=>h);ATH.glow='';ATJ.nx=x;ATJ.ny=y;g.lineCap='round';g.lineJoin='round';
+  try{athHelmet(g,r/.138,e,UNI_SKIN,team,false,1,num)}finally{ATH.glow=sv}}
+/* still picture of a set (thumbnails): front view + helmet */
+function uniThumb(cv,team,U,num){if(!cv)return;const dpr=Math.min(3,window.devicePixelRatio||1),w=cv.clientWidth||cv.width,h=cv.clientHeight||cv.height;cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);
+  const g=cv.getContext('2d');g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);uniFig(g,U,team,w*.36,h*.95,h*.88,.35,num);uniHelmetSide(g,U,team,w*.76,h*.3,Math.min(w*.17,h*.2),num)}
+const uniNum=t=>{const q=(t.roster||[]).filter(p=>p.pos==='QB').sort((a,b)=>(b.ovr||0)-(a.ovr||0))[0];return q&&q.num!=null?q.num:7};
+
+/* ---------- touch controls: swatches + segmented buttons ---------- */
+const UNI_PAL=['#FFFFFF','#F1F2F4','#17191F','#6B7280','#C7CCD4','#C9A227','#EDE6D6'];
+const SCHOOL_PAL=['#9E1B32','#BA0C2F','#E35205','#F2C230','#FFC72C','#154733','#00843D','#002855','#0033A0','#4B9CD3','#4F2683','#6A1B9A','#5B2C14','#17191F','#FFFFFF','#A2AAAD'];
+const uePal=t=>[...new Set([t.c1,t.c2||'#FFFFFF',shade(t.c1,-.45),...UNI_PAL].map(x=>String(x).toUpperCase()))];
+function swHTML(f,val,pal,auto){const v=String(val||'').toUpperCase(),has=pal.includes(v);
+  return `<div class="ue-sw" data-f="${f}" role="group">${auto?`<button data-v="" class="auto" aria-pressed="${!v}">${auto}</button>`:''}${pal.map(c=>`<button data-v="${c}" style="--c:${c}" aria-pressed="${c===v}" aria-label="Color ${c}"></button>`).join('')}<label class="cust" style="${v&&!has?'--c:'+v:''}" aria-pressed="${!!v&&!has}" title="Custom color"><input type="color" data-f="${f}" value="${uniHex(v)||'#FFFFFF'}" aria-label="Custom color"></label></div>`}
+const segHTML=(f,val,opts,num)=>`<div class="seg ue-seg" data-f="${f}"${num?' data-n="1"':''}>${opts.map(([v,l])=>`<button data-v="${v}" aria-pressed="${String(v)===String(val)}">${l}</button>`).join('')}</div>`;
+const rowHTML=(l,c)=>`<div class="ue-row"><span class="eyebrow">${l}</span>${c}</div>`;
+/* one delegated handler for every swatch row, custom color and segmented control under root; set(field,value) */
+function swBind(root,set){
+  root.addEventListener('click',e=>{const b=e.target.closest('button[data-v]');if(!b||!root.contains(b))return;const row=b.parentNode;if(!row.classList.contains('ue-sw')&&!row.classList.contains('ue-seg'))return;
+    const f=row.dataset.f;let v=b.dataset.v;if(row.dataset.n)v=+v;row.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));const cu=row.querySelector('.cust');if(cu){cu.setAttribute('aria-pressed','false');cu.style.removeProperty('--c')}set(f,v)});
+  root.addEventListener('input',e=>{const i=e.target;if(!i.matches('input[type=color][data-f]'))return;const v=i.value.toUpperCase(),row=i.closest('.ue-sw');
+    if(row){row.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed','false'));const cu=row.querySelector('.cust');cu.setAttribute('aria-pressed','true');cu.style.setProperty('--c',v)}set(i.dataset.f,v)});
+}
+function copyCode(ta){ta.value=ta.value||'';ta.focus();ta.select();try{navigator.clipboard.writeText(ta.value).then(()=>toast('Code copied'),()=>toast('Select all and copy'))}catch(e){toast('Select all and copy')}}
+
+/* ---------- uniform editor ---------- */
+const UE={raf:0,t:null,L:null,W:null,cur:'H',rot:null,ask:false,view:'rot',num:7,sig:'',e:null,done:null};
+const UE_DEC=t=>[['L','Letter'],['N','Number'],['S','Star'],['B','Bolt'],['M','Shield'],...(typeof teamLogoURL==='function'&&teamLogoURL(t)?[['G','Logo']]:[]),['X','None']];
+const UE_N=[[0,'None'],[1,'Single'],[2,'Double'],[3,'Triple']];
+function ueCtlHTML(){const t=UE.t,U=UE.W[UE.cur],P=uePal(t);
+  return `<div class="ue-sec"><div class="h3">Helmet</div>${rowHTML('Shell',swHTML('h',U.h,P))}${rowHTML('Finish',segHTML('hf',U.hf,[['m','Matte'],['g','Gloss'],['c','Chrome']]))}${rowHTML('Facemask',swHTML('m',U.m,P))}
+    ${rowHTML('Decal',segHTML('d',U.d,UE_DEC(t)))}${rowHTML('Decal color',swHTML('dc',U.dc,P))}${rowHTML('Stripes',segHTML('hs',U.hs,UE_N,1))}${rowHTML('Stripe color',swHTML('hc',U.hc,P))}</div>
+  <div class="ue-sec"><div class="h3">Jersey</div>${rowHTML('Jersey',swHTML('j',U.j,P))}${rowHTML('Numbers',swHTML('n',U.n,P))}${rowHTML('Number outline',swHTML('no',U.no,P,'Auto'))}
+    ${rowHTML('Sleeve stripes',segHTML('sl',U.sl,[[0,'None'],[1,'1'],[2,'2'],[3,'3']],1))}${rowHTML('Sleeve stripe color',swHTML('sc',U.sc,P))}</div>
+  <div class="ue-sec"><div class="h3">Pants &amp; socks</div>${rowHTML('Pants',swHTML('p',U.p,P))}${rowHTML('Pants stripe',segHTML('ps',U.ps,UE_N,1))}${rowHTML('Stripe color',swHTML('pc',U.pc,P))}${rowHTML('Socks',swHTML('k',U.k,P))}</div>
+  <div class="btns"><button class="btn sm ghost" id="ueReset">Reset ${UNI_SETS.find(x=>x[0]===UE.cur)[1]} to default</button></div>`}
+function ueRotHTML(){const r=UE.rot,S4=UNI_SETS.map(([k,l])=>[k,l]),opt=[['','Normal'],...S4];
+  return `<div class="card ue-rotc"><div class="h2">Game-day rotation</div>
+    ${rowHTML('How to choose',segHTML('ask',UE.ask?1:0,[[0,'Automatic'],[1,'Pick before each game']],1))}
+    ${rowHTML('Home games',segHTML('r:hm',r.hm,S4))}${rowHTML('Road games',segHTML('r:rd',r.rd,S4))}
+    ${rowHTML('Rivalry games',segHTML('r:rv',r.rv,opt))}${rowHTML('Primetime',segHTML('r:pt',r.pt,opt))}${rowHTML('Bowls &amp; playoff',segHTML('r:po',r.po,opt))}
+    <p class="note">Bowls and the playoff come first, then rivalry, then primetime, then home or road. ${UE.t.id===(UE.L&&UE.L.user)?'With "Pick before each game" the pregame show asks which set to wear. ':''}If both teams would look alike, the road team switches to a set that reads clearly.</p></div>`}
+function openUniEditor(id,done,L){
+  L=L||LG;const t=L.teams[id];if(!t)return;
+  Object.assign(UE,{t,L,cur:'H',view:'rot',sig:'',e:null,done,num:uniNum(t),rot:uniRot(t),ask:!!(t.uni&&t.uni.ask),W:Object.fromEntries(UNI_IDS.map(k=>[k,uniSet(t,k)]))});
+  openModal(`<div class="ue" id="ueRoot"><div class="ue-head">${badge(t,'')}<div style="min-width:0"><div class="eyebrow">Uniform editor</div><div class="h2">${esc(teamName(t))}</div></div></div>
+    <div class="seg ue-tabs" id="ueSets">${UNI_SETS.map(([k,l])=>`<button data-k="${k}" aria-pressed="${k===UE.cur}">${l}</button>`).join('')}</div>
+    <div class="ue-grid"><div class="ue-prev"><canvas id="uePrev" aria-label="Uniform preview"></canvas><div class="seg" id="ueView">${[['rot','Turn'],['front','Front'],['back','Back']].map(([k,l])=>`<button data-k="${k}" aria-pressed="${k==='rot'}">${l}</button>`).join('')}</div></div>
+      <div class="ue-ctl" id="ueCtl">${ueCtlHTML()}</div></div>
+    ${ueRotHTML()}
+    <div class="card"><div class="h2">Share codes</div><p class="note">A set code carries one uniform; a school code carries the whole look (name, colors, badge, stadium and all four sets). Paste either one here to wear it.</p>
+      <div class="btns"><button class="btn sm ghost" id="ueCopySet">Copy set code</button><button class="btn sm ghost" id="ueCopyAll">Copy school code</button><button class="btn sm ghost" id="uePaste">Paste a code</button></div>
+      <div id="ueShare" hidden><textarea id="ueCode" rows="3" spellcheck="false" placeholder="GLU1:… or GLS1:…"></textarea><div class="btns"><button class="btn sm" id="ueApply">Apply code</button></div><p class="note" id="ueMsg"></p></div></div>
+    <div class="btns cta"><button class="btn" id="ueSave">Save uniforms</button><button class="btn ghost" id="ueX">Cancel</button></div></div>`,true);
+  const root=$('#ueRoot');
+  swBind(root,(f,v)=>{if(f==='ask'){UE.ask=!!v;return}if(f.startsWith('r:')){UE.rot[f.slice(2)]=v;return}UE.W[UE.cur][f]=v});
+  const tabs=(sel,k,fn)=>$(sel).querySelectorAll('button').forEach(b=>b.onclick=()=>{$(sel).querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));fn(b.dataset[k])});
+  const ctl=()=>{$('#ueCtl').innerHTML=ueCtlHTML();on('ueReset',()=>{UE.W[UE.cur]=uniGen(UE.t)[UE.cur];ctl()})};ctl();
+  tabs('#ueSets','k',k=>{UE.cur=k;ctl()});tabs('#ueView','k',k=>{UE.view=k});
+  const share=(code,msg)=>{$('#ueShare').hidden=false;const ta=$('#ueCode');ta.value=code||'';$('#ueMsg').textContent=msg||'';if(code)copyCode(ta);else ta.focus()};
+  on('ueCopySet',()=>share(uniEnc('GLU1',uniArr(UE.W[UE.cur])),UNI_SETS.find(x=>x[0]===UE.cur)[1]+' set code. Copy it and paste it into any team’s uniform editor.'));
+  on('ueCopyAll',()=>{const tmp={...UE.t};uniCommit(tmp,UE.W,UE.rot,UE.ask);share(schoolCode(tmp),'School code: paste it in Create a school (League tab or a new dynasty).')});
+  on('uePaste',()=>share('','Paste a set code (GLU1:) or a school code (GLS1:), then Apply.'));
+  on('ueApply',()=>{const r=uniDec($('#ueCode').value);if(!r){$('#ueMsg').textContent='That code could not be read.';return}
+    if(r.kind==='GLU1'){const s=uniFromArr(r.o);if(!s){$('#ueMsg').textContent='That set code is empty.';return}Object.assign(UE.W[UE.cur],s);toast('Set applied to '+UNI_SETS.find(x=>x[0]===UE.cur)[1])}
+    else{const sc=schoolFromCode(r.o);if(!sc){$('#ueMsg').textContent='That school code could not be read.';return}for(const k of UNI_IDS)if(sc.sets[k])Object.assign(UE.W[k],sc.sets[k]);Object.assign(UE.rot,sc.rot);UE.ask=sc.ask;$('.ue-rotc').outerHTML=ueRotHTML();toast('Uniforms from '+sc.city+' applied')}
+    ctl()});
+  on('ueSave',()=>{uniCommit(UE.t,UE.W,UE.rot,UE.ask);closeModal();if(UE.L===LG&&typeof saveNow==='function')saveNow();toast('Uniforms saved');UE.done&&UE.done()});
+  on('ueX',()=>{closeModal();UE.done&&UE.done()});
+  const cv=$('#uePrev'),fit=()=>{const tall=innerHeight>innerWidth,ar=tall?.62:.74,maxH=Math.max(150,innerHeight*(tall?.3:.48)),w=Math.round(Math.max(180,Math.min(cv.parentNode.clientWidth-16||300,380,maxH/ar))),h=Math.round(w*ar),dpr=Math.min(3,window.devicePixelRatio||1);cv.style.width=w+'px';cv.style.height=h+'px';cv.width=Math.round(w*dpr);cv.height=Math.round(h*dpr);cv._dpr=dpr};
+  fit();cancelAnimationFrame(UE.raf);const loop=now=>{if(!cv.isConnected||$('#modal').hidden){UE.raf=0;return}ueDraw(cv,now);UE.raf=requestAnimationFrame(loop)};UE.raf=requestAnimationFrame(loop);
+}
+function ueDraw(cv,now){
+  const g=cv.getContext('2d'),dpr=cv._dpr||1,w=cv.width/dpr,h=cv.height/dpr,t=UE.t,U=UE.W[UE.cur],sig=JSON.stringify(U);
+  if(UE.sig!==sig){UE.sig=sig;UE.e=athMake(t,U,x=>x)}
+  g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  const th=UE.view==='front'?0:UE.view==='back'?Math.PI:now/1150;
+  uniFig(g,U,t,w*.33,h*.95,h*.86,th,UE.num);
+  uniHelmetSide(g,U,t,w*.75,h*.4,Math.min(w*.16,h*.24),UE.num,UE.e);
+  g.font=`700 11px ${FFONT}`;g.textAlign='center';g.fillStyle='rgba(220,230,245,.6)';g.fillText(UNI_SETS.find(x=>x[0]===UE.cur)[1].toUpperCase()+' · '+({m:'MATTE',g:'GLOSS',c:'CHROME'}[U.hf]||''),w*.75,h*.74);
+}
+
+/* ---------- school builder: create a school or edit one (name, colors, badge, stadium, league slot) ---------- */
+const SB={st:null,L:null,t:null,mode:'edit'};
+function sbTeam(){const s=SB.st,b=SB.t;return {...(b||{}),id:b?b.id:997,city:s.city||'Your School',name:s.name||'Mascots',abbr:(s.abbr||s.city.slice(0,3)||'YOU').toUpperCase(),c1:s.c1,c2:s.c2,bdg:s.bdg||{},stad:s.stad,stadium:s.stadium,logo:'',logoDark:''}}
+function sbHTML(){
+  const s=SB.st,create=SB.mode==='create',L=SB.L,tm=sbTeam(),b=bdgOf(tm),P=uePal(tm),st=s.stad||{};
+  const confs=L.confs.map((c,i)=>c.ind?'':`<option value="${i}" ${i===s.conf?'selected':''}>${esc(c.name)} · ${c.div}</option>`).join('');
+  const reps=create?L.teams.filter(x=>x.conf===s.conf&&!(LG&&L===LG&&x.id===L.user)).sort((a,b)=>qOf(a)-qOf(b)).map(x=>`<option value="${x.id}" ${x.id===s.rep?'selected':''}>${esc(teamName(x))}</option>`).join(''):'';
+  return `<div class="sb" id="sbRoot"><div class="eyebrow">${create?'Build from scratch':'Edit school'}</div><div class="h2">${create?'Create a school':esc(teamName(SB.t))}</div>
+    <div class="sb-top"><canvas id="sbBadge" width="120" height="132" aria-label="Badge preview"></canvas><div class="sb-id">
+      <div class="field-row"><label for="sbCity">School</label><input type="text" id="sbCity" data-k="city" maxlength="22" value="${esc(s.city)}" placeholder="Riverside State"></div>
+      <div class="field-row"><label for="sbName">Mascot</label><input type="text" id="sbName" data-k="name" maxlength="16" value="${esc(s.name)}" placeholder="Thunder"></div>
+      <div class="colors"><div class="field-row"><label for="sbAbbr">Abbreviation</label><input type="text" id="sbAbbr" data-k="abbr" maxlength="4" value="${esc(s.abbr)}" placeholder="RSU" style="text-transform:uppercase;width:92px"></div>
+      <div class="field-row" style="flex:1;min-width:150px"><label for="sbStad">Stadium</label><input type="text" id="sbStad" data-k="stadium" maxlength="30" value="${esc(s.stadium)}" placeholder="Riverside Stadium"></div></div></div></div>
+    <div class="card"><div class="h2">Colors</div>${rowHTML('Primary',swHTML('t:c1',s.c1,SCHOOL_PAL))}${rowHTML('Secondary',swHTML('t:c2',s.c2,SCHOOL_PAL))}</div>
+    <div class="card"><div class="h2">Badge</div><p class="note">Your badge shows on every schedule, ranking and team page, at midfield and as the Shield helmet decal.</p>
+      ${rowHTML('Shape',segHTML('b:sh',b.sh,BDG_SH))}<div class="ue-row"><span class="eyebrow">Letters</span><input type="text" id="sbTx" maxlength="4" value="${esc(s.bdg&&s.bdg.tx!=null?s.bdg.tx:'')}" placeholder="${esc(tm.abbr)}" style="text-transform:uppercase;max-width:140px"></div>
+      ${rowHTML('Background',swHTML('b:bg',b.bg,P))}${rowHTML('Rim',swHTML('b:rim',b.rim,P))}${rowHTML('Letters color',swHTML('b:fg',b.fg,P))}${rowHTML('Decoration',segHTML('b:dec',b.dec,BDG_DEC))}${rowHTML('Decoration color',swHTML('b:dc',b.dc,P))}
+      ${!create&&s.bdg?'<div class="btns"><button class="btn sm ghost" id="sbClassic">Use the classic badge</button></div>':''}</div>
+    <div class="card"><div class="h2">Stadium</div><canvas id="sbField" aria-label="Field preview"></canvas>
+      ${rowHTML('Seats',swHTML('s:s1',st.s1||'',P,'Auto'))}${rowHTML('Seat accent',swHTML('s:s2',st.s2||'',P,'Auto'))}${rowHTML('End zones',segHTML('s:ez',st.ez||'solid',STAD_EZ))}
+      ${rowHTML('Turf',swHTML('s:turf',st.turf||'',['#3A8A3D','#1D4FB0','#B3262D','#6D6F76','#1B8F8C','#4F2D7F','#2B2D33'],'Natural'))}${rowHTML('Midfield badge',segHTML('s:mid',st.mid===0?0:1,[[1,'On'],[0,'Off']],1))}</div>
+    ${create?`<div class="card"><div class="h2">Join the league</div><div class="field-row"><label for="sbConf">Conference</label><select id="sbConf">${confs}</select></div>
+      <div class="field-row"><label for="sbRep">Takes the place of</label><select id="sbRep">${reps}</select></div>
+      ${LG&&L===LG?`${rowHTML('Roster',segHTML('x:keep',s.keep?1:0,[[1,'Keep their players'],[0,'New 1-star roster']],1))}<p class="note">The schedule stays as it is: your school plays the games already on that team's calendar, and its record so far carries over.</p>`:'<p class="note">Your school starts at one-star prestige with a thin roster.</p>'}</div>`:''}
+    <div class="card"><div class="h2">Share</div><p class="note">${create?'Paste a school code (GLS1:) to start from someone else’s design.':'Copy a school code to rebuild this look in another dynasty.'}</p>
+      <div class="btns">${create?'':'<button class="btn sm ghost" id="sbCopy">Copy school code</button>'}<button class="btn sm ghost" id="sbPaste">Paste a school code</button></div>
+      <div id="sbShare" hidden><textarea id="sbCode" rows="3" spellcheck="false" placeholder="GLS1:…"></textarea><div class="btns"><button class="btn sm" id="sbApply">Apply code</button></div></div></div>
+    <p class="note" id="sbErr"></p>
+    <div class="btns cta"><button class="btn" id="sbGo">${create?(LG&&L===LG?'Add to league':'Create &amp; coach'):'Save'}</button>${!create&&L===LG?'<button class="btn ghost" id="sbUni">Uniforms</button>':''}<button class="btn ghost" id="sbX">Cancel</button></div></div>`;
+}
+function sbDraw(){
+  const tm=sbTeam(),cb=$('#sbBadge');if(cb){const g=cb.getContext('2d');g.setTransform(1,0,0,1,0,0);g.clearRect(0,0,120,132);bdgPaint(g,bdgOf(tm),120)}
+  const cf=$('#sbField');if(!cf)return;const w=Math.max(220,cf.parentNode.clientWidth-2||300),h=Math.round(w*.3),dpr=Math.min(3,window.devicePixelRatio||1);if(cf.width!==Math.round(w*dpr)){cf.style.width=w+'px';cf.style.height=h+'px';cf.width=Math.round(w*dpr);cf.height=Math.round(h*dpr)}
+  const g=cf.getContext('2d'),st=tm.stad||{},seat=h*.2,fy=seat+2,fh=h-fy,ez=w*.09,turf=st.turf||'#3A8A3D';g.setTransform(dpr,0,0,dpr,0,0);g.clearRect(0,0,w,h);
+  for(let i=0;i<20;i++){g.fillStyle=i%2?(st.s2||(lum(tm.c2)>.8?'#555b66':shade(tm.c2,-.45))):(st.s1||shade(tm.c1,-.5));g.fillRect(i*w/20,0,w/20+1,seat)}
+  for(let i=0;i<20;i++){g.fillStyle=i%2?shade(turf,-.1):turf;g.fillRect(ez+i*(w-2*ez)/20,fy,(w-2*ez)/20+1,fh)}
+  for(const x of [0,w-ez]){g.fillStyle=tm.c1;g.fillRect(x,fy,ez,fh);const lt=contrasty(tm.c1,tm.c2)?tm.c2:inkOn(tm.c1);g.save();g.beginPath();g.rect(x,fy,ez,fh);g.clip();
+    if(st.ez==='check'){g.fillStyle=lt;for(let i=0;i<3;i++)for(let j=0;j<8;j++)if((i+j)%2)g.fillRect(x+i*ez/3,fy+j*fh/8,ez/3,fh/8)}
+    else if(st.ez==='diag'){g.fillStyle=shade(tm.c1,-.25);for(let k=-fh;k<fh*2;k+=fh/6){g.beginPath();g.moveTo(x,fy+k);g.lineTo(x+ez,fy+k-ez*.6);g.lineTo(x+ez,fy+k-ez*.6+fh/14);g.lineTo(x,fy+k+fh/14);g.fill()}}
+    g.translate(x+ez/2,fy+fh/2);g.rotate(x?Math.PI/2:-Math.PI/2);g.font=`italic 900 ${Math.min(ez*.7,fh*.9/Math.max(4,tm.city.length)*1.5)}px ${FFONT}`;g.textAlign='center';g.textBaseline='middle';g.fillStyle=lt;g.fillText(tm.city.toUpperCase(),0,0);g.restore()}
+  g.fillStyle='rgba(255,255,255,.8)';for(let i=0;i<=10;i++)g.fillRect(ez+i*(w-2*ez)/10-.5,fy,1,fh);
+  if(st.mid!==0){const bh=fh*.62,bw=bh/1.1;g.drawImage(bdgCanvas(tm,128),w/2-bw/2,fy+fh/2-bh/2,bw,bh)}
+}
+function openSchoolBuilder(o){
+  const L=o.L||LG,t=o.id!=null?L.teams[o.id]:null,create=o.mode==='create';
+  const conf0=create?(t?t.conf:L.confs.findIndex(c=>!c.ind)):0;
+  SB.L=L;SB.t=t;SB.mode=create?'create':'edit';
+  SB.st=create?{city:'',name:'',abbr:'',stadium:'',c1:'#6A1B9A',c2:'#F2C230',bdg:{},stad:{},conf:conf0,rep:null,keep:1,sets:null,rot:null,ask:false}
+    :{city:t.city,name:t.name,abbr:t.abbr,stadium:t.stadium||'',c1:String(t.c1).toUpperCase(),c2:String(t.c2).toUpperCase(),bdg:t.bdg?{...t.bdg}:null,stad:{...(t.stad||{})},sets:null,rot:null,ask:false};
+  const repFor=()=>{const c=L.teams.filter(x=>x.conf===SB.st.conf&&!(LG&&L===LG&&x.id===L.user)).sort((a,b)=>qOf(a)-qOf(b))[0];SB.st.rep=c?c.id:null};if(create)repFor();
+  const render=()=>{const y=$('#modal').scrollTop;openModal(sbHTML(),true);$('#modal').scrollTop=y;bind();sbDraw()};
+  const bind=()=>{
+    const root=$('#sbRoot'),s=SB.st;
+    swBind(root,(f,v)=>{const [ns,k]=f.split(':');if(ns==='t'){s[k]=v;sbDraw();return}if(ns==='b'){(s.bdg||(s.bdg={}))[k]=v;sbDraw();return}
+      if(ns==='s'){if(v===''||(k==='mid'&&v===1))delete s.stad[k];else s.stad[k]=v;sbDraw();return}if(ns==='x')s[k]=v});
+    root.querySelectorAll('input[type=text][data-k]').forEach(i=>i.oninput=()=>{s[i.dataset.k]=i.value;sbDraw()});
+    const tx=$('#sbTx');tx.oninput=()=>{(s.bdg||(s.bdg={})).tx=tx.value.toUpperCase().replace(/[^A-Z0-9&]/g,'').slice(0,4);if(!s.bdg.tx)delete s.bdg.tx;sbDraw()};
+    on('sbClassic',()=>{s.bdg=null;render()});
+    const cs=$('#sbConf');if(cs)cs.onchange=()=>{s.conf=+cs.value;repFor();render()};const rs=$('#sbRep');if(rs)rs.onchange=()=>{s.rep=+rs.value};
+    on('sbCopy',()=>{$('#sbShare').hidden=false;const ta=$('#sbCode');const tmp={...t,...sbApplyTo({...t})};ta.value=schoolCode(tmp);copyCode(ta)});
+    on('sbPaste',()=>{$('#sbShare').hidden=false;$('#sbCode').value='';$('#sbCode').focus()});
+    on('sbApply',()=>{const r=uniDec($('#sbCode').value),sc=r&&r.kind==='GLS1'?schoolFromCode(r.o):null;if(!sc){$('#sbErr').textContent='That school code could not be read.';return}
+      Object.assign(s,{city:sc.city,name:sc.name,abbr:sc.abbr,c1:sc.c1,c2:sc.c2,stadium:sc.stadium||s.stadium,bdg:sc.bdg||{},stad:sc.stad||{},sets:sc.sets,rot:sc.rot,ask:sc.ask});toast(sc.city+' loaded');render()});
+    on('sbX',()=>{closeModal();o.done&&o.done()});
+    on('sbUni',()=>{closeModal();openUniEditor(t.id,o.done,L)});
+    on('sbGo',()=>{const city=s.city.trim(),name=s.name.trim();if(!city||!name){$('#sbErr').textContent='Give your school a name and a mascot.';return}
+      if(create)sbCreate(o);else{sbApplyTo(t);UNI_VER++;closeModal();if(L===LG&&typeof saveNow==='function')saveNow();if(LG&&t.id===LG.user&&L===LG)applyTeamTheme(t);o.done&&o.done()}});
+  };
+  render();
+}
+/* write the builder's identity, badge and stadium onto team x (returns x) */
+function sbApplyTo(x){const s=SB.st,city=s.city.trim()||x.city,ab=(s.abbr.trim()||city.replace(/[^A-Za-z]/g,'').slice(0,3)).toUpperCase().slice(0,4);
+  Object.assign(x,{city,name:s.name.trim()||x.name,abbr:ab,c1:s.c1,c2:s.c2,stadium:s.stadium.trim()||x.stadium||city+' Stadium'});
+  if(s.bdg)x.bdg=bdgClean(s.bdg)||{};else delete x.bdg;const st=stadClean(s.stad);if(st&&Object.keys(st).length)x.stad=st;else delete x.stad;
+  if(s.sets){const all=Object.fromEntries(UNI_IDS.map(k=>[k,Object.assign(uniSet(x,k),s.sets[k]||{})]));uniCommit(x,all,Object.assign({},UNI_ROT0,s.rot||{}),s.ask)}
+  return x}
+function sbCreate(o){
+  const s=SB.st,L=SB.L,slotT=L.teams[s.rep];if(!slotT){$('#sbErr').textContent='Pick a team to replace.';return}
+  const inDyn=!!(LG&&L===LG),conf=slotT.conf,keep=inDyn&&s.keep;
+  if(slotT.rival!=null){const r=L.teams[slotT.rival],tro=slotT.trophy;if(r&&r.rival===slotT.id){r.rival=null;r.trophy=''}slotT.rival=null;slotT.trophy='';
+    /* games still to play stop being trophy games (finished ones keep their history) */
+    if(inDyn)for(const w of L.weeks)for(const g of w.games)if(g.hs==null&&g.rival&&(g.h===slotT.id||g.a===slotT.id)){g.rival=false;if(g.tag===tro)g.tag=null}}
+  delete slotT.logo;delete slotT.logoDark;delete slotT.uni;
+  if(!keep){const fresh=genTeam(slotT.id,s.city.trim(),s.name.trim(),s.c1,1,conf,{exact:true,div:slotT.div,q:slotT.div==='FCS'?1.2:1.7});Object.assign(slotT,{prestige:1,q:fresh.q,roster:fresh.roster,cap:22000});if(inDyn)for(const p of slotT.roster)p.ss=newSS()}
+  sbApplyTo(slotT);slotT.custom=1;UNI_VER++;invalidate();
+  if(inDyn){try{updateRankings(L)}catch(e){console.error(e)}closeModal();saveNow&&saveNow();toast(teamName(slotT)+' joins '+confName(conf));o.done&&o.done();return}
+  resetRecords(L);buildSchedule(L);updateRankings(L);startDynasty(slotT.id);
+}
+
+/* ---------- hub pieces ---------- */
+/* Program tab card: thumbnails of the four sets + buttons */
+function uniCardHTML(t){return `<div class="card uni-card"><div class="setrow"><div class="h2">Uniforms &amp; school</div><div class="btns" style="flex:0 1 auto"><button class="btn sm" id="uniOpen">Uniform editor</button><button class="btn sm ghost" id="uniSchool">School &amp; badge</button></div></div>
+  <div class="uni-thumbs">${UNI_SETS.map(([k,l])=>`<button class="uni-th" data-k="${k}"><canvas data-k="${k}"></canvas><small>${l}</small></button>`).join('')}</div>
+  <p class="note">${t.uni&&t.uni.ask?'You pick a set in the pregame show before each game.':'Sets rotate automatically: home, road, rivalry, primetime and postseason rules live in the editor.'}</p></div>`}
+function bindUniCard(){const t=T(LG.user),re=()=>{showHub('program')};
+  on('uniOpen',()=>openUniEditor(t.id,re));on('uniSchool',()=>openEditor(t.id,re));
+  document.querySelectorAll('.uni-th').forEach(b=>{b.onclick=()=>{openUniEditor(t.id,re);const s=b.dataset.k;const x=document.querySelector(`#ueSets [data-k="${s}"]`);if(x)x.click()};uniThumb(b.querySelector('canvas'),t,uniSet(t,b.dataset.k),uniNum(t))});
+}
+/* pregame: the set this game (uniStyle with a game context) and the opponent's after the clash check */
+function uniGameCtx(g){const u=T(LG.user),o=T(g.h===LG.user?g.a:g.h);const host=g.neutral?u:(g.h===LG.user?u:o);return {g,a:u,b:o,host,slot:g.slot||'Afternoon'}}
+function uniPregameHTML(g){const u=T(LG.user),ask=!!(u.uni&&u.uni.ask),x=uniGameCtx(g),cur=g.uni&&UNI_IDS.includes(g.uni)?g.uni:(ask?uniStyle(u,{...x,g:{...g,uni:null}}):'auto');
+  const opts=ask?UNI_SETS:[['auto','Auto'],...UNI_SETS];
+  return `<div class="card pg-uni"><div class="setrow"><span class="eyebrow">Uniform${ask?' · pick one for this game':''}</span><div class="seg" id="uniSeg">${opts.map(([k,l])=>`<button data-v="${k}" aria-pressed="${cur===k}">${l}</button>`).join('')}</div></div>
+    <div class="pg-unis"><figure><canvas id="pgUniU"></canvas><figcaption>${esc(u.abbr)}</figcaption></figure><span class="vs">VS</span><figure><canvas id="pgUniO"></canvas><figcaption>${esc(x.b.abbr)}</figcaption></figure></div></div>`}
+function bindPregameUni(g){const u=T(LG.user),ask=!!(u.uni&&u.uni.ask);
+  if(ask&&!g.uni){const x=uniGameCtx(g);g.uni=uniStyle(u,{...x,g:{...g,uni:null}})}
+  const draw=()=>{const x=uniGameCtx(g);uniThumb($('#pgUniU'),u,uniColors(u,x),uniNum(u));uniThumb($('#pgUniO'),x.b,uniColors(x.b,x),uniNum(x.b))};
+  document.querySelectorAll('#uniSeg button').forEach(b=>b.onclick=()=>{const v=b.dataset.v;g.uni=v==='auto'?null:v;if(!g.uni)delete g.uni;LG.settings.uniform='auto';UNI_VER++;
+    document.querySelectorAll('#uniSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));draw();saveNow()});
+  draw();
 }
 
 </script>
