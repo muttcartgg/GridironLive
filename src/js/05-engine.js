@@ -68,7 +68,7 @@ function startDefDrive(los,why){S.poss='away';fatRest(2);if(typeof BC!=='undefin
 function oppPossession(dist,why){
   S.phase='wait';S.rzActive=false;S.clockRun=false;S.poss='away';hideActs();
   /* Key moments plays every opponent snap on the engine (simmed, or handed to you when it matters) */
-  const mode=playStyle()==='km'?'play':LG.settings.defMode||'ask',go=m=>m==='play'?startDefDrive(110-dist,why):oppDrive(dist,why);
+  const mode=playStyle()==='km'||playStyle()==='rtg'?'play':LG.settings.defMode||'ask',go=m=>m==='play'?startDefDrive(110-dist,why):oppDrive(dist,why);
   if(mode==='ask')showOpt(`<b>${esc(S.away.abbr)} ball</b>${why?' · '+esc(why):''} · ${esc(spotLabelFor(110-dist,'away'))}`,[{t:'Play defense',s:'Control a defender',f:()=>go('play')},{t:'Sim the drive',s:'Play-by-play ticker',cls:'alt',f:()=>go('sim')}]);
   else go(mode);
 }
@@ -102,8 +102,10 @@ function toPresnap(){
   if(!S.conv&&!S.rzActive&&S.los>=90){S.rzActive=true;tstat().rzA++}
   S.motion=null;$('#hotBar').hidden=true;adjClose();S.flip=Math.random()<.5?1:-1;S.covLock=null;S.frontLock=null;S.readCov=null;S.dcPick=null;S.hard=false;S.slide=0;gameMeans();CALL_TAB=S.down===4&&!S.conv?'special':CALL_TAB==='special'?'pass':CALL_TAB;
   /* Key moments (05h kmCheck) may hand the user the ball here, or resume simming (S.ff: the AI calls it, no sheets) */
-  if(uOff()){kmCheck(null);setupFormation(null,S.flip);if(!S.ff)showCall()}
-  else{const pc=aiChoosePlay();S.aiPlay=pc;kmCheck(pc);if(pc.special){S.phase='wait';return aiSpecial(pc.special)}if(S.ff){S.defCall='auto';S.defFront='auto'}setupFormation(pc,S.flip);if(!S.ff)showDefCall()}
+  /* Road to Glory (05i rtgCheck/rtgSnap): the AI calls both sides; snaps without the user's player are simmed */
+  const rtg=playStyle()==='rtg';
+  if(uOff()){kmCheck(null);setupFormation(null,S.flip);if(!S.ff)rtg?rtgSnap():showCall()}
+  else{const pc=aiChoosePlay();S.aiPlay=pc;kmCheck(pc);if(pc.special){S.phase='wait';return aiSpecial(pc.special)}if(S.ff||rtg){S.defCall='auto';S.defFront='auto'}setupFormation(pc,S.flip);if(!S.ff)rtg?rtgSnap():showDefCall()}
   snapshot();
   $('#toBtn').hidden=!(S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0);
 }
@@ -183,7 +185,7 @@ $('#snapAdj').onclick=()=>{ac();if(S.phase==='presnap'&&S.pc)adjToggle()};
 $('#snapBack').onclick=()=>{ac();if(S.phase==='presnap'){$('#snapBar').hidden=true;adjClose();S.pc=null;setupFormation(null,S.flip);showCall()}};
 function showOpt(head,opts){
   /* simming (Key moments): the AI answers for the user, the option marked ai (else the recommended first one) */
-  if(S.ff){const o=opts.find(x=>x.ai)||opts[0];$('#opt').hidden=true;setTimeout(()=>o.f(),0);return}
+  if(S.ff||playStyle()==='rtg'){const o=opts.find(x=>x.ai)||opts[0];$('#opt').hidden=true;setTimeout(()=>o.f(),0);return}   // Road to Glory: the CPU head coach decides
   $('#optHead').innerHTML=head;const row=$('#optRow');row.innerHTML='';
   opts.forEach(o=>{const b=document.createElement('button');b.className='play '+(o.cls||'');b.innerHTML=`<b>${o.t}</b><small>${o.s||''}</small>`;b.onclick=()=>{ac();$('#opt').hidden=true;o.f()};row.appendChild(b)});
   $('#opt').hidden=false;
@@ -245,7 +247,7 @@ $('#bulletBtn').onclick=()=>{S.bullet=!S.bullet;$('#bulletBtn').setAttribute('ar
 function showDefCall(){renderDefCall()}
 function switchDefender(target){
   if(play&&play.st&&S.phase==='live')return stSwitch(target);
-  if(uOff())return;let best=target||null;
+  if(uOff()||S.auto&&AUTO.exempt!=null)return;   // Road to Glory: you stay with your playerlet best=target||null;
   if(!best){const fx=ball.state==='air'?ball.tx:(play&&play.carrier?play.carrier.x:S.los),fy=ball.state==='air'?ball.ty:(play&&play.carrier?play.carrier.y:S.ballY);let bd=1e9;for(const d of DEF){if(d===S.ctrl)continue;const dd=hyp(d.x-fx,d.y-fy);if(dd<bd){bd=dd;best=d}}}
   if(best){S.ctrl=best;S.ctrlKey=best.key;sfx('cut');if(S.phase==='presnap'&&!$('#call').hidden)defHead()}
 }
@@ -496,6 +498,8 @@ function simulate(dt){
     if(pl.type==='run'&&p.key===pl.ckey&&!pl.handed){carrierPre(p,dt);continue}
     if(pl.flea&&p===RB&&!pl.fleaDone){steer(p,L-1.8,p.y,5.5,dt);continue}
     if(pl.pitchMan===p&&!pl.pitched){steer(p,Q.x-1.6,Q.y+Math.sign(pl.gapY-S.ballY||1)*3.6,p.spd*.85,dt);continue}
+    /* Road to Glory (05i): your receiver adjusts his route with the stick; let go and he runs it (and tracks the ball) */
+    if(!p.blocker&&stick&&stick.m>12&&S.auto&&userCtl(p)&&uOff()&&p!==Q){steer(p,p.x+stick.dx*3,p.y+stick.dy*3,p.spd,dt,12);continue}
     if(p.blocker)blockAI(p,dt);else if(p.route&&(p!==RB||pl.t>.4))runRoute(p,dt);else steer(p,p.x,p.y,0,dt);
     if(ball.state==='air'&&!ball.pitch&&eligible(p)&&!p.blocker&&(ball.tip||ball.t>.2)&&(p===pl.intended||hyp(p.x-ball.tx,p.y-ball.ty)<6))steer(p,ball.tx,ball.ty,p.spd,dt,13);
   }
@@ -664,7 +668,7 @@ function otSetBall(){if(S.otRound>=3){S.conv=true;S.los=107;S.firstDownX=110}els
 function otPossess(side){
   const lab=(S.otRound>1?S.otRound:'')+'OT';
   if(side==='home'){S.poss='home';otSetBall();toPresnap();banner(S.otRound>=3?lab+' · two-point play':lab,S.home.c1);return}
-  S.phase='wait';const mode=playStyle()==='km'?'play':LG.settings.defMode||'ask';
+  S.phase='wait';const mode=playStyle()==='km'||playStyle()==='rtg'?'play':LG.settings.defMode||'ask';
   const live=()=>{S.poss='away';otSetBall();toPresnap()};
   if(mode==='sim')return oppOT();if(mode==='play')return live();
   showOpt(`<b>${esc(S.away.abbr)} ${lab} ${S.otRound>=3?'two-point play':'possession'}</b>`,[{t:'Play defense',s:'Control a defender',f:live},{t:'Sim it',s:'See the result',cls:'alt',f:oppOT}]);
@@ -935,6 +939,7 @@ function gameOver(){
     ${driveChartHTML()}
     ${stam?`<div class="card"><div class="h2">Stamina at the final whistle</div><p class="note">Speed drops steadily through a game. Higher stamina means less drop-off; condition carries over week to week.</p>${stam}</div>`:''}
     <button class="btn wide" id="postGo">Continue</button>`;
+  if(LG.rtg&&typeof rtgPost==='function')rtgPost();
   const show=()=>{$('#post').hidden=false;$('#post .scroll').scrollTop=0;if(won)sfx('roar');if(storm){for(let i=0;i<6;i++)setTimeout(()=>sfx('roar'),i*300)}};
   const fin=()=>{if((storm||trophy)&&!S.simmed&&typeof startStorm==='function'){startStorm(storm,trophy);setTimeout(show,storm?3600:2600)}else show()};
   if(!S.simmed&&typeof finalGraphic==='function'&&LG.settings.gfx!==false){finalGraphic(won,pog,g);setTimeout(fin,3000)}else fin();

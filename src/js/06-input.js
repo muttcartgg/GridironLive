@@ -43,7 +43,9 @@ cv.addEventListener('pointerdown',e=>{
   if(touch)return;
   try{cv.setPointerCapture(e.pointerId)}catch(_){}
   const t={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,ox:e.clientX,oy:e.clientY,t0:performance.now(),moved:0};
+  const ex=S.auto?autoSprite():null;   // Road to Glory: a receiver / back steers himself, the QB stays AI
   if(!uOff())t.mode='dstick';
+  else if(ex&&ex!==Q)t.mode='stick';
   else if(play.type==='pass'&&!play.thrown&&!play.scramble&&play.carrier===Q)t.mode='aim?';
   else if(isRunner())t.mode='stick';else return;
   touch=t;
@@ -63,7 +65,7 @@ function up(e){
   if(t.mode==='aim'&&aim&&!play.thrown){if(hyp(aim.x-Q.x,aim.y-Q.y)>2.5)throwBall(aim.x,aim.y,S.bullet);aim=null;return}
   if(t.mode==='aim?'&&!play.thrown){play.scramble=true;play.scrT=play.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}hint('Scramble! Drag to steer · JUKE / SPIN / TRUCK');$('#bulletBtn').hidden=true;aim=null;hideActs();showActs();return}
   const dtm=performance.now()-t.t0,ddx=t.x-t.sx,ddy=t.y-t.sy;
-  if(t.mode==='stick'&&isRunner()&&dtm<230&&t.moved>34){if(Math.abs(ddx)>Math.abs(ddy)&&ddx>0)doDive();else if(Math.abs(ddy)>=Math.abs(ddx))doJuke(Math.sign(ddy)||1)}
+  if(t.mode==='stick'&&isRunner()&&(!S.auto||userCtl(play.carrier))&&dtm<230&&t.moved>34){if(Math.abs(ddx)>Math.abs(ddy)&&ddx>0)doDive();else if(Math.abs(ddy)>=Math.abs(ddx))doJuke(Math.sign(ddy)||1)}
   if(t.mode==='dstick'&&dtm<220&&t.moved<12){const d=defenderAt(t.x,t.y);if(d&&d!==S.ctrl)switchDefender(d);else userTackle()}
 }
 cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);

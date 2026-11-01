@@ -190,6 +190,7 @@ function portalStart(L){
     for(const pos of POS_ORDER){sq[pos]=startQ(t,pos);for(const p of starters(t,pos))st.add(p.id)}
     const keep=[];
     for(const p of t.roster){
+      if(L.rtg&&p.id===L.rtg.pid){keep.push(p);continue}   /* Road to Glory: your player stays put */
       const s=st.has(p.id),o9=ovr99(p),pt=!s&&ovr(p)>=sq[p.pos]-.25,star=o9>=80&&pw<.45;
       let pe=(s?.025:.06)+(pt?.14:0)+(!s&&p.ss.gp<3?.04:0)+(star?.16:0)+mor;
       pe*=(ch?1.9:1)*(1.15-.3*pw)*(p.redshirt?.5:1);

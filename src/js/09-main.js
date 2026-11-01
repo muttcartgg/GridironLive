@@ -11,6 +11,7 @@ function frame(now){
   const dt=real*S.ts;
   const active=!S.paused&&!['hub','boot','over','menu'].includes(S.phase);
   /* Key moments (05h): while simming, the engine fast-forwards with no field rendering */
+  if(active&&!S.ff&&LG&&LG.rtg)rtgFrame();   // Road to Glory (05i): special teams are simmed
   if(active&&S.ff){kmPump(real);hudAcc+=real;if(hudAcc>.1){hudAcc=0;hud()}requestAnimationFrame(frame);return}
   if(!active&&(S.phase==='over'||S.phase==='hub'&&!S.home)&&(S.ff||AUTO.shown))autoIdle();
   if(active){
