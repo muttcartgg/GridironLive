@@ -33,11 +33,12 @@ function defenderAt(sx,sy){const [wx,wy]=toWorld(sx,sy);let b=null,bd=2.6;for(co
 ['touchstart','touchmove','gesturestart','contextmenu','selectstart','dblclick'].forEach(ev=>cv.addEventListener(ev,e=>{if(e.cancelable)e.preventDefault()},{passive:false}));
 cv.addEventListener('pointerdown',e=>{
   ac();if(S.paused)return;
-  if(S.phase==='kick'){kickTap();return}
+  if(S.phase==='kick'){if(!S.auto)kickTap();return}
   if(S.phase==='replay'){if(typeof teleDown==='function')teleDown(e);return}
   if(S.phase==='presnap'&&!uOff()){const d=defenderAt(e.clientX,e.clientY);if(d)switchDefender(d);return}
   if(S.phase==='presnap'&&hotRouteAt(e.clientX,e.clientY))return;
   if(S.phase!=='live'||!play)return;
+  if(S.auto&&!autoSprite())return;   // autopilot (05h): the AI has every player
   if(touch&&touch.mode==='aim'&&e.pointerId!==touch.id){S.bullet=!S.bullet;$('#bulletBtn').setAttribute('aria-pressed',String(S.bullet));updateAim();return}
   if(touch)return;
   try{cv.setPointerCapture(e.pointerId)}catch(_){}

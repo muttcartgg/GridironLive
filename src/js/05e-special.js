@@ -215,7 +215,7 @@ function stChase(d,dt,c){
 function stRunner(c,dt){
   const pl=play,st=pl.st,dir=stDir(c);
   if(st.ezT!=null){st.ezT-=dt;if(stick&&stick.m>12)st.ezT=null;else{steer(c,c.x,c.y,0,dt);if(st.ezT<=0){st.ezT=null;return stEnd('tb','Touchback')}return}}
-  if(c.user){const spd=c.spd*moveMul();let dxv=dir,dyv=0;if(stick&&stick.m>12){dxv=stick.dx;dyv=stick.dy}
+  if(userCtl(c)){const spd=c.spd*moveMul();let dxv=dir,dyv=0;if(stick&&stick.m>12){dxv=stick.dx;dyv=stick.dy}
     if(pl.jukeT>0){dyv+=pl.jukeDir*1.1;dxv=dir*Math.max(dxv*dir,.5)}
     const n=hyp(dxv,dyv)||1;let vx=dxv/n*spd,vy=dyv/n*spd;if(pl.dive>0){vy*=.3;vx=dir*Math.max(vx*dir,spd*.9)}
     phyMove(c,vx,vy,dt,pl.jukeT>0?2.6:pl.spinT>0?1.8:PHY.user)}
@@ -276,8 +276,8 @@ function stAirTick(dt){
 function stDecide(){
   const st=play.st;st.decided=true;const f=st.fielder;if(!f||st.sub==='onside')return;
   const lx=ball.tx,ly=ball.ty,[,kd]=nearest(P,lx,ly,p=>p.side==='d'&&p.stun<=0);
-  if(st.kind==='punt'&&lx<18&&!st.fair){st.noCatch=true;if(f.user)toast('Letting it bounce');return}   // never field a punt inside the 8
-  if(f.user)return;
+  if(st.kind==='punt'&&lx<18&&!st.fair){st.noCatch=true;if(userCtl(f))toast('Letting it bounce');return}   // never field a punt inside the 8
+  if(userCtl(f))return;
   if(st.kind==='punt'?kd<7:(lx<35&&kd<5))st.fair=true;
   if(st.fair)toast(`${f.team.abbr} signals for a fair catch`);
 }
@@ -287,9 +287,9 @@ function stCatch(f){
   if(Math.random()<Math.max(.002,mp)*(st.fair?.6:1)){st.muff=true;toast('Muffed!');slowMo(.6);setAnim(f,'catch');f.recCD=.5;ballLoose(ball.tx,ball.ty,R(-3,3),R(-3,3),R(1,3),1.2);st.phase='loose';st.lt=0;st.still=0;stCtrlInit();showActs();return}
   ball={state:'held',x:f.x,y:f.y,z:0};pl.carrier=f;st.gx=st.rx=f.x;setAnim(f,'catch');f.vx*=.3;f.vy*=.3;
   if(st.fair){fx('fairCatch',{p:f});return stEnd('fc','Fair catch')}
-  if(st.kind==='ko'&&f.x<10){if(!f.user){if(f.x<6.5||Math.random()<.5)return stEnd('tb','Touchback')}else st.ezT=.5}
+  if(st.kind==='ko'&&f.x<10){if(!userCtl(f)){if(f.x<6.5||Math.random()<.5)return stEnd('tb','Touchback')}else st.ezT=.5}
   st.phase='ret';st.t=0;stCtrlInit();showActs();
-  if(f.user)hint(st.ezT!=null?'In the end zone · hold still to take a knee · drag to run it out':'Drag to steer · JUKE / SPIN / TRUCK');
+  if(userCtl(f))hint(st.ezT!=null?'In the end zone · hold still to take a knee · drag to run it out':'Drag to steer · JUKE / SPIN / TRUCK');
 }
 
 /* ---------- loose ball: bounces, scrambles, recoveries ---------- */
@@ -354,6 +354,7 @@ function stRecover(p,down){
 /* ---------- user control: who the stick drives, taps, the action bar ---------- */
 function stCtrlInit(){
   const pl=play,st=pl&&pl.st;if(!st)return;const c=pl.carrier;
+  if(S.auto){const ex=autoSprite();S.ctrl=ex||null;return}   // autopilot (05h): every man is AI but the exempt player
   if(c&&c.user){S.ctrl=c;return}
   if(st.phase==='set'||st.phase==='air'){if(st.kt===S.home){const ly=st.phase==='air'?ball.ty:CEN;let b=null,bd=1e9;for(const p of P){if(!p.user||p.stj==='K'||p.stj==='P')continue;const d=Math.abs(p.y-ly)+(p.stj==='gun'?-3:0);if(d<bd){bd=d;b=p}}S.ctrl=b}else S.ctrl=null;return}
   const fx0=c?c.x:ball.x,fy0=c?c.y:ball.y;let best=null,bd=1e9;for(const p of P){if(!p.user||p.stun>0||p===c)continue;const d=hyp(p.x-fx0,p.y-fy0);if(d<bd){bd=d;best=p}}S.ctrl=best;
@@ -476,7 +477,7 @@ function stApply(){
 function stFCK(team,x){
   const dist=Math.round(120-x);
   if(team===S.home){if(dist>60)return false;S.phase='wait';
-    showOpt(`<b>Fair catch</b> · ${esc(spotLabelFor(x,'home'))} · the free kick option`,[{t:'Fair catch kick',s:`${dist} yd free kick · 3 points`,f:()=>{S.poss='home';S.los=x;S.ballY=CEN;S.conv=false;startKick(dist,'fck')}},{t:'Offense',s:'1st & 10 from the spot',cls:'alt',f:()=>toUser(x,'Fair catch')}]);return true}
+    showOpt(`<b>Fair catch</b> · ${esc(spotLabelFor(x,'home'))} · the free kick option`,[{t:'Fair catch kick',s:`${dist} yd free kick · 3 points`,f:()=>{S.poss='home';S.los=x;S.ballY=CEN;S.conv=false;startKick(dist,'fck')}},{t:'Offense',s:'1st & 10 from the spot',cls:'alt',ai:!((S.q===2||S.q===4)&&S.clock<=S.qlen*.06&&dist<=maxFG()-4),f:()=>toUser(x,'Fair catch')}]);return true}
   const k=bestK(S.away,'acc');if(!k||!(S.q===2||S.q===4)||S.ot||S.clock>S.qlen*.06||dist>maxFG(k)-4)return false;
   const good=Math.random()<clamp(1.21-dist*.0125-(5-k.thr)*.03,.1,.985);sAdd(S.away,'fga');if(good)sAdd(S.away,'fgm');S.phase='wait';
   toast(`${S.away.abbr} lines up a ${dist}-yd fair catch kick`);logPBP(`${S.away.abbr} ${dist}-yard fair catch kick is ${good?'good':'no good'}.`);

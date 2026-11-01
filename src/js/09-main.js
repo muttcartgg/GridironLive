@@ -10,6 +10,9 @@ function frame(now){
   if(S.slowT>0){S.slowT-=real;S.ts=.32}else S.ts=Math.min(1,S.ts+real*2.5);
   const dt=real*S.ts;
   const active=!S.paused&&!['hub','boot','over','menu'].includes(S.phase);
+  /* Key moments (05h): while simming, the engine fast-forwards with no field rendering */
+  if(active&&S.ff){kmPump(real);hudAcc+=real;if(hudAcc>.1){hudAcc=0;hud()}requestAnimationFrame(frame);return}
+  if(!active&&(S.phase==='over'||S.phase==='hub'&&!S.home)&&(S.ff||AUTO.shown))autoIdle();
   if(active){
     if(S.phase==='presnap'){
       if(uOff()&&!S.conv){S.playClock-=real;if(S.playClock<=0)delayOfGame()}
@@ -22,14 +25,14 @@ function frame(now){
     else if(S.phase==='kick'){updateKick(real);drawKick()}
     else if(S.phase==='replay'){if(typeof updateReplay==='function')updateReplay(real)}
     else if((S.phase==='live'||S.phase==='dead')&&play){
-      const n=dt>.02?3:2;for(let i=0;i<n;i++)simulate(dt/n);
+      const n=dt>.02?3:2,sp=S.auto?AUTO.speed:1;for(let i=0;i<n*sp;i++)simulate(dt/n);   /* Coach mode 2x: twice the steps */
       if(S.phase==='live'&&typeof recFrame==='function')recFrame(dt);
-      if(S.phase==='dead'){deadT-=real;if(deadT<=0)applyResult()}
+      if(S.phase==='dead'){deadT-=real*(S.auto?AUTO.speed:1);if(deadT<=0)applyResult()}
     }
     else for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,.12);p.z=Math.max(0,(p.z||0)-real*3)}
     if(typeof BC!=='undefined')BC.tick(real);
     updateParticles(dt);updateWeather(real);updateCam(real);draw(now);
-    hudAcc+=real;if(hudAcc>.1){hudAcc=0;hud()}
+    hudAcc+=real;if(hudAcc>.1){hudAcc=0;hud();apBarTick()}
   }else if(S.phase==='over'&&S.stormT>0){S.stormT-=real;updateParticles(real);draw(now)}
   requestAnimationFrame(frame);
 }

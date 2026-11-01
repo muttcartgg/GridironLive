@@ -158,7 +158,7 @@ const BC={
   },
   play(r,gain){
     const off=offT(),def=defT(),c=play.carrier||Q,nm=x=>x?(x.pl?x.pl.last:x.last):'',ours=t=>t===hostT()||t===S.home;
-    const hostOff=off===hostT();const dr=S.drive;if(dr&&!S.conv){dr.plays++;if(['tackle','oob','td','sack'].includes(r.kind)||r.kind==='fum')dr.yds+=Math.round(Math.min(110,r.x)-S.los)}
+    const hostOff=off===hostT();const dr=S.drive;if(dr&&!S.conv){dr.plays++;if(dr.start==null)dr.start=Math.round(S.los-10);dr.end=clamp(Math.round((r.kind==='inc'?S.los:Math.min(110,r.x))-10),0,100);if(['tackle','oob','td','sack'].includes(r.kind)||r.kind==='fum')dr.yds+=Math.round(Math.min(110,r.x)-S.los)}
     const yd=g=>g===0?'No gain':g>0?`${g} yd${g===1?'':'s'}`:`Loss of ${-g}`;
     const next=()=>{const nx=r.x;if(r.kind==='inc')return S.down<4?`${ord(S.down+1)} & ${Math.max(1,Math.round(S.firstDownX-S.los))} next`:'Turnover on downs';if(nx>=S.firstDownX)return 'First down';if(S.down>=4)return 'Turnover on downs';return `${ord(S.down+1)} & ${Math.max(1,Math.round(S.firstDownX-nx))} next`};
     if(r.kind==='td'){this.hype=hostOff?1:.15;sceneEvent('td',{team:off});this.setRibbon(hostOff?'TOUCHDOWN '+off.name.toUpperCase():'',6);if(hostOff)setTimeout(()=>this.setRibbon('♪ FIGHT SONG ♪',4),1500);
@@ -175,7 +175,7 @@ const BC={
     if(big&&LG.settings.replay!=='off'&&REC.length>20){if(LG.settings.replay==='auto'&&r.kind!=='td'){deadT+=.3;setTimeout(()=>{if(S.phase==='dead')startReplay()},700)}else{$('#replayBtn').hidden=false;deadT=Math.max(deadT,3.2);clearTimeout(this.rbT);this.rbT=setTimeout(()=>$('#replayBtn').hidden=true,3200)}}
   },
   /* linescore + drive tracker */
-  newDrive(){S.drive={plays:0,yds:0,clk:S.clock,q:S.q,team:S.poss};this.rzShown=false},
+  newDrive(){if(typeof closeDrive==='function')closeDrive();S.drive={plays:0,yds:0,clk:S.clock,q:S.q,team:S.poss};this.rzShown=false},   // the previous drive goes to the drive chart
   driveText(){const d=S.drive;if(!d||d.team!==S.poss||S.ot||!d.plays)return '';const t=(Math.min(S.q,4)-Math.min(d.q,4))*S.qlen+d.clk-S.clock;return `DRIVE ${d.plays} PL · ${d.yds} YDS · ${fmtClock(Math.max(0,t))}`},
   trackScore(){S.line=S.line||[[0,0,0,0,0],[0,0,0,0,0]];S.lineLast=S.lineLast||[0,0];for(const i of [0,1]){const d=S.score[i]-S.lineLast[i];if(d>0){S.line[i][Math.min(S.q,5)-1]+=d}S.lineLast[i]=S.score[i]}},
   /* visitor first, like every TV linescore */

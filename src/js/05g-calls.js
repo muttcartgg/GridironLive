@@ -169,7 +169,7 @@ function pickReasons(p,sit,cov,why0){
 /* ---------- offense call sheet ---------- */
 function renderCall(){
   const late=!S.ot&&S.q>=4&&S.clock<=S.qlen*.25&&S.score[0]>S.score[1],fourth=S.down===4&&!S.conv;
-  $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(ddText())}</b> · ${S.conv?'from the 3':esc(spotLabel(S.los))} · QB ${esc(Q.pl.last)} <span class="ovr">${Q.ovr}</span>${S.wx!=='Clear'?' · '+WX_ICON[S.wx]+' '+S.wx:''}${fourth?` · <span class="tag gold">Go-for-it ${Math.round(convChance()*100)}%</span>`:''}`;
+  $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(ddText())}</b> · ${S.conv?'from the 3':esc(spotLabel(S.los))} · QB ${esc(Q.pl.last)} <span class="ovr">${Q.ovr}</span>${S.wx!=='Clear'?' · '+WX_ICON[S.wx]+' '+S.wx:''}${fourth?` · <span class="tag gold">Go-for-it ${Math.round(convChance()*100)}%</span>`:''}${modeTag()}`;
   const specials=[];
   if(fourth){if(!S.ot)specials.push(['punt','Punt','Flip the field'],['fakepunt','Fake punt','Catch them napping']);const fd=fgDist();if(fd<=maxFG()+3)specials.push(['fg','Field goal',fd+' yd attempt'],['fakefg','Fake FG','Surprise run'])}
   if(late&&!S.conv)specials.push(['kneel','Kneel','Run clock · −1 yd']);
@@ -201,7 +201,7 @@ function scrollHint(row){const sc=row.querySelector('.cs-scroll'),m=row.querySel
 /* ---------- defense call sheet: fronts × coverages ---------- */
 function defHead(){
   const pc=S.aiPlay,f=pc&&FORMS[pc.form];
-  $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(S.away.abbr)} ball</b> · ${esc(ddText())} · ${esc(spotLabelFor(S.los,'away'))} · <span class="tag">${esc(pc?pc.form:'')} · ${f?f.pers:'11'} personnel</span> · you control <b>#${S.ctrl.num} ${esc(S.ctrl.pl.last)}</b> <span class="ovr">${S.ctrl.ovr}</span>`;
+  $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(S.away.abbr)} ball</b> · ${esc(ddText())} · ${esc(spotLabelFor(S.los,'away'))} · <span class="tag">${esc(pc?pc.form:'')} · ${f?f.pers:'11'} personnel</span>${S.auto?' · the AI plays it out':S.ctrl?` · you control <b>#${S.ctrl.num} ${esc(S.ctrl.pl.last)}</b> <span class="ovr">${S.ctrl.ovr}</span>`:''}${modeTag()}`;
 }
 function renderDefCall(){
   defHead();const sit=sitInfo(),pc=S.aiPlay;

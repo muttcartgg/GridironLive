@@ -371,6 +371,9 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
   <div id="snapBar" hidden><span id="snapName"></span><button class="btn ghost sm" id="snapBack">Change</button><button class="btn ghost sm" id="snapAdj" aria-expanded="false" aria-controls="adjMenu">Adjust</button><button class="btn" id="snapGo">Snap</button></div>
   <div id="adjMenu" hidden></div>
   <div id="actBar" hidden></div>
+  <div id="apBar" hidden><span class="ap-lab">AI playing</span><button data-sp="1" aria-pressed="true">1×</button><button data-sp="2" aria-pressed="false">2×</button><button data-sp="skip">Result ▸▸</button></div>
+  <div id="kmBan" hidden></div>
+  <div id="kmOv" hidden><div class="km-box"><div class="km-eye"><i></i>Key moments · simming</div><div class="km-sc" id="kmSc"></div><div class="km-pbp" id="kmPbp"></div><button class="btn ghost sm" id="kmTake">Take over now</button></div></div>
   <div id="hotBar" hidden></div>
   <div id="photoBar" hidden><label for="phZoom">Zoom</label><input type="range" id="phZoom" min="0.5" max="2.2" step="0.05" value="1"><select id="phFilter" aria-label="Filter"><option value="none">No filter</option><option value="film">Film</option><option value="bw">Black &amp; white</option><option value="vivid">Vivid</option><option value="night">Night</option></select><button class="btn sm" id="phDone">Done</button><span class="note">Drag to move the camera</span></div>
   <div id="wm" hidden>GLN<b>LIVE</b></div>
@@ -412,6 +415,7 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
       <p class="note">Your game is saved at every snap, so you can close the app and resume later. Sim to final plays out the rest of the game instantly, based on both rosters and the current score.</p>
       <div class="btns"><button class="btn light" id="resume">Resume</button><button class="btn ghost" id="simRest">Sim to final</button><button class="btn ghost" id="quitHub">Save &amp; exit</button></div>
       <div class="btns"><button class="btn ghost sm" id="pmBox">Box score</button><button class="btn ghost sm" id="pmPbp">Play-by-play</button><button class="btn ghost sm" id="pmDrv">Drive chart</button><button class="btn ghost sm" id="pmPhoto">Photo mode</button></div>
+      <div id="pmMode" class="pm-mode"></div>
       <div id="pauseInfo" hidden></div>
     </div>
   </section>
