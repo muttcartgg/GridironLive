@@ -29,7 +29,7 @@ const BC={
     if(AC)ambStart();
     if(!resumed)this.say('open',{});
   },
-  stop(){$('#wm').hidden=true;['#rcard','#sit','#qcard','#wpG','#dbm'].forEach(x=>$(x).classList.remove('on'));$('#lower').classList.remove('on');$('#ticker').hidden=true;$('#wpG').hidden=true;$('#dbm').hidden=true;$('#replayBtn').hidden=true;$('#replayBar').hidden=true;document.documentElement.classList.remove('ticker');ambStop()},
+  stop(){clearTimeout(this.qWait);$('#wm').hidden=true;['#rcard','#sit','#qcard','#wpG','#dbm'].forEach(x=>$(x).classList.remove('on'));$('#lower').classList.remove('on');$('#ticker').hidden=true;$('#wpG').hidden=true;$('#dbm').hidden=true;$('#replayBtn').hidden=true;$('#replayBar').hidden=true;document.documentElement.classList.remove('ticker');ambStop()},
   /* out-of-town games: pre-simulated at kickoff so the ticker, halftime show and final standings agree */
   buildLeague(){
     const w=LG.weeks[LG.week];this.league=[];if(!w)return;
@@ -132,6 +132,7 @@ const BC={
   firstDown(e){if(!e||!e.team||S.conv)return;this.chip('First down',e.team.c1,e.x!=null?spotLabelFor(Math.min(109,e.x),S.poss):'','fd')},
   bannerSub(t){const b=$('#banner');if(!b.classList.contains('on'))return;const s=b.querySelector('.su');s.textContent=t;s.hidden=!t},
   snap(){
+    clearTimeout(this.qWait);$('#qcard').classList.remove('on');$('#rcard').classList.remove('on');
     const hostDef=defT()===hostT();
     if(S.down===3&&!S.conv){if(hostDef){this.setRibbon('3RD DOWN · MAKE SOME NOISE',5);this.sound('third');this.setRibbon('DE-FENSE · DE-FENSE',5)}else this.setRibbon('3RD DOWN',3)}
     if(S.down===4&&!S.conv)this.setRibbon('4TH DOWN',4);
@@ -158,7 +159,7 @@ const BC={
   },
   play(r,gain){
     const off=offT(),def=defT(),c=play.carrier||Q,nm=x=>x?(x.pl?x.pl.last:x.last):'',ours=t=>t===hostT()||t===S.home;
-    const hostOff=off===hostT();const dr=S.drive;if(dr&&!S.conv){dr.plays++;if(dr.start==null)dr.start=Math.round(S.los-10);dr.end=clamp(Math.round((r.kind==='inc'?S.los:Math.min(110,r.x))-10),0,100);if(['tackle','oob','td','sack'].includes(r.kind)||r.kind==='fum')dr.yds+=Math.round(Math.min(110,r.x)-S.los)}
+    const hostOff=off===hostT();const dr=S.drive;if(dr&&!S.conv){dr.plays++;if(dr.start==null)dr.start=Math.round(S.los-10);dr.end=clamp(Math.round((r.kind==='inc'||r.kind==='int'?S.los:Math.min(110,r.x))-10),0,100);dr.yds=dr.end-dr.start}   // net yards, penalties included, so the drive chart bar, the tracker and the scoring-drive chip all agree
     const yd=g=>g===0?'No gain':g>0?`${g} yd${g===1?'':'s'}`:`Loss of ${-g}`;
     const next=()=>{const nx=r.x;if(r.kind==='inc')return S.down<4?`${ord(S.down+1)} & ${Math.max(1,Math.round(S.firstDownX-S.los))} next`:'Turnover on downs';if(nx>=S.firstDownX)return 'First down';if(S.down>=4)return 'Turnover on downs';return `${ord(S.down+1)} & ${Math.max(1,Math.round(S.firstDownX-nx))} next`};
     if(r.kind==='td'){this.hype=hostOff?1:.15;sceneEvent('td',{team:off});this.setRibbon(hostOff?'TOUCHDOWN '+off.name.toUpperCase():'',6);if(hostOff)setTimeout(()=>this.setRibbon('♪ FIGHT SONG ♪',4),1500);
@@ -184,8 +185,19 @@ const BC={
     const row=(t,i)=>`<tr class="${win===i?'w':win>=0?'l':''}" style="--c:${tvCol(t)}"><td><span class="ln">${tvLogo(t,'sm')}<b>${esc(t.abbr)}</b><small>${recStr(t)}</small></span></td>${qs.map((_,k)=>`<td>${k<S.q||k===4&&ot||fin?L[i][k]:'–'}</td>`).join('')}<td class="tot">${S.score[i]}</td></tr>`;
     return `<table class="lscore"><thead><tr><th></th>${qs.map(q=>`<th>${q}</th>`).join('')}<th>T</th></tr></thead><tbody>${this.sides().map(([t,i])=>row(t,i)).join('')}</tbody></table>`},
   cardHead(title,sub){return `<div class="qh"><span class="net">GLN</span><b>${title}</b>${sub?`<small>${sub}</small>`:''}</div>`},
-  showQ(html,cls,ms){const el=$('#qcard');el.className=cls||'';el.innerHTML=html;void el.offsetWidth;el.classList.add('on');clearTimeout(this.qT);this.qT=setTimeout(()=>el.classList.remove('on'),ms||3400)},
-  statRow(lab,a,b,fmt,base){base=base||0;const tot=a+b-2*base,p=tot>0?clamp((a-base)/tot*100,4,96):50,[L]=this.sides();const la=L[1]===0?a:b,lb=L[1]===0?b:a,pl=L[1]===0?p:100-p;return `<div class="tvs"><b>${fmt?fmt(la):la}</b><div class="tvb"><i style="--w:${pl}%;background:${tvCol(L[0])}"></i></div><em>${lab}</em><div class="tvb r"><i style="--w:${100-pl}%;background:${tvCol(this.sides()[1][0])}"></i></div><b>${fmt?fmt(lb):lb}</b></div>`},
+  /* graphics priority: an interactive sheet outranks every broadcast card. A full-screen card that comes up while a
+     sheet is open (or during a live play) waits for the next dead ball (up to 20 s, then it is dropped), so it never covers the play list it can't be
+     tapped through; the snap clears it (see snap) */
+  sheetUp(){return ['#call','#opt','#kick','#pausem','#studio'].some(s=>{const e=$(s);return e&&!e.hidden})},
+  showQ(html,cls,ms,waited){clearTimeout(this.qWait);
+    if(this.sheetUp()||S.phase==='live'||S.phase==='kick'){if((waited||0)<20000)this.qWait=setTimeout(()=>this.showQ(html,cls,Math.min(ms||3400,2800),(waited||0)+250),250);return}
+    const el=$('#qcard');el.className=cls||'';el.innerHTML=html;void el.offsetWidth;el.classList.add('on');clearTimeout(this.qT);this.qT=setTimeout(()=>el.classList.remove('on'),ms||3400)},
+  clearCards(){clearTimeout(this.qWait);clearTimeout(this.qT);$('#qcard').classList.remove('on');$('#rcard').classList.remove('on');$('#lower').classList.remove('on');this.lowT=0},
+  /* tale-of-the-tape row, visitor on the left: each bar is that team's share of the total (0 when it has none), drawn
+     out from the shared centre label; fixed grid columns in 10-ui.css keep every row's bars on one axis */
+  statRow(lab,a,b,fmt,base){base=base||0;a=+a||0;b=+b||0;const [[L0,li],[R0]]=this.sides(),la=li===0?a:b,lb=li===0?b:a,ea=Math.max(0,la-base),eb=Math.max(0,lb-base),tot=ea+eb,
+    wl=tot>0?ea/tot*100:0,wr=tot>0?eb/tot*100:0,f=v=>fmt?fmt(v):v;
+    return `<div class="tvs"><b>${f(la)}</b><div class="tvb"><i style="--w:${wl.toFixed(1)}%;background:${tvCol(L0)}"></i></div><em>${lab}</em><div class="tvb r"><i style="--w:${wr.toFixed(1)}%;background:${tvCol(R0)}"></i></div><b>${f(lb)}</b></div>`},
   quarterCard(q){
     if(LG.settings.gfx===false)return;const st=S.stats,os=S.ostats,half=q===3;
     this.showQ(`${this.cardHead(half?'Halftime':`End of ${ordQ(q-1).toLowerCase()} quarter`,esc(hostT().stadium||hostT().city))}${this.linescore()}<div class="qstats">${this.statRow('Total yards',st.passYds+st.rushYds,os.passYds+os.rushYds)}${this.statRow('Win prob',Math.round(winProbLive()*100),100-Math.round(winProbLive()*100),v=>v+'%')}</div>`,'',3400);
@@ -250,11 +262,11 @@ const BC={
         <div class="stv-mu">${side(A,'a')}<div class="mid">${half?`<b class="hs">${S.score[ai]}<i>–</i>${S.score[hi]}</b><small>Halftime</small>`:`<b class="at">${S.neutral?'VS':'AT'}</b><small>${esc(S.slot||'')}</small>`}</div>${side(Hm,'b')}</div>
         <div class="stv-wp"><span>${esc(A.abbr)} ${Math.round(wA*100)}%</span><div class="bar"><i style="--w:${(wA*100).toFixed(1)}%;background:${tvCol(A)}"></i><i style="background:${tvCol(Hm)}"></i></div><span>${Math.round((1-wA)*100)}% ${esc(Hm.abbr)}</span><em>Win probability</em></div></div>
       ${half?`<div class="stv-grid"><div class="card stv-card"><div class="eyebrow">Linescore</div>${this.linescore()}</div>
-        <div class="card stv-card"><div class="eyebrow">First-half stats</div><div class="tape">${row('Total yards',st.passYds+st.rushYds,os.passYds+os.rushYds)}${row('Passing',st.passYds,os.passYds)}${row('Rushing',st.rushYds,os.rushYds)}${row('First downs',st.firstDowns,os.firstDowns)}${row('Turnovers',st.int+st.fum,os.int+os.fum)}</div></div></div>
+        <div class="card stv-card"><div class="eyebrow">First-half stats</div><div class="tape">${row('Total yards',st.passYds+st.rushYds,os.passYds+os.rushYds)}${row('Passing',st.passYds,os.passYds)}${row('Rushing',st.rushYds,os.rushYds)}${row('First downs',st.firstDowns,os.firstDowns)}${row('Turnovers',st.int+(st.fumLost||0),os.int+(os.fumLost||0))}</div></div></div>
         <div class="card stv-card"><div class="eyebrow">Top performers</div><div class="perfs">${perf(A)}${perf(Hm)}</div></div>`
       :`<div class="stv-grid"><div class="card stv-card"><div class="eyebrow">Tale of the tape</div><div class="tape">${row('Overall',tOvr99(teamOvr(u)),tOvr99(teamOvr(o)),null,45)}${row('Offense',tOvr99(offOvr(u)),tOvr99(offOvr(o)),null,45)}${row('Defense',tOvr99(defOvr(u)),tOvr99(defOvr(o)),null,45)}${row('Points / game',pg(u),pg(o))}${row('Allowed / game',pa(u),pa(o))}</div><p class="note">Schemes: ${esc(schemeOf(A))} vs ${esc(schemeOf(Hm))}</p></div>
         <div class="card stv-card"><div class="eyebrow">Keys to the game</div><div class="keys2">${keys.map(([t,k])=>`<div class="key" style="--c:${t.c1}">${tvLogo(t,'xs')}<p><b>${esc(t.abbr)}</b> ${esc(k)}</p></div>`).join('')}</div></div></div>`}
-      ${spot&&!half?`<div class="card stv-card"><div class="eyebrow">Matchup spotlight</div><div class="vs"><div>${photoHTML(spot.a,52,'',u,true)}<b>${esc(fullName(spot.a))}</b><div class="note">${spot.a.pos} · ${esc(u.abbr)} · ${ovrTag(spot.a)}</div></div><div class="mid">vs</div><div>${photoHTML(spot.b,52,'',o,true)}<b>${esc(fullName(spot.b))}</b><div class="note">${spot.b.pos} · ${esc(o.abbr)} · ${ovrTag(spot.b)}</div></div></div>${spot.rows.map(r=>`<div class="mbar"><span>${r[0]}</span><div class="b"><i style="width:${r[1]/(r[1]+r[2])*100}%"></i></div><span>${r[2]}</span></div>`).join('')}</div>`:''}
+      ${spot&&!half?`<div class="card stv-card"><div class="eyebrow">Matchup spotlight</div><div class="vs"><div>${photoHTML(spot.a,52,'',u,true)}<b>${esc(fullName(spot.a))}</b><div class="note">${spot.a.pos} · ${esc(u.abbr)} · ${ovrTag(spot.a)}</div></div><div class="mid">vs</div><div>${photoHTML(spot.b,52,'',o,true)}<b>${esc(fullName(spot.b))}</b><div class="note">${spot.b.pos} · ${esc(o.abbr)} · ${ovrTag(spot.b)}</div></div></div>${spot.rows.map(r=>`<div class="mbar"><em>${esc(r[0])}</em><span>${r[1]}</span><div class="b"><i style="width:${r[1]+r[2]>0?(r[1]/(r[1]+r[2])*100).toFixed(1):50}%"></i></div><span>${r[2]}</span></div>`).join('')}</div>`:''}
       ${ser&&!half?`<div class="card stv-card"><div class="eyebrow">Series</div><p>${esc(ser)}</p></div>`:''}
       ${lg?`<div class="card stv-card"><div class="eyebrow">${half?'Around the country · halftime':'Also on the slate today'}</div><div class="list">${lg}</div></div>`:''}
       ${hz||bubble?`<div class="grid2">${hz?`<div class="card stv-card"><div class="eyebrow">Heisman tracker</div><div class="list">${hz}</div></div>`:''}${bubble?`<div class="card stv-card"><div class="eyebrow">Playoff picture</div>${bubble}</div>`:''}</div>`:''}
@@ -270,6 +282,8 @@ onFx('td',e=>{if(e.team&&(e.team===hostT()||e.team===S.home))BC.sound('td')});
 onFx('firstDown',e=>BC.firstDown(e));
 ['dead','punt','kickoff'].forEach(n=>onFx(n,()=>{BC.wpPend=true}));
 new MutationObserver(()=>{const pm=$('#pausem');if(!pm.hidden){BC.pauseWP();ambSet(.006)}}).observe($('#pausem'),{attributes:true,attributeFilter:['hidden']});
+/* a sheet opening takes the transient cards down with it (no result card or lower third ghosting through the play-call sheet) */
+{const mo=new MutationObserver(()=>{if(['#call','#opt','#kick'].some(s=>!$(s).hidden)){$('#qcard').classList.remove('on');$('#rcard').classList.remove('on');$('#lower').classList.remove('on');BC.lowT=0}});['#call','#opt','#kick'].forEach(s=>mo.observe($(s),{attributes:true,attributeFilter:['hidden']}))}
 const ordQ=q=>['1ST','2ND','3RD','4TH'][q-1]||'OT';
 function scoreEvents(hs,as){const ev=[];const split=(n,h)=>{let left=n;while(left>0){const p=left>=7&&(left-7)%3!==1&&Math.random()<.7?7:left>=3?3:left;if(left-p===1||left-p===2&&p===7){ev.push({t:Math.random(),h,p:left});left=0;break}ev.push({t:Math.random(),h,p});left-=p}};split(hs,true);split(as,false);return ev.sort((a,b)=>a.t-b.t)}
 function winProbLive(){return winProbState()}
@@ -285,7 +299,7 @@ function matchup(u,o){
   const wr=best(u,'WR'),cb=best(o,'CB'),qb=best(u,'QB'),pr=best(o,'DL');if(!wr||!cb)return null;
   const pickWR=ovr99(wr)+ovr99(cb)>=(qb&&pr?ovr99(qb)+ovr99(pr):0);const a=pickWR?wr:qb,b=pickWR?cb:pr;
   const rows=pickWR?[['Speed',wr.spd,cb.spd],['Hands vs ball skills',wr.cat,cb.cat],['Strength vs tackling',wr.str,cb.tkl]]:[['Arm vs strength',qb.thr,pr.str],['Accuracy vs pass rush',qb.acc,pr.tkl],['Mobility vs speed',qb.spd,pr.spd]];
-  return {a,b,rows:rows.map(r=>[r[0]+' '+tOvr99(r[1]),tOvr99(r[1]),tOvr99(r[2])]),lab:pickWR?`${wr.last} against ${cb.last} on the outside could decide this one.`:`Can ${pr.last} get to ${qb.last}?`};
+  return {a,b,rows:rows.map(r=>[r[0],tOvr99(r[1]),tOvr99(r[2])]),lab:pickWR?`${wr.last} against ${cb.last} on the outside could decide this one.`:`Can ${pr.last} get to ${qb.last}?`};
 }
 function keyToGame(t,opp){const sc=schemeOf(t);const o=offOvr(t)-defOvr(opp);return {'Option':`${t.city} has to stay patient with the option and win time of possession.`,'Air Raid':`${t.city} lives and dies with the quick passing game. Protect the quarterback.`,'Power':`${t.city} wants to lean on people up front and run the football.`,'Pro':`${t.city} needs the play-action game working off the run.`,'Spread':`${t.city} has to win in space and create explosive plays.`}[sc]+(o>.3?' They have the edge on paper.':o<-.3?' On paper this is an uphill climb.':'')}
 function playoffBubble(L){

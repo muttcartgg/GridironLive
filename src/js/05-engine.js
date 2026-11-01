@@ -62,8 +62,8 @@ function snapshot(pat){
 }
 
 /* ---------- possessions, kickoffs, quarters ---------- */
-function startDrive(x,why){S.poss='home';fatRest(2);if(typeof BC!=='undefined')BC.newDrive();S.los=x;S.ballY=CEN;S.down=1;S.firstDownX=Math.min(110,x+10);S.conv=false;S.rzActive=false;S.clockRun=false;if(why&&typeof BC!=='undefined')BC.say('drive',{why});toPresnap()}
-function startDefDrive(los,why){S.poss='away';fatRest(2);if(typeof BC!=='undefined')BC.newDrive();S.los=clamp(los,11,109);S.ballY=CEN;S.down=1;S.firstDownX=Math.min(110,S.los+10);S.conv=false;S.rzActive=false;S.clockRun=false;if(why)toast(why);toPresnap()}
+function startDrive(x,why){S.poss='home';fatRest(2);if(typeof BC!=='undefined')BC.newDrive();S.los=x;if(S.drive)S.drive.start=Math.round(x-10);S.ballY=CEN;S.down=1;S.firstDownX=Math.min(110,x+10);S.conv=false;S.rzActive=false;S.clockRun=false;if(why&&typeof BC!=='undefined')BC.say('drive',{why});toPresnap()}
+function startDefDrive(los,why){S.poss='away';fatRest(2);if(typeof BC!=='undefined')BC.newDrive();S.los=clamp(los,11,109);if(S.drive)S.drive.start=Math.round(S.los-10);S.ballY=CEN;S.down=1;S.firstDownX=Math.min(110,S.los+10);S.conv=false;S.rzActive=false;S.clockRun=false;if(why)toast(why);toPresnap()}
 /* opponent gets the ball; dist = yards from the user's goal line */
 function oppPossession(dist,why){
   S.phase='wait';S.rzActive=false;S.clockRun=false;S.poss='away';hideActs();
@@ -894,7 +894,7 @@ function showActs(){
 /* ---------- post-game ---------- */
 const ncaaRating=s=>s.att?((8.4*s.passYds)+(330*s.passTD)+(100*s.comp)-(200*s.int))/s.att:0;
 function gameOver(){
-  if(S.phase==='over')return;S.phase='over';if(S.ff)kmStopFF();   // a game that ends while simming stops the fast-forward right away (no frame race)hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);
+  if(S.phase==='over')return;S.phase='over';if(S.ff)kmStopFF();hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);   // a game that ends while simming stops the fast-forward right away (no frame race); the HUD comes down at the final whistle
   if(typeof BC!=='undefined')BC.stop();
   const g=S.game,[us,them]=S.score,won=us>them,s=S.stats,os=S.ostats||newGameStats(),rate=ncaaRating(s),u=S.home,opp=S.away;
   const storm=won&&S.userHome&&rankOf(opp.id)&&rankOf(opp.id)<=10&&(!rankOf(u.id)||rankOf(u.id)>rankOf(opp.id)+5);

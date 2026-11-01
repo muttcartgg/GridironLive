@@ -211,9 +211,10 @@
 .lscore tr.w .tot{color:var(--gold)}.lscore tr.l{opacity:.6}
 .qstats{display:flex;flex-direction:column;gap:7px;padding:6px 12px 11px;border-top:1px solid var(--hair)}
 .qfoot{padding:8px 12px;font:700 11.5px/1.25 var(--tv);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);border-top:1px solid var(--hair)}
-.tvs{display:grid;grid-template-columns:40px 1fr auto 1fr 40px;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
-.tvs>b{font:800 italic 17px/1 var(--tv)}.tvs>b:last-child{text-align:right}
-.tvs em{min-width:78px;font:700 11px/1 var(--tv);font-style:normal;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);text-align:center}
+/* every tale-of-the-tape row uses the same fixed columns, so the bars of all rows share one centre line and one scale */
+.tvs{display:grid;grid-template-columns:46px minmax(0,1fr) 92px minmax(0,1fr) 46px;align-items:center;gap:6px;font-variant-numeric:tabular-nums}
+.tvs>b{font:800 italic 17px/1 var(--tv);white-space:nowrap;min-width:0}.tvs>b:last-child{text-align:right}
+.tvs em{min-width:0;font:700 10.5px/1.1 var(--tv);font-style:normal;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .tvb{display:flex;justify-content:flex-end;height:8px;border-radius:4px;background:rgba(255,255,255,.07);overflow:hidden}.tvb.r{justify-content:flex-start}
 .tvb i{display:block;height:100%;width:var(--w);border-radius:4px}
 #qcard.mini .tvs{padding:2px 12px 11px}

@@ -99,3 +99,7 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
 #callHead .ap-mode{background:rgba(77,163,255,.16);color:#9FCBFF}#callHead .ap-km{background:rgba(232,195,90,.16);color:#E8C35A}#callHead .ap-full{background:rgba(255,255,255,.07);color:#B9C4D0}
 .pm-mode{margin:10px 0 2px;display:flex;flex-direction:column;gap:8px}.pm-mode .setrow{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
 @media (max-width:540px){#apBar .ap-lab{display:none}#kmOv .km-sc strong{font-size:24px}}
+/* the pause / timeout buttons sit over the top corners of a full-height sheet: keep the sheet header clear of them,
+   and in landscape (the sheet covers the score bug and repeats the score in its header) hide the bug underneath */
+#call h3,#opt h3{padding:0 46px;max-width:100%;box-sizing:border-box}
+@media (max-height:480px){body:has(#call:not([hidden])) #sb{visibility:hidden}}

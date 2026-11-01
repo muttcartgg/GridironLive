@@ -121,10 +121,15 @@ function simDriveLog(d,yds,plays,label,time){
   logPBP(`${S.away.abbr} drive (simulated): ${plays} plays, ${yds} yards, ${fmtClock(time)} · ${label}`,'sim');
   closeDrive();(S.drives=S.drives||[]).push({team:'away',start:100-d,end:Math.min(100,100-d+yds),plays,yds,res:label,sim:true,q:S.q});
 }
+/* drive chart: every lane is the same to-scale 120-yard field (end zones at both ends, a line every 10 yards, the 50
+   in the middle), so all bars share one axis; each team drives left to right from its own goal line, the bar runs
+   from the drive's first snap to its final spot and the arrowhead shows the direction (a drive can lose yards) */
 function driveChartHTML(){
   const ds=S.drives||[];if(!ds.length)return '';
-  return `<div class="card"><div class="h2">Drive chart</div><div class="dchart">${ds.map(d=>{const t=d.team==='home'?S.home:S.away,a=clamp(d.start,0,100),b=clamp(d.end,0,100),good=/TD|FG/.test(d.res)&&!/Missed/.test(d.res);
-    return `<div class="drow"><span class="ab">${esc(t.abbr)}</span><div class="lane"><i style="left:${Math.min(a,b)}%;width:${Math.max(1.5,Math.abs(b-a))}%;background:${t.c1}"></i></div><span class="res ${good?'ok':''}">${esc(d.res)}${d.sim?' *':''}</span></div>`}).join('')}</div><p class="note">Bars run from own goal line (left) to the opponent's (right). * simulated drive.</p></div>`;
+  const X=v=>(10+clamp(+v||0,0,100))/1.2,pc=v=>v.toFixed(2)+'%';
+  const axis=[10,20,30,40,50,60,70,80,90].map(v=>`<span style="left:${pc(X(v))}">${v>50?100-v:v}</span>`).join('');
+  return `<div class="card"><div class="h2">Drive chart</div><div class="dchart"><div class="drow dax" aria-hidden="true"><span></span><div class="axis"><span class="ez" style="left:${pc(X(0)/2)}">G</span>${axis}<span class="ez" style="left:${pc(100-X(0)/2)}">G</span></div><span></span></div>${ds.map(d=>{const t=d.team==='home'?S.home:S.away,a=clamp(+d.start||0,0,100),b=clamp(d.end!=null?+d.end:a,0,100),good=/TD|FG/.test(d.res)&&!/Missed/.test(d.res),net=Math.round(b-a);
+    return `<div class="drow"><span class="ab">${esc(t.abbr)}</span><div class="lane"><i class="${b<a?'bk':''}" style="left:${pc(X(Math.min(a,b)))};width:${pc(Math.max(.8,Math.abs(b-a)/1.2))};--c:${tvCol(t)}"></i></div><span class="res ${good?'ok':''}"><b>${esc(d.res)}${d.sim?' *':''}</b><small>${d.plays||0} pl · ${net>0?'+':''}${net} yds</small></span></div>`}).join('')}</div><p class="note">Each team drives left to right, from its own goal line (G) toward the opponent's. Bars run from the first snap to the final spot. * simulated drive.</p></div>`;
 }
 
 /* box score for the pause menu and the post-game screen */
