@@ -9,6 +9,11 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 7.7: UI polish and real stadium designs
+
+- UI polish: stat comparison bars line up on shared columns; the drive chart is drawn to scale with correct starts, ends and yards; halftime turnovers match the box score; quarter and two-minute cards wait for a dead ball; only one center graphic at a time; the score bug hides after the final; readable route lines for dark-colored teams.
+- Real stadium designs (separate file, not in the app): import gridiron-live-2026-stadiums.json in Settings › Rosters & data to draw all 138 FBS home stadiums from their real shape, decks, end-zone seating, seat colors, video board, roof, turf and signature features (hedges, hills, mountain/lake/skyline backdrops, checkerboard end zones, colored turf…), including the kick view. Domes keep the weather out. "Use real stadium designs" setting.
+
 ## Version 7.6: Road to Glory
 
 - A player career mode inside a normal league (generated or imported real rosters): create a recruit (QB, RB, WR, TE, LB, CB or S; home state; 2–5 stars; archetype), see your senior-year recap, weigh 5–8 offers, take up to three official visits and commit.

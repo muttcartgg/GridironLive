@@ -2217,8 +2217,41 @@ function applyRosterPack(L,pk,opts){
   if(L.user!=null&&L.teams[L.user]&&Array.isArray(L.captains)){const u=L.teams[L.user];const ids=new Set(u.roster.map(p=>p.id));if(!L.captains.every(id=>ids.has(id)))L.captains=u.roster.filter(p=>p.yr>=3).sort((a,b)=>ovr(b)-ovr(a)).slice(0,2).map(p=>p.id)}
   invalidate();if(typeof updateRankings==='function'&&L.weeks)try{updateRankings(L)}catch(err){console.error(err)}
   L.pack={name:String(pk.name||'Imported pack').slice(0,60),season:pk.season||null,teams:pairs.length};
-  return {teams:pairs.length,miss,players,logos,custom,coaches};
+  const std=stdList(pk)?applyStadiums(L,stdList(pk)).teams:0;
+  return {teams:pairs.length,miss,players,logos,custom,coaches,std};
 }
+
+/* ---------- real stadiums: {"format":"gridiron-live-stadiums","version":1,"stadiums":[…]} on its own or as "stadiums" in a roster pack ----------
+   Entries match teams like pack teams (espnId, abbr in "team", school). Each match sets t.stadium/t.cap and t.std, the compact
+   design 08g draws: {v:1, sh bowl|horse|u|side, d far-side decks 1–3, L/R end codes (L large, M medium, S small, B hill, X building,
+   O open) as seen from across the press box, bd video-board end 'L'|'R'|'', ft signature features, sc seats ['#s1','#s2']|'metal'|
+   'primary'|null, tf special turf color, gr 1 natural grass, rf 1 dome, cap, el elevation ft}. Saved with the dynasty (team field)
+   and, when chosen, in KV for new dynasties. LG.settings.realStadiums===false draws the generic stadium instead. */
+const STD_KEY='gl.std',STD_ON='gl.stdOn',STD_FT=['hedges','hill','turf','checker','mountains','water','skyline','trees','tower','arches','cards','pyro','dome','board','canopy'];
+const stdList=pk=>pk&&!Array.isArray(pk)&&Array.isArray(pk.stadiums)&&pk.stadiums.length?pk.stadiums:null;
+const stdIsFile=pk=>!!(stdList(pk)&&!(Array.isArray(pk.teams)&&pk.teams.length)&&!(Array.isArray(pk.players)&&pk.players.length));
+function stdCompact(e){
+  const a=e&&e.architecture;if(!a||typeof a!=='object')return null;const v=a.view||{},ends=a.ends||{},hx=/^#[0-9a-f]{6}$/i;
+  const code=x=>({large:'L',medium:'M',small:'S',hill:'B',building:'X',open:'O'})[x]||'M';
+  const ft=(Array.isArray(a.features)?a.features:[]).filter(f=>STD_FT.includes(f)).slice(0,3);
+  const sc=Array.isArray(a.seats)&&a.seats.length===2&&a.seats.every(c=>hx.test(c))?a.seats.slice():a.seats==='metal'||a.seats==='primary'?a.seats:null;
+  return {v:1,sh:['bowl','horse','u','side'].includes(a.shape)?a.shape:'bowl',d:clamp(parseInt(a.decks&&a.decks.pressSide)||2,1,3),L:code(ends[v.left]),R:code(ends[v.right]),
+    bd:a.videoBoard&&a.videoBoard===v.left?'L':a.videoBoard&&a.videoBoard===v.right?'R':'',ft,sc,tf:hx.test(e.turf||'')?e.turf:'',gr:e.surface==='grass'?1:0,
+    rf:e.roof==='dome'||ft.includes('dome')?1:0,cap:clamp(parseInt(e.capacity)||40000,5000,120000),el:clamp(parseInt(e.elevation_ft)||0,0,12000)};
+}
+const stdMatch=(L,list)=>packMatch(L,{teams:list.filter(e=>e&&typeof e==='object').map(e=>({...e,abbr:e.abbr||e.team}))});
+function applyStadiums(L,list){
+  const {pairs,miss}=stdMatch(L,list);let n=0;
+  for(const [t,e] of pairs){const s=stdCompact(e);if(!s)continue;t.std=s;n++;if(e.name)t.stadium=String(e.name).slice(0,40);const c=parseInt(e.capacity);if(c>=1000&&c<=200000)t.cap=c}
+  if(typeof STAD!=='undefined')STAD.key='';if(typeof FLD!=='undefined')FLD.key='';
+  return {teams:n,miss};
+}
+/* kept for new dynasties: only what applyStadiums needs (about 20 KB) */
+function stdSave(list){const c=list.filter(e=>e&&e.architecture).map(e=>({team:e.team||e.abbr,school:e.school,espnId:e.espnId,name:e.name,capacity:e.capacity,turf:e.turf,surface:e.surface,roof:e.roof,elevation_ft:e.elevation_ft,architecture:e.architecture}));
+  KV.set(STD_KEY,JSON.stringify(c));KV.set(STD_ON,'1');return c.length}
+function stdLoadSaved(){try{const raw=KV.get(STD_KEY);const c=raw?JSON.parse(raw):null;return Array.isArray(c)?c:null}catch(e){console.error(e);return null}}
+const stdSavedOn=()=>KV.has(STD_KEY)&&KV.get(STD_ON)!=='0';
+function stdAutoApply(L){if(!L||L.kind!=='ncaa'||!stdSavedOn())return false;const c=stdLoadSaved();if(!c)return false;try{applyStadiums(L,c);return true}catch(e){console.error(e);return false}}
 /* summary for the preview, without touching the league */
 function packPreview(L,pk){
   if(Array.isArray(pk))pk={players:pk};
@@ -2226,7 +2259,9 @@ function packPreview(L,pk){
   const {pairs,miss}=packMatch(L,pk);let players=0,logos=0,coaches=0;for(const [,e] of pairs){players+=Array.isArray(e.roster)?e.roster.length:0;if(safeURL(e.logo)||safeURL(e.logoDark))logos++;if(e.coaches)coaches+=['hc','oc','dc'].filter(k=>e.coaches[k]&&e.coaches[k].name).length}
   const cust=(pk.players||[]).filter(e=>e&&packTeamFor(L,e.team)).length;
   const sc=realSchedOK(pk.schedule)?{season:pk.schedule.season||pk.season||2026,through:pk.schedule.through|0}:null;
-  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,coaches,custom:cust,customMiss:(pk.players||[]).length-cust,sched:sc};
+  const sl=stdList(pk),sm=sl?stdMatch(L,sl):null;
+  return {v1:false,pk,teams:pairs.length,total:(pk.teams||[]).length,miss,players,logos,coaches,custom:cust,customMiss:(pk.players||[]).length-cust,sched:sc,
+    std:sm?{teams:sm.pairs.length,total:sl.length,miss:sm.miss}:null,stdOnly:stdIsFile(pk)};
 }
 
 /* ---------- saved pack for new dynasties (compressed in KV; only the 60 players each team would use) ---------- */
@@ -2237,6 +2272,7 @@ function packSave(pk){
   const sc=pk.schedule;if(realSchedOK(sc))c.schedule={season:sc.season||pk.season||null,through:sc.through|0,updated:sc.updated||'',games:sc.games.slice(0,4000)};
   const raw='Z:'+LZString.compressToBase64(JSON.stringify(c));
   if(raw.length>6e6)throw new Error('This pack is too big to keep for new dynasties.');
+  if(stdList(pk))stdSave(stdList(pk));
   KV.set(PACK_KEY,raw);KV.set(PACK_ON,'1');KV.set(REAL_KEY,c.schedule?JSON.stringify({season:c.schedule.season||2026,through:c.schedule.through,n:c.schedule.games.length}):null);return raw.length;
 }
 function packLoadSaved(){
@@ -2247,21 +2283,28 @@ function packLoadSaved(){
 }
 const packSavedOn=()=>KV.has(PACK_KEY)&&KV.get(PACK_ON)!=='0';
 /* new NCAA dynasties start from the saved pack when it is on */
-function packAutoApply(L){if(!L||L.kind!=='ncaa'||!packSavedOn())return false;const pk=packLoadSaved();if(!pk)return false;try{applyRosterPack(L,pk,{});return true}catch(e){console.error(e);return false}}
+function packAutoApply(L){if(!L||L.kind!=='ncaa')return false;let ok=false;
+  if(packSavedOn()){const pk=packLoadSaved();if(pk)try{applyRosterPack(L,pk,{});ok=true}catch(e){console.error(e)}}
+  stdAutoApply(L);return ok}   /* saved stadiums go on after the pack (their names win over the pack's venue names) */
 
 /* ---------- import UI ---------- */
 function openRosterImport(L,done,opt){
   opt=opt||{};const live=typeof LG!=='undefined'&&LG&&L===LG;let pk=null,pv=null;
   const render=()=>{
     const p=pv;let prev='';
+    const stdK=p&&p.std?`<div><em>Stadiums</em><b>${p.std.teams}<small>/${p.std.total}</small></b></div>`:'';
     if(p&&p.v1)prev=`<div class="ri-prev"><b>Old-style team pack</b><p class="note">${p.teams} schools, matched by their order in the list.</p></div>`;
-    else if(p)prev=`<div class="ri-prev"><div class="kpis"><div><em>Teams matched</em><b>${p.teams}<small>/${p.total}</small></b></div><div><em>Players</em><b>${p.players.toLocaleString()}</b></div><div><em>Logos</em><b>${p.logos}</b></div><div><em>Coaches</em><b>${p.coaches||0}</b></div><div><em>Custom players</em><b>${p.custom}</b></div></div>
+    else if(p&&p.stdOnly)prev=`<div class="ri-prev"><div class="kpis">${stdK}</div><p class="note">Real stadium designs: names, capacities and a drawn version of each stadium (shape, decks, open ends, video board, seats, turf and signature touches). Turn them off any time in Settings › Rosters &amp; data.</p>
+      ${p.std.miss.length?`<p class="note">Not in this league (skipped): ${esc(p.std.miss.slice(0,8).join(', '))}${p.std.miss.length>8?` and ${p.std.miss.length-8} more`:''}</p>`:''}
+      ${live?`<label class="ri-opt"><input type="checkbox" id="riCur" ${L.live?'disabled':'checked'}> Apply to this dynasty now${L.live?' (finish the game in progress first)':''}</label>`:''}
+      ${p.std.teams?`<label class="ri-opt"><input type="checkbox" id="riSave" checked> Use for new dynasties</label>`:''}</div>`;
+    else if(p)prev=`<div class="ri-prev"><div class="kpis"><div><em>Teams matched</em><b>${p.teams}<small>/${p.total}</small></b></div><div><em>Players</em><b>${p.players.toLocaleString()}</b></div><div><em>Logos</em><b>${p.logos}</b></div><div><em>Coaches</em><b>${p.coaches||0}</b></div><div><em>Custom players</em><b>${p.custom}</b></div>${stdK}</div>
       ${p.miss.length?`<p class="note">Not in this league (skipped): ${esc(p.miss.slice(0,8).join(', '))}${p.miss.length>8?` and ${p.miss.length-8} more`:''}</p>`:''}${p.customMiss?`<p class="note">${p.customMiss} custom player${p.customMiss>1?'s have':' has'} no matching team.</p>`:''}${p.sched?`<p class="note">Includes the real ${p.sched.season} schedule with results through week ${p.sched.through}: keep "Use for new dynasties" on, then pick Real ${p.sched.season} on the new-dynasty screen.</p>`:''}
       ${live?`<label class="ri-opt"><input type="checkbox" id="riCur" ${L.live?'disabled':'checked'}> Apply to this dynasty now${L.live?' (finish the game in progress first)':''}</label>
       <label class="ri-opt"><input type="checkbox" id="riKeep" checked> Keep my team's roster</label>`:''}
-      ${p.teams&&(p.pk.teams||[]).length?`<label class="ri-opt"><input type="checkbox" id="riSave" checked> Use for new dynasties</label>`:''}</div>`;
+      ${p.teams&&(p.pk.teams||[]).length||p.std&&p.std.teams?`<label class="ri-opt"><input type="checkbox" id="riSave" checked> Use for new dynasties</label>`:''}</div>`;
     openModal(`<div class="eyebrow">Rosters &amp; logos</div><div class="h2">Import rosters &amp; logos</div>
-      <p class="note">Choose a roster pack (.json) saved in Files, or paste one below. A pack replaces players and coaching staffs, adds custom players and links team logos; school names and colors stay as they are.</p>
+      <p class="note">Choose a roster pack or a stadiums file (.json) saved in Files, or paste one below. A pack replaces players and coaching staffs, adds custom players and links team logos; a stadiums file gives teams their real stadium designs. School names and colors stay as they are.</p>
       <div class="btns"><label class="btn light ri-file">Choose file…<input type="file" id="riFile" accept=".json,application/json,text/plain" hidden></label></div>
       <textarea id="riPaste" placeholder='{"format":"gridiron-live-pack","version":2,…}  or a custom players list'></textarea>
       <div class="btns"><button class="btn ghost sm" id="riRead">Read pasted text</button></div>
@@ -2269,16 +2312,18 @@ function openRosterImport(L,done,opt){
       <div class="btns">${p?`<button class="btn" id="riGo">${p.v1?'Apply team pack':'Import'}</button>`:''}<button class="btn ghost" id="riX">${p?'Cancel':'Close'}</button></div>`);
     on('riX',closeModal);
     const err=m=>{$('#riErr').textContent=m};
-    const take=txt=>{try{let j=JSON.parse(String(txt).replace(/^﻿/,''));if(Array.isArray(j))j={players:j};if(!j||typeof j!=='object'||!(Array.isArray(j.teams)||Array.isArray(j.players)))throw new Error('shape');pk=j;pv=packPreview(L,j);render()}
-      catch(e){pk=pv=null;err(e.message==='shape'?'That JSON has no "teams" or "players" list.':'That isn’t valid JSON. Check that you copied all of it.')}};
+    const take=txt=>{try{let j=JSON.parse(String(txt).replace(/^﻿/,''));if(Array.isArray(j))j={players:j};if(!j||typeof j!=='object'||!(Array.isArray(j.teams)||Array.isArray(j.players)||stdList(j)))throw new Error('shape');pk=j;pv=packPreview(L,j);render()}
+      catch(e){pk=pv=null;err(e.message==='shape'?'That JSON has no "teams", "players" or "stadiums" list.':'That isn’t valid JSON. Check that you copied all of it.')}};
     const f=$('#riFile');f.onchange=()=>{const file=f.files&&f.files[0];if(!file)return;if(file.size>40e6){err('That file is too big (40 MB max).');return}err('Reading '+file.name+'…');const rd=new FileReader();rd.onload=()=>take(rd.result);rd.onerror=()=>err('That file could not be read.');rd.readAsText(file)};
     on('riRead',()=>{const v=$('#riPaste').value.trim();if(!v){err('Paste a pack first.');return}take(v)});
     on('riGo',()=>{const b=$('#riGo');b.disabled=true;b.textContent='Importing…';setTimeout(()=>{try{
       if(pv.v1){applyTeamPack(L,pk,{regen:opt.regen||L.phase==='regular'&&L.week===0});closeModal();done&&done();return}
       const save=!!($('#riSave')&&$('#riSave').checked),keep=live&&$('#riKeep')&&$('#riKeep').checked;
       const cur=live?!!($('#riCur')&&$('#riCur').checked&&!L.live):!(opt.setup&&save);
-      let msg=[],saved=false;if(cur){const s=applyRosterPack(L,pk,{keepUser:keep});msg.push(`${s.teams} teams updated`+(s.coaches?`, ${s.coaches} coaches`:'')+(s.custom?`, ${s.custom} custom players`:''))}
-      if(save){try{packSave(pk);saved=true;msg.push('saved for new dynasties')}catch(e){msg.push(e.message)}}
+      let msg=[],saved=false;
+      if(cur&&pv.stdOnly){const s=applyStadiums(L,stdList(pk));msg.push(`${s.teams} stadiums`)}
+      else if(cur){const s=applyRosterPack(L,pk,{keepUser:keep});msg.push(`${s.teams} teams updated`+(s.coaches?`, ${s.coaches} coaches`:'')+(s.custom?`, ${s.custom} custom players`:'')+(s.std?`, ${s.std} stadiums`:''))}
+      if(save){try{if(pv.stdOnly)stdSave(stdList(pk));else packSave(pk);saved=true;msg.push('saved for new dynasties')}catch(e){msg.push(e.message)}}
       closeModal();toast(msg.join(' · ')||'Nothing to import');done&&done({saved,applied:cur})}catch(e){console.error(e);b.disabled=false;b.textContent='Import';err('Import failed: '+e.message)}},30)});
   };render();
 }
@@ -2346,9 +2391,11 @@ Promise.resolve().then(()=>{
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Rosters pack',button:'Import rosters & logos',id:'impRosters',note:'Load a roster pack (.json) from Files or paste one: real rosters, custom players and team logos.',onClick:()=>openRosterImport(LG,()=>{saveNow();showHub('settings')})});
 SETTINGS_EXTRA.push({card:'Rosters & data',key:'showLogos',label:'Show imported logos',opts:[[1,'On'],[0,'Off']],def:1,bool:true});
 SETTINGS_EXTRA.push({card:'Rosters & data',key:'showPhotos',label:'Show real player photos',opts:[[1,'On'],[0,'Off']],def:1,bool:true,note:'Imported players show their headshot when you are online (loaded from ESPN, never saved). Everyone else, and anyone without a photo, gets a team-colour avatar.'});
+SETTINGS_EXTRA.push({card:'Rosters & data',key:'realStadiums',label:'Use real stadium designs',opts:[[1,'On'],[0,'Off']],def:1,bool:true,when:()=>LG.teams.some(t=>t.std)||stdSavedOn(),
+  note:'Teams with an imported stadium design play in a drawn version of their real stadium (import a stadiums file above). Off: everyone gets the standard stadium.',after:()=>{STAD.key='';FLD.key=''}});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Your roster',button:'Export my roster (JSON)',id:'expRoster',onClick:()=>openRosterExport()});
-SETTINGS_EXTRA.push({card:'Rosters & data',label:'Imported data',button:'Remove imported data',id:'rmPack',note:'New dynasties go back to generated rosters; this dynasty keeps its players and drops the imported logos.',
-  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);KV.set(REAL_KEY,null);for(const t of LG.teams){delete t.logo;delete t.logoDark}delete LG.pack;saveNow();showHub('settings');toast('Imported data removed')}});
+SETTINGS_EXTRA.push({card:'Rosters & data',label:'Imported data',button:'Remove imported data',id:'rmPack',note:'New dynasties go back to generated rosters and the standard stadium; this dynasty keeps its players and drops the imported logos and stadium designs.',
+  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);KV.set(REAL_KEY,null);KV.set(STD_KEY,null);KV.set(STD_ON,null);for(const t of LG.teams){delete t.logo;delete t.logoDark;delete t.std}delete LG.pack;STAD.key='';FLD.key='';saveNow();showHub('settings');toast('Imported data removed')}});
 });
 
 /* ---------- v1 team packs (moved from 02-data.js) ---------- */
@@ -4844,7 +4891,7 @@ function startUserGame(g,snap){
   const u=T(LG.user),opp=T(g.h===LG.user?g.a:g.h);
   const rk=rankOf(opp.id),boost=rk?(rk<=5?1.05:rk<=10?1.035:1.02):1;
   Object.assign(S,{game:g,home:u,away:opp,userHome:g.h===LG.user&&!g.neutral,neutral:!!g.neutral,qlen:LG.settings.qlen,diffMul:(DIFF[LG.settings.diff]||1)*boost,
-    aiSkill:clamp(.45+(teamOvr(opp)-3)*.13+(boost-1)*4+(LG.settings.diff-1)*.08,.2,.97),wx:g.wx||'Clear',slot:g.slot||'Afternoon',ts:1,slowT:0,shake:0,paused:false,simmed:false,celebrate:null,defCall:'auto',ctrlKey:LG.settings.defPlayer||'LB0'});
+    aiSkill:clamp(.45+(teamOvr(opp)-3)*.13+(boost-1)*4+(LG.settings.diff-1)*.08,.2,.97),wx:(()=>{const h=T(g.h);return !g.neutral&&h&&h.std&&h.std.rf&&LG.settings.realStadiums!==false?'Clear':g.wx||'Clear'})(),slot:g.slot||'Afternoon',ts:1,slowT:0,shake:0,paused:false,simmed:false,celebrate:null,defCall:'auto',ctrlKey:LG.settings.defPlayer||'LB0'});
   muted=!!LG.settings.muted;
   S.dc={u:{},a:{}};for(const pos of POS_ORDER){S.dc.u[pos]=depth(u,pos);S.dc.a[pos]=depth(opp,pos)}
   Object.assign(S,{tmo:{},ejected:[],otPos:0,otFirst:'home',untimed:false,toDB:[0,0],kickPenA:false,clockHold:0,pbp:[],drives:[],drive:null});   // a resumed game brings back its log and drives (snapshot)
@@ -8857,9 +8904,10 @@ function drawKick(){
   if(S.home){const kk=stadKey();if(!STAD.T||kk!==STAD.key){STAD.key=kk;buildStadium()}}const T=STAD.T,hz=h*.47;g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';
   /* sky by time slot, end-zone stands (same tiles as the far stands), light towers */
   const sk={day:['#4f7fbf','#a8c4e2'],late:['#5d7fb0','#e2c9a2'],sunset:['#23305c','#ee8a4e'],night:['#02040a','#101a33']}[st]||['#4f7fbf','#a8c4e2'];
-  const sky=g.createLinearGradient(0,0,0,h*.2);sky.addColorStop(0,sk[0]);sky.addColorStop(1,sk[1]);g.fillStyle=sky;g.fillRect(0,0,w,hz);
   const good=k.stage==='flight'&&k.flight>=1&&k.good;
-  if(T){const P=STAD.ppu,f=h*.15/(ST.loN*ST.loH*P),fu=f*.82,tw=ST.tile*P,ex=good?1:0,lo=ex?T.lo1:T.lo0,up=ex?T.up1:T.up0,ub=h*.255,lb=h*.42,cb=lb-ST.wall*0;
+  if(T&&STAD.sd)stdKick(g,w,h,hz,good,now,host);   /* real stadium design: the end being kicked at (08g) */
+  else{const sky=g.createLinearGradient(0,0,0,h*.2);sky.addColorStop(0,sk[0]);sky.addColorStop(1,sk[1]);g.fillStyle=sky;g.fillRect(0,0,w,hz)}
+  if(T&&!STAD.sd){const P=STAD.ppu,f=h*.15/(ST.loN*ST.loH*P),fu=f*.82,tw=ST.tile*P,ex=good?1:0,lo=ex?T.lo1:T.lo0,up=ex?T.up1:T.up0,ub=h*.255,lb=h*.42,cb=lb-ST.wall*0;
     g.fillStyle=night?'#151920':'#4c535d';g.fillRect(0,h*.075,w,h*.03);g.fillStyle=host.c1;g.fillRect(0,h*.095,w,h*.008);
     for(let x=-((now*.01)%1);x<w;x+=tw*fu){const b=ex?Math.abs(Math.sin(now/120+x))*6:0;g.drawImage(up,x,ub-up.height*fu-b,tw*fu+1,up.height*fu)}
     for(let x=0;x<w;x+=tw*f)g.drawImage(T.club,x,ub-2,tw*f+1,ST.club*P*f*.75);
@@ -8870,7 +8918,7 @@ function drawKick(){
       if(L.glow>.05){g.globalCompositeOperation='lighter';g.globalAlpha=Math.min(1,L.glow*1.2);g.drawImage(T.glow,tx-160,-100,320,230);g.globalAlpha=1;g.globalCompositeOperation='source-over'}}}
   /* turf in perspective: mow bands, yard lines, sidelines, end zone in host colors */
   const vy=hz-h*.9,pz=y=>(y-vy)/(h-vy),fx2=(x,y)=>cx+(x-cx)*pz(y),span=w*.45,postY=h*.5,barY=h*.42,topY2=h*.08,ux=k.width*span;
-  for(let i=0;i<9;i++){const y0=hz+(h-hz)*Math.pow(i/9,1.55),y1=hz+(h-hz)*Math.pow((i+1)/9,1.55);g.fillStyle=i%2?'#2f7f36':'#2a7231';g.fillRect(0,y0,w,y1-y0+1)}
+  const tcol=STAD.sd?turfColors(night):null;for(let i=0;i<9;i++){const y0=hz+(h-hz)*Math.pow(i/9,1.55),y1=hz+(h-hz)*Math.pow((i+1)/9,1.55);g.fillStyle=tcol?tcol[i%2]:i%2?'#2f7f36':'#2a7231';g.fillRect(0,y0,w,y1-y0+1)}
   const ez=hz+(h-hz)*.07;g.fillStyle=host.c1;g.globalAlpha=.85;g.fillRect(0,hz,w,ez-hz);g.globalAlpha=1;g.save();g.translate(cx,(hz+ez)/2);g.scale(1,.32);g.fillStyle=inkOn(host.c1);g.font=`900 italic ${Math.round((ez-hz)*2.4)}px ${FFONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText(String(host.city||host.name).toUpperCase(),0,0);g.restore();
   g.strokeStyle='rgba(255,255,255,.75)';for(let i=0;i<=9;i++){const y=hz+(h-hz)*Math.pow(i/9,1.55);g.lineWidth=1+3*pz(y);g.beginPath();g.moveTo(0,y);g.lineTo(w,y);g.stroke()}
   g.lineWidth=3;g.beginPath();for(const sx of [-1,1]){g.moveTo(fx2(cx+sx*w*.62,hz),hz);g.lineTo(fx2(cx+sx*w*.62,h),h)}g.stroke();
@@ -9323,7 +9371,9 @@ function feedWeek(L,prevRank){
 const hostT=()=>S.neutral?S.home:(S.userHome?S.home:S.away);
 const isNight=()=>S.slot==='Primetime'||(S.slot==='Afternoon'&&progress()>.66);
 const SPECIAL_TURF={BOIS:['#1d4fb0','#1a46a0'],EWU:['#b3262d','#9e2127'],CCU:['#1b8f8c','#177d7a'],UCA:['#6d6f76','#4f2d7f']};
-function turfColors(night){const t=hostT(),cu=t.stad&&t.stad.turf,sp=LG.settings.specialTurf!==false&&(cu?[cu,shade(cu,-.1)]:SPECIAL_TURF[t.abbr]);if(sp)return night?[shade(sp[0],-.15),shade(sp[1],-.15)]:sp;return night?['#2c7432','#25652c']:['#3a8a3d','#2e7633']}
+function turfColors(night){const t=hostT(),sd=typeof stdOf==='function'?stdOf(t):null,cu=t.stad&&t.stad.turf||sd&&sd.tf,sp=LG.settings.specialTurf!==false&&(cu?[cu,shade(cu,-.1)]:SPECIAL_TURF[t.abbr]);if(sp)return night?[shade(sp[0],-.15),shade(sp[1],-.15)]:sp;
+  if(sd&&!sd.gr)return night?['#2f7a37','#2a6d31']:['#3e9143','#357f39'];   /* artificial turf: a touch brighter and more even */
+  return night?['#2c7432','#25652c']:['#3a8a3d','#2e7633']}
 function crowdTheme(){const t=LG.settings.studentTheme||'auto';if(t!=='auto')return t;const g=S.game;if(!g)return 'none';if(g.rival)return 'stripe';if(S.slot==='Primetime')return (hostT().id%2)?'black':'white';return 'none'}
 function crowdEmpty(){
   const dens=LG.settings.crowd==='low'?.25:0;let e=dens;if(!S.home||S.ot)return e;
@@ -9929,8 +9979,8 @@ const DIG={0:[[.9,0,3.1,0,4,.9,4,5.1,3.1,6,.9,6,0,5.1,0,.9],[1.45,1.2,2.55,1.2,2
   5:[[0,0,4,0,4,1.2,1.2,1.2,1.2,2.4,3.1,2.4,4,3.3,4,5.1,3.1,6,0,6,0,4.8,2.8,4.8,2.8,3.6,0,3.6]]};
 const FFONT='-apple-system,system-ui,"Helvetica Neue",Arial,sans-serif';
 function fRng(seed){let a=seed>>>0||1;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-function lightStage(){if(S.slot==='Primetime')return 'night';if(S.slot==='Afternoon'){const p=progress();return p>.66?'night':p>.35?'sunset':'late'}return 'day'}
-const wxKind=()=>S.wx==='Rain'?'wet':S.wx==='Snow'?'snow':'dry';
+function lightStage(){if(stdIndoor())return 'day';if(S.slot==='Primetime')return 'night';if(S.slot==='Afternoon'){const p=progress();return p>.66?'night':p>.35?'sunset':'late'}return 'day'}
+const wxKind=()=>stdIndoor()?'dry':S.wx==='Rain'?'wet':S.wx==='Snow'?'snow':'dry';
 function sceneLight(){
   const st=lightStage(),wk=wxKind(),k=st+wk;if(FLD.lightKey===k&&FLD.light)return FLD.light;
   const L=st==='night'?{sx:.6,sy:.8,len:.55,a:.16,n:4,tint:'rgba(110,140,255,.08)',glow:.7}:st==='sunset'?{sx:.97,sy:.24,len:1.6,a:.3,n:1,tint:'rgba(255,140,60,.12)',glow:.3}
@@ -9939,8 +9989,8 @@ function sceneLight(){
   FLD.lightKey=k;FLD.light=L;return L;
 }
 const fieldPPY=()=>Math.min(Math.floor(4096/(FLD.x1-FLD.x0)),Math.max(8,Math.ceil(sc*1.2*DPR)));
-function fieldKey(){const t=hostT(),lg=typeof teamLogo==='function'&&teamLogo(t)?1:0;
-  return [t.id,t.abbr,t.city,t.c1,t.c2,S.home.id,S.away.id,LG.settings.specialTurf!==false?1:0,wxKind(),lightStage(),fieldPPY(),lg,UNI_VER].join('|')}
+function fieldKey(){const t=hostT(),lg=typeof teamLogo==='function'&&teamLogo(t)?1:0,sd=stdOf(t);
+  return [t.id,t.abbr,t.city,t.c1,t.c2,S.home.id,S.away.id,LG.settings.specialTurf!==false?1:0,wxKind(),lightStage(),fieldPPY(),lg,UNI_VER,sd?[sd.tf,sd.gr,stdHas(sd,'checker')?1:0].join(','):''].join('|')}
 function ensureField(){if(FLD.cv&&(++FLD.chk%10))return;if(FLD.cv&&S.phase==='live')return;const k=fieldKey();if(k!==FLD.key){FLD.key=k;buildField()}}
 function grainTile(){
   if(FLD.grain)return FLD.grain;const n=document.createElement('canvas');n.width=n.height=256;const g=n.getContext('2d'),r=fRng(99);
@@ -9953,7 +10003,7 @@ function fieldDigits(g,ds){/* two-digit yard number centered on 0,0 in yards, 2 
 function buildField(){
   const t=hostT(),{x0,y0,x1,y1}=FLD,ppy=fieldPPY(),pv=ppy*VY,Wc=Math.ceil((x1-x0)*ppy),Hc=Math.ceil((y1-y0)*pv);
   const cv=FLD.cv||(FLD.cv=document.createElement('canvas'));if(cv.width!==Wc||cv.height!==Hc){cv.width=Wc;cv.height=Hc}
-  const g=cv.getContext('2d'),st=lightStage(),wk=wxKind(),night=st==='night',art=!!(LG.settings.specialTurf!==false&&(SPECIAL_TURF[t.abbr]||stadOf(t).turf)),tf=turfColors(false),r=fRng(t.id*7919+17);
+  const g=cv.getContext('2d'),st=lightStage(),wk=wxKind(),night=st==='night',sdt=stdOf(t),art=!!(LG.settings.specialTurf!==false&&(SPECIAL_TURF[t.abbr]||stadOf(t).turf||(sdt&&sdt.tf)))||!!(sdt&&!sdt.gr),tf=turfColors(false),r=fRng(t.id*7919+17);
   FLD.ppy=ppy;FLD.art=art;
   const WS=()=>g.setTransform(ppy,0,0,pv,-x0*ppy,-y0*pv),PX=(x,y)=>g.setTransform(1,0,0,VY,(x-x0)*ppy,(y-y0)*pv);
   g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.clearRect(0,0,Wc,Hc);WS();
@@ -9965,7 +10015,7 @@ function buildField(){
   /* team areas behind the sidelines */
   g.globalAlpha=.3;g.fillStyle=S.home.c1;g.fillRect(35,FW+2,50,5);g.fillStyle=S.away.c1;g.fillRect(35,-6,50,4);g.globalAlpha=1;
   /* end zones in the host's colors */
-  const sez=stadOf(t).ez,ez=sez?(sez==='solid'?'':sez):EZ_STYLE[t.abbr]||'',lt=contrasty(t.c1,t.c2)?t.c2:inkOn(t.c1),ol=lum(lt)>.5?shade(t.c1,-.55):'#FFFFFF',name=String(t.city||t.name||t.abbr).toUpperCase();
+  const sez=stadOf(t).ez||(stdHas(sdt,'checker')?'check':''),ez=sez?(sez==='solid'?'':sez):EZ_STYLE[t.abbr]||'',lt=contrasty(t.c1,t.c2)?t.c2:inkOn(t.c1),ol=lum(lt)>.5?shade(t.c1,-.55):'#FFFFFF',name=String(t.city||t.name||t.abbr).toUpperCase();
   for(const ex of [0,110]){
     WS();g.fillStyle=t.c1;g.fillRect(ex,0,10,FW);
     if(ez==='check'){g.fillStyle=lt;for(let i=0;i<3;i++)for(let j=0;j<16;j++)if((i+j)%2)g.fillRect(ex+i*10/3,j*FW/16,10/3,FW/16)}
@@ -10100,10 +10150,16 @@ function buildGrade(st,wk){
    seated or standing copy of the same fans plus a small bounce: that is the whole crowd animation (roars,
    the wave, the visitors' pocket cheering alone). fx events drive reactions and ribbon messages.
    Graphics quality (gfxQ) 'saver': whole-tile blits, no bounce, no phone lights or flashbulbs.
+   Real stadium designs (t.std from an imported stadiums file, 02c): STAD.G holds the far-stand geometry (decks and rows from the
+   design and capacity); the camera sits across from the press box, so the press-box stands are the far stands and t.std L/R are
+   the ends on screen (mirrored while the user defends, see stdEnd). Non-bowl stands stop at the corners where an end is not a full
+   deck, showing the sky/backdrop strip (mountains, skyline, trees, water: one cached parallax tile) and the landmark. End codes draw
+   large/medium/small end stands, a grass hill, a building or nothing; features add hedges, checkerboard end zones (08f), colored
+   turf, card stunts, pyro, a dome roof, a canopy, arches and the video board. No t.std (or the setting off): the generic stadium.
    ========================================================= */
 const ST={wall:1,loN:8,loH:.55,club:1.3,upN:7,upH:.48,rim:.4,press:2.4,tile:24,x0:-12,ck:3,ez:7.6};
 const SK=(()=>{const loB=ST.wall,loT=loB+ST.loN*ST.loH,clT=loT+ST.club,upT=clT+ST.upN*ST.upH;return {loB,loT,clT,upT,rimT:upT+ST.rim}})();
-const STAD={key:'',chk:0,ppu:0,T:null,roar:0,hush:0,flashT:0,waveX:-99,msg:'',msgT:0,rb:{},jump:new Map(),lt:0,dots:null};
+const STAD={key:'',chk:0,ppu:0,T:null,G:null,sd:null,roar:0,hush:0,flashT:0,waveX:-99,msg:'',msgT:0,rb:{},jump:new Map(),lt:0,dots:null,pyroT:0,brdKey:'',bandReal:-1,lmReal:1};
 const TOWERS=[-6,36,84,126];
 const stadHi=()=>!(LG&&LG.settings.gfxQ==='saver');
 const stadPPU=()=>clamp(Math.round(sc*zoomMul()*DPR),8,44);
@@ -10112,13 +10168,36 @@ const stadAway=()=>hostT()===S.home?S.away:S.home;
 const stadAlt=t=>contrasty(t.c1,t.c2)?t.c2:lum(t.c1)>.5?'#1d2129':'#F2F3F5';
 const stadCv=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(w));c.height=Math.max(1,Math.ceil(h));return c};
 const stadH01=i=>{const v=Math.sin(i*127.1+311.7)*43758.5453;return v-Math.floor(v)};
-function stadKey(){const h=hostT(),a=stadAway();return [h.id,h.c1,h.c2,h.city,a.id,a.c1,a.c2,crowdTheme(),Math.round(crowdEmpty()*10),lightStage(),wxKind(),stadPPU(),stadStunt()?1:0,uniColors(S.home).j,uniColors(S.away).j,UNI_VER].join('|')}
+/* ---------- real stadium designs ---------- */
+function stdOf(t){t=t||(S.home?hostT():null);return t&&t.std&&t.std.v===1&&!S.neutral&&!(typeof LG!=='undefined'&&LG&&LG.settings&&LG.settings.realStadiums===false)?t.std:null}
+function stdHas(sd,f){return !!(sd&&sd.ft&&sd.ft.indexOf(f)>=0)}
+function stdIndoor(){const sd=S.home?stdOf():null;return !!(sd&&sd.rf)}
+/* end code on screen side -1 (left) / 1 (right): the picture is mirrored while the user defends */
+function stdEnd(sd,side){return (uOff()?side:-side)<0?sd.L:sd.R}
+const stdSeated=c=>c==='L'||c==='M'||c==='S',STD_ROWS={L:14,M:9,S:4};
+function stadGeo(sd){
+  if(!sd)return {loN:ST.loN,upN:ST.upN,d:2,loB:SK.loB,loT:SK.loT,clT:SK.clT,mdT:0,c2T:0,upT:SK.upT,rimT:SK.rimT,pw:36};
+  const cap=sd.cap||40000,d=sd.d,loN=d===1?clamp(Math.round(6+cap/9000),7,16):clamp(Math.round(5+cap/25000),6,10),upN=clamp(Math.round(3+cap/14000),4,10);
+  const loB=ST.wall,loT=loB+loN*ST.loH;let clT=loT,mdT=0,c2T=0,upT=loT;
+  if(d>=2){clT=loT+ST.club;upT=clT+upN*ST.upH}
+  if(d===3){mdT=upT;c2T=mdT+ST.club*.85;upT=c2T+upN*ST.upH}
+  return {loN,upN,d,loB,loT,clT,mdT,c2T,upT,rimT:upT+ST.rim,pw:cap<26000?24:cap<45000?30:36};
+}
+function stadKey(){const h=hostT(),a=stadAway(),sd=stdOf(h);return [h.id,h.c1,h.c2,h.city,a.id,a.c1,a.c2,crowdTheme(),Math.round(crowdEmpty()*10),lightStage(),wxKind(),stadPPU(),stadStunt()?1:0,uniColors(S.home).j,uniColors(S.away).j,UNI_VER,sd?JSON.stringify(sd):''].join('|')}
 function ensureStadium(){if(STAD.T&&(++STAD.chk%15))return;if(STAD.T&&S.phase==='live')return;const k=stadKey();if(k!==STAD.key||!STAD.T){STAD.key=k;buildStadium()}}
 function buildStadium(){
-  STAD.ppu=stadPPU();const T={},lit=sceneLight().glow>.25,r=fRng(hostT().id*31+7);
+  STAD.ppu=stadPPU();const sd=STAD.sd=stdOf(),G=STAD.G=stadGeo(sd),T={},lit=sceneLight().glow>.25,r=fRng(hostT().id*31+7);
   T.lo0=crowdTile('lo','main',0);T.lo1=crowdTile('lo','main',1);T.su0=crowdTile('lo','stu',0);T.su1=crowdTile('lo','stu',1);
   T.up0=crowdTile('up','up',0);T.up1=crowdTile('up','up',1);T.vi0=crowdTile('up','vis',0);T.vi1=crowdTile('up','vis',1);
-  T.club=clubTile();T.press=pressTile();T.tow=towerTile(lit);T.glow=STAD.T&&STAD.T.glow||glowTile();T.end=endTile(false);T.band=endTile(true);
+  T.club=clubTile();T.press=pressTile(G.pw);T.tow=towerTile(lit);T.glow=STAD.T&&STAD.T.glow||glowTile();
+  if(!sd){T.end=endTile(false);T.band=endTile(true)}
+  else{/* the band sits in a seated end (left first), end tiles only for the codes this stadium uses */
+    STAD.bandReal=stdSeated(sd.L)?-1:stdSeated(sd.R)?1:0;
+    for(const c of [sd.L,sd.R]){const n='e'+c;if(T[n])continue;if(stdSeated(c))T[n]=endTile(false,STD_ROWS[c]);else if(c==='B')T[n]=endTile(false,8,'berm');else if(c==='X')T[n]=endTile(false,6,'bldg')}
+    if(STAD.bandReal)T.band=endTile(true,STD_ROWS[STAD.bandReal<0?sd.L:sd.R]);
+    const op=[sd.L,sd.R].map(c=>c==='O'||c==='B');STAD.lmReal=op[0]?-1:op[1]?1:sd.bd==='R'?-1:1;
+    T.bk=backdropTile(sd,G);if(stdHas(sd,'tower'))T.lm=landmarkTile(G);if(stdHas(sd,'arches'))T.arch=archTile();
+    if(sd.rf)T.roof=roofTile();if(stdHas(sd,'hedges'))T.hedge=hedgeTile();if(stdHas(sd,'pyro'))T.flame=flameTile();STAD.brdKey=''}
   T.bn=benchTile(S.home,true);T.bf=benchTile(S.away,false);
   STAD.dots=Array.from({length:44},()=>({u:r()*ST.tile,v:.12+r()*.8,up:r()<.45,ph:r()*6.28,f:.6+r()*.9,p:r()}));
   STAD.T=T;STAD.rb={};
@@ -10135,20 +10214,22 @@ function stadFan(g,x,y,P,sh,sk,hat,up){
 }
 /* a 24-yard crowd tile (40 seat columns, an aisle every 10th); variant up=1 stands the same fans up */
 function crowdTile(deck,mode,up){
-  const P=STAD.ppu,lo=deck==='lo',n=lo?ST.loN:ST.upN,rh=(lo?ST.loH:ST.upH)*P,hr=.6*P,W0=Math.round(ST.tile*P),H0=Math.ceil(n*rh+hr),cv=stadCv(W0,H0),g=cv.getContext('2d');
-  const h=hostT(),a=stadAway(),r=fRng(h.id*131+a.id*7+(lo?11:23)+mode.length*101),th=crowdTheme(),em=crowdEmpty(),st=lightStage(),night=st==='night',sw=.6*P,alt=stadAlt(h);
-  if(lo&&mode==='main'&&stadStunt())mode='stunt';
-  const hs=h.stad||{},sA=hs.s1||shade(h.c1,-.5),sB=hs.s2||(lum(h.c2)>.8?'#555b66':shade(h.c2,-.45)),con=night?'#232a35':'#646b76',conD=night?'#141921':'#40464f';
+  const G=STAD.G||stadGeo(null),P=STAD.ppu,lo=deck==='lo',n=lo?G.loN:G.upN,rh=(lo?ST.loH:ST.upH)*P,hr=.6*P,W0=Math.round(ST.tile*P),H0=Math.ceil(n*rh+hr),cv=stadCv(W0,H0),g=cv.getContext('2d');
+  const h=hostT(),a=stadAway(),r=fRng(h.id*131+a.id*7+(lo?11:23)+mode.length*101),th=crowdTheme(),em=crowdEmpty(),st=lightStage(),night=st==='night',sw=.6*P,alt=stadAlt(h),sd=STAD.sd;
+  if(lo&&mode==='main'&&stadStunt())mode='stunt';if(mode==='stu'&&stdHas(sd,'cards'))mode='cards';
+  const ss=sd&&sd.sc,sq=Array.isArray(ss)?ss:ss==='metal'?['#9aa2ac','#848c96']:ss==='primary'?[shade(h.c1,-.25),shade(h.c1,-.4)]:null;
+  const hs=h.stad||{},sA=hs.s1||(sq&&sq[0])||shade(h.c1,-.5),sB=hs.s2||(sq&&sq[1])||(lum(h.c2)>.8?'#555b66':shade(h.c2,-.45)),con=night?'#232a35':'#646b76',conD=night?'#141921':'#40464f';
   const mix=[h.c1,h.c1,h.c1,h.c1,h.c1,h.c2,alt,'#F2F3F5','#F2F3F5','#23272f','#2f3541','#6b7380',a.c1,'#3b5b8a','#8a3b3b','#c9b48a'],neon=['#39ff88','#ff3cac','#2de2ff',h.c1],tones=[...TONES,'#5C3A21'];
   const pickC=(b,q,j)=>mode==='vis'?(b<.55?a.c1:b<.75?stadAlt(a):mix[b*16|0])
     :mode==='stu'?(th==='white'?(b<.93?'#F2F3F5':h.c1):th==='black'?(b<.93?'#121418':h.c1):th==='stripe'?(b<.92?(j%2?h.c1:alt):'#F2F3F5'):th==='neon'?neon[b*4|0]:(b<.8?h.c1:alt))
-    :mode==='stunt'?(b<.88?(q%2?alt:h.c1):mix[b*16|0]):mix[b*16|0];
+    :mode==='stunt'?(b<.88?(q%2?alt:h.c1):mix[b*16|0])
+    :mode==='cards'?(b<.95?((((q*10+j)>>2)+(j>>1))%2?alt:h.c1):'#F2F3F5'):mix[b*16|0];
   for(let j=0;j<n;j++){const y0=hr+j*rh;
     g.fillStyle=conD;g.fillRect(0,y0,W0,rh);g.fillStyle=con;g.fillRect(0,y0+rh*.72,W0,rh*.28);
     for(let q=0;q<4;q++){g.fillStyle=q%2?sB:sA;g.fillRect(q*10*sw+sw,y0+rh*.42,9*sw,rh*.3)}
     for(let i=0;i<40;i++){const v0=r(),v1=r(),v2=r(),v3=r(),v4=r(),v5=r();if(i%10===0)continue;const q=i/10|0;
       if(v0<.025+em*(mode==='stu'?.45:1))continue;
-      const stand=up?(v5<.85?(v5<.6?1:2):0):(mode==='stu'&&v5<.6)||v5<.03?2:0;
+      const stand=mode==='cards'?2:up?(v5<.85?(v5<.6?1:2):0):(mode==='stu'&&v5<.6)||v5<.03?2:0;
       stadFan(g,(i+.5)*sw+(j%2?.07:-.07)*P+(v4-.5)*.04*P,y0+rh*.8,P*(lo?1:.92),pickC(v1,q,j),tones[v2*5|0],v3<.16?(v3<.08?h.c1:'#23272f'):null,stand)}}
   /* aisles: stairs with yellow nosings and a center handrail; front rail */
   const ln=Math.max(1,.03*P);
@@ -10176,8 +10257,8 @@ function clubTile(){
   g.fillStyle=h.c1;g.fillRect(0,H0-.16*P,W0,.16*P);g.fillStyle='rgba(255,255,255,.2)';g.fillRect(0,H0-.16*P,W0,Math.max(1,.03*P));
   return cv;
 }
-function pressTile(){
-  const P=STAD.ppu,W0=Math.round(36*P),H0=Math.ceil(ST.press*P),cv=stadCv(W0,H0),g=cv.getContext('2d'),h=hostT(),night=lightStage()==='night';
+function pressTile(pw){
+  const P=STAD.ppu,W0=Math.round((pw||36)*P),H0=Math.ceil(ST.press*P),cv=stadCv(W0,H0),g=cv.getContext('2d'),h=hostT(),night=lightStage()==='night';
   g.fillStyle=night?'#2a303a':'#aeb4bd';g.fillRect(2*P,.25*P,W0-4*P,H0-.25*P);g.fillStyle=night?'#1d222a':'#8d939c';g.fillRect(0,.6*P,2.2*P,H0-.6*P);g.fillRect(W0-2.2*P,.6*P,2.2*P,H0-.6*P);
   g.fillStyle=shade(h.c1,-.15);g.fillRect(2*P,.25*P,W0-4*P,.55*P);g.fillStyle=inkOn(h.c1);g.font=`900 italic ${Math.round(.42*P)}px ${FFONT}`;g.textAlign='center';g.textBaseline='middle';g.fillText(String(h.city||h.name).toUpperCase(),W0/2,.54*P,W0-6*P);
   for(let k=0;k<2;k++){const y=.95*P+k*.7*P,gg=g.createLinearGradient(0,y,0,y+.5*P);if(night){gg.addColorStop(0,'#f3d9a0');gg.addColorStop(1,'#b48a4e')}else{gg.addColorStop(0,'#2a3a4c');gg.addColorStop(1,'#56708a')}g.fillStyle=gg;g.fillRect(2.3*P,y,W0-4.6*P,.5*P);
@@ -10189,17 +10270,95 @@ function towerTile(lit){
   for(let j=0;j<3;j++)for(let i=0;i<7;i++){const x=(i+.5)*W0/7,y=(j+.5)*H0/3;g.fillStyle=lit?'#fff3cf':'#8d96a1';g.beginPath();g.arc(x,y,.2*P,0,7);g.fill();if(lit){g.fillStyle='#ffffff';g.beginPath();g.arc(x,y,.1*P,0,7);g.fill()}}
   return cv;
 }
+/* ---------- real-stadium pieces (built with the stadium; the backdrop/roof at half resolution: they are far away) ---------- */
+/* backdrop strip 96 yd wide, horizon at the bottom; ridges are integer-period sines and trees wrap, so it tiles seamlessly */
+function backdropTile(sd,G){
+  const f=['mountains','skyline','trees','water'].filter(x=>stdHas(sd,x)),open=sd.sh!=='bowl'&&(sd.L!=='L'||sd.R!=='L');
+  if(!f.length&&!open)return null;if(!f.length)f.push('trees');
+  const q=Math.max(4,Math.round(STAD.ppu*.5)),WY=96,mh=Math.max(8,G.rimT+5),top=f.includes('mountains')?mh:f.includes('skyline')?G.rimT+4:5,HY=Math.ceil(Math.max(6,top+1));
+  const cv=stadCv(WY*q,HY*q),g=cv.getContext('2d'),st=lightStage(),night=st==='night',sun=st==='sunset',r=fRng(hostT().id*53+11),B=HY*q,yy=v=>B-v*q,tau=Math.PI*2;
+  const ridge=(amp,base,col,ph)=>{g.fillStyle=col;g.beginPath();g.moveTo(0,B);for(let x=0;x<=WY;x+=.5){const v=base+amp*(.5*Math.sin(tau*2*x/WY+ph)+.28*Math.sin(tau*5*x/WY+ph*2.3)+.14*Math.sin(tau*11*x/WY+ph*1.7)+.08*Math.sin(tau*23*x/WY+ph*.6));g.lineTo(x*q,yy(v))}g.lineTo(WY*q,B);g.closePath();g.fill()};
+  if(f.includes('mountains')){const c1=night?'#121a29':sun?'#6c5873':st==='late'?'#8d97ad':'#8ea2bc',c2=night?'#0b111c':sun?'#4a3d57':st==='late'?'#68748c':'#647a95';
+    ridge(mh*.42,mh*.56,c1,r()*6);if(sd.el>=4500&&!night){g.save();g.globalCompositeOperation='source-atop';g.fillStyle='rgba(240,245,252,.85)';g.fillRect(0,0,WY*q,yy(mh*.84));g.restore()}
+    ridge(mh*.24,mh*.3,c2,r()*6)}
+  if(f.includes('skyline'))for(let i=0;i<26;i++){const dx=(r()-.5)*36*(.4+r()*.6),x=WY/2+dx,w=1.4+r()*2.6,ht=(2.5+r()*(G.rimT+3))*(1-Math.abs(dx)/26);
+    g.fillStyle=night?(i%2?'#151b27':'#1b2231'):sun?(i%2?'#4e4660':'#5a5270'):(i%2?'#6f7d93':'#7d8ba1');g.fillRect((x-w/2)*q,yy(ht),w*q,ht*q);
+    g.fillStyle=night?'rgba(255,220,140,.75)':'rgba(255,255,255,.18)';for(let wy=.6;wy<ht-.4;wy+=.7)for(let wx=.3;wx<w-.3;wx+=.55)if(r()<(night?.45:.3))g.fillRect((x-w/2+wx)*q,yy(ht-wy),Math.max(1,.22*q),Math.max(1,.22*q))}
+  const wb=f.includes('water')?1.3:0,tr=f.includes('trees');
+  if(tr||wb){const n=Math.round(WY*1.6);for(let i=0;i<n;i++){const x=(i/n)*WY+(r()-.5)*.8,ht=(tr?2.2+r()*1.8:.8+r()*.9)+wb,rr=.7+r()*.8;
+    g.fillStyle=night?(i%2?'#0c160f':'#101c12'):sun?(i%2?'#2c3a2a':'#344530'):(i%3?'#2f5a34':i%2?'#3a6a3d':'#264b2b');
+    for(const o of x<3?[0,WY]:x>WY-3?[0,-WY]:[0]){g.beginPath();g.arc((x+o)*q,yy(ht-rr*.5),rr*q,0,7);g.fill();g.fillRect((x+o-rr*.8)*q,yy(ht-rr*.5),rr*1.6*q,(ht-rr*.5)*q)}}}
+  if(wb){const gr=g.createLinearGradient(0,yy(wb),0,B);gr.addColorStop(0,night?'#0e1a2c':sun?'#7a5a7a':'#5b8fbf');gr.addColorStop(1,night?'#081221':sun?'#5a3f5c':'#3c6f9e');g.fillStyle=gr;g.fillRect(0,yy(wb),WY*q,wb*q);
+    g.fillStyle=night?'rgba(255,230,170,.25)':'rgba(255,255,255,.35)';for(let i=0;i<70;i++)g.fillRect(r()*WY*q,yy(wb*r()),(.6+r()*1.6)*q,Math.max(1,.08*q))}
+  cv.q=q;return cv;
+}
+/* campus landmark beyond an end: a stylized bell tower, tall enough to clear the rim */
+function landmarkTile(G){
+  const P=Math.max(4,Math.round(STAD.ppu*.6)),hy=Math.max(9,G.rimT+3.5),wy=3.2,cv=stadCv(wy*P,(hy+1)*P),g=cv.getContext('2d'),night=lightStage()==='night',stone=night?'#2b2f38':'#d8d0bf',dk=night?'#1d2027':'#b5ab97';
+  const x0=wy*P/2,yb=(hy+1)*P,sw=1.5*P,by=yb-hy*P*.7;
+  g.fillStyle=stone;g.fillRect(x0-sw/2,by,sw,hy*P*.7);g.fillStyle=dk;g.fillRect(x0+sw*.15,by,sw*.35,hy*P*.7);
+  g.fillStyle=stone;g.fillRect(x0-sw*.62,by-1.4*P,sw*1.24,1.4*P);g.fillStyle=night?'#f3d9a0':'#3a4049';
+  for(let i=0;i<2;i++){const ax=x0-sw*.3+i*sw*.6;g.beginPath();g.moveTo(ax-.22*P,by-.2*P);g.lineTo(ax-.22*P,by-.95*P);g.arc(ax,by-.95*P,.22*P,Math.PI,0);g.lineTo(ax+.22*P,by-.2*P);g.fill()}
+  g.fillStyle=night?'#1a2a26':'#5f8f7d';g.beginPath();g.moveTo(x0-sw*.7,by-1.4*P);g.lineTo(x0,by-1.4*P-hy*P*.18);g.lineTo(x0+sw*.7,by-1.4*P);g.closePath();g.fill();
+  g.fillStyle=night?'#ffe9b0':'#f4f1ea';g.beginPath();g.arc(x0,by+.8*P,.4*P,0,7);g.fill();
+  cv.q=P;cv.wy=wy;cv.hy=hy+1;return cv;
+}
+/* a colonnade of arches with a torch (stands behind one end stand) */
+function archTile(){
+  const P=Math.max(4,Math.round(STAD.ppu*.6)),wy=14,hy=6.5,cv=stadCv(wy*P,hy*P),g=cv.getContext('2d'),night=lightStage()==='night',stone=night?'#30343d':'#d9cfb8';
+  g.fillStyle=stone;g.fillRect(0,1.4*P,wy*P,(hy-1.4)*P);g.globalCompositeOperation='destination-out';
+  for(let i=0;i<7;i++){const ax=(1+i*2)*P,aw=1.3*P,t=2.4*P;g.beginPath();g.moveTo(ax-aw/2,hy*P);g.lineTo(ax-aw/2,t+aw/2);g.arc(ax,t+aw/2,aw/2,Math.PI,0);g.lineTo(ax+aw/2,hy*P);g.fill()}
+  g.globalCompositeOperation='source-over';g.fillStyle=night?'#23262e':'#c4b89c';g.fillRect(0,1.4*P,wy*P,.35*P);
+  g.fillStyle=stone;g.fillRect(wy*P/2-.5*P,.5*P,P,.9*P);g.fillStyle='#ff9a2e';g.beginPath();g.ellipse(wy*P/2,.4*P,.35*P,.45*P,0,0,7);g.fill();
+  cv.q=P;cv.wy=wy;cv.hy=hy;return cv;
+}
+function roofTile(){
+  const q=Math.max(4,Math.round(STAD.ppu*.5)),wy=48,hy=24,cv=stadCv(wy*q,hy*q),g=cv.getContext('2d'),gr=g.createLinearGradient(0,0,0,hy*q);
+  gr.addColorStop(0,'#0d1016');gr.addColorStop(1,'#2a313c');g.fillStyle=gr;g.fillRect(0,0,wy*q,hy*q);g.strokeStyle='rgba(150,165,185,.35)';g.lineWidth=Math.max(1,.12*q);
+  for(let x=0;x<wy;x+=6){g.beginPath();g.moveTo(x*q,0);g.lineTo((x+3)*q,hy*q);g.lineTo((x+6)*q,0);g.stroke()}
+  for(let y=4;y<hy;y+=5){g.beginPath();g.moveTo(0,y*q);g.lineTo(wy*q,y*q);g.stroke()}
+  g.fillStyle='rgba(255,246,220,.9)';for(let x=1.5;x<wy;x+=3)for(const y of [hy-3,hy-8])g.fillRect(x*q,y*q,.5*q,.25*q);
+  cv.q=q;return cv;
+}
+function hedgeTile(){const P=STAD.ppu,wy=12,hy=1.3,cv=stadCv(wy*P,hy*P),g=cv.getContext('2d'),r=fRng(77),night=lightStage()==='night';
+  g.fillStyle=night?'#12301a':'#24572b';g.fillRect(0,.25*P,wy*P,(hy-.25)*P);
+  for(let i=0;i<420;i++){const x=r()*wy*P,y=.15*P+r()*(hy-.2)*P;g.fillStyle=night?(r()<.5?'#1a4024':'#0e2615'):(r()<.5?'#2f6d35':r()<.5?'#3d8043':'#1c4a22');g.beginPath();g.arc(x,y,(.08+r()*.12)*P,0,7);g.fill()}
+  return cv}
+function flameTile(){const P=Math.max(6,Math.round(STAD.ppu*.6)),w=1.2*P,h=3.2*P,cv=stadCv(w,h),g=cv.getContext('2d'),gr=g.createRadialGradient(w/2,h*.8,0,w/2,h*.7,h*.75);
+  gr.addColorStop(0,'rgba(255,250,210,1)');gr.addColorStop(.25,'rgba(255,190,60,.95)');gr.addColorStop(.6,'rgba(240,80,20,.6)');gr.addColorStop(1,'rgba(200,30,10,0)');
+  g.fillStyle=gr;g.beginPath();g.moveTo(w/2,0);g.quadraticCurveTo(w,h*.6,w/2,h);g.quadraticCurveTo(0,h*.6,w/2,0);g.fill();return cv}
+/* video board: host colors and the score (redrawn only when the score changes) */
+function stdBoard(){
+  const T=STAD.T,h=hostT(),v=stadAway(),hi=h===S.home?0:1,k=[h.id,v.id,S.score[hi],S.score[1-hi],lightStage()].join('|');if(STAD.brdKey===k&&T.brd)return T.brd;STAD.brdKey=k;
+  const P=Math.max(6,Math.round(STAD.ppu*.55)),wy=9,hy=5,cv=T.brd||stadCv(wy*P,hy*P),g=cv.getContext('2d'),U=x=>String(x).toUpperCase();cv.width=wy*P;cv.height=hy*P;
+  g.fillStyle='#0b0e13';g.fillRect(0,0,wy*P,hy*P);const gr=g.createLinearGradient(0,0,0,hy*P);gr.addColorStop(0,shade(h.c1,.05));gr.addColorStop(1,shade(h.c1,-.45));g.fillStyle=gr;g.fillRect(.25*P,.25*P,(wy-.5)*P,(hy-.5)*P);
+  g.fillStyle=inkOn(h.c1);g.textAlign='center';g.textBaseline='middle';g.font=`900 italic ${Math.round(1.05*P)}px ${FFONT}`;g.fillText(U(h.city||h.abbr),wy*P/2,1.05*P,(wy-1)*P);
+  g.font=`900 ${Math.round(1.15*P)}px ${FFONT}`;g.fillText(`${U(h.abbr)} ${S.score[hi]}`,wy*P/2,2.45*P,(wy-1)*P);g.fillText(`${U(v.abbr)} ${S.score[1-hi]}`,wy*P/2,3.75*P,(wy-1)*P);
+  g.fillStyle='rgba(0,0,0,.24)';const d=Math.max(2,Math.round(P/5));for(let y=0;y<hy*P;y+=d)g.fillRect(0,y,wy*P,1);
+  cv.q=P;cv.wy=wy;cv.hy=hy;return T.brd=cv;
+}
+/* board on two posts, base at screen y yb, centered at x (sk: a little skew so it reads as facing the field) */
+function stdBoardAt(c,x,yb,s,lift,sk){const b=stdBoard(),w=b.wy*s,hh=b.hy*s,y=yb-lift*s-hh;c.fillStyle='#1b1f26';c.fillRect(x-w*.3,y+hh,.35*s,lift*s);c.fillRect(x+w*.3-.35*s,y+hh,.35*s,lift*s);
+  c.save();c.transform(1,sk||0,0,1,x-w/2,y);c.drawImage(b,0,0,w,hh);c.restore()}
 function glowTile(){const n=stadCv(128,128),g=n.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,248,225,.85)');gr.addColorStop(.16,'rgba(255,240,200,.42)');gr.addColorStop(.5,'rgba(200,215,255,.1)');gr.addColorStop(1,'rgba(200,215,255,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return n}
 /* end-zone stands: tile x = rows going back from the field, tile y = along the end line (pre-squashed by VY) */
 function bandie(g,x,y,P,h,alt,k,j){const bw=.34*P,top=y-.42*P;g.fillStyle=h.c1;g.fillRect(x-bw/2,top,bw,.42*P);g.fillStyle='#F2F3F5';g.fillRect(x-.03*P,top,.06*P,.42*P);g.fillStyle=TONES[(k+j)%4];g.beginPath();g.arc(x,top-.08*P,.09*P,0,7);g.fill();
   g.fillStyle=alt;g.fillRect(x-.09*P,top-.36*P,.18*P,.24*P);g.fillStyle='#F2F3F5';g.fillRect(x-.03*P,top-.5*P,.06*P,.16*P);if((k+j)%3===0){g.fillStyle=k%2?'#E8C547':'#D9DDE3';g.fillRect(x+bw*.4,top+.05*P,.17*P,.1*P)}}
-function endTile(band){
-  const P=STAD.ppu,rows=9,rw=.9*P,hr=.65*P,W0=Math.ceil(rows*rw),H0=Math.ceil(ST.tile*P*VY+hr),cv=stadCv(W0,H0),g=cv.getContext('2d');
-  const h=hostT(),a=stadAway(),r=fRng(h.id*17+(band?3:9)),night=lightStage()==='night',em=crowdEmpty(),con=night?'#232a35':'#646b76',conD=night?'#141921':'#40464f',sp=.6*P*VY,alt=stadAlt(h);
-  const mix=[h.c1,h.c1,h.c1,h.c2,alt,'#F2F3F5','#23272f','#6b7380',a.c1,'#8a3b3b'],tones=[...TONES,'#5C3A21'];
-  for(let j=rows-1;j>=0;j--){const x0=j*rw;g.fillStyle=conD;g.fillRect(x0,hr,rw,H0-hr);g.fillStyle=con;g.fillRect(x0,hr,rw*.22,H0-hr);if(!band){g.fillStyle=j%2?shade(h.c1,-.5):'#3a3f48';g.fillRect(x0+rw*.3,hr,rw*.12,H0-hr)}
+function endTile(band,rows,kind){
+  rows=rows||9;const P=STAD.ppu,rw=.9*P,hr=.65*P,W0=Math.ceil(rows*rw),H0=Math.ceil(ST.tile*P*VY+hr),cv=stadCv(W0,H0),g=cv.getContext('2d');
+  const h=hostT(),a=stadAway(),r=fRng(h.id*17+(band?3:9)+rows),night=lightStage()==='night',em=crowdEmpty(),con=night?'#232a35':'#646b76',conD=night?'#141921':'#40464f',sp=.6*P*VY,alt=stadAlt(h);
+  const mix=[h.c1,h.c1,h.c1,h.c2,alt,'#F2F3F5','#23272f','#6b7380',a.c1,'#8a3b3b'],tones=[...TONES,'#5C3A21'],ss=STAD.sd&&STAD.sd.sc,seat=ss==='metal'?'#8a929c':Array.isArray(ss)?ss[0]:null;
+  if(kind==='bldg'){/* end-zone building: glass floors stepping back, host trim, a few people at the windows */
+    for(let j=rows-1;j>=0;j--){const x0=j*rw;g.fillStyle=j%2?'#2b3038':'#3a4049';g.fillRect(x0,hr,rw,H0-hr);g.fillStyle=night?(j%2?'#e2bf80':'#c9a86a'):(j%2?'#4a5e74':'#3a4c60');g.fillRect(x0+rw*.18,hr+.2*P,rw*.64,H0-hr-.4*P);
+      g.fillStyle=night?'rgba(70,48,24,.55)':'rgba(10,14,20,.45)';for(let k=0;k<ST.tile/.6;k++){if(r()<.75)continue;g.fillRect(x0+rw*.3,hr+(k+.4)*sp,rw*.3,sp*.6)}
+      g.fillStyle='#14181f';for(let y=hr;y<H0;y+=1.6*P*VY)g.fillRect(x0+rw*.18,y,rw*.64,Math.max(1,.07*P))}
+    g.fillStyle=h.c1;g.fillRect(W0-rw*.25,hr,rw*.25,H0-hr);cv.hr=hr;return cv}
+  for(let j=rows-1;j>=0;j--){const x0=j*rw;
+    if(kind==='berm'){g.fillStyle=night?(j%2?'#1c3a20':'#183420'):(j%2?'#4a8a3f':'#427f38');g.fillRect(x0,hr,rw+1,H0-hr)}
+    else{g.fillStyle=conD;g.fillRect(x0,hr,rw,H0-hr);g.fillStyle=con;g.fillRect(x0,hr,rw*.22,H0-hr);if(!band){g.fillStyle=seat||(j%2?shade(h.c1,-.5):'#3a3f48');g.fillRect(x0+rw*.3,hr,rw*.12,H0-hr)}}
     for(let k=0;k<ST.tile/.6;k++){const v0=r(),v1=r(),v2=r(),v3=r(),x=x0+rw*.6,y=hr+(k+.9)*sp;
       if(band){if(k%10===9)continue;bandie(g,x,y,P,h,alt,k,j);continue}
+      if(kind==='berm'){if(v0<.5+em)continue;stadFan(g,x+(v3-.5)*rw*.6,y,P*.86,mix[v1*10|0],tones[v2*5|0],null,v3>.85?2:0);continue}
       if(k%10===0||v0<.03+em)continue;stadFan(g,x,y,P*.9,mix[v1*10|0],tones[v2*5|0],v3<.12?h.c1:null,v3>.9?2:0)}}
   g.globalCompositeOperation='source-atop';const lg=g.createLinearGradient(0,0,W0,0);lg.addColorStop(0,`rgba(3,6,14,${night?.05:0})`);lg.addColorStop(1,`rgba(3,6,14,${night?.4:.24})`);g.fillStyle=lg;g.fillRect(0,0,W0,H0);g.globalCompositeOperation='source-over';
   cv.hr=hr;return cv;
@@ -10261,60 +10420,132 @@ function stadMsg(main){
 /* ---------- crowd reactions (fx) ---------- */
 function stadReact(v,msg,t){if(v>0){STAD.roar=Math.max(STAD.roar,v);STAD.hush=Math.max(0,STAD.hush-.5);if(v>=.7&&isNight())STAD.flashT=Math.max(STAD.flashT,4.5)}else STAD.hush=Math.max(STAD.hush,-v);if(msg){STAD.msg=msg+' · '+msg+' · ';STAD.msgT=t||4.5}}
 const stadDef=e=>e.team===S.home?S.away:S.home;
-onFx('td',e=>{const h=e.team===hostT();stadReact(h?1:-.9,h?'TOUCHDOWN':'');if(e.team)STAD.jump.set(e.team,3)});
+onFx('td',e=>{const h=e.team===hostT();stadReact(h?1:-.9,h?'TOUCHDOWN':'');if(e.team)STAD.jump.set(e.team,3);if(h&&stdHas(STAD.sd,'pyro'))STAD.pyroT=2.4});
 onFx('intercept',e=>{const b=stadDef(e),h=b===hostT();stadReact(h?.95:-.7,h?'INTERCEPTION':'');STAD.jump.set(b,2.2)});
 onFx('fumble',e=>{const rec=!!(play&&play.result&&play.result.defRec),b=rec?stadDef(e):e.team,h=b===hostT();if(rec){stadReact(h?.85:-.5,h?'FUMBLE · TURNOVER':'');STAD.jump.set(b,2)}else stadReact(h?.3:.4,'')});
 onFx('sack',e=>{const h=stadDef(e)===hostT();stadReact(h?.75:-.3,h?'SACK':'')});
 onFx('firstDown',e=>{if(e.team===hostT())stadReact(.35,'FIRST DOWN',3)});
 onFx('tackle',e=>{if(e.big&&e.d&&e.d.team===hostT())stadReact(.55,'BIG HIT',2.5)});
 onFx('dead',e=>{if(e.kind==='td'||e.x==null||S.los==null)return;if(e.x-S.los>=20){const h=e.team===hostT();stadReact(h?.8:-.4,h?'BIG PLAY':'');if(h)STAD.jump.set(e.team,1.5)}});
-onFx('kickoff',()=>{STAD.roar=Math.max(STAD.roar,.5)});
+onFx('kickoff',()=>{STAD.roar=Math.max(STAD.roar,.5);if(stdHas(STAD.sd,'pyro')&&stadHi())STAD.pyroT=2});
 function stadTick(now){
-  const dt=clamp((now-(STAD.lt||now))/1000,0,.1);STAD.lt=now;STAD.roar=Math.max(0,STAD.roar-dt*.28);STAD.hush=Math.max(0,STAD.hush-dt*.2);STAD.flashT-=dt;STAD.msgT-=dt;
+  const dt=clamp((now-(STAD.lt||now))/1000,0,.1);STAD.lt=now;STAD.roar=Math.max(0,STAD.roar-dt*.28);STAD.hush=Math.max(0,STAD.hush-dt*.2);STAD.flashT-=dt;STAD.msgT-=dt;STAD.pyroT=Math.max(0,STAD.pyroT-dt);
   for(const [k,v] of STAD.jump){if(v<=0)STAD.jump.delete(k);else STAD.jump.set(k,v-dt)}
   if(STAD.waveX>-60){STAD.waveX+=dt*20;if(STAD.waveX>150)STAD.waveX=-99}else if(stadHi()&&S.phase==='presnap'&&STAD.roar<.1&&Math.random()<dt*.012)STAD.waveX=-40;
 }
 const stadEx=()=>{const hy=typeof BC!=='undefined'?BC.noise():.3;return clamp(Math.max(STAD.roar,(hy-.42)*1.25)*(1-STAD.hush*.85),0,1)};
 /* ---------- far stands ---------- */
-function drawDeck(c,s,now,lo,yb,ex,hi){
+function drawDeck(c,s,now,lo,yb,ex,hi,mid){
   const T=STAD.T,P=STAD.ppu,k=s/P,xl=cam.x-W/2/s-1,xr=cam.x+W/2/s+1,t0=Math.floor((xl-ST.x0)/ST.tile),t1=Math.floor((xr-ST.x0)/ST.tile),uo=uOff();
-  for(let ti=t0;ti<=t1;ti++){const pi=uo?ti:5-ti,sp=lo?pi>=4:pi<=0,a=lo?(sp?T.su0:T.lo0):(sp?T.vi0:T.up0),b=lo?(sp?T.su1:T.lo1):(sp?T.vi1:T.up1),x0=ST.x0+ti*ST.tile,y=yb-a.height*k;
+  for(let ti=t0;ti<=t1;ti++){const pi=uo?ti:5-ti,sp=lo?pi>=4:!mid&&pi<=0,a=lo?(sp?T.su0:T.lo0):(sp?T.vi0:T.up0),b=lo?(sp?T.su1:T.lo1):(sp?T.vi1:T.up1),x0=ST.x0+ti*ST.tile,y=yb-a.height*k;
     if(!hi){c.drawImage(ex>.5||(sp&&!lo&&STAD.hush>.2)?b:a,X(x0),y,ST.tile*s,a.height*k);continue}
     for(let q=0;q<8;q++){const xc=x0+q*ST.ck;if(xc+ST.ck<xl||xc>xr)continue;const id=ti*8+q+(lo?0:500),h=stadH01(id),wv=Math.abs(xc+1.5-STAD.waveX)<3.5;
       const up=wv||(ex>.2&&h<ex*1.2)||(!lo&&sp&&STAD.hush>.2)||(!lo&&h>.985);const amp=up?(wv?.28:.05+ex*.16+(sp?STAD.hush*.12:0))*s:0,bob=amp*Math.max(0,Math.sin(now*(.0095+.004*h)+id*1.7));
       c.drawImage(up?b:a,q*ST.ck*P,0,ST.ck*P,a.height,X(xc)-.3,y-bob,ST.ck*s+.6,a.height*k)}}
 }
+const STAD_SKY={day:['#4f7fbf','#a8c4e2'],late:['#5d7fb0','#e2c9a2'],sunset:['#23305c','#ee8a4e'],night:['#02040a','#0f1830']},STAD_SKYW={day:['#5d6672','#a5adb7'],late:['#5d6672','#a5adb7'],sunset:['#3a3f4f','#9d8577'],night:['#04060a','#151b25']};
+/* real stadium: sky (or dome roof) down to the horizon, the parallax backdrop strip and the landmark, all behind the far stands */
+function stdSky(c,s,now,sd,B,G){
+  const T=STAD.T,st=lightStage(),yu=u=>B-u*s;
+  if(sd.rf){const R=T.roof,q=R.q,tw=R.width/q*s,th=R.height/q*s,yb=yu(G.rimT)+1;c.fillStyle='#0d1016';c.fillRect(0,0,W,Math.max(0,yb-th));let o=((-cam.x*s*.5)%tw+tw)%tw-tw;for(let x=o;x<W;x+=tw)c.drawImage(R,x,yb-th,tw+.5,th);return}
+  const cc=(wxKind()!=='dry'?STAD_SKYW:STAD_SKY)[st],gr=c.createLinearGradient(0,B-26*s,0,B);gr.addColorStop(0,cc[0]);gr.addColorStop(1,cc[1]);c.fillStyle=gr;c.fillRect(0,0,W,B);
+  if(T.bk){const q=T.bk.q,tw=T.bk.width/q*s,th=T.bk.height/q*s;let o=((-cam.x*s*.3)%tw+tw)%tw-tw;for(let x=o;x<W;x+=tw)c.drawImage(T.bk,x,B-th+1,tw+.5,th)}
+  if(T.lm){const side=uOff()?STAD.lmReal:-STAD.lmReal,lx=X(side<0?-15:135),w=T.lm.wy*s;if(lx>-w&&lx<W+w)c.drawImage(T.lm,lx-w/2,B-T.lm.hy*s+.5*s,w,T.lm.hy*s)}
+}
 function drawStands(c,s,now){
   const T=STAD.T;if(!T)return;stadTick(now);const B=Y(-6);if(B<=0)return;
-  const k=s/STAD.ppu,hi=stadHi(),h=hostT(),L=sceneLight(),st=lightStage(),wet=wxKind()!=='dry',yu=u=>B-u*s,ex=stadEx(),night=st==='night';
-  /* sky */
-  const sb=yu(SK.rimT)+1;if(sb>0){const C={day:['#4f7fbf','#a8c4e2'],late:['#5d7fb0','#e2c9a2'],sunset:['#23305c','#ee8a4e'],night:['#02040a','#0f1830']}[st],Cw={day:['#5d6672','#a5adb7'],late:['#5d6672','#a5adb7'],sunset:['#3a3f4f','#9d8577'],night:['#04060a','#151b25']}[st],cc=wet?Cw:C;
-    const gr=c.createLinearGradient(0,sb-16*s,0,sb);gr.addColorStop(0,cc[0]);gr.addColorStop(1,cc[1]);c.fillStyle=gr;c.fillRect(0,0,W,sb)}
-  /* light towers, rim, press box */
-  if(yu(SK.rimT)>0){const lit=L.glow>.25;c.fillStyle=lit?'#151a21':'#3a4049';
-    for(const tx of TOWERS){const px=X(tx);if(px<-3*s||px>W+3*s)continue;c.fillRect(px-.16*s,yu(13.4),.32*s,(13.4-SK.rimT)*s);c.fillRect(px-1.1*s,yu(13.5),2.2*s,.14*s);c.drawImage(T.tow,px-2*s,yu(15),4*s,1.6*s)}
-    c.fillStyle=night?'#151920':'#4c535d';c.fillRect(0,yu(SK.rimT),W,ST.rim*s);c.fillStyle=h.c1;c.fillRect(0,yu(SK.rimT)+ST.rim*s*.5,W,ST.rim*s*.28);
-    const px=X(42);if(px<W&&px+36*s>0&&yu(SK.rimT+ST.press)<B)c.drawImage(T.press,px,yu(SK.rimT+ST.press),36*s,ST.press*s)}
-  /* upper deck, club band + ribbon, lower deck, padded wall + main ribbon */
-  if(yu(SK.clT)>0)drawDeck(c,s,now,false,yu(SK.clT)+.08*s,ex,hi);
-  if(yu(SK.loT)>0){const xl=cam.x-W/2/s-1,t0=Math.floor((xl-ST.x0)/ST.tile);for(let x=ST.x0+t0*ST.tile;X(x)<W;x+=ST.tile)c.drawImage(T.club,X(x)-.3,yu(SK.clT),ST.tile*s+.6,ST.club*s);
-    drawRibbon(c,'club',stadMsg(false),yu(SK.clT)+.05*s,.42*s,shade(h.c1,-.55),'#ffffff',.012,now)}
-  drawDeck(c,s,now,true,yu(SK.loB)+.06*s,ex,hi);
-  const flash=STAD.msgT>0&&STAD.roar>.6&&hi&&Math.floor(now/260)%2,bg=flash?stadAlt(h):shade(h.c1,-.35),fg=flash?inkOn(stadAlt(h)):inkOn(shade(h.c1,-.35));
-  c.fillStyle='#0d1016';c.fillRect(0,yu(SK.loB),W,SK.loB*s);drawRibbon(c,'main',stadMsg(true),yu(.86),.68*s,bg,fg,.04,now);c.fillStyle='rgba(225,230,238,.85)';c.fillRect(0,yu(SK.loB),W,Math.max(1,.07*s));
+  const G=STAD.G,sd=STAD.sd,k=s/STAD.ppu,hi=stadHi(),h=hostT(),L=sceneLight(),st=lightStage(),wet=wxKind()!=='dry',yu=u=>B-u*s,ex=stadEx(),night=st==='night';
+  /* sky (real stadiums: down to the horizon, with the backdrop; non-bowl stands stop at corners without a full end deck) */
+  let pa=-10,pb=W+10;
+  if(sd){const cut=v=>sd.sh!=='bowl'&&v!=='L';if(cut(stdEnd(sd,-1)))pa=X(-8.2);if(cut(stdEnd(sd,1)))pb=X(128.2);stdSky(c,s,now,sd,B,G)}
+  else{const sb=yu(G.rimT)+1;if(sb>0){const cc=(wet?STAD_SKYW:STAD_SKY)[st],gr=c.createLinearGradient(0,sb-16*s,0,sb);gr.addColorStop(0,cc[0]);gr.addColorStop(1,cc[1]);c.fillStyle=gr;c.fillRect(0,0,W,sb)}}
+  if(pb<=0||pa>=W)return drawStdFront(c,s,now,sd,B,G,pa,pb);
+  const clip=pa>-10||pb<W+10;if(clip){c.save();c.beginPath();c.rect(pa,0,pb-pa,H);c.clip()}
+  /* light towers (rim light banks on big bowls, none under a dome), rim, canopy, press box */
+  const rimLt=!!(sd&&!sd.rf&&sd.sh==='bowl'&&sd.d>=2&&sd.cap>=55000),poles=!(sd&&(sd.rf||rimLt));
+  if(yu(G.rimT)>0){const lit=L.glow>.25;c.fillStyle=lit?'#151a21':'#3a4049';const tt=Math.max(13.4,G.rimT+2.9);
+    if(poles)for(const tx of TOWERS){const px=X(tx);if(px<-3*s||px>W+3*s)continue;c.fillRect(px-.16*s,yu(tt),.32*s,(tt-G.rimT)*s);c.fillRect(px-1.1*s,yu(tt+.1),2.2*s,.14*s);c.drawImage(T.tow,px-2*s,yu(tt+1.6),4*s,1.6*s)}
+    else if(rimLt)for(const tx of TOWERS){const px=X(tx);if(px<-3*s||px>W+3*s)continue;c.drawImage(T.tow,px-2*s,yu(G.rimT+1.5),4*s,1.4*s)}
+    c.fillStyle=night?'#151920':'#4c535d';c.fillRect(0,yu(G.rimT),W,ST.rim*s);c.fillStyle=h.c1;c.fillRect(0,yu(G.rimT)+ST.rim*s*.5,W,ST.rim*s*.28);
+    if(stdHas(sd,'canopy')){c.fillStyle=night?'#0f1218':'#2c323b';c.fillRect(0,yu(G.rimT+1.1),W,.7*s);c.fillStyle=night?'#1d222a':'#e8ebef';c.fillRect(0,yu(G.rimT+1.1),W,.16*s);c.fillStyle='rgba(0,0,0,.25)';c.fillRect(0,yu(G.rimT+.4),W,.9*s)}
+    const pw=G.pw,px=X(60-pw/2);if(px<W&&px+pw*s>0&&yu(G.rimT+ST.press)<B)c.drawImage(T.press,px,yu(G.rimT+ST.press),pw*s,ST.press*s)}
+  /* decks top to bottom: upper (and a second club band + middle deck on three-deck sides), club band + ribbon, lower deck */
+  const xl=cam.x-W/2/s-1,t0=Math.floor((xl-ST.x0)/ST.tile),band=(y0,hh)=>{for(let x=ST.x0+t0*ST.tile;X(x)<W;x+=ST.tile)c.drawImage(T.club,X(x)-.3,y0,ST.tile*s+.6,hh)};
+  if(G.d===3){if(yu(G.c2T)>0)drawDeck(c,s,now,false,yu(G.c2T)+.08*s,ex,hi);if(yu(G.mdT)>0){band(yu(G.c2T),(G.c2T-G.mdT)*s);drawDeck(c,s,now,false,yu(G.clT)+.08*s,ex,hi,true)}}
+  else if(G.d===2&&yu(G.clT)>0)drawDeck(c,s,now,false,yu(G.clT)+.08*s,ex,hi);
+  if(G.d>=2&&yu(G.loT)>0){band(yu(G.clT),ST.club*s);drawRibbon(c,'club',stadMsg(false),yu(G.clT)+.05*s,.42*s,shade(h.c1,-.55),'#ffffff',.012,now)}
+  drawDeck(c,s,now,true,yu(G.loB)+.06*s,ex,hi);
+  drawStdFront(c,s,now,sd,B,G,pa,pb,clip);
   /* phone flashlights at night on big moments, light-tower glow */
-  if(hi&&night&&STAD.dots&&(ex>.45||STAD.flashT>0)){const amt=Math.max(ex,STAD.flashT>0?.85:0),xl=cam.x-W/2/s,xr=cam.x+W/2/s,t0=Math.floor((xl-ST.x0)/ST.tile),t1=Math.floor((xr-ST.x0)/ST.tile),z=Math.max(1.2,s*.09);
-    c.fillStyle='rgba(255,252,236,.92)';c.beginPath();for(let ti=t0;ti<=t1;ti++){const bx=ST.x0+ti*ST.tile;for(const d of STAD.dots){if(d.p>amt||Math.sin(now*.004*d.f+d.ph+ti)<.15)continue;const x=X(bx+d.u);if(x<0||x>W)continue;c.rect(x,d.up?yu(SK.clT+d.v*ST.upN*ST.upH):yu(SK.loB+d.v*ST.loN*ST.loH),z,z)}}c.fill()}
-  if(L.glow>.05&&yu(13)>-6*s){c.globalCompositeOperation='lighter';c.globalAlpha=Math.min(1,L.glow*1.1);for(const tx of TOWERS){const px=X(tx);if(px<-7*s||px>W+7*s)continue;c.drawImage(T.glow,px-7*s,yu(14.2)-5*s,14*s,10*s)}c.globalAlpha=1;c.globalCompositeOperation='source-over'}
+  if(hi&&night&&STAD.dots&&(ex>.45||STAD.flashT>0)){const amt=Math.max(ex,STAD.flashT>0?.85:0),xl=cam.x-W/2/s,xr=cam.x+W/2/s,t0=Math.floor((xl-ST.x0)/ST.tile),t1=Math.floor((xr-ST.x0)/ST.tile),z=Math.max(1.2,s*.09),uT=G.d>=2?G.clT:G.loB;
+    c.fillStyle='rgba(255,252,236,.92)';c.beginPath();for(let ti=t0;ti<=t1;ti++){const bx=ST.x0+ti*ST.tile;for(const d of STAD.dots){if(d.p>amt||Math.sin(now*.004*d.f+d.ph+ti)<.15)continue;const x=X(bx+d.u);if(x<pa||x>pb||x<0||x>W)continue;c.rect(x,d.up&&G.d>=2?yu(uT+d.v*G.upN*ST.upH):yu(G.loB+d.v*G.loN*ST.loH),z,z)}}c.fill()}
+  if(L.glow>.05&&!(sd&&sd.rf)){const gy=poles?Math.max(14.2,G.rimT+3.7):G.rimT+.8;if(yu(gy-1)>-6*s){c.globalCompositeOperation='lighter';c.globalAlpha=Math.min(1,L.glow*1.1);for(const tx of TOWERS){const px=X(tx);if(px<-7*s||px>W+7*s)continue;c.drawImage(T.glow,px-7*s,yu(gy)-5*s,14*s,10*s)}c.globalAlpha=1;c.globalCompositeOperation='source-over'}}
+}
+/* padded wall + main ribbon (inside the clip), then the stand ends, hedges and pyro (outside it) */
+function drawStdFront(c,s,now,sd,B,G,pa,pb,clip){
+  const h=hostT(),hi=stadHi(),yu=u=>B-u*s;
+  if(clip!==undefined){const flash=STAD.msgT>0&&STAD.roar>.6&&hi&&Math.floor(now/260)%2,bg=flash?stadAlt(h):shade(h.c1,-.35),fg=flash?inkOn(stadAlt(h)):inkOn(shade(h.c1,-.35));
+    c.fillStyle='#0d1016';c.fillRect(0,yu(G.loB),W,G.loB*s);drawRibbon(c,'main',stadMsg(true),yu(.86),.68*s,bg,fg,.04,now);c.fillStyle='rgba(225,230,238,.85)';c.fillRect(0,yu(G.loB),W,Math.max(1,.07*s));
+    if(clip)c.restore()}
+  if(!sd)return;const night=lightStage()==='night',top=yu(G.rimT);
+  /* the cut ends of the far stands: a concrete edge with a soft shadow */
+  for(const [x,d] of [[pa,-1],[pb,1]]){if(x<=-10||x>=W+10)continue;c.fillStyle=night?'#1a1f27':'#59606b';c.fillRect(d<0?x:x-.45*s,top,.45*s,B-top);c.fillStyle='rgba(0,0,0,.22)';c.fillRect(d<0?x-.6*s:x,top+.5*s,.6*s,B-top-.5*s)}
+  if(STAD.T.hedge){const T=STAD.T,tw=12*s,x0=Math.max(X(-ST.ez),-tw),x1=Math.min(X(120+ST.ez),W+tw);for(let x=x0+((X(-ST.ez)-x0)%tw);x<x1;x+=tw)c.drawImage(T.hedge,x-.3,B-1.05*s,tw+.6,1.3*s)}
+  if(STAD.pyroT>0&&STAD.T.flame){const fl=STAD.T.flame,a=Math.min(1,STAD.pyroT/.6);c.globalCompositeOperation='lighter';c.globalAlpha=a;
+    for(let x=10;x<=110;x+=20){const px=X(x),f=.75+.35*Math.abs(Math.sin(now/70+x));if(px<-2*s||px>W+2*s)continue;c.drawImage(fl,px-.6*s*f,B-.3*s-3.2*s*f,1.2*s*f,3.2*s*f)}
+    c.globalCompositeOperation='source-over';c.globalAlpha=a*.35;c.fillStyle=night?'#6b6f78':'#d9dde3';for(let x=10;x<=110;x+=20){const px=X(x),up=(2.4-STAD.pyroT)*2.2;if(px<-3*s||px>W+3*s)continue;for(let i=0;i<3;i++){c.beginPath();c.arc(px+(i-1)*.7*s,B-(3.4+up+i*.8)*s,(.9+i*.3+up*.2)*s,0,7);c.fill()}}c.globalAlpha=1}
 }
 /* ---------- end-zone stands (after the field, before the goal posts) ---------- */
 function drawEndStands(c,s,now){
-  const T=STAD.T;if(!T)return;const k=s/STAD.ppu,bandL=uOff(),hi=stadHi(),ex=stadEx(),h=hostT(),y0=Y(-6),y1=Y(FW+10);
+  const T=STAD.T;if(!T)return;if(STAD.sd)return drawEndStd(c,s,now,STAD.sd);const k=s/STAD.ppu,bandL=uOff(),hi=stadHi(),ex=stadEx(),h=hostT(),y0=Y(-6),y1=Y(FW+10);
   for(const sd of [-1,1]){const px=X(sd<0?-ST.ez:120+ST.ez);if(sd<0?px<=0:px>=W)continue;
     c.fillStyle=shade(h.c1,-.35);c.fillRect(sd<0?px-.45*s:px,y0-.5*s,.45*s,y1-y0+.5*s);c.fillStyle='rgba(255,255,255,.25)';c.fillRect(sd<0?px-.45*s:px+.35*s,y0-.5*s,.1*s,y1-y0+.5*s);
     const bob=hi?ex*.12*s*Math.max(0,Math.sin(now/105)):0;
     for(let q=0;q<3;q++){const band=q===1&&(sd<0)===bandL,tl=band?T.band:T.end,b=band&&hi?Math.abs(Math.sin(now/240))*.1*s+ex*.1*s:bob;
       c.save();c.transform(sd*k,-.5*k,0,k,px,Y(-6+q*ST.tile)-tl.hr*k-b);c.drawImage(tl,0,0);c.restore()}}
+}
+/* real stadium ends: large/medium/small stands, a grass hill, a building or open; hedges, arches and the video board */
+function drawEndStd(c,s,now,sd){
+  const T=STAD.T,k=s/STAD.ppu,hi=stadHi(),ex=stadEx(),h=hostT(),y0=Y(-6),y1=Y(FW+10),night=lightStage()==='night';
+  for(const side of [-1,1]){const px=X(side<0?-ST.ez:120+ST.ez),code=stdEnd(sd,side),real=uOff()?side:-side,tl0=T['e'+code];if(side<0?px<=-14*s:px>=W+14*s)continue;
+    const wx=side<0?px-.45*s:px;
+    if(T.hedge){c.fillStyle=night?'#12301a':'#24572b';c.fillRect(side<0?px-.9*s:px,y0-1.1*s,.9*s,y1-y0+1.1*s);c.fillStyle=night?'#1a4024':'#3d8043';c.fillRect(side<0?px-.9*s:px,y0-1.1*s,.9*s,.25*s)}
+    else if(code==='O'||code==='B'){c.fillStyle=shade(h.c1,-.35);c.fillRect(wx,y0-.25*s,.45*s,y1-y0+.25*s)}
+    else{c.fillStyle=shade(h.c1,-.35);c.fillRect(wx,y0-.5*s,.45*s,y1-y0+.5*s);c.fillStyle='rgba(255,255,255,.25)';c.fillRect(side<0?px-.45*s:px+.35*s,y0-.5*s,.1*s,y1-y0+.5*s)}
+    let W0=0;
+    if(tl0){W0=tl0.width;const bob=hi&&code!=='X'?ex*.12*s*Math.max(0,Math.sin(now/105)):0;
+      for(let q=0;q<3;q++){const band=q===1&&T.band&&real===STAD.bandReal,tl=band?T.band:tl0,b=band&&hi?Math.abs(Math.sin(now/240))*.1*s+ex*.1*s:bob;
+        c.save();c.transform(side*k,-.5*k,0,k,px,Y(-6+q*ST.tile)-tl.hr*k-b);c.drawImage(tl,0,0);c.restore()}}
+    /* back edge of the end stand at world y: (px + side*W0*k, Y(y) - W0*k/2) */
+    const bx=px+side*(W0*k+(W0?.6*s:5*s)),by=yy=>Y(yy)-W0*k/2;
+    if(T.arch&&real===(sd.L==='M'?-1:sd.R==='M'?1:-1)){const a=T.arch,w=a.wy*s;c.drawImage(a,bx-w/2+side*w*.3,by(CEN-4)-a.hy*s,w,a.hy*s)}
+    if(sd.bd&&real===(sd.bd==='L'?-1:1))stdBoardAt(c,bx+side*1.5*s,W0?by(4):Y(-3),s,W0?1.2:2.6,-side*.06)}
+}
+/* kick view (08-render drawKick) for a real stadium: the end being kicked at, by its code, over the sky/roof and backdrop */
+function stdKick(g,w,h,hz,good,now,host){
+  const T=STAD.T,G=STAD.G,sd=STAD.sd,P=STAD.ppu,st=lightStage(),night=st==='night',code=stdEnd(sd,1),real=uOff()?1:-1,L=sceneLight(),u=h*.021,ex=good?1:0;
+  if(sd.rf){const R=T.roof,k2=h*.36/R.height,rw=R.width*k2;g.fillStyle='#0d1016';g.fillRect(0,0,w,hz);for(let x=-((now*.01)%rw);x<w;x+=rw)g.drawImage(R,x,0,rw+1,R.height*k2)}
+  else{const cc=(wxKind()!=='dry'?STAD_SKYW:STAD_SKY)[st]||STAD_SKY.day,sky=g.createLinearGradient(0,0,0,hz);sky.addColorStop(0,cc[0]);sky.addColorStop(1,cc[1]);g.fillStyle=sky;g.fillRect(0,0,w,hz)}
+  if(T.bk){const bk=T.bk,bw=bk.width/bk.q*u,bh=bk.height/bk.q*u;for(let x=-((now*.003)%bw);x<w;x+=bw)g.drawImage(bk,x,hz-bh+2,bw+1,bh)}
+  if(T.lm&&STAD.lmReal===real){const m=T.lm;g.drawImage(m,w*.3-m.wy*u/2,hz-m.hy*u,m.wy*u,m.hy*u)}
+  const lb=h*.42,tw=ST.tile*P,lo=ex?T.lo1:T.lo0,top={L:h*.075,M:h*.2,S:h*.31,B:h*.3,X:h*.22,O:hz}[code]||h*.2;
+  if(code==='L'||code==='M'||code==='S'){
+    const f=(lb-(code==='L'?h*.27:top))/(lo.height),up=ex?T.up1:T.up0;
+    if(code==='L'){const fu=(h*.255-h*.105)/up.height;g.fillStyle=night?'#151920':'#4c535d';g.fillRect(0,h*.075,w,h*.03);g.fillStyle=host.c1;g.fillRect(0,h*.095,w,h*.008);
+      for(let x=-((now*.01)%1);x<w;x+=tw*fu){const b=ex?Math.abs(Math.sin(now/120+x))*6:0;g.drawImage(up,x,h*.255-up.height*fu-b,tw*fu+1,up.height*fu)}
+      for(let x=0;x<w;x+=tw*f)g.drawImage(T.club,x,h*.255-2,tw*f+1,(h*.27-h*.255)+4)}
+    else{g.fillStyle=night?'#151920':'#4c535d';g.fillRect(0,top-h*.02,w,h*.02);g.fillStyle=host.c1;g.fillRect(0,top-h*.008,w,h*.006)}
+    for(let x=0;x<w;x+=tw*f){const b=ex?Math.abs(Math.sin(now/110+x*.01))*8:0;g.drawImage(lo,x,lb-lo.height*f-b,tw*f+1,lo.height*f)}}
+  else if(code==='B'){const gr=g.createLinearGradient(0,top,0,hz);gr.addColorStop(0,night?'#1c3a20':'#4f9244');gr.addColorStop(1,night?'#142a17':'#3a7532');g.fillStyle=gr;g.beginPath();g.moveTo(0,hz);g.lineTo(0,top+h*.03);g.quadraticCurveTo(w/2,top-h*.03,w,top+h*.03);g.lineTo(w,hz);g.fill();
+    const r=fRng(host.id*7+3),cols=[host.c1,host.c1,stadAlt(host),'#F2F3F5','#23272f',host.c2];for(let i=0;i<70;i++){const x=r()*w,y=top+h*.04+r()*(hz-top-h*.07),z=h*.012*(.7+(y-top)/(hz-top));stadFan(g,x,y,z*2.6,cols[r()*6|0],TONES[r()*4|0],null,ex&&r()<.6?1:0)}}
+  else if(code==='X'){g.fillStyle=night?'#1d222a':'#3a4049';g.fillRect(0,top,w,hz-top);g.fillStyle=night?'#e2bf80':'#4a5e74';for(let y=top+h*.02;y<hz-h*.03;y+=h*.045)g.fillRect(0,y,w,h*.026);g.fillStyle='#14181f';for(let x=0;x<w;x+=w/24)g.fillRect(x,top,2,hz-top);g.fillStyle=host.c1;g.fillRect(0,top,w,h*.012)}
+  if(code==='O'||code==='B'){g.fillStyle=shade(host.c1,-.35);g.fillRect(0,hz-h*.018,w,h*.018)}
+  else{const rh=h*.04;g.fillStyle=shade(host.c1,-.35);g.fillRect(0,lb,w,hz-lb);const msg=good?'IT\'S GOOD · ':(kick&&kick.kind==='xp'?'EXTRA POINT · ':'FIELD GOAL · ')+String(host.city||host.name).toUpperCase()+' · ';
+    const rc=stadRibbon('kick',msg,Math.round(rh),shade(host.c1,-.35),inkOn(shade(host.c1,-.35)));for(let x=-((now*.06)%rc.width);x<w;x+=rc.width)g.drawImage(rc,x,lb+(hz-lb-rh)/2)}
+  if(T.hedge){g.fillStyle=night?'#12301a':'#24572b';g.fillRect(0,hz-h*.03,w,h*.03)}
+  if(sd.bd&&(sd.bd==='L'?-1:1)===real){const b=stdBoard(),bw=w*.26,bh=bw*b.hy/b.wy,by=Math.max(h*.01,(code==='O'?hz-h*.06:top)-bh-h*.01);g.fillStyle='#1b1f26';g.fillRect(w/2-bw*.3,by+bh,6,Math.max(0,hz-by-bh));g.fillRect(w/2+bw*.3-6,by+bh,6,Math.max(0,hz-by-bh));g.drawImage(b,w/2-bw/2,by,bw,bh)}
+  if(!sd.rf)for(const tx of [w*.07,w*.93]){g.fillStyle=L.glow>.25?'#151a21':'#3a4049';g.fillRect(tx-4,h*.03,8,h*.06);g.drawImage(T.tow,tx-46,0,92,h*.065);
+    if(L.glow>.05){g.globalCompositeOperation='lighter';g.globalAlpha=Math.min(1,L.glow*1.2);g.drawImage(T.glow,tx-160,-100,320,230);g.globalAlpha=1;g.globalCompositeOperation='source-over'}}
 }
 SETTINGS_EXTRA.push({card:'Graphics',key:'gfxQ',label:'Graphics quality',opts:[['high','High'],['saver','Battery saver']],def:'high',note:'Battery saver keeps the crowd still and drops phone lights, flashbulbs and other stadium extras.',after:()=>{STAD.key=''}});
 
