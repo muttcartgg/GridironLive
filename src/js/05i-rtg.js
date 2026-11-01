@@ -67,6 +67,7 @@ function rtgStartCareer(off){
   st.coach=(t.staff&&t.staff.hc&&t.staff.hc.name)||'Head coach';if(!st.name.trim())st.name=`${fullName(p)} · Road to Glory`;
   rtgDepth(L,true);rtgGoals(L);
   startDynasty(t.id);
+  const hc=T(LG.user).staff&&T(LG.user).staff.hc;if(hc&&hc.name&&LG.coach.name==='Head coach')LG.coach.name=hc.name;
   LG.settings.recAuto=true;LG.news.unshift({t:`${o.stars}★ ${o.pos} ${fullName(p)} (${p.home}) signs with ${teamName(t)} and opens fall camp #${LG.rtg.depth+1} on the depth chart.`,good:true});
   saveNow(true);showHub('home');
 }

@@ -877,12 +877,13 @@ function slowMo(d){S.slowT=Math.max(S.slowT,d);S.ts=.32}
 function hideActs(){const a=$('#actBar');if(a)a.hidden=true}
 function showActs(){
   const a=$('#actBar');if(!a||!play)return;if(S.auto&&!autoSprite()){a.hidden=true;return}if(play.st)return stActs();
-  const userRunner=uOff()&&isRunner()&&play.carrier.user,userQB=uOff()&&!play.thrown&&play.type==='pass'&&!play.scramble;
+  /* Road to Glory: only your player's buttons (no QB buttons for a receiver, no jukes for a teammate, no SWITCH) */
+  const ex=S.auto?autoSprite():null,userRunner=uOff()&&isRunner()&&play.carrier.user&&(!ex||play.carrier===ex),userQB=uOff()&&!play.thrown&&play.type==='pass'&&!play.scramble&&(!ex||ex===Q);
   let html='';
-  if(!uOff())html=`<button data-a="tackle" class="big">TACKLE</button><button data-a="switch">SWITCH</button>`;
+  if(!uOff())html=`<button data-a="tackle" class="big">TACKLE</button>${ex?'':'<button data-a="switch">SWITCH</button>'}`;
   else if(userQB)html=`<button data-a="bullet" aria-pressed="${!!S.bullet}">BULLET</button><button data-a="lob" aria-pressed="${!!S.lob}">LOB</button><button data-a="scramble" class="big">RUN</button>`;
   else if(play.type==='run'&&!play.handed&&!play.caught)html='';
-  if(uOff()&&(userRunner||play.type==='run')){html=`<button data-a="juke-1">JUKE ▲</button><button data-a="juke1">JUKE ▼</button><button data-a="spin">SPIN</button><button data-a="truck">TRUCK</button><button data-a="hurdle">HURDLE</button><button data-a="dive">DIVE</button>${play.pitchMan&&!play.pitched&&!(play.run&&play.run.triple&&!play.qbCarry)?'<button data-a="pitch" class="big">PITCH</button>':''}`}
+  if(uOff()&&(userRunner||play.type==='run'&&(!ex||KP[play.ckey]===ex))){html=`<button data-a="juke-1">JUKE ▲</button><button data-a="juke1">JUKE ▼</button><button data-a="spin">SPIN</button><button data-a="truck">TRUCK</button><button data-a="hurdle">HURDLE</button><button data-a="dive">DIVE</button>${play.pitchMan&&!play.pitched&&!(play.run&&play.run.triple&&!play.qbCarry)?'<button data-a="pitch" class="big">PITCH</button>':''}`}
   a.innerHTML=html;a.hidden=!html;
   a.querySelectorAll('[data-a]').forEach(b=>b.onpointerdown=e=>{e.preventDefault();e.stopPropagation();ac();const k=b.dataset.a;
     if(k==='bullet'||k==='lob'){if(k==='bullet'){S.bullet=!S.bullet;S.lob=false}else{S.lob=!S.lob;S.bullet=false}haptic('light');updateAim();showActs();return}
@@ -893,7 +894,7 @@ function showActs(){
 /* ---------- post-game ---------- */
 const ncaaRating=s=>s.att?((8.4*s.passYds)+(330*s.passTD)+(100*s.comp)-(200*s.int))/s.att:0;
 function gameOver(){
-  if(S.phase==='over')return;S.phase='over';hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);
+  if(S.phase==='over')return;S.phase='over';if(S.ff)kmStopFF();   // a game that ends while simming stops the fast-forward right away (no frame race)hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);
   if(typeof BC!=='undefined')BC.stop();
   const g=S.game,[us,them]=S.score,won=us>them,s=S.stats,os=S.ostats||newGameStats(),rate=ncaaRating(s),u=S.home,opp=S.away;
   const storm=won&&S.userHome&&rankOf(opp.id)&&rankOf(opp.id)<=10&&(!rankOf(u.id)||rankOf(u.id)>rankOf(opp.id)+5);
