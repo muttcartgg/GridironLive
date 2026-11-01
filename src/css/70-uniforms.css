@@ -1,0 +1,50 @@
+/* =========================================================
+   70 · Uniform editor, school builder, badge designer (10c). Touch-first: 36px swatches, segmented buttons,
+   one scrolling sheet; the live preview stays pinned while you scroll (beside the controls when there is room).
+   ========================================================= */
+.ue,.sb{display:flex;flex-direction:column;gap:14px;min-width:0}
+.ue-head{display:flex;gap:12px;align-items:center}
+.ue-head .h2{font-size:22px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#modal .ue-tabs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr))}
+#modal .ue-tabs button{padding:0 4px}
+.ue-grid{display:grid;gap:12px;grid-template-columns:minmax(0,1fr);align-items:start}
+.ue-prev{position:sticky;top:-12px;z-index:1;display:flex;flex-direction:column;align-items:center;gap:8px;padding:10px 8px;border-radius:16px;border:1px solid var(--m-line2);
+  background:radial-gradient(90% 80% at 50% 100%,color-mix(in srgb,var(--team) 30%,transparent),transparent 70%),linear-gradient(180deg,#152038,#0C1320);box-shadow:0 10px 24px rgba(0,0,0,.45)}
+.ue-prev canvas{display:block;max-width:100%}
+#modal .ue-prev .seg button{min-height:32px;padding:0 12px;font-size:12px}
+@media (min-width:640px){.ue-grid{grid-template-columns:minmax(250px,330px) minmax(0,1fr)}.ue-prev{top:0}}
+@media (orientation:landscape) and (max-height:500px){.ue-grid{grid-template-columns:minmax(220px,290px) minmax(0,1fr)}.ue-prev{top:0}}
+.ue-ctl{display:flex;flex-direction:column;min-width:0}
+.ue-sec{display:flex;flex-direction:column;gap:12px;padding:12px 0 14px;border-top:1px solid var(--line)}
+.ue-sec:first-child{border-top:0;padding-top:2px}
+.ue-sec .h3{font:800 16px/1 var(--tv,var(--disp));letter-spacing:.08em;text-transform:uppercase;color:#fff}
+.ue-row{display:flex;flex-direction:column;gap:7px;min-width:0}
+.ue-sw{display:flex;flex-wrap:wrap;gap:7px}
+.ue-sw button,.ue-sw .cust{width:36px;height:36px;flex:none;border-radius:50%;padding:0;border:2px solid rgba(255,255,255,.2);background:var(--c);position:relative;cursor:pointer;box-shadow:inset 0 -3px 6px rgba(0,0,0,.25)}
+.ue-sw button[aria-pressed="true"],.ue-sw .cust[aria-pressed="true"]{outline:3px solid #fff;outline-offset:2px;border-color:#0C1320}
+.ue-sw button.auto{width:auto;border-radius:18px;padding:0 12px;background:rgba(255,255,255,.07);color:#DCE4F0;font:700 12px/1 var(--body);letter-spacing:.04em;text-transform:uppercase;box-shadow:none}
+.ue-sw .cust{background:var(--c,conic-gradient(#ff4d4d,#ffd23f,#3bd98a,#4ea3ff,#b06bff,#ff4d4d))}
+.ue-sw .cust::after{content:"+";position:absolute;inset:0;display:grid;place-items:center;font:800 18px/1 var(--body);color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.6)}
+.ue-sw .cust input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+#modal .ue-seg{max-width:100%}
+#modal .ue-seg button{padding:0 11px}
+.ue-rotc .ue-row{gap:6px}
+.badge.bd{background:none;border:0;clip-path:none;padding:0}
+.badge.bd img{width:100%;height:100%;object-fit:contain;display:block;filter:drop-shadow(0 1px 1px rgba(0,0,0,.35))}
+.sb-top{display:flex;gap:16px;align-items:center}
+.sb-top canvas{width:108px;height:119px;flex:none;filter:drop-shadow(0 6px 12px rgba(0,0,0,.4))}
+.sb-id{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
+#sbField{display:block;border-radius:10px;max-width:100%}
+.sb .card{display:flex;flex-direction:column;gap:12px}
+@media (max-width:420px){.sb-top{align-items:flex-start}.sb-top canvas{width:84px;height:92px}}
+.uni-card .btns{margin:0}
+.uni-thumbs{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:10px}
+.uni-th{display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 4px;border-radius:12px;border:1px solid var(--line);background:radial-gradient(90% 70% at 50% 100%,color-mix(in srgb,var(--team) 22%,transparent),transparent 70%),rgba(255,255,255,.03);color:var(--fg)}
+.uni-th canvas{width:100%;height:112px;display:block}
+.uni-th small{font:700 11px/1 var(--body);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.pg-uni{display:flex;flex-direction:column;gap:10px}
+.pg-unis{display:flex;align-items:center;justify-content:center;gap:12px}
+.pg-unis figure{margin:0;display:flex;flex-direction:column;align-items:center;gap:2px}
+.pg-unis canvas{width:132px;height:104px;display:block}
+.pg-unis figcaption{font:800 13px/1 var(--tv,var(--disp));letter-spacing:.08em;color:var(--mute)}
+.pg-unis .vs{font:800 14px/1 var(--tv,var(--disp));color:var(--mute)}

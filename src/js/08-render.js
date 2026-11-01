@@ -196,9 +196,9 @@ function pxText(c,str,x,y,s,col,vertical){str=String(str).toUpperCase();c.fillSt
 const pxW=(str,s)=>String(str).length*4*s-s;
 const SPR={stand:["..HHH..",".HHHHH.",".HHHFM.","..JJJ..",".JJJJJ.",".SNNNS.","..PPP..","..P.P..","..P.P..",".KK.KK."],run1:["..HHH..",".HHHHH.",".HHHFM.","..JJJ..",".JJJJJ.","SJNNNJ.","..PPP..",".P...P.","P.....P","K.....K"],run2:["..HHH..",".HHHHH.",".HHHFM.","..JJJ..",".JJJJJ.",".JNNNJS","..PPP..","..PP...","..P.P..","..KK..."],down:[".......",".......",".......",".......",".......","..HHH..","JJJHHFM","JNNJHHH","PPPKK..","......."]};
 function sprite(team,side,tone,frame,flip){
-  const key=team.id+side+tone+frame+flip+team.c1+team.c2;let c=spriteCache.get(key);if(c)return c;
+  const U=S.home&&(team===S.home||team===S.away)?uniColorsC(team):null,key=team.id+side+tone+frame+flip+team.c1+team.c2+(U?U.h+U.j+U.n+U.p+U.m:'');let c=spriteCache.get(key);if(c)return c;
   const rows=SPR[frame];c=document.createElement('canvas');c.width=9;c.height=12;const g=c.getContext('2d');const home=side==='o';
-  const pal={H:team.c1,J:home?team.c1:'#F4F4F2',N:home?(contrasty(team.c1,team.c2)?team.c2:'#FFFFFF'):team.c1,P:home?team.c2:'#DADAD6',K:'#14161A',F:TONES[tone],S:TONES[tone],M:'#C9CED6'};
+  const pal=U?{H:U.h,J:U.j,N:U.n,P:U.p,K:'#14161A',F:TONES[tone],S:TONES[tone],M:U.m}:{H:team.c1,J:home?team.c1:'#F4F4F2',N:home?(contrasty(team.c1,team.c2)?team.c2:'#FFFFFF'):team.c1,P:home?team.c2:'#DADAD6',K:'#14161A',F:TONES[tone],S:TONES[tone],M:'#C9CED6'};
   const fill=new Set();rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(ch!=='.')fill.add(((flip?6-x:x)+1)+','+(y+1))}));
   g.fillStyle='rgba(6,14,8,.75)';for(const k of fill){const [x,y]=k.split(',').map(Number);for(const [a,b] of [[1,0],[-1,0],[0,1],[0,-1]])if(!fill.has((x+a)+','+(y+b)))g.fillRect(x+a,y+b,1,1)}
   rows.forEach((r,y)=>[...r].forEach((ch,x)=>{if(ch==='.')return;g.fillStyle=pal[ch];g.fillRect((flip?6-x:x)+1,y+1,1,1)}));spriteCache.set(key,c);return c;

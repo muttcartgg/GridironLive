@@ -31,7 +31,7 @@ function sceneLight(){
 }
 const fieldPPY=()=>Math.min(Math.floor(4096/(FLD.x1-FLD.x0)),Math.max(8,Math.ceil(sc*1.2*DPR)));
 function fieldKey(){const t=hostT(),lg=typeof teamLogo==='function'&&teamLogo(t)?1:0;
-  return [t.id,t.abbr,t.city,t.c1,t.c2,S.home.id,S.away.id,LG.settings.specialTurf!==false?1:0,wxKind(),lightStage(),fieldPPY(),lg].join('|')}
+  return [t.id,t.abbr,t.city,t.c1,t.c2,S.home.id,S.away.id,LG.settings.specialTurf!==false?1:0,wxKind(),lightStage(),fieldPPY(),lg,UNI_VER].join('|')}
 function ensureField(){if(FLD.cv&&(++FLD.chk%10))return;if(FLD.cv&&S.phase==='live')return;const k=fieldKey();if(k!==FLD.key){FLD.key=k;buildField()}}
 function grainTile(){
   if(FLD.grain)return FLD.grain;const n=document.createElement('canvas');n.width=n.height=256;const g=n.getContext('2d'),r=fRng(99);
@@ -44,7 +44,7 @@ function fieldDigits(g,ds){/* two-digit yard number centered on 0,0 in yards, 2 
 function buildField(){
   const t=hostT(),{x0,y0,x1,y1}=FLD,ppy=fieldPPY(),pv=ppy*VY,Wc=Math.ceil((x1-x0)*ppy),Hc=Math.ceil((y1-y0)*pv);
   const cv=FLD.cv||(FLD.cv=document.createElement('canvas'));if(cv.width!==Wc||cv.height!==Hc){cv.width=Wc;cv.height=Hc}
-  const g=cv.getContext('2d'),st=lightStage(),wk=wxKind(),night=st==='night',art=!!(LG.settings.specialTurf!==false&&SPECIAL_TURF[t.abbr]),tf=turfColors(false),r=fRng(t.id*7919+17);
+  const g=cv.getContext('2d'),st=lightStage(),wk=wxKind(),night=st==='night',art=!!(LG.settings.specialTurf!==false&&(SPECIAL_TURF[t.abbr]||stadOf(t).turf)),tf=turfColors(false),r=fRng(t.id*7919+17);
   FLD.ppy=ppy;FLD.art=art;
   const WS=()=>g.setTransform(ppy,0,0,pv,-x0*ppy,-y0*pv),PX=(x,y)=>g.setTransform(1,0,0,VY,(x-x0)*ppy,(y-y0)*pv);
   g.setTransform(1,0,0,1,0,0);g.globalCompositeOperation='source-over';g.globalAlpha=1;g.clearRect(0,0,Wc,Hc);WS();
@@ -56,7 +56,7 @@ function buildField(){
   /* team areas behind the sidelines */
   g.globalAlpha=.3;g.fillStyle=S.home.c1;g.fillRect(35,FW+2,50,5);g.fillStyle=S.away.c1;g.fillRect(35,-6,50,4);g.globalAlpha=1;
   /* end zones in the host's colors */
-  const ez=EZ_STYLE[t.abbr]||'',lt=contrasty(t.c1,t.c2)?t.c2:inkOn(t.c1),ol=lum(lt)>.5?shade(t.c1,-.55):'#FFFFFF',name=String(t.city||t.name||t.abbr).toUpperCase();
+  const sez=stadOf(t).ez,ez=sez?(sez==='solid'?'':sez):EZ_STYLE[t.abbr]||'',lt=contrasty(t.c1,t.c2)?t.c2:inkOn(t.c1),ol=lum(lt)>.5?shade(t.c1,-.55):'#FFFFFF',name=String(t.city||t.name||t.abbr).toUpperCase();
   for(const ex of [0,110]){
     WS();g.fillStyle=t.c1;g.fillRect(ex,0,10,FW);
     if(ez==='check'){g.fillStyle=lt;for(let i=0;i<3;i++)for(let j=0;j<16;j++)if((i+j)%2)g.fillRect(ex+i*10/3,j*FW/16,10/3,FW/16)}
@@ -101,8 +101,11 @@ function bakeLight(g,st,wk,Wc,Hc){
   g.globalCompositeOperation='source-over';g.globalAlpha=1;
 }
 function fieldBadge(g,t){
-  const {x0,y0,ppy}=FLD,pv=ppy*VY,img=typeof teamLogo==='function'?teamLogo(t):null;
+  const {x0,y0,ppy}=FLD,pv=ppy*VY,img=t.bdg?null:typeof teamLogo==='function'?teamLogo(t):null;
+  if(stadOf(t).mid===0)return;
   g.setTransform(ppy,0,0,pv,(60-x0)*ppy,(CEN-y0)*pv);
+  /* a badge from the badge designer (10c) */
+  if(t.bdg&&typeof bdgCanvas==='function'){const b=bdgCanvas(t,256),bh=9.4,bw=bh/1.1;g.globalAlpha=.95;g.drawImage(b,-bw/2,-bh/2,bw,bh);g.globalAlpha=1;return}
   if(img){try{const iw=img.naturalWidth||img.width,ih=img.naturalHeight||img.height,k=Math.min(11/iw,8.5/ih);g.globalAlpha=.95;g.drawImage(img,-iw*k/2,-ih*k/2,iw*k,ih*k);g.globalAlpha=1;return}catch(e){g.globalAlpha=1}}
   /* generated monogram shield (never a real logo) */
   const r=4.1,sh=k=>{g.beginPath();g.moveTo(-r*k,-r*.9*k);g.quadraticCurveTo(0,-r*1.1*k,r*k,-r*.9*k);g.lineTo(r*k,r*.15*k);g.quadraticCurveTo(r*.92*k,r*.82*k,0,r*1.18*k);g.quadraticCurveTo(-r*.92*k,r*.82*k,-r*k,r*.15*k);g.closePath()};

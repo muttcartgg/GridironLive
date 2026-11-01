@@ -164,36 +164,43 @@ function pausePanel(k){
   box.dataset.k=k;box.innerHTML=k==='box'?boxScoreHTML():k==='pbp'?pbpHTML():driveChartHTML()||'<p class="note">No completed drives yet.</p>';box.hidden=false;
 }
 
-/* uniforms: the host wears colors and the visitor white, unless you pick something else */
-const UNI_STYLES=[['auto','Traditional'],['color','Home colors'],['white','Road whites'],['alt','Alternate dark'],['rush','Color rush']];
-function uniStyle(team){
-  const pick=(LG.settings.uniform||'auto');
-  const userStyle=pick==='auto'?(hostT()===S.home?'color':'white'):pick;
-  if(team===S.home)return userStyle;
-  return userStyle==='white'?'color':'white';
+/* uniforms: four sets per team (10c: t.uni, uniSet). The set for a game is your pregame pick (g.uni), else the
+   team's rotation (postseason, rivalry, primetime, then home / road); x = game context {g,a,b,host,slot}, from S by default */
+const UNI_STYLES=[['auto','Auto'],['H','Home'],['A','Away'],['L','Alternate'],['T','Throwback']];
+const uniCtxS=()=>({g:S.game,a:S.home,b:S.away,host:S.home?hostT():null,slot:S.slot});
+function uniStyle(team,x){
+  x=x||uniCtxS();const g=x.g,u=!!(LG&&team&&team.id===LG.user&&(team===x.a||team===x.b));
+  if(u&&g&&g.uni&&UNI_IDS.includes(g.uni))return g.uni;
+  if(u&&UNI_LEGACY[LG.settings.uniform])return UNI_LEGACY[LG.settings.uniform];   /* older saves: the old global pick */
+  const r=uniRot(team);
+  if(g&&(g.bowl||g.cfp||g.fcsp||g.ccg)&&r.po)return r.po;
+  if(g&&g.rival&&r.rv)return r.rv;
+  if(x.slot==='Primetime'&&r.pt)return r.pt;
+  return !x.host||team===x.host?r.hm:r.rd;
 }
 /* colour distance 0..1 (weighted "redmean" RGB) */
 const uniRGB=h=>{const n=parseInt(String(h).slice(1),16)||0;return [n>>16,n>>8&255,n&255]};
 function uniDist(a,b){const [r1,g1,b1]=uniRGB(a),[r2,g2,b2]=uniRGB(b),rm=(r1+r2)/2,dr=r1-r2,dg=g1-g2,db=b1-b2;return Math.sqrt((2+rm/256)*dr*dr+4*dg*dg+(2+(255-rm)/256)*db*db)/765}
-/* teams always read differently: when the road team's jersey or helmet is too close to the host's (Georgia at
-   Fresno State: both red helmets; a silver team in colors vs a white road set), the road team switches to a
-   contrasting set: the dark alternate (or whites against a dark host) for a jersey clash, a contrasting helmet and
-   darker trim for a helmet clash */
-function uniColors(team){
-  const u=uniBase(team);if(!S.home||!S.away||(team!==S.home&&team!==S.away)||team===hostT())return u;
-  const o=uniBase(team===S.home?S.away:S.home);
-  if(uniDist(u.j,o.j)<.2){if(lum(o.j)>.35)return {j:'#17191f',t:team.c1,p:'#17191f',h:'#17191f',s:'#17191f',mask:team.c1};const k=shade(team.c1,-.45);return {j:'#F1F2F4',t:k,p:'#D7DAE0',h:k,s:k,mask:'#C7CCD4'}}
-  if(uniDist(u.h,o.h)<.2||uniDist(u.h,o.j)<.12){
-    let h=u.h,bd=-1;for(const c of [team.c2,shade(team.c1,-.55),'#17191f','#F1F2F4']){if(!c)continue;const d=Math.min(uniDist(c,o.h),uniDist(c,o.j)*1.3,uniDist(c,u.j)*2);if(d>bd){bd=d;h=c}}
-    const t=lum(u.j)>.8?(lum(h)<.6?h:shade(team.c1,-.45)):u.t;return {...u,h,t,s:lum(u.j)>.8?t:u.s}}
-  return u;
+/* teams always read differently (Georgia at Fresno State: both red helmets; a silver team in colors vs a white road
+   set): when the road team's jersey is too close to the host's it changes into another of its own sets that reads
+   clearly (or, failing that, a generated dark / white set); a helmet clash recolors the helmet and its trim.
+   Returns the resolved set (10c field names plus the old j,t,p,h,s,mask) */
+function uniColors(team,x){
+  x=x||uniCtxS();const k=uniStyle(team,x),u=uniSet(team,k);
+  if(!x.a||!x.b||(team!==x.a&&team!==x.b)||team===x.host)return u;
+  const oT=team===x.a?x.b:x.a,o=uniSet(oT,uniStyle(oT,x));
+  if(uniDist(u.j,o.j)<.2){
+    let best=null,bd=-1;for(const s of UNI_IDS){if(s===k)continue;const v=uniSet(team,s),dj=uniDist(v.j,o.j);if(dj<.2)continue;const d=dj+.5*Math.min(.2,uniDist(v.h,o.h));if(d>bd){bd=d;best=v}}
+    if(best)return uniHelm(team,best,o);
+    const c1=team.c1,dk=shade(c1,-.45),keep={hf:u.hf,d:u.d,hs:u.hs,sl:u.sl,ps:u.ps,set:k};
+    return uniHelm(team,uniAl(lum(o.j)>.35?uniMk(team,'#17191F',c1,'#17191F','#17191F','#17191F',c1,keep):uniMk(team,'#F1F2F4',dk,'#D7DAE0',dk,dk,'#C7CCD4',keep)),o);
+  }
+  return uniHelm(team,u,o);
 }
-function uniBase(team){
-  const st=uniStyle(team),c1=team.c1,c2=team.c2,ct=contrasty(c1,c2);
-  if(st==='white')return {j:'#F1F2F4',t:c1,p:'#D7DAE0',h:c1,s:c1,mask:'#C7CCD4'};
-  if(st==='alt')return {j:'#17191f',t:c1,p:'#17191f',h:'#17191f',s:'#17191f',mask:c1};
-  if(st==='rush'){const j=lum(c2)>.85?shade(c1,-.35):c2;return {j,t:c1,p:j,h:j,s:j,mask:c1}}
-  return {j:c1,t:ct?c2:'#FFFFFF',p:ct?c2:'#E6E6E6',h:c1,s:ct?c2:'#FFFFFF',mask:'#C7CCD4'};
+function uniHelm(team,u,o){
+  if(uniDist(u.h,o.h)>=.2&&uniDist(u.h,o.j)>=.12)return u;
+  let h=u.h,bd=-1;for(const c of [team.c2,shade(team.c1,-.55),'#17191F','#F1F2F4']){if(!c)continue;const d=Math.min(uniDist(c,o.h),uniDist(c,o.j)*1.3,uniDist(c,u.j)*2);if(d>bd){bd=d;h=c}}
+  const tr=c=>contrasty(c,h)?c:inkOn(h);return Object.assign({},u,{h,hc:tr(u.hc),dc:tr(u.dc),t:u.n,s:u.k,mask:u.m});
 }
 /* body types by position */
 const BUILD={OL:[1.22,1.02],DL:[1.17,1.02],LB:[1.08,1],TE:[1.08,1.01],RB:[1.03,.97],WR:[.92,1.01],CB:[.92,.99],S:[.96,1],QB:[1,1.01],K:[.9,.97]};

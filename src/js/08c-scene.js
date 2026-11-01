@@ -5,7 +5,7 @@
 const hostT=()=>S.neutral?S.home:(S.userHome?S.home:S.away);
 const isNight=()=>S.slot==='Primetime'||(S.slot==='Afternoon'&&progress()>.66);
 const SPECIAL_TURF={BOIS:['#1d4fb0','#1a46a0'],EWU:['#b3262d','#9e2127'],CCU:['#1b8f8c','#177d7a'],UCA:['#6d6f76','#4f2d7f']};
-function turfColors(night){const t=hostT(),sp=LG.settings.specialTurf!==false&&SPECIAL_TURF[t.abbr];if(sp)return night?[shade(sp[0],-.15),shade(sp[1],-.15)]:sp;return night?['#2c7432','#25652c']:['#3a8a3d','#2e7633']}
+function turfColors(night){const t=hostT(),cu=t.stad&&t.stad.turf,sp=LG.settings.specialTurf!==false&&(cu?[cu,shade(cu,-.1)]:SPECIAL_TURF[t.abbr]);if(sp)return night?[shade(sp[0],-.15),shade(sp[1],-.15)]:sp;return night?['#2c7432','#25652c']:['#3a8a3d','#2e7633']}
 function crowdTheme(){const t=LG.settings.studentTheme||'auto';if(t!=='auto')return t;const g=S.game;if(!g)return 'none';if(g.rival)return 'stripe';if(S.slot==='Primetime')return (hostT().id%2)?'black':'white';return 'none'}
 function crowdEmpty(){
   const dens=LG.settings.crowd==='low'?.25:0;let e=dens;if(!S.home||S.ot)return e;
