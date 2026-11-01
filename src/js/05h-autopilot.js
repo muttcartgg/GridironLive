@@ -21,8 +21,9 @@
      overlay) and hands you the game at high-leverage moments (kmWhy), then resumes once that drive is over.
    ========================================================= */
 const AUTO={exempt:null,speed:1,m0:false,shown:false};
-const playStyle=()=>(LG&&LG.settings&&LG.settings.playStyle)||'full';
-const STYLE_N={full:'Full control',coach:'Coach mode',km:'Key moments'};
+/* Road to Glory (05i): while the player's college career runs, every game is played in the 'rtg' style */
+const playStyle=()=>LG&&LG.rtg&&LG.rtg.stage==='college'?'rtg':(LG&&LG.settings&&LG.settings.playStyle)||'full';
+const STYLE_N={full:'Full control',coach:'Coach mode',km:'Key moments',rtg:'Road to Glory'};
 function autoSprite(){if(AUTO.exempt==null)return null;for(const p of P)if(p.user&&p.pl&&p.pl.id===AUTO.exempt)return p;return null}
 const userCtl=p=>!!p&&!!p.user&&(!S.auto||AUTO.exempt!=null&&!!p.pl&&p.pl.id===AUTO.exempt);
 function autoOn(){S.auto=true;autoSync()}
@@ -86,7 +87,7 @@ function coachSnap(pc){setTimeout(()=>{if(S.auto&&!S.ff&&S.phase==='presnap'&&S.
 /* ---------- speed bar while the autopilot plays ---------- */
 function autoSkip(){if(!play||S.phase!=='live')return;for(let i=0;i<6000&&S.phase==='live';i++)simulate(1/120);if(S.phase==='dead')deadT=Math.min(deadT,.45)}
 function apBarTick(force){
-  const b=$('#apBar');if(!b)return;const show=!!S.auto&&!S.ff&&!S.paused&&(S.phase==='live'||S.phase==='dead')&&!!play;
+  const b=$('#apBar');if(!b)return;const show=!!S.auto&&!S.ff&&!S.paused&&(S.phase==='live'||S.phase==='dead')&&!!play&&playStyle()!=='rtg';
   if(show===AUTO.shown&&!force)return;AUTO.shown=show;b.hidden=!show;
   if(show)b.querySelectorAll('[data-sp]').forEach(x=>x.setAttribute('aria-pressed',String(x.dataset.sp===String(AUTO.speed))));
 }
@@ -95,7 +96,7 @@ $('#apBar').querySelectorAll('[data-sp]').forEach(b=>b.onclick=e=>{e.stopPropaga
 function modeTag(){const st=playStyle(),t=st==='km'?(S.km?'Key moment · '+S.km.why:'Key moments'):STYLE_N[st]||'Full control';return ` · <span class="tag ap-mode ap-${st}">${esc(t)}</span>`}
 
 /* ---------- play style: game start, switching mid-game ---------- */
-function styleInit(){S.km=null;S.kmTake=false;S.ff=false;AUTO.speed=1;const st=playStyle();S.auto=st!=='full';if(st==='km')kmResume()}
+function styleInit(){S.km=null;S.kmTake=false;S.ff=false;AUTO.speed=1;S.rtgCall=null;const st=playStyle();S.auto=st!=='full';AUTO.exempt=null;if(st==='km')kmResume();if(st==='rtg')rtgGameInit()}
 function setPlayStyle(v){
   LG.settings.playStyle=v;if(typeof saveNow==='function')saveNow();
   if(!S.home||['hub','over','boot','menu'].includes(S.phase))return;
@@ -104,7 +105,7 @@ function setPlayStyle(v){
   if(v==='km')S.kmArm=true;
   autoSync();if(S.phase==='presnap'&&!S.paused)toPresnap();
 }
-function pauseModeHTML(){const st=playStyle(),dm=LG.settings.defMode||'ask',seg=(id,o,v)=>`<div class="seg" id="${id}">${o.map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===v}">${l}</button>`).join('')}</div>`;
+function pauseModeHTML(){if(playStyle()==='rtg')return `<div class="setrow"><span class="eyebrow">Road to Glory</span><span class="note">You play only your player; the AI plays the rest and sims the snaps you sit out.</span></div>`;const st=playStyle(),dm=LG.settings.defMode||'ask',seg=(id,o,v)=>`<div class="seg" id="${id}">${o.map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===v}">${l}</button>`).join('')}</div>`;
   return `<div class="setrow"><span class="eyebrow">Play style</span>${seg('pmStyle',[['full','Full control'],['coach','Coach'],['km','Key moments']],st)}</div><div class="setrow"><span class="eyebrow">Opponent drives</span>${seg('pmDef',[['ask','Ask'],['play','Play D'],['sim','Sim']],dm)}</div>`}
 function pauseModeRender(){const box=$('#pmMode');if(!box||!LG)return;box.innerHTML=pauseModeHTML();
   box.querySelectorAll('#pmStyle [data-v]').forEach(b=>b.onclick=()=>{ac();const v=b.dataset.v;S.paused=false;setPlayStyle(v);S.paused=true;pauseModeRender();toast(STYLE_N[v])});
@@ -134,6 +135,7 @@ function kmWhy(pc){
 }
 /* called by toPresnap in Key moments: drop the user in, keep control through the drive, or resume simming */
 function kmCheck(pc){
+  if(playStyle()==='rtg')return rtgCheck(pc);
   if(playStyle()!=='km'||!S.home)return;
   if(S.kmArm){S.kmArm=false;const w=kmWhy(pc);if(w)return kmStart(w);return kmResume()}
   if(S.ff){const w=kmWhy(pc);if(w)kmStart(w);return}
@@ -155,6 +157,7 @@ function kmStart(why){
 }
 function kmResume(){
   S.km=null;S.auto=true;if(S.ff)return;S.ff=true;AUTO.m0=muted;muted=true;document.body.classList.add('ff');
+  if(playStyle()!=='rtg'){const e=$('#kmOv .km-eye');if(e)e.innerHTML='<i></i>Key moments · simming';$('#kmTake').hidden=false}
   ['#call','#opt','#snapBar','#kick','#celebBtn','#celebSheet','#toBtn','#bulletBtn','#apBar','#kmBan'].forEach(s=>{const e=$(s);if(e)e.hidden=true});hideActs();hint('');
   $('#kmOv').hidden=false;AUTO.pbpN=-1;kmOverlay();
 }
@@ -180,7 +183,7 @@ function ffRunoff(){
   if(S.clock<=0){S.phase='wait';boundary(()=>toPresnap());return true}return false}
 function ffPresnap(){
   if(uOff()){
-    if(!S.pc){const c=apChoosePlay();if(ffRunoff())return true;
+    if(!S.pc){const c=S.rtgCall||apChoosePlay();S.rtgCall=null;if(ffRunoff())return true;
       if(c.special){if(c.special==='kneel'&&S.clockRun&&!S.ot)S.clock=Math.max(0,S.clock-Math.min(S.clock,26));callSpecial(c.special);return true}
       pickPlay(c)}
     if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}return true}

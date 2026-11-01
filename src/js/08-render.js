@@ -67,6 +67,7 @@ function updateCam(dt){
       else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.97:1;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.9;st=.32;
         if(!retro&&!uOff()&&S.ctrl&&S.ctrl!==h&&!play.st&&S.phase==='live')box=camBox([fx,fx,fy,fy],S.ctrl.x,S.ctrl.y)}}   // your defender stays in the shot
     const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.07}
+  {const ex=S.auto&&AUTO.exempt!=null&&(S.phase==='presnap'||S.phase==='live')?autoSprite():null;if(ex&&ex.side==='o'&&!retro){if(!box)box=[fx,fx,fy,fy];camBox(box,ex.x,ex.y)}}   // Road to Glory: your player stays in the shot
   if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box,S.phase==='presnap'?64:play&&play.type==='pass'&&!play.scramble?80:58));
   camDamp('z',z,zst,dt);
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY),ext=retro?0:7;
@@ -124,7 +125,7 @@ function drawModern(now){
   for(const p of sorted){
     if(passLive&&eligible(p)){const [,nd]=nearest(DEF,p.x,p.y);const col=openCol(nd);c.save();c.strokeStyle=col;c.shadowColor=col;c.shadowBlur=10;c.lineWidth=2.5;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*.85,s*.85*VY,0,0,7);c.stroke();c.restore()}
     if(play&&p===play.carrier&&isRunner()){c.save();c.strokeStyle='rgba(255,255,255,.75)';c.lineWidth=2;const pr=s*(.9+.12*Math.sin(now/120));c.beginPath();c.ellipse(X(p.x),Y(p.y),pr,pr*VY,0,0,7);c.stroke();if(play.jukeT>0||play.hurdle>0){c.strokeStyle=S.home.c1;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),pr*1.3,pr*1.3*VY,0,0,7);c.stroke()}c.restore()}
-    if(p===S.ctrl&&ctrlRing(p)&&S.phase!=='dead'){c.save();c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=12;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*1.05,s*1.05*VY,0,0,7);c.stroke();c.beginPath();c.moveTo(X(p.x),Y(p.y)-s*3.6);c.lineTo(X(p.x)-s*.45,Y(p.y)-s*4.3);c.lineTo(X(p.x)+s*.45,Y(p.y)-s*4.3);c.closePath();c.fillStyle='#FFD23F';c.fill();c.restore()}
+    if((p===S.ctrl&&ctrlRing(p)||rtgMine(p)&&p.side==='o')&&S.phase!=='dead'){c.save();c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=12;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*1.05,s*1.05*VY,0,0,7);c.stroke();c.beginPath();c.moveTo(X(p.x),Y(p.y)-s*3.6);c.lineTo(X(p.x)-s*.45,Y(p.y)-s*4.3);c.lineTo(X(p.x)+s*.45,Y(p.y)-s*4.3);c.closePath();c.fillStyle='#FFD23F';c.fill();c.restore()}
     drawAthlete(c,p,now);
   }
   drawSideline(c,s,now,true);drawStick(c);

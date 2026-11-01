@@ -149,20 +149,21 @@ function renderSetup(){
   const st=SETUP,L=st.L;invalidate();
   const confs=L.confs.map((c,i)=>[c,i]).filter(([c])=>st.div==='all'||c.div===st.div);
   $('#setupBody').innerHTML=`
-    <div class="su-head"><div><div class="eyebrow">New dynasty · slot ${st.slot}</div><div class="h1">Pick your program</div></div><button class="btn ghost sm" id="setBack">‹ Saves</button></div>
+    <div class="su-head"><div><div class="eyebrow">New dynasty · slot ${st.slot}</div><div class="h1">${st.mode==='rtg'?'Road to Glory':'Pick your program'}</div></div><button class="btn ghost sm" id="setBack">‹ Saves</button></div>
+    <div class="card"><div class="setrow"><span class="eyebrow">Mode</span><div class="seg" id="modeSeg"><button data-v="coach" aria-pressed="${st.mode!=='rtg'}">Coach a program</button><button data-v="rtg" id="modeRtg" aria-pressed="${st.mode==='rtg'}">Road to Glory</button></div></div></div>
     <div class="card su-opts"><div class="grid2 su-names">
       <div class="field-row"><label for="coachName">Coach name</label><input type="text" id="coachName" maxlength="24" placeholder="Coach Merchant" value="${esc(st.coach)}"></div>
       <div class="field-row"><label for="dynName">Dynasty name</label><input type="text" id="dynName" maxlength="28" placeholder="My Dynasty" value="${esc(st.name)}"></div></div>
       <div class="setrow"><span class="eyebrow">Difficulty</span><div class="seg" id="setDiff">${[[0,'Rookie'],[1,'Varsity'],[2,'All-American'],[3,'Heisman']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${v===st.diff}">${l}</button>`).join('')}</div></div></div>
     <div class="card"><div class="setrow"><span class="eyebrow">League</span><div class="seg" id="leagueSeg">${[['ncaa','All FBS & FCS'],['original','Original schools'],['pack','Load a team pack']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.league===v}">${l}</button>`).join('')}</div></div>
       <p class="note">${st.league==='ncaa'?`All ${L.teams.length} Division I programs: ${L.teams.filter(t=>t.div==='FBS').length} FBS and ${L.teams.filter(isFCS).length} FCS, in their ${L.confs.length} conferences for 2026, with team colors, real rivalries and strength based on recent results. Badges use abbreviations, not official logos. ${st.L.pack?`Rosters from ${esc(st.L.pack.name)}.`:'Players are generated; import real rosters any time.'}`:st.league==='pack'?'Your team pack is loaded.':'Thirty-two original schools you can rename and recolor.'}</p>${typeof packSetupHTML==='function'?packSetupHTML(st):''}</div>
-    <div class="su-filter">
+    ${st.mode==='rtg'?rtgCreateHTML(st):`<div class="su-filter">
       <div class="su-q"><input type="search" id="teamQ" placeholder="Search schools, mascots, stadiums" value="${esc(st.q)}" autocomplete="off" aria-label="Search schools"></div>
       ${L.teams.some(isFCS)?`<div class="chips" id="divChips">${[['FBS','FBS'],['FCS','FCS'],['all','All Division I']].map(([v,l])=>`<button class="chipbtn" data-v="${v}" aria-pressed="${st.div===v}">${l}</button>`).join('')}</div>`:''}
       <div class="chips scrollx" id="confChips"><button class="chipbtn" data-v="all" aria-pressed="${st.conf==='all'}">All conferences</button>${confs.map(([c,i])=>`<button class="chipbtn" data-v="${i}" aria-pressed="${String(i)===st.conf}">${esc(c.name)}</button>`).join('')}</div>
       <div class="setrow"><span class="eyebrow" id="teamCount"></span><div class="seg" id="sortSeg">${[['prestige','Prestige'],['ovr','Overall'],['name','A–Z']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.sort===v}">${l}</button>`).join('')}</div></div></div>
     <div class="teampick" id="teamGrid"></div>
-    <button class="btn ghost wide" id="customProg">Build a custom program from scratch</button>`;
+    <button class="btn ghost wide" id="customProg">Build a custom program from scratch</button>`}`;
   renderTeamGrid();
   on('setBack',showSlots);
   $('#coachName').oninput=e=>st.coach=e.target.value;$('#dynName').oninput=e=>st.name=e.target.value;
@@ -171,6 +172,8 @@ function renderSetup(){
     if(v==='original'){st.L=genLeague();st.league=v;st.conf='all';st.div='all';renderSetupKeep()}
     else if(v==='ncaa'){st.L=genNCAALeague();if(typeof packAutoApply==='function')packAutoApply(st.L);st.league=v;st.conf='all';st.div='FBS';renderSetupKeep()}
     else openPackImport(st.L,()=>{st.league='pack';renderSetupKeep()},true)});
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.onclick=()=>{st.mode=b.dataset.v;renderSetupKeep()});
+  if(st.mode==='rtg'){rtgSetupBind(st);if(typeof packSetupBind==='function')packSetupBind(st);return}   /* Road to Glory (05i) */
   document.querySelectorAll('#divChips button').forEach(b=>b.onclick=()=>{st.div=b.dataset.v;st.conf='all';renderSetupKeep()});
   document.querySelectorAll('#confChips button').forEach(b=>b.onclick=()=>{st.conf=b.dataset.v;renderSetupKeep()});
   document.querySelectorAll('#sortSeg button').forEach(b=>b.onclick=()=>{st.sort=b.dataset.v;renderSetupKeep()});
@@ -215,13 +218,14 @@ function startDynasty(id){
 const TABS=[['home','Home'],['schedule','Schedule'],['rankings','Rankings'],['playoff','Playoff'],['feed','Feed'],['team','Roster'],['recruit','Recruiting'],['program','Program'],['stats','Stats'],['league','League'],['settings','Settings']];
 function showHub(tab){
   const prev=TAB,wasHidden=$('#hub').hidden;
-  invalidate();hideAll();if(tab)TAB=tab;S.phase='hub';applyStyle();ensureCareer(LG);
+  invalidate();hideAll();if(tab)TAB=tab;if(LG.rtg&&(TAB==='recruit'||TAB==='program'))TAB='home';S.phase='hub';applyStyle();ensureCareer(LG);
   const u=T(LG.user);applyTeamTheme(u);
   const ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null,top=$('#hubTop');top.style.setProperty('--hd',deepC(u));
-  top.innerHTML=`<span class="ht-wm" aria-hidden="true">${esc(u.abbr)}</span>${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)} <span>${esc(u.name)}</span></b><small>${esc(LG.coach.name)}</small></div>
+  top.innerHTML=`<span class="ht-wm" aria-hidden="true">${esc(u.abbr)}</span>${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)} <span>${esc(u.name)}</span></b><small>${LG.rtg&&typeof rtgMe==='function'&&rtgMe()?esc(fullName(rtgMe()))+' · #'+rtgMe().num+' '+rtgMe().pos+' · coach '+esc(LG.coach.name):esc(LG.coach.name)}</small></div>
     <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div>
-    <div class="pills"><span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL and revenue-sharing budget left">${money(LG.nil)} NIL</span></div>`;
-  $('#tabs').innerHTML=TABS.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${TAB===k}">${k==='home'&&LG.phase==='offseason'?'Offseason':l}${k==='home'&&LG.event?'<span class="dot"></span>':''}</button>`).join('');
+    <div class="pills">${LG.rtg?`<span class="pill" title="Skill points">${LG.rtg.sp} SP</span><span class="pill" title="Your NIL earnings">${money(LG.rtg.nil.cash)} NIL</span>`:`<span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL and revenue-sharing budget left">${money(LG.nil)} NIL</span>`}</div>`;
+  const tabs=LG.rtg?TABS.filter(([k])=>k!=='recruit'&&k!=='program'):TABS;   /* Road to Glory: the coach-only screens are the CPU coach's */
+  $('#tabs').innerHTML=tabs.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${TAB===k}">${k==='home'&&LG.rtg?'Career':k==='home'&&LG.phase==='offseason'?'Offseason':l}${k==='home'&&LG.event?'<span class="dot"></span>':''}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{showHub(b.id.slice(4));$('#hubScroll').scrollTop=0});
   const hb=$('#hubBody');
   hb.innerHTML=({home:hubHome,schedule:hubSchedule,rankings:hubRankings,playoff:hubPlayoff,feed:hubFeed,team:hubTeam,recruit:hubRecruit,program:hubProgram,stats:hubStats,league:hubLeague,settings:hubSettings})[TAB]();
@@ -247,6 +251,7 @@ function gameHero(g,wi,extra,link){
     ${extra||''}</div>`;
 }
 function hubHome(){
+  if(LG.rtg)return rtgHome();   /* Road to Glory career hub (05i) */
   if(LG.phase==='offseason')return hubOffseason();
   const u=T(LG.user),w=LG.weeks[LG.week],g=userGameThisWeek();
   let main='';
@@ -563,10 +568,12 @@ function bindHub(){
   on('packImport',()=>openPackImport(LG,()=>{saveNow();showHub();toast('Team pack applied')}));
   // offseason controls
   bindOffseason();if(typeof bindRecruit==='function')bindRecruit();
+  if(LG.rtg&&typeof rtgBind==='function')rtgBind();
 }
 
 /* ---------- modals ---------- */
 function openPlayer(id){
+  if(LG.rtg&&typeof rtgOpenPlayer==='function')return rtgOpenPlayer(id);   /* read-only in Road to Glory */
   const u=T(LG.user),p=u.roster.find(x=>x.id===id);if(!p)return;
   const render=()=>{
     const s=p.ss,isCap=LG.captains.includes(p.id),startIdx=depth(u,p.pos).indexOf(p);
@@ -671,7 +678,7 @@ function hubOffseason(){
   return '';
 }
 function bindOffseason(){
-  if(LG.phase!=='offseason')return;const o=LG.off;
+  if(LG.phase!=='offseason'||LG.rtg)return;const o=LG.off;
   on('offNext',()=>{
     if(o.stage==='recap'){departures(LG);o.stage='departures'}
     else if(o.stage==='departures'){runCarousel(LG);o.stage='carousel'}

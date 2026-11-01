@@ -511,11 +511,12 @@ function finishWeek(L){
   if(w.kind==='post0')awardHeisman(L);
   for(const g of w.games)if(g.upset&&L.news.length<40){const wt=L.teams[winner(g)],lt=L.teams[loser(g)];L.news.unshift({t:`Upset: ${wt.city} beats ${rk(lt.id)?'#'+rk(lt.id)+' ':''}${lt.city}, ${Math.max(g.hs,g.as)}–${Math.min(g.hs,g.as)}.`})}
   if(typeof rcOnWeek==='function')try{rcOnWeek(L,w)}catch(e){console.error(e)}   /* season-long recruiting (04b) */
+  if(L.rtg&&typeof rtgWeek==='function')try{rtgWeek(L,w)}catch(e){console.error(e)}   /* Road to Glory (05i): practice, trust, depth chart, NIL */
   L.news=L.news.slice(0,30);
   L.week++;
   if(L.week>=L.R&&L.week<=L.R+4)buildPost(L);
   if(L.week>L.R+4)return startOffseason(L);
-  if(L.week<L.R&&Math.random()<.4)L.event=genEvent(L);
+  if(L.week<L.R&&!L.rtg&&Math.random()<.4)L.event=genEvent(L);   /* front-office dilemmas are the coach's, not in Road to Glory */
 }
 function pickPOTW(L,w){
   const u=L.teams[L.user];const conf=u.conf;let best=null;
@@ -543,7 +544,7 @@ const REGIMES={light:{x:.75,c:-4,i:.6,label:'Light'},normal:{x:1,c:0,i:1,label:'
 function addXP(p,x,list){p.xp+=x;let n=0;while(p.xp>=100&&n<4){n++;p.xp-=100;const ks=PATTR[p.pos].filter(k=>p[k]<5);if(!ks.length){p.xp=0;break}ks.sort((a,b)=>p[a]-p[b]);const k=Math.random()<.6?ks[0]:pick(ks);p[k]=r1(p[k]+R(.25,.45));list&&list.push({id:p.id,name:fullName(p),pos:p.pos,attr:attrName(p.pos,k),to:a99(p[k])})}}
 const gameXP=s=>s?Math.min(80,s.py/8+s.ptd*12+s.ry/5+s.rtd*12+s.recy/5+s.rectd*12+s.rec*2):0;
 function processUserGame(L,g,info){
-  const u=L.teams[L.user],opp=L.teams[g.h===L.user?g.a:g.h],home=g.h===L.user&&!g.neutral,wi=L.week;
+  const u=L.teams[L.user],opp=L.teams[g.h===L.user?g.a:g.h],home=g.h===L.user&&!g.neutral,wi=L.week,rb=L.rtg&&typeof rtgSS==='function'?rtgSS(L):null;
   let cc=info.won?3:1;if(home)cc+=L.fac.stadium-1+(L.fan>70?1:0);if(info.won&&rankOf(opp.id))cc+=1;L.credits+=cc;
   let fan=info.won?4:-5;if(info.won&&rankOf(opp.id)&&rankOf(opp.id)<=10)fan+=4;if(g.rival)fan+=info.won?6:-6;if(home&&wi===L.hcWeek)fan+=info.won?3:-2;if(info.storm)fan+=8;L.fan=clamp(L.fan+fan,0,100);
   let mor=info.won?5:-Math.max(2,Math.round(6*(2-coachMod(u,'mor'))));coachXP(L,info.won?12:4);if(captainsHealthy(L))mor+=info.won?1:2;L.morale=clamp(L.morale+mor,0,100);
@@ -562,6 +563,7 @@ function processUserGame(L,g,info){
   if(info.simmed&&typeof simTargeting==='function')simTargeting(L,g);
   const ts=L.ts,s=info.stats||{};ts.g++;ts.pf+=info.us;ts.pa+=info.them;ts.py+=s.passYds||0;ts.ry+=s.rushYds||0;ts.thirdA+=s.thirdA||0;ts.thirdC+=s.thirdC||0;ts.rzA+=s.rzA||0;ts.rzTD+=s.rzTD||0;ts.to+=(s.int||0);ts.pen+=s.pen||0;
   updateGameRecords(L,info,opp);
+  if(rb)try{rtgGameDone(L,g,info,rb)}catch(e){console.error(e)}   /* Road to Glory (05i): his game grade */
   return {cc,fan,mor,lev,inj};
 }
 function seedRecords(L){
@@ -605,7 +607,7 @@ function departures(L){
     const keep=[];
     for(const p of t.roster){
       const leave=p.yr>=4&&!(p.ss.gp<=4&&!p.rs);   /* the 4-game rule: a senior who played four games or fewer and never redshirted gets a fifth year */
-      const declare=!leave&&Math.random()<(typeof declareOdds==='function'?declareOdds(p):p.yr===3&&ovr(p)>=4.2?.55:0);
+      const mine=L.rtg&&p.id===L.rtg.pid,declare=!leave&&(mine?L.rtg.decl==='declare':Math.random()<(typeof declareOdds==='function'?declareOdds(p):p.yr===3&&ovr(p)>=4.2?.55:0));   /* Road to Glory: you decide */
       const portal=false;   /* transfers: portalStart (04c), after the coaching carousel */
       if(leave||declare){draftPool.push({p,t,declare});if(t.id===L.user){(declare?out.declares:out.grads).push({name:fullName(p),pos:p.pos,ovr:ovr(p)});if(typeof hofCheck==='function'&&hofCheck(L,p))(out.hof||(out.hof=[])).push(fullName(p))}}
       else if(portal){if(t.id===L.user)out.portalOut.push({name:fullName(p),pos:p.pos,ovr:ovr(p)});L.off.portalPool.push({...p,from:t.id})}
@@ -614,7 +616,7 @@ function departures(L){
     t.roster=keep;
     if(t.dco)for(const pos in t.dco)t.dco[pos]=t.dco[pos].filter(id=>keep.some(p=>p.id===id));
   }
-  if(typeof runDraft==='function')runDraft(L,draftPool).forEach(d=>{if(d.x.t.id===L.user)out.drafted.push({name:fullName(d.x.p),pos:d.x.p.pos,round:d.round,pick:d.pick,overall:d.overall})});
+  if(typeof runDraft==='function'){const dr=runDraft(L,draftPool);dr.forEach(d=>{if(d.x.t.id===L.user)out.drafted.push({name:fullName(d.x.p),pos:d.x.p.pos,round:d.round,pick:d.pick,overall:d.overall})});if(L.rtg&&typeof rtgDrafted==='function')rtgDrafted(L,draftPool,dr)}
   else{draftPool.sort((a,b)=>ovr(b.p)-ovr(a.p));draftPool.slice(0,7*32).forEach((x,i)=>{if(x.t.id===L.user)out.drafted.push({name:fullName(x.p),pos:x.p.pos,round:Math.floor(i/32)+1,pick:i+1})})}
   L.captains=L.captains.filter(id=>user.roster.some(p=>p.id===id));
   L.off.dep=out;

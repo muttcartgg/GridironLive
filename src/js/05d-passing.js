@@ -152,7 +152,7 @@ function completeTo(rec,cx,cy,contested,dive){
   OFF.forEach(o=>{if(o===rec||o===Q)return;if(o.role==='OL'||hyp(o.x-cx,o.y-cy)<9){o.blocker=true;o.tgt=null}else{o.route=null;o.cont=null}});
   rec.x=cx;rec.y=cy;pl.catchX=rec.x;setAnim(rec,dive?'dive':'catch');{const k=dive?.35:contested?.5:.62;rec.vx*=k;rec.vy*=k;pl.slowT=Math.max(pl.slowT,.3)}
   if(contested){toast('Contested catch!');slowMo(.3)}
-  if(rec.user)hint('Drag to steer · JUKE / SPIN / TRUCK buttons');showActs();
+  if(rec.user&&userCtl(rec))hint('Drag to steer · JUKE / SPIN / TRUCK buttons');showActs();
   fx('catch',{p:rec,contested:!!contested});
   if(typeof BC!=='undefined')BC.say('catch',{p:rec,contested});
 }
