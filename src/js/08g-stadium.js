@@ -22,7 +22,7 @@ const stadAway=()=>hostT()===S.home?S.away:S.home;
 const stadAlt=t=>contrasty(t.c1,t.c2)?t.c2:lum(t.c1)>.5?'#1d2129':'#F2F3F5';
 const stadCv=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(w));c.height=Math.max(1,Math.ceil(h));return c};
 const stadH01=i=>{const v=Math.sin(i*127.1+311.7)*43758.5453;return v-Math.floor(v)};
-function stadKey(){const h=hostT(),a=stadAway();return [h.id,h.c1,h.c2,h.city,a.id,a.c1,a.c2,crowdTheme(),Math.round(crowdEmpty()*10),lightStage(),wxKind(),stadPPU(),stadStunt()?1:0,uniColors(S.home).j,uniColors(S.away).j].join('|')}
+function stadKey(){const h=hostT(),a=stadAway();return [h.id,h.c1,h.c2,h.city,a.id,a.c1,a.c2,crowdTheme(),Math.round(crowdEmpty()*10),lightStage(),wxKind(),stadPPU(),stadStunt()?1:0,uniColors(S.home).j,uniColors(S.away).j,UNI_VER].join('|')}
 function ensureStadium(){if(STAD.T&&(++STAD.chk%15))return;if(STAD.T&&S.phase==='live')return;const k=stadKey();if(k!==STAD.key||!STAD.T){STAD.key=k;buildStadium()}}
 function buildStadium(){
   STAD.ppu=stadPPU();const T={},lit=sceneLight().glow>.25,r=fRng(hostT().id*31+7);
@@ -48,7 +48,7 @@ function crowdTile(deck,mode,up){
   const P=STAD.ppu,lo=deck==='lo',n=lo?ST.loN:ST.upN,rh=(lo?ST.loH:ST.upH)*P,hr=.6*P,W0=Math.round(ST.tile*P),H0=Math.ceil(n*rh+hr),cv=stadCv(W0,H0),g=cv.getContext('2d');
   const h=hostT(),a=stadAway(),r=fRng(h.id*131+a.id*7+(lo?11:23)+mode.length*101),th=crowdTheme(),em=crowdEmpty(),st=lightStage(),night=st==='night',sw=.6*P,alt=stadAlt(h);
   if(lo&&mode==='main'&&stadStunt())mode='stunt';
-  const sA=shade(h.c1,-.5),sB=lum(h.c2)>.8?'#555b66':shade(h.c2,-.45),con=night?'#232a35':'#646b76',conD=night?'#141921':'#40464f';
+  const hs=h.stad||{},sA=hs.s1||shade(h.c1,-.5),sB=hs.s2||(lum(h.c2)>.8?'#555b66':shade(h.c2,-.45)),con=night?'#232a35':'#646b76',conD=night?'#141921':'#40464f';
   const mix=[h.c1,h.c1,h.c1,h.c1,h.c1,h.c2,alt,'#F2F3F5','#F2F3F5','#23272f','#2f3541','#6b7380',a.c1,'#3b5b8a','#8a3b3b','#c9b48a'],neon=['#39ff88','#ff3cac','#2de2ff',h.c1],tones=[...TONES,'#5C3A21'];
   const pickC=(b,q,j)=>mode==='vis'?(b<.55?a.c1:b<.75?stadAlt(a):mix[b*16|0])
     :mode==='stu'?(th==='white'?(b<.93?'#F2F3F5':h.c1):th==='black'?(b<.93?'#121418':h.c1):th==='stripe'?(b<.92?(j%2?h.c1:alt):'#F2F3F5'):th==='neon'?neon[b*4|0]:(b<.8?h.c1:alt))

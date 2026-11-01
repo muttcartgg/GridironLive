@@ -3,7 +3,7 @@
    ========================================================= */
 let TAB='home',SETUP=null,ROSTER_FILTER='All';
 /* team badge: the generated shield, or the imported logo on a light shield once it loads (02c-packs.js) */
-const badge=(t,cls='')=>{const u=typeof teamLogoURL==='function'?teamLogoURL(t):'';return `<span class="badge ${cls}${u?' hl':''}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"><span class="ab">${esc(t.abbr)}</span>`:esc(t.abbr)}</span>`};
+const badge=(t,cls='')=>{if(t.bdg&&typeof bdgURL==='function')return `<span class="badge bd ${cls}"><img src="${bdgURL(t)}" alt="${esc(t.abbr)}" decoding="async"></span>`;const u=typeof teamLogoURL==='function'?teamLogoURL(t):'';return `<span class="badge ${cls}${u?' hl':''}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"><span class="ab">${esc(t.abbr)}</span>`:esc(t.abbr)}</span>`};
 const recStr=t=>`${t.rec.w}–${t.rec.l}`;
 const tcell=(t,label)=>`<div class="tname" data-team="${t.id}" style="cursor:pointer">${badge(t,'sm')}<span>${esc(label||rankTag(t.id)+t.city)}</span></div>`;
 function applyTeamTheme(t){const r=document.documentElement.style;r.setProperty('--team',t.c1);r.setProperty('--team2',t.c2);r.setProperty('--btn-ink',inkOn(t.c1))}
@@ -195,27 +195,8 @@ function openTeamDetail(id){
   on('tdX',closeModal);on('tdEdit',()=>openEditor(id,()=>openTeamDetail(id),SETUP.L));
   on('coachHere',()=>startDynasty(id));
 }
-function openCustomProgram(){
-  const L=SETUP.L;
-  openModal(`<div class="eyebrow">Build from scratch</div><div class="h2">Create your program</div><p class="note">Your new school starts at one-star prestige with a thin roster. It takes a spot in the conference you choose.</p>
-    <div class="field-row"><label for="cpCity">School</label><input type="text" id="cpCity" maxlength="22" placeholder="Riverside State"></div>
-    <div class="field-row"><label for="cpName">Mascot</label><input type="text" id="cpName" maxlength="16" placeholder="Thunder"></div>
-    <div class="field-row"><label for="cpAbbr">Abbreviation</label><input type="text" id="cpAbbr" maxlength="4" placeholder="RSU" style="text-transform:uppercase"></div>
-    <div class="colors"><div class="field-row"><label for="cpC1">Primary</label><input type="color" id="cpC1" value="#6A1B9A"></div><div class="field-row"><label for="cpC2">Secondary</label><input type="color" id="cpC2" value="#F2C230"></div></div>
-    <div class="field-row"><label for="cpConf">Conference</label><select id="cpConf">${L.confs.map((c,i)=>c.ind?'':`<option value="${i}">${esc(c.name)} · ${c.div}</option>`).join('')}</select></div>
-    <p class="note" id="cpErr"></p>
-    <div class="btns"><button class="btn" id="cpGo">Create &amp; coach</button><button class="btn ghost" id="cpX">Cancel</button></div>`);
-
-  on('cpX',closeModal);
-  on('cpGo',()=>{
-    const city=$('#cpCity').value.trim(),name=$('#cpName').value.trim();if(!city||!name){$('#cpErr').textContent='Give your school a name and a mascot.';return}
-    const conf=+$('#cpConf').value;const slotT=L.teams.filter(t=>t.conf===conf).sort((a,b)=>qOf(a)-qOf(b))[0];
-    const fresh=genTeam(slotT.id,city,name,$('#cpC1').value,1,conf,{exact:true,div:slotT.div,q:slotT.div==='FCS'?1.2:1.7});
-    if(slotT.rival!=null){const r=L.teams[slotT.rival];r.rival=null;slotT.rival=null}
-    Object.assign(slotT,{city,name,abbr:($('#cpAbbr').value.trim()||city.slice(0,3)).toUpperCase().slice(0,4),c1:$('#cpC1').value,c2:$('#cpC2').value,prestige:1,q:fresh.q,roster:fresh.roster,stadium:city+' Stadium',cap:22000});
-    invalidate();resetRecords(L);buildSchedule(L);updateRankings(L);startDynasty(slotT.id);
-  });
-}
+/* create-a-school (10c school builder): name, colors, badge, stadium style, and the team it replaces */
+function openCustomProgram(){openSchoolBuilder({mode:'create',L:SETUP.L})}
 function startDynasty(id){
   const st=SETUP,L=st.L;closeModal();
   L.user=id;L.coach.name=st.coach.trim()||'Coach';L.name=st.name.trim()||`${L.teams[id].city} Dynasty`;L.settings.diff=st.diff;L.coach.schools=[id];
@@ -438,7 +419,8 @@ function hubProgram(){
   ${careerStaffHTML()}
   <div class="card"><div class="h2">Trophy case</div><div class="grid3">
     <div class="kpis"><div><em>National titles</em><b>${u.titles}</b></div></div><div class="kpis"><div><em>Conference titles</em><b>${u.ccTitles}</b></div></div><div class="kpis"><div><em>Bowl wins</em><b>${u.bowlWins}</b></div></div><div class="kpis"><div><em>Playoff trips</em><b>${u.playoffApps||0}</b></div></div></div>
-    <div class="kv"><span>${esc(u.trophy)} vs ${esc(T(u.rival).city)}</span><b>${u.holder===u.id?'In your case':'Held by '+esc(T(u.rival).city)}</b></div></div>`;
+    ${u.rival!=null&&T(u.rival)&&u.trophy?`<div class="kv"><span>${esc(u.trophy)} vs ${esc(T(u.rival).city)}</span><b>${u.holder===u.id?'In your case':'Held by '+esc(T(u.rival).city)}</b></div>`:''}</div>
+  ${uniCardHTML(u)}`;
 }
 function hubStats(){
   const u=T(LG.user),ts=LG.ts,g=Math.max(1,ts.g);
@@ -461,7 +443,9 @@ function hubLeague(){
     <div class="field-row"><label for="leagueConf">Conference</label><select id="leagueConf">${groups}</select></div></div>
   <div class="card"><div class="eyebrow">${esc(confName(c))}${LG.confs[c].ind?'':' standings'}</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th><th class="n">OVR</th><th></th></tr></thead><tbody>${confStandings(LG,c).map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t,rankTag(t.id)+teamName(t))}</td><td class="n">${LG.confs[c].ind?'—':t.rec.cw+'–'+t.rec.cl}</td><td class="n">${recStr(t)}</td><td class="n">${tOvr99(teamOvr(t))}</td><td class="n"><button class="linkbtn" id="edit-${t.id}">Edit</button></td></tr>`).join('')}</tbody></table></div></div>
   <div class="card"><div class="h2">Team pack</div><p class="note">Rename and recolor the whole league at once, or paste real rosters. Export the current list, edit it, then import it back. Teams are matched by their order in the list.</p>
-    <div class="btns"><button class="btn ghost" id="packExport">Export team pack</button><button class="btn ghost" id="packImport">Import team pack</button></div></div>`;
+    <div class="btns"><button class="btn ghost" id="packExport">Export team pack</button><button class="btn ghost" id="packImport">Import team pack</button></div></div>
+  <div class="card"><div class="h2">Create a school</div><p class="note">Design a new program (name, colors, badge, stadium and uniforms) and put it in any conference in place of a CPU team. The schedule stays valid. Paste a school code to bring in a shared design.</p>
+    <div class="btns"><button class="btn ghost" id="newSchool">Create a school</button></div></div>`;
 }
 /* v7 settings registry: any module can add a setting or a button to the Settings tab without editing hubSettings.
    SETTINGS_EXTRA.push({card:'Realism',key:'penalties',label:'Penalties',opts:[['normal','Normal'],['low','Fewer'],['off','Off']],def:'normal'})
@@ -544,7 +528,8 @@ function hubSettings(){
     <b>Clock:</b> college rules. The clock keeps running after in-bounds tackles and stops on incompletions, out of bounds, scores and changes of possession. Inside two minutes of each half it stops briefly on first downs. Use TIMEOUT before the snap.</p></div>`;
 }
 function bindHub(){
-  if(TAB==='program')bindCareer();
+  if(TAB==='program'){bindCareer();bindUniCard()}
+  on('newSchool',()=>openSchoolBuilder({mode:'create',L:LG,done:rerender}));
   on('playGame',()=>{ac();openPregame(userGameThisWeek())});
   on('simGame',()=>{simUserGame(userGameThisWeek())});
   on('resumeGame',()=>{ac();resumeGame()});
@@ -603,20 +588,8 @@ function openPlayer(id){
   };
   render();
 }
-function openEditor(id,done,L){
-  L=L||LG;const t=L.teams[id];
-  openModal(`<div class="eyebrow">Edit program</div><div style="display:flex;gap:12px;align-items:center" id="edPrev">${badge(t,'lg')}<b class="h2">${esc(teamName(t))}</b></div>
-    <div class="field-row"><label for="edCity">School</label><input type="text" id="edCity" maxlength="22" value="${esc(t.city)}"></div>
-    <div class="field-row"><label for="edName">Mascot</label><input type="text" id="edName" maxlength="16" value="${esc(t.name)}"></div>
-    <div class="field-row"><label for="edAbbr">Abbreviation (2–4 letters)</label><input type="text" id="edAbbr" maxlength="4" value="${esc(t.abbr)}" style="text-transform:uppercase"></div>
-    <div class="field-row"><label for="edStad">Stadium</label><input type="text" id="edStad" maxlength="30" value="${esc(t.stadium)}"></div>
-    <div class="colors"><div class="field-row"><label for="edC1">Primary</label><input type="color" id="edC1" value="${t.c1}"></div><div class="field-row"><label for="edC2">Secondary</label><input type="color" id="edC2" value="${t.c2}"></div></div>
-    <div class="btns"><button class="btn light" id="edSave">Save</button><button class="btn ghost" id="edCancel">Cancel</button></div>`);
-  const prev=()=>{const tmp={...t,city:$('#edCity').value||t.city,name:$('#edName').value||t.name,abbr:($('#edAbbr').value||t.abbr).toUpperCase(),c1:$('#edC1').value,c2:$('#edC2').value};$('#edPrev').innerHTML=`${badge(tmp,'lg')}<b class="h2">${esc(teamName(tmp))}</b>`};
-  ['edCity','edName','edAbbr','edC1','edC2'].forEach(i=>$('#'+i).oninput=prev);
-  on('edSave',()=>{t.city=$('#edCity').value.trim()||t.city;t.name=$('#edName').value.trim()||t.name;t.abbr=($('#edAbbr').value.trim()||t.abbr).toUpperCase().slice(0,4);t.stadium=$('#edStad').value.trim()||t.stadium;t.c1=$('#edC1').value;t.c2=$('#edC2').value;closeModal();done&&done()});
-  on('edCancel',()=>{closeModal();done&&done()});
-}
+/* edit a school: name, mascot, abbreviation, stadium, colors, badge designer and stadium style (10c) */
+function openEditor(id,done,L){openSchoolBuilder({mode:'edit',id,L:L||LG,done})}
 function openEvent(){
   const e=LG.event;if(!e)return;const ev=EVENTS[e.k],p=T(LG.user).roster.find(x=>x.id===e.pid);if(!p){LG.event=null;return}
   openModal(`<div class="eyebrow">Front office · decision</div><div class="h2">${esc(ev.text(p))}</div><div class="btns">${ev.opts.map((o,i)=>`<button class="btn ${i?'ghost':''}" id="evo-${i}">${esc(o[0])}</button>`).join('')}</div>`);
@@ -636,9 +609,9 @@ function openPregame(g){
     ${gameHero(g,LG.week)}
     <div class="grid2 pg-grid"><div class="card"><div class="eyebrow">Keys to the game</div><ol class="pg-keys">${keys.slice(0,3).map(k=>`<li>${esc(k)}</li>`).join('')}</ol></div>
     <div class="card"><div class="eyebrow">Players to watch · ${esc(opp.abbr)}</div><div class="list">${watch.map(p=>`<div class="lrow"><span class="l"><span class="num">${p.pos}</span><span>${esc(fullName(p))} <small class="note">#${p.num} · ${yrStr(p)}</small></span></span>${ovrTag(p)}</div>`).join('')}</div></div></div>
-    <div class="setrow pg-uni"><span class="eyebrow">Uniform</span><div class="seg" id="uniSeg">${UNI_STYLES.map(([k,l])=>`<button data-v="${k}" aria-pressed="${(LG.settings.uniform||'auto')===k}">${l}</button>`).join('')}</div></div>
+    ${uniPregameHTML(g)}
     <div class="btns cta"><button class="btn" id="kickoff">${ICO.play}Kick off</button><button class="btn ghost" id="pgX">Back</button></div>`,true);
-  document.querySelectorAll('#uniSeg button').forEach(b=>b.onclick=()=>{LG.settings.uniform=b.dataset.v;document.querySelectorAll('#uniSeg button').forEach(x=>x.setAttribute('aria-pressed',String(x===b)));saveNow()});
+  bindPregameUni(g);
   on('pgX',closeModal);on('kickoff',()=>{closeModal();startUserGame(g)});
 }
 function simUserGame(g){
@@ -745,8 +718,9 @@ function openTeamPage(id){
     else if(tab==='roster'){body=POS_ORDER.map(pos=>`<div class="eyebrow" style="margin-top:6px">${pos}</div><div class="list">${depth(t,pos).map(p=>`<div class="lrow"><span class="l">${photoHTML(p,34,'',t)}<span>${esc(fullName(p))} <small class="note">${['Fr','So','Jr','Sr'][p.yr-1]||''}${p.inj>0?' · injured':''}</small></span></span><span><small class="note">${esc(statLine(p))}</small> ${ovrTag(p)}</span></div>`).join('')}</div>`).join('')}
     else{body=`<div class="list">${games.map(({g,w})=>{const home=g.h===id,o=T(home?g.a:g.h),done=g.hs!=null,us=home?g.hs:g.as,them=home?g.as:g.hs;return `<div class="lrow"><span class="l"><small class="note" style="min-width:64px">${esc(w.label)}</small>${home?'vs':'@'} ${badge(o,'sm')} ${rankTag(o.id)}${esc(o.city)}</span><span class="${done?(us>them?'res-w':'res-l'):'note'}">${done?(us>them?'W ':'L ')+us+'–'+them:esc(g.tag||'')}</span></div>`}).join('')||'<p class="note">No games yet.</p>'}</div>`}
     openModal(`<div style="display:flex;gap:14px;align-items:center">${badge(t,'xl')}<div style="min-width:0"><div class="eyebrow">${esc(confName(t.conf,L))} · ${t.div}${rk?' · #'+rk:''}</div><div class="h2" style="font-size:24px">${esc(teamName(t))}</div><div class="note">${esc(t.stadium||'')}</div></div></div>
-      <div class="seg" id="tpTabs">${[['overview','Overview'],['roster','Roster'],['schedule','Schedule']].map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===tab}">${l}</button>`).join('')}</div>${body}<button class="btn ghost" id="tpClose">Close</button>`,true);
+      <div class="seg" id="tpTabs">${[['overview','Overview'],['roster','Roster'],['schedule','Schedule']].map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===tab}">${l}</button>`).join('')}</div>${body}<div class="btns"><button class="btn ghost" id="tpUni">Uniforms</button><button class="btn ghost" id="tpEdit">Edit school</button><button class="btn ghost" id="tpClose">Close</button></div>`,true);
     $('#tpTabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{tab=b.dataset.v;render()});on('tpClose',closeModal);
+    on('tpUni',()=>openUniEditor(id,()=>openTeamPage(id)));on('tpEdit',()=>openEditor(id,()=>openTeamPage(id)));
   };render();
 }
 document.addEventListener('click',e=>{const el=e.target.closest&&e.target.closest('[data-team]');if(!el||!LG)return;if(!$('#hub').hidden||!$('#modal').hidden){e.stopPropagation();openTeamPage(+el.dataset.team)}},true);
