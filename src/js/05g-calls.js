@@ -188,7 +188,7 @@ function renderCall(){
   const row=$('#callRow');
   row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;CALL_FORM='';renderCall()});
   row.querySelectorAll('[data-fm]').forEach(b=>b.onclick=()=>{ac();CALL_FORM=b.dataset.fm;renderCall()});
-  const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},420)};
+  const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},460)};   // just past the re-form glide
   row.querySelector('[data-coach]').onclick=()=>{ac();const p=picks[0]?picks[0].p:aiPickPlay(S.home,sitInfo());pickPlay(p)};
   row.querySelectorAll('[data-pid]').forEach(b=>b.onclick=()=>{ac();pickPlay(PLAYBOOK[+b.dataset.pid])});
   row.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{ac();callSpecial(b.dataset.sp)});

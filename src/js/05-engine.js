@@ -135,9 +135,9 @@ function formTick(dt){for(const p of P){if(p._gx==null)continue;p._gt+=dt;const 
   p.x=lerp(p._g0x,p._gx,k);p.y=lerp(p._g0y,p._gy,k);if(u>=1){p._gx=p._gy=null;p.vx=p.vy=0;continue}
   p.vx=dt>0?(p.x-ox)/dt:0;p.vy=dt>0?(p.y-oy)/dt:0;p.phase+=hyp(p.x-ox,p.y-oy)*1.85}}   // smoothstep, a quarter to under half a second
 function formSnap(){for(const p of P)if(p._gx!=null){p.x=p._gx;p.y=p._gy;p._gx=p._gy=null;p.vx=p.vy=0}}
-/* snapped mid-glide: a man nearly there plays on from where he is (no pop); one still far off (a flip) is put on his
-   spot so his assignment starts where it was drawn */
-function formStop(){for(const p of P)if(p._gx!=null){if(hyp(p._gx-p.x,p._gy-p.y)>1.5){p.x=p._gx;p.y=p._gy}p._gx=p._gy=null;p.vx=p.vy=0}}
+/* snapped mid-glide (only possible inside ~0.4 s of a re-form): everyone takes his spot, so every assignment starts
+   exactly where it was drawn and the play is the same as without the glide; a man within a foot just plays on */
+function formStop(){for(const p of P)if(p._gx!=null){if(hyp(p._gx-p.x,p._gy-p.y)>.35){p.x=p._gx;p.y=p._gy}p._gx=p._gy=null;p.vx=p.vy=0}}
 function setupFormation(pc,flip){
   const keep=S.phase==='presnap'&&S.formDone===S.formSer&&P.length&&!S.ff?new Map(P.map(p=>[p.side+(p.pl&&p.pl.id),p])):null;
   formSetup(pc,flip);S.formDone=S.formSer;

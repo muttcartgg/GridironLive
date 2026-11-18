@@ -54,6 +54,8 @@ function shakeXY(now){const s=S.shake;if(!(s>0)||LG&&LG.settings&&LG.settings.sh
 function camCut(){cam.cut=1}
 function updateCam(dt){
   dt=Math.min(dt,.05);const retro=LG&&LG.settings.style==='retro';
+  /* between plays ('wait': a kick result, a change of possession, a flag) the shot holds; the next snap or kick cuts */
+  if(S.phase==='wait'&&!cam.cut){S.shake=Math.max(0,S.shake-dt*1.6);return}
   let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
   if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1;
     /* frame the formation: the QB, every eligible receiver and your defender stay in view on any phone (hot routes, reads) */
@@ -85,7 +87,7 @@ function updateCam(dt){
   if(cut){cam.x=tx;cam.y=ty;cam.xv=cam.yv=0;cam.cut=0;S.cutA=1;S.cutN=(S.cutN||0)+1}
   else{camDamp('x',tx,st,dt);camDamp('y',ty,st*1.2,dt);
   /* keep the ball (or its carrier) on screen when the spring lags: pulled back in quickly (no snap), hard-held only at the very edge */
-  if(S.phase!=='presnap'){const hw=vw/2-Math.min(vw*.2,3),hx=vw/2-.8;let o=bx<cam.x-hw?bx+hw-cam.x:bx>cam.x+hw?bx-hw-cam.x:0;
+  if(S.phase==='live'||S.phase==='dead'||S.phase==='replay'){const hw=vw/2-Math.min(vw*.2,3),hx=vw/2-.8;let o=bx<cam.x-hw?bx+hw-cam.x:bx>cam.x+hw?bx-hw-cam.x:0;
     if(o){cam.x+=o*Math.min(1,dt*10);cam.x=clamp(cam.x,bx-hx,bx+hx);cam.xv=o<0?Math.min(cam.xv||0,0):Math.max(cam.xv||0,0)}
     if(vh<FW+10){const hh=vh/2-1.5,hy=vh/2-.6;o=by<cam.y-hh?by+hh-cam.y:by>cam.y+hh?by-hh-cam.y:0;if(o){cam.y+=o*Math.min(1,dt*10);cam.y=clamp(cam.y,by-hy,by+hy);cam.yv=o<0?Math.min(cam.yv||0,0):Math.max(cam.yv||0,0)}}}}
   S.shake=Math.max(0,S.shake-dt*1.6);
