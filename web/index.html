@@ -1264,6 +1264,161 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
 .pg-unis figcaption{font:800 13px/1 var(--tv,var(--disp));letter-spacing:.08em;color:var(--mute)}
 .pg-unis .vs{font:800 14px/1 var(--tv,var(--disp));color:var(--mute)}
 
+/* =========================================================
+   90 · System: the one set of rules every menu surface agrees on. Loaded last, so it settles
+   what the earlier files left inconsistent.
+   - Type: Barlow Condensed (--tv) for names, numbers and screen titles; the system font (--body) for
+     everything you read or tap. Labels and controls are sentence case; only display type is uppercase.
+   - Color roles: --fg text, --m-mute secondary text, --m-line hairlines, --gold for rank and honors,
+     --ok / --hot for results. The team color marks the one primary action and the current place only.
+   - Space 4 · 8 · 12 · 16 · 24; radius 8 (chips) · 12 (controls) · 18 (cards) · 24 (sheets).
+   - Motion: 120 ms press, 240 ms enter, one easing; transform and opacity only; off with reduced motion.
+   ========================================================= */
+:root{--sp1:4px;--sp2:8px;--sp3:12px;--sp4:16px;--sp5:24px;--r-ch:8px;--r-ct:12px;--r-cd:18px;--r-sh:24px;
+  --ease:cubic-bezier(.2,.8,.2,1);--t-press:.12s;--t-enter:.24s;
+  --accent:color-mix(in srgb,var(--team) 62%,#fff);--on:#34C77B;--bar:rgba(7,11,20,.97)}
+
+/* ---------- hub: header, sub-tabs, tab bar (bottom on a portrait phone, a rail in landscape) ---------- */
+#hub>.hub-top{padding-bottom:10px}
+#hub>.tabs{order:9;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;overflow:visible;
+  padding:5px max(4px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));
+  background:var(--bar);border-top:1px solid var(--m-line);border-bottom:0}
+#hub>.tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:50px;padding:4px 2px;border-radius:12px;
+  background:none;box-shadow:none;font:600 11px/1.1 var(--body);letter-spacing:0;text-transform:none;color:#7C889C;transition:transform var(--t-press) var(--ease)}
+#hub>.tabs button svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#hub>.tabs button svg circle{fill:currentColor;stroke:none}
+#hub>.tabs button span:not(.dot){max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hub>.tabs button[aria-selected="true"]{background:none;box-shadow:none;color:var(--fg)}
+#hub>.tabs button[aria-selected="true"] svg{color:var(--accent);stroke-width:2}
+#hub>.tabs button .dot{position:absolute;top:5px;left:calc(50% + 8px);width:8px;height:8px;margin:0;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px var(--bar)}
+#hub>.tabs button:active{transform:scale(.94)}
+@media (max-width:380px){#hub>.tabs button{font-size:10.5px;padding:4px 0}}
+#hub>.subtabs{display:flex;flex:none;gap:2px;overflow-x:auto;scrollbar-width:none;touch-action:pan-x pan-y;overscroll-behavior-x:contain;
+  padding:0 max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));background:#070B14;border-bottom:1px solid var(--m-line)}
+#hub>.subtabs::-webkit-scrollbar{display:none}
+#hub>.subtabs button{position:relative;flex:none;min-height:44px;padding:0 12px;border:0;background:none;font:600 15px/1 var(--body);color:#8692A6;transition:color var(--t-press)}
+#hub>.subtabs button[aria-selected="true"]{color:var(--fg)}
+#hub>.subtabs button[aria-selected="true"]::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--accent)}
+#hub>.subtabs button:active{opacity:.6}
+#hubScroll{padding-bottom:28px}
+@media (orientation:landscape) and (max-height:520px){
+  #hub{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr)}
+  #hub>.hub-top{grid-column:2;grid-row:1;padding-left:16px}
+  #hub>.subtabs{grid-column:2;grid-row:2;padding-left:10px}
+  #hub>.scroll{grid-column:2;grid-row:3;padding-left:16px}
+  #hub>.tabs{grid-column:1;grid-row:1/4;grid-auto-flow:row;grid-auto-rows:minmax(0,58px);grid-auto-columns:auto;align-content:center;gap:2px;width:calc(70px + env(safe-area-inset-left,0px));
+    padding:calc(env(safe-area-inset-top,0px) + 6px) 6px calc(env(safe-area-inset-bottom,0px) + 6px) max(6px,env(safe-area-inset-left,0px));border-top:0;border-right:1px solid var(--m-line)}
+  #hub>.tabs button{min-height:0}
+}
+
+/* ---------- type: sentence-case labels and controls ---------- */
+:where(.screen,#modal,#pausem) :is(.card,.panel)>.eyebrow:first-child::before,:where(.screen,#modal,#pausem) .card>.h2:first-child::before{display:none}
+:where(.screen,#modal,#pausem) .setrow>.eyebrow:first-child{font:600 14.5px/1.25 var(--body);letter-spacing:0;text-transform:none;color:#C9D1DE}
+:where(.screen,#modal,#pausem) .seg button{font:600 14px/1.1 var(--body);letter-spacing:0;text-transform:none}
+:where(.screen,#modal,#pausem) .chipbtn{font:600 14px/1 var(--body);letter-spacing:0;text-transform:none}
+:where(.screen,#modal,#pausem) .linkbtn{font:600 13.5px/1 var(--body);letter-spacing:0;text-transform:none;color:#B9C3D2}
+:where(.screen,#modal,#pausem) .field-row label{font:600 13px/1 var(--body);letter-spacing:0;text-transform:none;color:var(--m-mute)}
+:where(.screen,#modal,#pausem) .note{color:#97A3B6}
+
+/* ---------- buttons: one filled primary (team color); everything else is quiet ---------- */
+:where(.screen,#modal,#pausem) .btn.light{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,0) 58%),var(--team);color:var(--btn-ink);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.2)}
+:where(.screen,#modal,#pausem) .btn{transition:transform var(--t-press) var(--ease),opacity var(--t-press)}
+:where(.screen,#modal,#pausem) :is(.rrow,.lrow[data-team],.chipbtn,.seg button,.linkbtn,.slot.empty,.tp,.res-g .rt,.bt):active{opacity:.72}
+:where(.screen,#modal,#pausem) .rrow{transition:opacity var(--t-press)}
+:where(.screen,#modal,#pausem) .btn.ghost:not(:disabled):active{background:rgba(255,255,255,.1)}
+
+/* ---------- settings ---------- */
+.set-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px;align-items:start}
+.card.set{gap:0;padding:14px 16px 6px}
+.card.set>.h2:first-child{margin-bottom:4px}
+.sr{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)}
+.card>.h2+.sr,.more-b>.sr:first-child,.sr-h+.sr,.note+.sr{border-top:0}
+.sr-l{display:flex;flex-direction:column;gap:3px;min-width:0;font:500 15px/1.25 var(--body);color:var(--fg)}
+.sr-l small{font-size:12.5px;line-height:1.35;color:var(--m-mute)}
+.sr>.seg{flex:none}
+.sr:has(>.seg:not(.tg)>button:nth-child(3)),.sr.stack{flex-direction:column;align-items:stretch;gap:9px}
+.sr>.seg:not(.tg):has(>button:nth-child(3)){display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+.sr>.seg.many{display:flex!important;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.sr>.seg.many::-webkit-scrollbar{display:none}
+.sr>.seg.many button{flex:1 0 auto}
+.sr>.seg button{padding:0 8px;white-space:nowrap}
+.sr .aud{display:flex;gap:8px;align-items:center}.sr .aud select{flex:1;min-width:0}
+.sr-h{margin:16px 0 4px;font:700 13px/1 var(--body);color:var(--m-mute)}
+.card.set .note{font-size:13px;margin:2px 0 8px}
+.card.set>.btns,.card.set .more-b>.btns{margin:8px 0 10px}
+.card.set .field-row{margin:6px 0 8px}
+.card.set>.kv{min-height:44px}
+.set details.more{border-top:1px solid rgba(255,255,255,.06);margin-top:2px}
+.set details.more>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;min-height:48px;font:600 15px/1 var(--body);color:#AEB8C8;cursor:pointer}
+.set details.more>summary::-webkit-details-marker{display:none}
+.set details.more>summary::after{content:"";width:8px;height:8px;margin-right:4px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform var(--t-enter) var(--ease)}
+.set details.more[open]>summary::after{transform:translateY(2px) rotate(225deg)}
+.set details.more[open]>summary{color:var(--fg)}
+.more-b{padding-bottom:6px}
+/* switch: one button, the dot slides */
+.seg.tg{display:inline-flex;padding:0;border:0;background:none;gap:0}
+.seg.tg button{position:relative;width:51px;min-height:31px;height:31px;padding:0;border-radius:999px;background:rgba(255,255,255,.17);box-shadow:none;transition:background-color var(--t-enter) var(--ease)}
+.seg.tg button i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.35);transition:transform var(--t-enter) var(--ease)}
+.seg.tg button[aria-checked="true"]{background:var(--on)}
+.seg.tg button[aria-checked="true"] i{transform:translateX(20px)}
+.seg.tg button:active i{transform:scale(.92)}.seg.tg button[aria-checked="true"]:active i{transform:translateX(20px) scale(.92)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- home: tour, decision, news ---------- */
+.card.tour{gap:8px;border-color:rgba(255,210,63,.28);background:radial-gradient(120% 120% at 0 0,rgba(255,210,63,.1),transparent 60%),var(--m-p1)}
+.tour-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tour-dots{display:flex;gap:5px}.tour-dots i{width:16px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);transition:background-color var(--t-enter)}.tour-dots i.on{background:var(--gold)}
+.card.tour .h2,.card.dec .h2{font-size:22px;line-height:1.1}
+.card.tour .note{margin:0;font-size:14.5px;color:#C3CCDA}
+.card.tour .btns .btn,.card.dec .btns .btn{flex:0 1 auto;min-width:96px}
+.card.dec{gap:10px;border-color:color-mix(in srgb,var(--gold) 34%,transparent)}
+.card.dec.done{border-color:var(--m-line)}
+.card.dec>.eyebrow:first-child{color:var(--gold)}
+.card.dec .h2{font-family:var(--body);font-style:normal;font-weight:600;font-size:16.5px;line-height:1.4;letter-spacing:0;text-transform:none}
+.news-h{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px}
+.news .lrow{font-size:14px;line-height:1.45}
+.news .lrow.lead{font-size:15px}
+
+/* ---------- trophy case: numbers, not emoji; empty shelves stay quiet ---------- */
+.tcase{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tcase .tile{padding:12px 6px;gap:6px}
+.tcase .tile b{font-size:28px;color:#5E6A7E}
+.tcase .tile.won b{color:var(--gold)}
+
+/* ---------- how to play ---------- */
+.card.help{gap:10px}
+.help-l{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+.help-l li{position:relative;padding-left:15px;font-size:14.5px;line-height:1.5;color:#C3CCDA}
+.help-l li::before{content:"";position:absolute;left:1px;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--m-mute)}
+.help-l b{color:var(--fg);font-weight:700}
+
+/* ---------- loading skeleton ---------- */
+.skel{display:flex;flex-direction:column;gap:14px;padding-top:8px}
+.skel .note{text-align:center}
+.sk{display:block;border-radius:var(--r-cd);background:rgba(255,255,255,.06);animation:skPulse 1s ease-in-out infinite alternate}
+.sk-top{display:flex;align-items:center;gap:14px}.sk-top>span{flex:1;display:flex;flex-direction:column;gap:8px}
+.sk-b{width:54px;height:58px;border-radius:12px}.sk-l{height:22px;width:62%;border-radius:6px}.sk-s{height:12px;width:40%;border-radius:6px}
+.sk-card{height:220px}.sk-card.sm{height:120px}
+@keyframes skPulse{from{opacity:.45}to{opacity:1}}
+
+/* ---------- screens arrive, they don't pop ---------- */
+#setup:not([hidden]),#post:not([hidden]){animation:scrIn var(--t-enter) var(--ease)}
+@keyframes scrIn{from{opacity:0}}
+#pausem>.panel{gap:12px}
+#pausem .pm-tools{gap:8px}
+#pausem .pm-tools .btn{flex:1 1 120px}
+
+/* ---------- toasts on menu screens: small, low, out of the way ---------- */
+#app:has(>.screen:not([hidden])) #toast{top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 76px);padding:10px 16px;border-radius:999px;font:600 14px/1.2 var(--body);letter-spacing:0;text-transform:none}
+#app:has(>.screen:not([hidden])) #toast::before{display:none}
+@media (orientation:landscape) and (max-height:520px){#app:has(>.screen:not([hidden])) #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}}
+/* with a sheet open its buttons own the bottom edge, so the toast moves to the top */
+#app:has(>#modal:not([hidden])) #toast{top:calc(env(safe-area-inset-top,0px) + 10px)!important;bottom:auto}
+
+@media (prefers-reduced-motion:reduce){
+  #toast,#hint,#hub>.tabs button,.seg.tg button,.seg.tg button i,.sk{transition-duration:.01ms!important;animation:none!important}
+}
+
 </style>
 </head>
 <body>
@@ -1333,11 +1488,10 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
 
   <section id="pausem" class="modal" hidden>
     <div class="panel">
-      <div class="eyebrow">Timeout on the field</div>
       <div class="h1">Paused</div>
-      <p class="note">Your game is saved at every snap, so you can close the app and resume later. Sim to final plays out the rest of the game instantly, based on both rosters and the current score.</p>
+      <p class="note">Saved at every snap. Close the app any time and pick up where you left off.</p>
       <div class="btns"><button class="btn light" id="resume">Resume</button><button class="btn ghost" id="simRest">Sim to final</button><button class="btn ghost" id="quitHub">Save &amp; exit</button></div>
-      <div class="btns"><button class="btn ghost sm" id="pmBox">Box score</button><button class="btn ghost sm" id="pmPbp">Play-by-play</button><button class="btn ghost sm" id="pmDrv">Drive chart</button><button class="btn ghost sm" id="pmPhoto">Photo mode</button></div>
+      <div class="btns pm-tools"><button class="btn ghost sm" id="pmBox">Box score</button><button class="btn ghost sm" id="pmPbp">Play-by-play</button><button class="btn ghost sm" id="pmDrv">Drive chart</button><button class="btn ghost sm" id="pmPhoto">Photo mode</button></div>
       <div id="pmMode" class="pm-mode"></div>
       <div id="pauseInfo" hidden></div>
     </div>
@@ -1346,8 +1500,9 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
   <section id="post" class="screen" hidden><div class="scroll"><div class="wrap" id="postBody"></div></div></section>
   <section id="hub" class="screen" hidden>
     <div class="hub-top" id="hubTop"></div>
-    <nav class="tabs" id="tabs" role="tablist"></nav>
+    <nav class="subtabs" id="subtabs" role="tablist" aria-label="Sections" hidden></nav>
     <div class="scroll" id="hubScroll"><div class="wrap" id="hubBody"></div></div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Main"></nav>
   </section>
   <section id="setup" class="screen" hidden><div class="stage" aria-hidden="true"><canvas id="stageCv" width="220" height="400"></canvas></div><div class="scroll" style="padding-top:calc(env(safe-area-inset-top,0px) + 16px)"><div class="wrap" id="setupBody"></div></div></section>
   <section id="modal" class="modal" hidden><div class="panel" id="modalBody"></div></section>
@@ -3270,6 +3425,11 @@ const WHATS_NEW=[
   ['Gameday look','New stadium, crowds, player models, animations, field markings, lighting by kickoff time and a 7-person officiating crew.'],
   ['Real rosters (optional)','Import 2026 rosters and logos for every FBS and FCS program from a file.']];
 
+function openWhatsNew(){openModal(`<div class="eyebrow">Gridiron Live 7</div><div class="h2">What’s new</div><ul class="wn">${WHATS_NEW.map(([h,d])=>`<li><b>${h}</b><span>${d}</span></li>`).join('')}</ul><button class="btn light wide" id="wnX">Done</button>`);on('wnX',closeModal)}
+/* a skeleton of the hub while a save loads (or the real season replays), so the tap always lands somewhere */
+function showLoading(label){hideAll();const s=$('#setup');s.classList.remove('title');
+  $('#setupBody').innerHTML=`<div class="skel" role="status" aria-live="polite"><div class="sk-top"><i class="sk sk-b"></i><span><i class="sk sk-l"></i><i class="sk sk-s"></i></span></div><i class="sk sk-card"></i><span class="grid2"><i class="sk sk-card sm"></i><i class="sk sk-card sm"></i></span><p class="note">${esc(label||'Loading…')}</p></div>`;s.hidden=false}
+
 /* ---------- title screen + save slots ---------- */
 function showSlots(){
   hideAll();S.phase='menu';LG=null;SLOT=null;document.documentElement.dataset.style='modern';
@@ -3287,21 +3447,22 @@ function showSlots(){
     <header class="ttl"><div class="ttl-net"><span class="gln">GLN</span><span>College football dynasty</span></div>
       <h1 class="ttl-word" aria-label="Gridiron Live"><span class="g">Gridiron</span><span class="l"><i></i>Live</span></h1>
       <div class="ttl-sub"><span>265 programs</span><span>2026 season</span></div>
-      <button class="ttl-new" id="whatsNew"><i></i>What’s new in version 7</button></header>
-    <div class="eyebrow ttl-h">Your dynasties <span class="ttl-cnt">${SLOTS.filter(n=>m.slots[n]).length} of ${SLOTS.length} slots used</span></div>
+      <button class="ttl-new" id="whatsNew"><i></i>What’s new</button></header>
+    <div class="eyebrow ttl-h">Your dynasties <span class="ttl-cnt">${SLOTS.filter(n=>m.slots[n]).length} of ${SLOTS.length}</span></div>
     <div class="slots">${SLOTS.map(card).join('')}</div>
     <div class="grid2 ttl-more">
-      <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">Any two programs, one game, nothing saved.</p></div><button class="btn" id="quickPlay">Play</button></div>
-      <div class="card ttl-act"><span class="ta-ic">${ICO.code}</span><div><div class="h2">Restore a dynasty</div><p class="note">From a backup file or a save code.</p></div><span style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost sm" id="restoreFile">File</button><button class="btn ghost sm" id="importCode">Code</button></span></div></div>`;
+      <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">Any two programs, one game, nothing saved.</p></div><button class="btn ghost" id="quickPlay">Play</button></div>
+      <div class="card ttl-act"><span class="ta-ic">${ICO.code}</span><div><div class="h2">Restore</div><p class="note">From a backup file or a save code.</p></div><span style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost sm" id="restoreFile">File</button><button class="btn ghost sm" id="importCode">Code</button></span></div></div>`;
   on('restoreFile',()=>openRestoreFile(showSlots));
   on('quickPlay',()=>{ac();openQuickPlay()});
-  on('whatsNew',()=>{openModal(`<div class="eyebrow">Gridiron Live 7</div><div class="h2">What’s new</div><ul class="wn">${WHATS_NEW.map(([h,d])=>`<li><b>${h}</b><span>${d}</span></li>`).join('')}</ul><button class="btn light wide" id="wnX">Let’s play</button>`);on('wnX',closeModal)});
+  on('whatsNew',openWhatsNew);
   for(const n of SLOTS){
     on('slotNew-'+n,async()=>{await KV.need(typeof PACK_KEY!=='undefined'?[PACK_KEY]:[]);if(S.phase==='menu'&&!LG)showSetup(n)});
     on('slotBak-'+n,()=>{openModal(`<div class="h2">Restore the backup?</div><p class="note">Slot ${n} goes back to the version saved ${timeAgo(+KV.get('gl3.bakt'+n))}. Anything after that is lost.</p><div class="btns"><button class="btn" id="bakYes">Restore</button><button class="btn ghost" id="bakNo">Cancel</button></div>`);on('bakNo',closeModal);on('bakYes',async()=>{closeModal();await KV.need(['gl3.bak'+n,'gl3.slot'+n]);toast(restoreBackup(n)?'Backup restored':'Backup could not be read');showSlots()})});
     /* saves the shell did not inject at launch arrive on demand: a brief loading state on the button */
     on('slotGo-'+n,async()=>{flushSave();const btn=document.getElementById('slotGo-'+n),wait=Saves.keys(n).some(k=>!KV.ready(k));if(wait&&btn){btn.disabled=true;btn.textContent='Loading…'}
-      const L=await Saves.loadAsync(n);if(btn){btn.disabled=false;btn.textContent=Saves.meta().slots[n]&&Saves.meta().slots[n].live?'Resume':'Continue'}if(LG||S.phase!=='menu')return;if(!L){toast('That save could not be opened');return}LG=L;SLOT=n;bumpUID(LG);muted=!!LG.settings.muted;applyStyle();showHub('home')});
+      const sk=wait?setTimeout(()=>{if(S.phase==='menu'&&!LG)showLoading('Opening your dynasty…')},250):0;
+      const L=await Saves.loadAsync(n);clearTimeout(sk);if(btn){btn.disabled=false;btn.textContent=Saves.meta().slots[n]&&Saves.meta().slots[n].live?'Resume':'Continue'}if(LG||S.phase!=='menu')return;if(!L){toast('That save could not be opened');showSlots();return}LG=L;SLOT=n;bumpUID(LG);muted=!!LG.settings.muted;applyStyle();showHub('home')});
     on('slotDel-'+n,()=>{$('#slotConf-'+n).hidden=false});on('slotNo-'+n,()=>{$('#slotConf-'+n).hidden=true});on('slotYes-'+n,()=>{Saves.del(n);showSlots()});
   }
   on('importCode',()=>{
@@ -3344,21 +3505,21 @@ function renderSetup(){
   const st=SETUP,L=st.L;invalidate();
   const confs=L.confs.map((c,i)=>[c,i]).filter(([c])=>st.div==='all'||c.div===st.div);
   $('#setupBody').innerHTML=`
-    <div class="su-head"><div><div class="eyebrow">New dynasty · slot ${st.slot}</div><div class="h1">${st.mode==='rtg'?'Road to Glory':'Pick your program'}</div></div><button class="btn ghost sm" id="setBack">‹ Saves</button></div>
+    <div class="su-head"><div><div class="eyebrow">New dynasty · slot ${st.slot}</div><div class="h1">${st.mode==='rtg'?'Road to Glory':'Pick your program'}</div></div><button class="btn ghost sm" id="setBack">Back</button></div>
     <div class="card"><div class="setrow"><span class="eyebrow">Mode</span><div class="seg" id="modeSeg"><button data-v="coach" aria-pressed="${st.mode!=='rtg'}">Coach a program</button><button data-v="rtg" id="modeRtg" aria-pressed="${st.mode==='rtg'}">Road to Glory</button></div></div></div>
     <div class="card su-opts"><div class="grid2 su-names">
       <div class="field-row"><label for="coachName">Coach name</label><input type="text" id="coachName" maxlength="24" placeholder="Coach Merchant" value="${esc(st.coach)}"></div>
       <div class="field-row"><label for="dynName">Dynasty name</label><input type="text" id="dynName" maxlength="28" placeholder="My Dynasty" value="${esc(st.name)}"></div></div>
       <div class="setrow"><span class="eyebrow">Difficulty</span><div class="seg" id="setDiff">${[[0,'Rookie'],[1,'Varsity'],[2,'All-American'],[3,'Heisman']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${v===st.diff}">${l}</button>`).join('')}</div></div></div>
     <div class="card"><div class="setrow"><span class="eyebrow">League</span><div class="seg" id="leagueSeg">${[['ncaa','All FBS & FCS'],['original','Original schools'],['pack','Load a team pack']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.league===v}">${l}</button>`).join('')}</div></div>
-      <p class="note">${st.league==='ncaa'?`All ${L.teams.length} Division I programs: ${L.teams.filter(t=>t.div==='FBS').length} FBS and ${L.teams.filter(isFCS).length} FCS, in their ${L.confs.length} conferences for 2026, with team colors, real rivalries and strength based on recent results. Badges use abbreviations, not official logos. ${st.L.pack?`Rosters from ${esc(st.L.pack.name)}.`:'Players are generated; import real rosters any time.'}`:st.league==='pack'?'Your team pack is loaded.':'Thirty-two original schools you can rename and recolor.'}</p>${typeof packSetupHTML==='function'?packSetupHTML(st):''}</div>
+      <p class="note">${st.league==='ncaa'?`${L.teams.length} Division I programs in ${L.confs.length} conferences, with real colors and rivalries. ${st.L.pack?`Rosters from ${esc(st.L.pack.name)}.`:'Players are generated; you can import real rosters later.'}`:st.league==='pack'?'Your team pack is loaded.':'32 original schools you can rename and recolor.'}</p>${typeof packSetupHTML==='function'?packSetupHTML(st):''}</div>
     ${st.mode==='rtg'?rtgCreateHTML(st):`<div class="su-filter">
       <div class="su-q"><input type="search" id="teamQ" placeholder="Search schools, mascots, stadiums" value="${esc(st.q)}" autocomplete="off" aria-label="Search schools"></div>
       ${L.teams.some(isFCS)?`<div class="chips" id="divChips">${[['FBS','FBS'],['FCS','FCS'],['all','All Division I']].map(([v,l])=>`<button class="chipbtn" data-v="${v}" aria-pressed="${st.div===v}">${l}</button>`).join('')}</div>`:''}
       <div class="chips scrollx" id="confChips"><button class="chipbtn" data-v="all" aria-pressed="${st.conf==='all'}">All conferences</button>${confs.map(([c,i])=>`<button class="chipbtn" data-v="${i}" aria-pressed="${String(i)===st.conf}">${esc(c.name)}</button>`).join('')}</div>
       <div class="setrow"><span class="eyebrow" id="teamCount"></span><div class="seg" id="sortSeg">${[['prestige','Prestige'],['ovr','Overall'],['name','A–Z']].map(([v,l])=>`<button data-v="${v}" aria-pressed="${st.sort===v}">${l}</button>`).join('')}</div></div></div>
     <div class="teampick" id="teamGrid"></div>
-    <button class="btn ghost wide" id="customProg">Build a custom program from scratch</button>`}`;
+    <button class="btn ghost wide" id="customProg">Create a school</button>`}`;
   renderTeamGrid();
   on('setBack',showSlots);
   $('#coachName').oninput=e=>st.coach=e.target.value;$('#dynName').oninput=e=>st.name=e.target.value;
@@ -3405,31 +3566,44 @@ function startDynasty(id){
   L.news=[{t:`${L.coach.name} is introduced as head coach of ${teamName(t)} on a 5-year deal. The AD expects ${adTarget(t)}+ wins. Player budget: ${money(L.budget.total)}.`,good:true}];
   LG=L;SLOT=st.slot;SETUP=null;const go=()=>{applyStyle();saveNow(true);showHub('home')};
   /* real-season mode (03b): replaying the finished weeks takes a few seconds on a phone, so say so first */
-  if(st.real&&typeof realSetupOn==='function'&&realSetupOn(st)){toast('Loading the real season…');setTimeout(()=>{try{realSeasonStart(L)}catch(e){console.error(e);toast('The real season could not be loaded')}go()},60);return}
+  if(st.real&&typeof realSetupOn==='function'&&realSetupOn(st)){showLoading('Loading the real season…');setTimeout(()=>{try{realSeasonStart(L)}catch(e){console.error(e);toast('The real season could not be loaded')}go()},60);return}
   go();
 }
 
 /* ---------- hub ---------- */
-const TABS=[['home','Home'],['schedule','Schedule'],['rankings','Rankings'],['playoff','Playoff'],['feed','Feed'],['team','Roster'],['recruit','Recruiting'],['program','Program'],['stats','Stats'],['league','League'],['settings','Settings']];
+/* Six destinations (the tab bar), each with its own sub-tabs. Every screen keeps its old key, so showHub('rankings') still works. */
+const VIEWS={home:'Home',team:'Roster',stats:'Stats',schedule:'Schedule',rankings:'Rankings',playoff:'Playoff',feed:'News',league:'League',recruit:'Recruiting',program:'Program',settings:'Settings',help:'How to play'};
+const NAV=[['home','Home',['home']],['team','Team',['team','stats']],['season','Season',['schedule','rankings','playoff','feed','league']],['recruit','Recruiting',['recruit']],['program','Program',['program']],['more','More',['settings','help']]];
+const TABS=NAV.flatMap(n=>n[2].map(v=>[v,VIEWS[v]]));
+const NAV_LAST={};
+const NAV_ICO={home:'<path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V20H5a1 1 0 0 1-1-1z"/>',
+  team:'<path d="M9 4h6l4.5 2.5L18 11l-2-.8V20H8v-9.8l-2 .8-1.5-4.5zM9 4a3 3 0 0 0 6 0"/>',
+  season:'<rect x="4" y="5.5" width="16" height="14.5" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/>',
+  recruit:'<path d="m12 3.8 2.5 5.1 5.6.8-4 3.9.9 5.6-5-2.6-5 2.6.9-5.6-4-3.9 5.6-.8z"/>',
+  program:'<path d="M7 4h10v4.5a5 5 0 0 1-10 0zM17 5.5h2.5a2.5 2.5 0 0 1-2.8 4.2M7 5.5H4.5a2.5 2.5 0 0 0 2.8 4.2M12 13.5V17M8.5 20h7l-.8-3h-5.4z"/>',
+  more:'<circle cx="5.5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="18.5" cy="12" r="1.3"/>'};
+const navOf=v=>NAV.find(n=>n[2].includes(v))||NAV[0];
 function showHub(tab){
-  const prev=TAB,wasHidden=$('#hub').hidden;
-  invalidate();hideAll();if(tab)TAB=tab;if(LG.rtg&&(TAB==='recruit'||TAB==='program'))TAB='home';S.phase='hub';applyStyle();ensureCareer(LG);
+  const prev=TAB,wasHidden=$('#hub').hidden;if(tab==='roster')tab='team';
+  invalidate();hideAll();if(tab&&VIEWS[tab])TAB=tab;if(LG.rtg&&(TAB==='recruit'||TAB==='program'))TAB='home';S.phase='hub';applyStyle();ensureCareer(LG);
   const u=T(LG.user);applyTeamTheme(u);
   const ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null,top=$('#hubTop');top.style.setProperty('--hd',deepC(u));
   top.innerHTML=`<span class="ht-wm" aria-hidden="true">${esc(u.abbr)}</span>${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)} <span>${esc(u.name)}</span></b><small>${LG.rtg&&typeof rtgMe==='function'&&rtgMe()?esc(fullName(rtgMe()))+' · #'+rtgMe().num+' '+rtgMe().pos+' · coach '+esc(LG.coach.name):esc(LG.coach.name)}</small></div>
     <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div>
     <div class="pills">${LG.rtg?`<span class="pill" title="Skill points">${LG.rtg.sp} SP</span><span class="pill" title="Your NIL earnings">${money(LG.rtg.nil.cash)} NIL</span>`:`<span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL and revenue-sharing budget left">${money(LG.nil)} NIL</span>`}</div>`;
-  const tabs=LG.rtg?TABS.filter(([k])=>k!=='recruit'&&k!=='program'):TABS;   /* Road to Glory: the coach-only screens are the CPU coach's */
-  $('#tabs').innerHTML=tabs.map(([k,l])=>`<button role="tab" id="tab-${k}" aria-selected="${TAB===k}">${k==='home'&&LG.rtg?'Career':k==='home'&&LG.phase==='offseason'?'Offseason':l}${k==='home'&&LG.event?'<span class="dot"></span>':''}</button>`).join('');
-  $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{showHub(b.id.slice(4));$('#hubScroll').scrollTop=0});
+  const nav=LG.rtg?NAV.filter(([k])=>k!=='recruit'&&k!=='program'):NAV,cur=navOf(TAB);NAV_LAST[cur[0]]=TAB;   /* Road to Glory: the coach-only screens are the CPU coach's */
+  $('#tabs').innerHTML=nav.map(([k,l,vs])=>`<button role="tab" id="tab-${k}" aria-selected="${cur[0]===k}"><svg viewBox="0 0 24 24" aria-hidden="true">${NAV_ICO[k]}</svg><span>${k==='home'&&LG.rtg?'Career':l}</span>${k==='home'&&LG.event?'<span class="dot" aria-label="Decision waiting"></span>':''}</button>`).join('');
+  $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{const n=NAV.find(x=>x[0]===b.id.slice(4));const same=n===navOf(TAB);showHub(same?n[2][0]:NAV_LAST[n[0]]||n[2][0]);$('#hubScroll').scrollTop=0});
+  const sub=$('#subtabs');sub.hidden=cur[2].length<2;
+  sub.innerHTML=cur[2].length<2?'':cur[2].map(v=>`<button role="tab" id="sub-${v}" aria-selected="${TAB===v}">${VIEWS[v]}</button>`).join('');
+  sub.querySelectorAll('button').forEach(b=>b.onclick=()=>{showHub(b.id.slice(4));$('#hubScroll').scrollTop=0});
   const hb=$('#hubBody');
-  hb.innerHTML=({home:hubHome,schedule:hubSchedule,rankings:hubRankings,playoff:hubPlayoff,feed:hubFeed,team:hubTeam,recruit:hubRecruit,program:hubProgram,stats:hubStats,league:hubLeague,settings:hubSettings})[TAB]();
+  hb.innerHTML=({home:hubHome,schedule:hubSchedule,rankings:hubRankings,playoff:hubPlayoff,feed:hubFeed,team:hubTeam,recruit:hubRecruit,program:hubProgram,stats:hubStats,league:hubLeague,settings:hubSettings,help:hubHelp})[TAB]();
   bindHub();$('#hub').hidden=false;applyAccess();
-  const nav=$('#tabs'),tb=$('#tab-'+TAB);if(tb)nav.scrollLeft=tb.offsetLeft-nav.offsetLeft-(nav.clientWidth-tb.offsetWidth)/2;
+  const sb=$('#sub-'+TAB);if(sb)sub.scrollLeft=sb.offsetLeft-sub.offsetLeft-(sub.clientWidth-sb.offsetWidth)/2;
   /* tab changes slide in from the side they come from; same-tab refreshes (settings toggles, upgrades) don't animate */
   hb.classList.remove('fade','fwd','back');
   if(wasHidden||prev!==TAB){const d=TABS.findIndex(x=>x[0]===TAB)-TABS.findIndex(x=>x[0]===prev);void hb.offsetWidth;hb.classList.add('fade');if(!wasHidden&&d)hb.classList.add(d>0?'fwd':'back')}
-  if(TAB==='home'&&LG.event&&$('#modal').hidden)openEvent();
 }
 function rerender(){const y=$('#hubScroll').scrollTop;showHub();$('#hubScroll').scrollTop=y}
 
@@ -3456,30 +3630,55 @@ function hubHome(){
     <div class="btns"><button class="btn" id="resumeGame">Resume game</button><button class="btn ghost" id="abandonGame">Sim the rest</button></div></div>`}
   else if(g)main+=gameHero(g,LG.week,`<div class="btns ng-act"><button class="btn" id="playGame">${ICO.play}Play game</button><button class="btn ghost" id="simGame">Sim game</button></div>`,true);
   else if(w){
-    main+=`<div class="card bye"><div class="eyebrow">${esc(w.label)}</div><div class="h2">${LG.week>=LG.R?'Your season is over. The postseason goes on.':'Bye week'}</div><div class="list">${w.games.slice(0,10).map(x=>`<div class="lrow"><span class="l">${tcell(T(x.h))} <span class="note">vs</span> ${tcell(T(x.a))}</span><span class="note">${esc(x.tag||'')}</span></div>`).join('')}</div><button class="btn" id="advWeek">Sim ${esc(w.label)}</button></div>`;
+    main+=`<div class="card bye"><div class="eyebrow">${esc(w.label)}</div><div class="h2">${LG.week>=LG.R?'Your season is over. The postseason goes on.':'Bye week'}</div><div class="list">${w.games.slice(0,6).map(x=>`<div class="lrow"><span class="l">${tcell(T(x.h))} <span class="note">vs</span> ${tcell(T(x.a))}</span><span class="note">${esc(x.tag||'')}</span></div>`).join('')}</div><button class="btn" id="advWeek">Sim ${esc(w.label)}</button></div>`;
   }
-  const tgt=adTarget(u),sec=LG.coach.security,R=LG.R||13;
+  const tgt=adTarget(u),R=LG.R||13,[hsN,hsC]=hotSeat(LG.coach.security);
   const cs=confStandings(LG,u.conf),cpos=cs.findIndex(t=>t.id===LG.user)+1,ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null;
   const track=LG.weeks.slice(0,R).map((wk,i)=>{const x=wk.games.find(z=>z.h===LG.user||z.a===LG.user);const c=!x?'bye':x.hs==null?'':((x.h===LG.user?x.hs>x.as:x.as>x.hs)?'w':'l');return `<i class="${c}${i===LG.week?' now':''}"></i>`}).join('');
   const season=`<div class="card sp"><div class="sp-top"><div><div class="eyebrow">${LG.season} season</div><div class="sp-wk">${LG.week<R?`Week ${LG.week+1}<small>of ${R}</small>`:esc(w?w.label:'Postseason')}</div></div>
     <div class="sp-k"><div><em>Record</em><b>${recStr(u)}</b></div>${cpos?`<div><em>${esc(confName(u.conf))}</em><b>${ordinal(cpos)}</b></div>`:''}<div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div></div>
-    <div class="sp-track" aria-hidden="true">${track}</div><div class="sp-foot"><span>${u.rec.cw}–${u.rec.cl} in conference</span><span>AD expects ${tgt}+ wins</span></div></div>`;
-  const [hsN,hsC]=hotSeat(sec),gp=u.rec.w+u.rec.l,pace=gp?Math.round(u.rec.w/gp*12):null;
-  const ad=`<div class="card"><div class="eyebrow">Athletic director</div><div class="kv"><span>Expectation</span><b>${tgt}+ wins${pace!=null?` · on pace for ${pace}`:''}</b></div><div class="kv"><span>Hot seat</span><b class="${hsC==='hot'?'res-l':''}">${hsN}</b></div>${meterHTML(100-sec,hsC==='hot'?'var(--hot)':hsC==='warn'?'var(--warn)':'var(--ok)')}<div class="kv"><span>Contract</span><b>${LG.coach.yrs} yr${LG.coach.yrs===1?'':'s'} · ${money(LG.coach.sal)}/yr</b></div>
-    <div class="kv"><span>Fan approval</span><b>${Math.round(LG.fan)}%</b></div>${meterHTML(LG.fan)}<div class="kv"><span>Locker room</span><b>${Math.round(LG.morale)}%</b></div>${meterHTML(LG.morale)}</div>`;
+    <div class="sp-track" aria-hidden="true">${track}</div><div class="sp-foot"><span>AD expects ${tgt}+ wins</span><span class="${hsC==='hot'?'res-l':''}">Hot seat: ${esc(hsN.toLowerCase())}</span></div></div>`;
+  const news=LG.news.length?`<div class="card news"><div class="news-h"><span class="eyebrow">This week</span><button class="linkbtn" id="homeNews">All news</button></div><div class="list">${LG.news.slice(0,3).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
+  return tourHTML()+main+decisionHTML()+`<div class="grid2">${season}${news}</div>`+(typeof rcHomeCard==='function'?rcHomeCard():'');
+}
+/* weekly front-office decision: a card on Home instead of a popup; the answer stays on the card until next week */
+function decisionHTML(){
+  const r=LG.evRes;if(r&&r.wk===LG.week&&r.season===LG.season)return `<div class="card dec done"><div class="eyebrow">Decision made</div><div class="h2">${esc(r.title)}</div><p class="note">${esc(r.msg)}</p></div>`;
+  const e=LG.event;if(!e)return '';const ev=EVENTS[e.k],p=T(LG.user).roster.find(x=>x.id===e.pid);if(!ev||!p)return '';
+  return `<div class="card dec"><div class="eyebrow">Your call</div><div class="h2">${esc(ev.text(p))}</div><div class="btns">${ev.opts.map((o,i)=>`<button class="btn sm ${i?'ghost':''}" id="evo-${i}">${esc(o[0])}</button>`).join('')}</div></div>`;
+}
+function bindDecision(){
+  const e=LG.event;if(!e||!EVENTS[e.k])return;const ev=EVENTS[e.k],p=T(LG.user).roster.find(x=>x.id===e.pid);if(!p)return;
+  ev.opts.forEach((o,i)=>on('evo-'+i,()=>{const msg=o[1](LG,p);LG.fan=clamp(LG.fan,0,100);LG.morale=clamp(LG.morale,0,100);LG.event=null;LG.evRes={wk:LG.week,season:LG.season,title:o[0],msg};saveNow();haptic('success');rerender()}));
+}
+/* first-run tour: four short cards at the top of Home, once per device */
+const TOUR=[['Your week starts here','Play or sim this week’s game from Home. Everything else can wait.'],['Find your next class','Recruiting is where you spend weekly hours on prospects. Your staff can do it for you.'],['Build the program','Program holds your staff, facilities, practice plan and uniforms.'],['Make it yours','More › Settings: difficulty, quarter length and how much of each game you play.']];
+let TOUR_I=0;
+function tourHTML(){
+  if(LG.rtg||LG.phase!=='regular'||KV.get('gl.tourDone'))return '';const [h,d]=TOUR[TOUR_I];
+  return `<div class="card tour" aria-live="polite"><div class="tour-top"><span class="tour-dots" aria-label="Tip ${TOUR_I+1} of ${TOUR.length}">${TOUR.map((x,i)=>`<i class="${i===TOUR_I?'on':''}"></i>`).join('')}</span><button class="linkbtn" id="tourSkip">Skip</button></div>
+    <div class="h2">${h}</div><p class="note">${d}</p><div class="btns"><button class="btn sm" id="tourNext">${TOUR_I<TOUR.length-1?'Next':'Got it'}</button></div></div>`;
+}
+function bindTour(){
+  const done=()=>{try{KV.set('gl.tourDone','1')}catch(e){}TOUR_I=0;rerender()};
+  on('tourSkip',done);on('tourNext',()=>{if(TOUR_I<TOUR.length-1){TOUR_I++;rerender()}else done()});
+}
+/* league-wide cards that used to crowd Home now live in Season › News */
+function leagueNewsHTML(){
+  const u=T(LG.user),cs=confStandings(LG,u.conf);
   const heis=LG.heisman&&typeof heisCeremonyHTML==='function'?heisCeremonyHTML(LG.heisman):LG.heismanWatch&&LG.heismanWatch.length?`<div class="card"><div class="eyebrow">Heisman watch</div><div class="list">${LG.heismanWatch.map((h,i)=>`<div class="lrow"><span class="l"><span class="rank">${i+1}</span>${badge(T(h.team),'sm')}${typeof awPh==='function'?awPh(h,36,''):''}<span><b>${esc(h.name)}</b> <span class="note">${h.pos}</span><br><small class="note">${esc(h.line)}</small></span></span></div>`).join('')}</div></div>`:'';
   const potw=LG.potw?`<div class="card"><div class="eyebrow">${confName(u.conf)} player of the week</div><div class="tname">${badge(T(LG.potw.team))}<span><b>${esc(LG.potw.name)}</b> · ${LG.potw.pos} · ${esc(T(LG.potw.team).city)}</span></div></div>`:'';
   const lw=LG.lastWeek?`<div class="card"><div class="eyebrow">Around the league · ${esc(LG.lastWeek.label)}</div><div class="list">${LG.lastWeek.games.filter(x=>x.h===LG.user||x.a===LG.user||(x.tag&&!/First Round|Second Round/.test(x.tag))||x.upset||((x.rh||x.ra)&&T(x.h).div===u.div)||T(x.h).conf===u.conf).sort((a,b)=>((b.h===LG.user||b.a===LG.user)-(a.h===LG.user||a.a===LG.user))||(!!(b.rh||b.ra)-!!(a.rh||a.ra))).slice(0,14).map(x=>{const hw=x.hs>x.as;return `<div class="lrow"><span class="l">${tcell(T(x.h),(x.rh?'#'+x.rh+' ':'')+T(x.h).city)}<b class="${hw?'res-w':''}">${x.hs}</b><span class="note">–</span><b class="${!hw?'res-w':''}">${x.as}</b>${tcell(T(x.a),(x.ra?'#'+x.ra+' ':'')+T(x.a).city)}</span>${x.upset?'<span class="tag hot">Upset</span>':x.tag?`<span class="note">${esc(x.tag)}</span>`:''}</div>`}).join('')}</div></div>`:'';
-  const news=LG.news.length?`<div class="card news"><div class="eyebrow">Top news</div><div class="list">${LG.news.slice(0,4).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${n.good?'<span class="tag ok">Program</span> ':''}${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
+  const news=LG.news.length?`<div class="card news"><div class="eyebrow">Program news</div><div class="list">${LG.news.slice(0,8).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
   const conf=`<div class="card"><div class="eyebrow">${confName(u.conf)} standings</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th></tr></thead><tbody>${cs.map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t)}</td><td class="n">${t.rec.cw}–${t.rec.cl}</td><td class="n">${recStr(t)}</td></tr>`).join('')}</tbody></table></div></div>`;
-  return main+`<div class="grid2">${season}${news||conf}</div>`+(typeof rcHomeCard==='function'?rcHomeCard():'')+gameOfWeek()+`<div class="grid2">${ad}${heis||potw}</div>${lw||news?`<div class="grid2">${lw}${news?conf:''}</div>`:''}${potw&&heis?`<div class="grid2">${potw}</div>`:''}`;
+  return `<div class="grid2">${news}${lw||conf}</div>`+gameOfWeek()+`<div class="grid2">${heis}${potw}${lw?conf:''}</div>`;
 }
 function hubSchedule(){
   const rows=LG.weeks.map((w,i)=>{const g=w.games.find(x=>x.h===LG.user||x.a===LG.user);if(!g)return w.kind==='reg'?`<tr class="${i===LG.week?'me':''}"><td>Wk ${i+1}</td><td class="note">Bye week</td><td></td></tr>`:'';const home=g.h===LG.user,opp=T(home?g.a:g.h);
     let res='';if(g.hs!=null){const us=home?g.hs:g.as,them=home?g.as:g.hs;res=`<span class="${us>them?'res-w':'res-l'}">${us>them?'W':'L'} ${us}–${them}</span>`}else res=i===LG.week?'<span class="tag blue">Next</span>':`<span class="note">${WX_ICON[g.wx]}</span>`;
     const fl=gameFlags(LG,g,i).filter(f=>f[1]!=='Conference game').map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join(' ');
     return `<tr class="${i===LG.week?'me':''}"><td>${esc(w.kind==='reg'?'Wk '+(i+1):'Post')}</td><td><div class="tname">${g.neutral?'vs':home?'vs':'at'} ${badge(opp,'sm')}<span>${esc(rankTag(opp.id)+teamName(opp))}</span></div>${fl?`<div class="tags" style="margin-top:4px">${fl}</div>`:''}</td><td class="n">${res}</td></tr>`}).join('');
-  return `<div class="card"><div class="h2">${LG.season} schedule</div><p class="note">Twelve games with a bye, conference games late and Rivalry Week to finish. Conference title games, bowls and the playoffs follow (12-team CFP for FBS, 24-team bracket for FCS).</p><div class="tw"><table><thead><tr><th>Week</th><th>Opponent</th><th class="n">Result</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  return `<div class="card"><div class="h2">${LG.season} schedule</div><div class="tw"><table><thead><tr><th>Week</th><th>Opponent</th><th class="n">Result</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 let RANK_DIV=null;
 let RANK_MODE='top',RES_WEEK=null,RES_FILTER='all';
@@ -3593,34 +3792,31 @@ function fcsBracket(){
 function hubTeam(){
   const u=T(LG.user);const pos=ROSTER_FILTER==='All'?POS_ORDER:[ROSTER_FILTER];
   const inj=u.roster.filter(p=>p.inj>0);
-  return `<div class="card"><div class="setrow"><div class="h2">Roster · ${u.roster.length}/${ROSTER_CAP} scholarships</div><span class="pill">${LG.credits} CC</span></div>
-    <p class="note">Tap a player to upgrade ratings with coaching credits, set the depth chart, redshirt, or name captains. ${inj.length?`<b style="color:var(--hot)">${inj.length} unavailable this week.</b>`:''}</p>
-    <div class="chips" id="rosChips">${['All',...POS_ORDER].map(p=>`<button class="chipbtn" data-v="${p}" aria-pressed="${ROSTER_FILTER===p}">${p}</button>`).join('')}</div>
-    <div class="setrow"><span class="note">Auto-redshirt freshmen buried on the depth chart (players who play four games or fewer keep the year)</span><div class="seg" id="setARS"><button data-v="1" aria-pressed="${LG.settings.autoRS!==false}">On</button><button data-v="0" aria-pressed="${LG.settings.autoRS===false}">Off</button></div></div></div>
+  return `<div class="card"><div class="setrow"><div class="h2">Roster · ${u.roster.length}/${ROSTER_CAP} scholarships</div></div>
+    <p class="note">Tap a player to upgrade him, move him up the depth chart, redshirt him or name him captain.${inj.length?` <b class="res-l">${inj.length} out this week.</b>`:''}</p>
+    <div class="chips scrollx" id="rosChips">${['All',...POS_ORDER].map(p=>`<button class="chipbtn" data-v="${p}" aria-pressed="${ROSTER_FILTER===p}">${p}</button>`).join('')}</div>
+    <div class="sr"><span class="sr-l">Auto-redshirt freshmen<small>Buried freshmen sit; four games or fewer keeps the year.</small></span><div class="seg tg" id="setARS"><button data-v="${LG.settings.autoRS!==false?0:1}" role="switch" aria-checked="${LG.settings.autoRS!==false}"><i></i><span class="vh">${LG.settings.autoRS!==false?'On':'Off'}</span></button></div></div></div>
   ${pos.map(ps=>`<div class="card"><div class="eyebrow">${POS_NAME[ps]} · ${STARTERS[ps]} starting</div><div>${depth(u,ps).map((p,i)=>`<button class="rrow" id="pl-${p.id}">${photoHTML(p,40,'',u)}<span class="meta"><b>${esc(fullName(p))} <small>${yrStr(p)}${i<STARTERS[ps]&&p.inj<=0&&!p.redshirt?' · Starter':''}${LG.captains.includes(p.id)?' · C':''}</small> ${p.inj>0?`<span class="tag hot">${esc(p.injWhy||'Injured')} · ${p.inj} wk</span>`:''}${p.redshirt?'<span class="tag blue">Redshirt</span>':''}</b><span class="attrs">${PATTR[p.pos].map(k=>`<span>${attrShort(p.pos,k)} ${`<span class="ovr">${a99(p[k])}</span>`}</span>`).join('')}</span><span style="display:grid;grid-template-columns:auto 1fr auto 1fr;gap:6px;align-items:center;font-size:10.5px;color:var(--mute)"><span>COND</span>${meterHTML(p.cond)}<span>XP</span>${meterHTML(p.xp,'var(--los)')}</span></span>${ovrTag(p)}</button>`).join('')}</div></div>`).join('')}`;
 }
 function hubProgram(){
   const c=LG.coach,u=T(LG.user),f=LG.fac;
   const FAC={stadium:['Stadium','More coaching credits from home games, plus a bonus when fan approval is above 70%.'],training:['Training facility','+20% XP per level for every player.'],rehab:['Rehab center','Faster condition recovery each week and shorter injuries.']};
   const FOCUS={balanced:['Balanced','No special boost.'],passing:['Passing','Tighter QB accuracy and surer hands this week.'],running:['Running','Ball carriers break more tackles; the line blocks longer.'],conditioning:['Conditioning','Players tire 30% slower this week.'],film:['Film study','Your defense reads their offense better this week.']};
-  return trophyCase()+`<div class="grid2">
+  return `<div class="grid2">
     ${careerCoachHTML()}
     <div class="card"><div class="eyebrow">Program pulse</div>
       <div class="kv"><span>Fan approval</span><b>${Math.round(LG.fan)}%</b></div>${meterHTML(LG.fan)}
       <div class="kv"><span>Locker room morale</span><b>${Math.round(LG.morale)}%</b></div>${meterHTML(LG.morale)}
-      <p class="note">Morale nudges player speed on game day. Fan approval drives coaching credits and recruiting.</p>
+      
       <div class="kv"><span>Captains</span><b>${LG.captains.map(id=>{const p=u.roster.find(x=>x.id===id);return p?esc(p.last):''}).filter(Boolean).join(', ')||'None'}</b></div></div></div>
   ${careerBudgetHTML()}${careerTreeHTML()}
-  <div class="card"><div class="h2">This week's practice</div>
+  <div class="card"><div class="h2">This week’s practice</div>
     <div class="seg" id="focusSeg">${Object.entries(FOCUS).map(([k,[l]])=>`<button data-v="${k}" aria-pressed="${LG.focus===k}">${l}</button>`).join('')}</div><p class="note">${FOCUS[LG.focus][1]}</p>
     <div class="setrow"><span class="eyebrow">Training regime</span><div class="seg" id="regSeg">${Object.entries(REGIMES).map(([k,r])=>`<button data-v="${k}" aria-pressed="${LG.regime===k}">${r.label}</button>`).join('')}</div></div>
     <p class="note">${LG.regime==='light'?'Less XP, but players stay fresher and get hurt less.':LG.regime==='hard'?'35% more XP, but players wear down faster and get hurt more.':'Standard XP, wear and injury risk.'}</p></div>
   <div class="card"><div class="h2">Facilities</div>${Object.entries(FAC).map(([k,[n,d]])=>`<div class="setrow"><div style="min-width:0;flex:1"><b>${n}</b><div class="pips">${[1,2,3,4,5].map(i=>`<i class="${i<=f[k]?'on':''}"></i>`).join('')}</div><p class="note">${d}</p></div>${f[k]<5?`<button class="btn sm" id="fac-${k}" ${LG.credits<f[k]*6?'disabled':''}>Upgrade · ${f[k]*6} CC</button>`:'<span class="tag gold">Maxed</span>'}</div>`).join('')}</div>
   ${careerStaffHTML()}
-  <div class="card"><div class="h2">Trophy case</div><div class="grid3">
-    <div class="kpis"><div><em>National titles</em><b>${u.titles}</b></div></div><div class="kpis"><div><em>Conference titles</em><b>${u.ccTitles}</b></div></div><div class="kpis"><div><em>Bowl wins</em><b>${u.bowlWins}</b></div></div><div class="kpis"><div><em>Playoff trips</em><b>${u.playoffApps||0}</b></div></div></div>
-    ${u.rival!=null&&T(u.rival)&&u.trophy?`<div class="kv"><span>${esc(u.trophy)} vs ${esc(T(u.rival).city)}</span><b>${u.holder===u.id?'In your case':'Held by '+esc(T(u.rival).city)}</b></div>`:''}</div>
-  ${uniCardHTML(u)}`;
+    ${uniCardHTML(u)}${trophyCase()}`;
 }
 function hubStats(){
   const u=T(LG.user),ts=LG.ts,g=Math.max(1,ts.g);
@@ -3639,96 +3835,132 @@ let LEAGUE_CONF=null;
 function hubLeague(){
   const u=T(LG.user);const c=LEAGUE_CONF!=null&&LG.confs[LEAGUE_CONF]?LEAGUE_CONF:u.conf;
   const groups=['FBS','FCS'].map(d=>{const cs=LG.confs.map((x,i)=>[x,i]).filter(([x])=>x.div===d);return cs.length?`<optgroup label="${d}">${cs.map(([x,i])=>`<option value="${i}" ${i===c?'selected':''}>${esc(x.name)} (${LG.teams.filter(t=>t.conf===i).length})</option>`).join('')}</optgroup>`:''}).join('');
-  return `<div class="card"><div class="h2">League</div><p class="note">${LG.teams.length} programs in ${LG.confs.length} conferences. Pick a conference to see its standings. Tap Edit to change any school's name, abbreviation or colors.</p>
+  return `<div class="card"><div class="h2">League</div><p class="note">${LG.teams.length} programs in ${LG.confs.length} conferences.</p>
     <div class="field-row"><label for="leagueConf">Conference</label><select id="leagueConf">${groups}</select></div></div>
   <div class="card"><div class="eyebrow">${esc(confName(c))}${LG.confs[c].ind?'':' standings'}</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th><th class="n">OVR</th><th></th></tr></thead><tbody>${confStandings(LG,c).map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t,rankTag(t.id)+teamName(t))}</td><td class="n">${LG.confs[c].ind?'—':t.rec.cw+'–'+t.rec.cl}</td><td class="n">${recStr(t)}</td><td class="n">${tOvr99(teamOvr(t))}</td><td class="n"><button class="linkbtn" id="edit-${t.id}">Edit</button></td></tr>`).join('')}</tbody></table></div></div>
-  <div class="card"><div class="h2">Team pack</div><p class="note">Rename and recolor the whole league at once, or paste real rosters. Export the current list, edit it, then import it back. Teams are matched by their order in the list.</p>
+  <div class="card"><div class="h2">Team pack</div><p class="note">Rename and recolor the whole league at once. Export the list, edit it, import it back.</p>
     <div class="btns"><button class="btn ghost" id="packExport">Export team pack</button><button class="btn ghost" id="packImport">Import team pack</button></div></div>
-  <div class="card"><div class="h2">Create a school</div><p class="note">Design a new program (name, colors, badge, stadium and uniforms) and put it in any conference in place of a CPU team. The schedule stays valid. Paste a school code to bring in a shared design.</p>
+  <div class="card"><div class="h2">Create a school</div><p class="note">Design a program and swap it in for any CPU team. The schedule stays valid.</p>
     <div class="btns"><button class="btn ghost" id="newSchool">Create a school</button></div></div>`;
 }
 /* v7 settings registry: any module can add a setting or a button to the Settings tab without editing hubSettings.
    SETTINGS_EXTRA.push({card:'Realism',key:'penalties',label:'Penalties',opts:[['normal','Normal'],['low','Fewer'],['off','Off']],def:'normal'})
      → stored in LG.settings[key]; numbers and the strings '1'/'0' are converted back (opts values 1/0 become true/false when bool:true)
    SETTINGS_EXTRA.push({card:'Rosters & data',button:'Import rosters (JSON)',id:'impRosters',note:'optional help text',onClick:()=>openRosterImport(LG)})
-   Entries render in the order pushed, grouped into cards by `card`, just above the Program card. */
+   Entries render in the order pushed, in the Settings section their card maps to (SET_CARD); `when` hides an entry. */
 const SETTINGS_EXTRA=[];
-function settingsExtraHTML(){
-  const s=LG.settings,cards=[];const by={};
-  for(const e of SETTINGS_EXTRA){if(e.when&&!e.when())continue;if(!by[e.card]){by[e.card]=[];cards.push(e.card)}by[e.card].push(e)}
-  const seg=(id,opts,val)=>`<div class="seg" id="${id}">${opts.map(([v,l])=>`<button data-v="${v}" aria-pressed="${String(v)===String(val)}">${l}</button>`).join('')}</div>`;
-  return cards.map(c=>`<div class="card"><div class="h2">${esc(c)}</div>${by[c].map(e=>e.button?`<div class="setrow"><span class="eyebrow">${esc(e.label||'')}</span><button class="btn sm ghost" id="sx-${e.id}">${esc(e.button)}</button></div>${e.note?`<p class="note">${e.note}</p>`:''}`:`<div class="setrow"><span class="eyebrow">${esc(e.label)}</span>${seg('sx-'+e.key,e.opts,(()=>{const v=s[e.key]==null?e.def:s[e.key];return e.bool?(v?1:0):v})())}</div>${e.note?`<p class="note">${e.note}</p>`:''}`).join('')}</div>`).join('');
-}
 function bindSettingsExtra(seg){
   for(const e of SETTINGS_EXTRA){
     if(e.button){on('sx-'+e.id,()=>{try{e.onClick()}catch(err){console.error(err);toast('Something went wrong')}});continue}
     seg('sx-'+e.key,v=>{const o=e.opts.find(([x])=>String(x)===v);let val=o?o[0]:v;if(e.bool)val=String(val)==='1';LG.settings[e.key]=val;if(e.after)e.after(val)});
   }
 }
+/* Settings: eight sections, most-used first; the rest of each section folds under "More".
+   Registry entries (SETTINGS_EXTRA) land in the section their card maps to; unknown cards get their own section before About. */
+const SET_OPEN=new Set();
+const SET_CARD={'Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Rosters & data':'data'};
+const SET_MORE=new Set(['penalties','recAuto','officials','showLogos','expRoster','rmPack']);
+const SET_NOTE={playStyle:'Coach mode: you call the plays and the AI runs them. Key moments: drives are simmed and you take over when it counts.',
+  penalties:'',recAuto:'Your staff spends the weekly recruiting hours for you.',gfxQ:'Battery saver keeps the crowd still and skips stadium extras.',
+  impRosters:'Real rosters, custom players and logos from a .json file.',showPhotos:'Headshots load when you’re online. Nothing is stored.',
+  rmPack:'New dynasties go back to generated rosters. This one keeps its players.',realStadiums:'',expRoster:''};
 function hubSettings(){
-  const s=LG.settings;const seg=(id,opts,val)=>`<div class="seg" id="${id}">${opts.map(([v,l])=>`<button data-v="${v}" aria-pressed="${v==val}">${l}</button>`).join('')}</div>`;
-  return `<div class="card"><div class="h2">Game settings</div>
-    <div class="setrow"><span class="eyebrow">Art style</span>${seg('setS',[['modern','Modern HD'],['retro','Retro pixel']],s.style)}</div>
-    <div class="setrow"><span class="eyebrow">Quarter length</span>${seg('setQ',[[120,'2 min'],[180,'3 min'],[300,'5 min']],s.qlen)}</div>
-    <div class="setrow"><span class="eyebrow">Difficulty</span>${seg('setD',[[0,'Rookie'],[1,'Varsity'],[2,'All-American'],[3,'Heisman']],s.diff)}</div>
-    <div class="setrow"><span class="eyebrow">Sound</span>${seg('setM',[[0,'On'],[1,'Off']],s.muted?1:0)}</div>
-    <div class="setrow"><span class="eyebrow">Opponent drives</span>${seg('setDef',[['ask','Ask each time'],['play','Play defense'],['sim','Sim them']],s.defMode||'ask')}</div>
-    <div class="setrow"><span class="eyebrow">Default defender</span>${seg('setDP',[['LB0','Linebacker'],['S0','Safety'],['CB0','Cornerback'],['DL1','D-line']],s.defPlayer||'LB0')}</div>
-    <div class="setrow"><span class="eyebrow">Play clock</span>${seg('setPC',[[25,'25 s'],[40,'40 s'],[90,'Relaxed']],s.pclock||25)}</div>
-    <div class="setrow"><span class="eyebrow">Camera zoom</span>${seg('setZ',[['auto','Auto'],[.85,'Wide'],[1,'Normal'],[1.15,'Close']],typeof s.zoom==='number'?s.zoom:'auto')}</div>
-    <p class="note" id="zoomNote">Auto fits your iPhone · <b>Optimized for ${esc(devLabel())}</b>. Players keep the same size on every phone and the view fits your screen, its notch or Dynamic Island and the score bug. Wide, Normal and Close adjust from that fit.</p>
-    <div class="setrow"><span class="eyebrow">Coin toss</span>${seg('setCoin',[[1,'Call it'],[0,'Automatic']],s.coin===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">In-game injuries</span>${seg('setInj',[[1,'On'],[0,'Off']],s.injuries===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Haptics</span>${seg('setHap',[[1,'On'],[0,'Off']],s.haptics===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Menu tap sounds</span>${seg('setTap',[[1,'On'],[0,'Off']],s.uiSounds===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Celebration button</span>${seg('setCel',[[1,'On'],[0,'Off']],s.celebrate===false?0:1)}</div></div>
-  <div class="card"><div class="h2">Gameplay sliders</div><p class="note">Fine-tune the game on top of difficulty.</p>
-    ${[['acc','Your QB accuracy'],['run','Your run blocking'],['cov','CPU pass coverage'],['tkl','CPU tackling'],['inj','Injury frequency']].map(([k,l])=>`<div class="setrow"><span class="eyebrow">${l}</span>${seg('sl-'+k,[[.8,'Low'],[1,'Normal'],[1.25,'High']],(s.sl&&s.sl[k])||1)}</div>`).join('')}</div>
-  <div class="card"><div class="h2">Accessibility</div>
-    <div class="setrow"><span class="eyebrow">Larger text</span>${seg('setBig',[[1,'On'],[0,'Off']],s.bigText?1:0)}</div>
-    <div class="setrow"><span class="eyebrow">Color-blind friendly colors</span>${seg('setCB',[[1,'On'],[0,'Off']],s.cb?1:0)}</div></div>
-  <div class="card"><div class="h2">Broadcast</div>
-    <div class="setrow"><span class="eyebrow">Pregame show</span>${seg('setPre',[[1,'On'],[0,'Off']],s.pregame===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Halftime show</span>${seg('setHalf',[[1,'On'],[0,'Off']],s.halftime===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Score ticker</span>${seg('setTk',[[1,'On'],[0,'Off']],s.ticker===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Broadcast package</span>${seg('setPkg',[['auto','Auto'],['national','National'],['regional','Regional'],['stream','Streaming']],s.pkg||'auto')}</div>
-    <div class="setrow"><span class="eyebrow">Broadcast graphics</span>${seg('setGfx',[[1,'On'],[0,'Off']],s.gfx===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Replays</span>${seg('setRp',[['ask','Button'],['auto','Automatic'],['off','Off']],s.replay||'ask')}</div>
-    <div class="setrow"><span class="eyebrow">Player cards</span>${seg('setLow',[[1,'On'],[0,'Off']],s.lower===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Win probability</span>${seg('setWP',[['key','Key moments'],['always','Always'],[0,'Off']],s.wp===false?0:s.wp==='always'?'always':'key')}</div>
-    <div class="setrow"><span class="eyebrow">Decibel meter</span>${seg('setDB',[[1,'On'],[0,'Off']],s.db===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Score bug position</span>${seg('setBug',[['top','Top'],['bottom','Bottom']],s.bugPos||'top')}</div>
-    <div class="setrow"><span class="eyebrow">Score bug size</span>${seg('setBS',[['s','Small'],['m','Medium'],['l','Large']],s.bugSize||'m')}</div>
-    <div class="setrow"><span class="eyebrow">Score bug opacity</span>${seg('setBA',[[1,'Solid'],[.8,'80%'],[.6,'60%']],s.hudAlpha!=null?s.hudAlpha:1)}</div></div>
-  <div class="card"><div class="h2">Stadium</div>
-    <div class="setrow"><span class="eyebrow">Crowd</span>${seg('setCr',[['low','Sparse'],['normal','Normal'],['high','Rowdy']],s.crowd||'normal')}</div>
-    <div class="setrow"><span class="eyebrow">Student section</span>${seg('setSt',[['auto','Auto'],['white','White-out'],['black','Blackout'],['stripe','Stripe-out'],['neon','Neon'],['none','None']],s.studentTheme||'auto')}</div>
-    <div class="setrow"><span class="eyebrow">Sideline (cheer, mascot, chains)</span>${seg('setSide',[[1,'On'],[0,'Off']],s.sideline===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Fireworks</span>${seg('setPy',[[1,'On'],[0,'Off']],s.pyro===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Star icons under elite players</span>${seg('setStar',[[1,'On'],[0,'Off']],s.stars===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Route lines</span>${seg('setRt',[[1,'On'],[0,'Off']],s.routes===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Joystick ring</span>${seg('setStk',[[1,'On'],[0,'Off']],s.stickUI===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Signature turf colors</span>${seg('setTurf',[[1,'On'],[0,'Off']],s.specialTurf===false?0:1)}</div>
-    <div class="setrow"><span class="eyebrow">Camera shake</span>${seg('setShk',[[1,'On'],[0,'Off']],s.shake===false?0:1)}</div></div>
-  <div class="card"><div class="h2">Stadium sounds</div><p class="note">Pick a sound for each moment, or upload your own clip (MP3/M4A/WAV under 600 KB).</p>
-    ${AUD_EVENTS.map(([k,l])=>`<div class="setrow"><span class="eyebrow">${l}</span><span style="display:flex;gap:6px;align-items:center"><select id="aud-${k}">${AUD_SOUNDS.map(([v,n])=>`<option value="${v}" ${((s.audioMap||{})[k]||'default')===v?'selected':''}>${n}</option>`).join('')}</select><label class="btn sm ghost" style="cursor:pointer">Upload<input type="file" accept="audio/*" id="audf-${k}" hidden></label></span></div>`).join('')}
-  </div>${settingsExtraHTML()}<div class="card"><div class="h2">Program</div>
-    <div class="setrow"><span class="eyebrow">Your program</span><button class="btn sm ghost" id="edit-${LG.user}">Edit name &amp; colors</button></div></div>
-  <div class="card"><div class="h2">Saves</div><p class="note">Slot ${SLOT} · autosaves after every snap and every menu action.</p>
-    <div class="field-row"><label for="dynRename">Dynasty name</label><input type="text" id="dynRename" maxlength="28" value="${esc(LG.name)}"></div>
-    <div class="btns"><button class="btn ghost" id="backupFiles">Back up to Files</button><button class="btn ghost" id="restoreFile2">Restore from file</button></div>
-    <div class="btns"><button class="btn ghost" id="exportSave">Export save code</button><button class="btn ghost" id="toSlots">Switch save slot</button></div></div>
-  <div class="card"><div class="h2">How to play</div><p class="note">
-    <b>Play calling:</b> pick a play from the ${PLAYBOOK.length}-play book (category tabs, formation chips, or a Coach's pick), then tap SNAP. ADJUST holds audibles, flip, motion, a hard count, slide protection and hot routes.<br>
-    <b>Pass:</b> after the snap, drag backward from anywhere and release. The circle shows how accurate the throw will be. A second finger or Bullet throws a fast, low ball. Tap RUN to scramble.<br>
-    <b>Run:</b> put a finger down anywhere and drag: it's a floating joystick. Use JUKE, SPIN, TRUCK, HURDLE and DIVE. Jukes keep your speed. A quick flick also jukes or dives.<br>
-    <b>Defense:</b> choose a coverage, then drag to move your player (gold ring). TACKLE dives at the ball carrier, or goes for the ball when it's in the air. SWITCH jumps to the defender nearest the ball. Before the snap you can tap any defender to control him.<br>
-    <b>Kick:</b> tap once to lock the direction, then again to lock the power.<br>
-    <b>Controller:</b> pair an Xbox, PlayStation or MFi controller in iPhone Settings › Bluetooth. Left stick moves your runner or defender. A / ✕ snaps, selects and tackles (hurdle with the ball). B / ○ jukes (tilt the stick up or down to pick the side) or switches defenders, and backs out of menus. X / □ spins or toggles a bullet pass, Y / △ trucks or toggles a lob. As the passer, RB / LB pick a receiver (gold ring) and A throws to him; with nobody picked A throws to the open man, a flick of the right stick throws that way, and B scrambles. RB dives with the ball, LB pitches on an option. Start pauses. The d-pad moves through the play-call sheet and every menu (LB / RB switch play tabs).<br>
-    <b>Clock:</b> college rules. The clock keeps running after in-bounds tackles and stops on incompletions, out of bounds, scores and changes of possession. Inside two minutes of each half it stops briefly on first downs. Use TIMEOUT before the snap.</p></div>`;
+  const s=LG.settings;
+  const seg=(id,opts,val)=>`<div class="seg${opts.length>3?' many':''}" id="${id}">${opts.map(([v,l])=>`<button data-v="${v}" aria-pressed="${v==val}">${l}</button>`).join('')}</div>`;
+  /* an On/Off switch is one button whose data-v is the value a tap sets */
+  const tg=(id,onv,next)=>`<div class="seg tg" id="${id}"><button data-v="${next!=null?next:onv?0:1}" role="switch" aria-checked="${!!onv}"><i></i><span class="vh">${onv?'On':'Off'}</span></button></div>`;
+  const row=(label,ctl,note)=>`<div class="sr"><span class="sr-l">${label}${note?`<small>${note}</small>`:''}</span>${ctl}</div>`;
+  const reg={},other=[];
+  for(const e of SETTINGS_EXTRA){if(e.when&&!e.when())continue;const sec=SET_CARD[e.card]||e.card;if(!SET_CARD[e.card]&&!other.includes(e.card))other.push(e.card);(reg[sec]=reg[sec]||{main:[],more:[]})[SET_MORE.has(e.key||e.id)?'more':'main'].push(e)}
+  const regRow=e=>{const k=e.key||e.id,note=k in SET_NOTE?SET_NOTE[k]:e.note||'';
+    if(e.button)return row(esc(e.label||e.button),`<button class="btn sm ghost" id="sx-${e.id}">${esc(e.button)}</button>`,note);
+    const v=s[e.key]==null?e.def:s[e.key];
+    if(e.bool)return row(esc(e.label),tg('sx-'+e.key,!!v),note);
+    return row(esc(e.label),seg('sx-'+e.key,e.opts,v),note)};
+  const regs=(k,w)=>((reg[k]||{})[w]||[]).map(regRow).join('');
+  const sec=(k,title,main,more)=>`<section class="card set" id="set-${k}"><div class="h2">${title}</div>${main}${more?`<details class="more" data-k="${k}"${SET_OPEN.has(k)?' open':''}><summary>More</summary><div class="more-b">${more}</div></details>`:''}</section>`;
+  const sl=[['acc','Your QB accuracy'],['run','Your run blocking'],['cov','CPU pass coverage'],['tkl','CPU tackling'],['inj','Injury frequency']].map(([k,l])=>row(l,seg('sl-'+k,[[.8,'Low'],[1,'Normal'],[1.25,'High']],(s.sl&&s.sl[k])||1))).join('');
+  return `<div class="set-wrap">`
+  +sec('play','Gameplay',
+     row('Difficulty',seg('setD',[[0,'Rookie'],[1,'Varsity'],[2,'All-American'],[3,'Heisman']],s.diff))
+    +row('Quarter length',seg('setQ',[[120,'2 min'],[180,'3 min'],[300,'5 min']],s.qlen))
+    +regs('play','main')
+    +row('Opponent drives',seg('setDef',[['ask','Ask each time'],['play','Play defense'],['sim','Sim them']],s.defMode||'ask')),
+     row('Play clock',seg('setPC',[[25,'25 s'],[40,'40 s'],[90,'Relaxed']],s.pclock||25))
+    +row('Call the coin toss',tg('setCoin',s.coin!==false))
+    +row('In-game injuries',tg('setInj',s.injuries!==false))
+    +regs('play','more')
+    +`<div class="sr-h">Sliders</div>`+sl)
+  +sec('ctl','Controls & camera',
+     row('Camera zoom',seg('setZ',[['auto','Auto'],[.85,'Wide'],[1,'Normal'],[1.15,'Close']],typeof s.zoom==='number'?s.zoom:'auto'),`Auto fits ${esc(devLabel())}.`)
+    +row('Default defender',seg('setDP',[['LB0','Linebacker'],['S0','Safety'],['CB0','Corner'],['DL1','D-line']],s.defPlayer||'LB0'))
+    +row('Haptics',tg('setHap',s.haptics!==false)),
+     row('Joystick ring',tg('setStk',s.stickUI!==false))
+    +row('Route lines',tg('setRt',s.routes!==false))
+    +row('Celebration button',tg('setCel',s.celebrate!==false))
+    +row('Camera shake',tg('setShk',s.shake!==false)))
+  +sec('gfx','Graphics & sound',
+     row('Art style',seg('setS',[['modern','Modern HD'],['retro','Retro pixel']],s.style))
+    +row('Sound',tg('setM',!s.muted,s.muted?0:1))
+    +regs('gfx','main')
+    +row('Crowd',seg('setCr',[['low','Sparse'],['normal','Normal'],['high','Rowdy']],s.crowd||'normal')),
+     row('Menu tap sounds',tg('setTap',s.uiSounds!==false))
+    +row('Student section',seg('setSt',[['auto','Auto'],['white','White-out'],['black','Blackout'],['stripe','Stripe-out'],['neon','Neon'],['none','None']],s.studentTheme||'auto'))
+    +row('Cheerleaders, mascot and chains',tg('setSide',s.sideline!==false))
+    +row('Fireworks',tg('setPy',s.pyro!==false))
+    +row('Signature turf colors',tg('setTurf',s.specialTurf!==false))
+    +row('Stars under elite players',tg('setStar',s.stars!==false))
+    +regs('gfx','more')
+    +`<div class="sr-h">Stadium sounds</div><p class="note">Pick a sound for each moment, or upload a clip (MP3, M4A or WAV, up to 600 KB).</p>`
+    +AUD_EVENTS.map(([k,l])=>`<div class="sr stack"><span class="sr-l">${l}</span><span class="aud"><select id="aud-${k}" aria-label="${esc(l)} sound">${AUD_SOUNDS.map(([v,n])=>`<option value="${v}" ${((s.audioMap||{})[k]||'default')===v?'selected':''}>${n}</option>`).join('')}</select><label class="btn sm ghost">Upload<input type="file" accept="audio/*" id="audf-${k}" hidden></label></span></div>`).join(''))
+  +sec('bc','Broadcast',
+     row('Pregame show',tg('setPre',s.pregame!==false))
+    +row('Halftime show',tg('setHalf',s.halftime!==false))
+    +row('Broadcast graphics',tg('setGfx',s.gfx!==false))
+    +row('Replays',seg('setRp',[['ask','Button'],['auto','Automatic'],['off','Off']],s.replay||'ask')),
+     row('Broadcast package',seg('setPkg',[['auto','Auto'],['national','National'],['regional','Regional'],['stream','Streaming']],s.pkg||'auto'))
+    +row('Win probability',seg('setWP',[['key','Key moments'],['always','Always'],[0,'Off']],s.wp===false?0:s.wp==='always'?'always':'key'))
+    +row('Score ticker',tg('setTk',s.ticker!==false))
+    +row('Player cards',tg('setLow',s.lower!==false))
+    +row('Decibel meter',tg('setDB',s.db!==false))
+    +row('Score bug position',seg('setBug',[['top','Top'],['bottom','Bottom']],s.bugPos||'top'))
+    +row('Score bug size',seg('setBS',[['s','Small'],['m','Medium'],['l','Large']],s.bugSize||'m'))
+    +row('Score bug opacity',seg('setBA',[[1,'Solid'],[.8,'80%'],[.6,'60%']],s.hudAlpha!=null?s.hudAlpha:1)))
+  +sec('data','Rosters &amp; data',
+     regs('data','main')
+    +row('Your school',`<button class="btn sm ghost" id="edit-${LG.user}">Edit name and colors</button>`),
+     regs('data','more'))
+  +sec('saves','Saves &amp; backups',
+     `<div class="field-row"><label for="dynRename">Dynasty name</label><input type="text" id="dynRename" maxlength="28" value="${esc(LG.name)}"></div>
+      <p class="note">Slot ${SLOT}. Saves after every snap and every change.</p>
+      <div class="btns"><button class="btn ghost" id="backupFiles">Back up to Files</button><button class="btn ghost" id="toSlots">Switch dynasty</button></div>`,
+     `<div class="btns"><button class="btn ghost sm" id="restoreFile2">Restore from file</button><button class="btn ghost sm" id="exportSave">Copy save code</button></div>`)
+  +sec('a11y','Accessibility',
+     row('Larger text',tg('setBig',!!s.bigText))
+    +row('Color-blind friendly colors',tg('setCB',!!s.cb)),'')
+  +other.map(c=>sec('x-'+c.replace(/\W+/g,''),esc(c),regs(c,'main'),regs(c,'more'))).join('')
+  +sec('about','About',
+     `<div class="kv"><span>Version</span><b>7.7</b></div><div class="btns"><button class="btn ghost sm" id="setHelp">How to play</button><button class="btn ghost sm" id="setNew">What’s new</button></div>
+      <p class="note">An original game. School badges use abbreviations, not official logos. Barlow Condensed and Silkscreen fonts under the SIL Open Font License.</p>`,'')
+  +`</div>`;
+}
+/* How to play: one card per part of the game, a line per idea */
+function hubHelp(){
+  const sec=(t,rows)=>`<section class="card help"><div class="h2">${t}</div><ul class="help-l">${rows.map(r=>`<li>${r}</li>`).join('')}</ul></section>`;
+  return `<div class="grid2">`
+  +sec('Calling plays',[`Pick from ${PLAYBOOK.length} plays by category or formation, or take a Coach’s pick.`,'Tap <b>Snap</b>. <b>Adjust</b> holds audibles, flips, motion, hard counts, slide protection and hot routes.'])
+  +sec('Passing',['Drag back from anywhere and let go to throw. The circle shows how accurate it will be.','A second finger or <b>Bullet</b> throws a fast, low ball. <b>Run</b> scrambles.'])
+  +sec('Running',['Touch anywhere and drag: it’s a floating joystick.','<b>Juke</b>, <b>Spin</b>, <b>Truck</b>, <b>Hurdle</b> and <b>Dive</b>. Jukes keep your speed; a quick flick jukes or dives too.'])
+  +sec('Defense',['Pick a coverage, then drag to move your player (gold ring). Tap any defender before the snap to take him.','<b>Tackle</b> dives at the ball carrier or plays the ball in the air. <b>Switch</b> jumps to the defender nearest the ball.'])
+  +sec('Kicking and the clock',['Tap once to set direction, again to set power.','College clock: it runs after tackles in bounds and stops on incompletions, scores and changes of possession. Call <b>Timeout</b> before the snap.'])
+  +sec('Controllers',['Pair an Xbox, PlayStation or MFi controller in iPhone Settings › Bluetooth.','Left stick moves. <b>A</b> snaps, selects and tackles. <b>B</b> jukes or switches and backs out of menus. <b>X</b> spins or toggles bullet, <b>Y</b> trucks or toggles lob.','As the passer, <b>RB</b>/<b>LB</b> pick a receiver and <b>A</b> throws; flick the right stick to throw that way. <b>Start</b> pauses; the d-pad moves through every menu.'])
+  +`</div>`;
 }
 function bindHub(){
   if(TAB==='program'){bindCareer();bindUniCard()}
+  if(TAB==='home'&&!LG.rtg){bindDecision();bindTour();on('homeNews',()=>{showHub('feed');$('#hubScroll').scrollTop=0})}
+  document.querySelectorAll('details.more').forEach(d=>d.ontoggle=()=>{d.open?SET_OPEN.add(d.dataset.k):SET_OPEN.delete(d.dataset.k)});
+  on('setHelp',()=>{showHub('help');$('#hubScroll').scrollTop=0});on('setNew',openWhatsNew);
   on('newSchool',()=>openSchoolBuilder({mode:'create',L:LG,done:rerender}));
   on('playGame',()=>{ac();openPregame(userGameThisWeek())});
   on('simGame',()=>{simUserGame(userGameThisWeek())});
@@ -3754,7 +3986,7 @@ function bindHub(){
   for(const k of ['stadium','training','rehab'])on('fac-'+k,()=>{const c=LG.fac[k]*6;if(LG.credits>=c&&LG.fac[k]<5){LG.credits-=c;LG.fac[k]++;saveNow();rerender();toast('Upgraded')}});
   for(const k of ['oc','dc'])LG.pool[k].forEach((s,i)=>on(`hire-${k}-${i}`,()=>{if(LG.credits<staffCost(s))return;LG.credits-=staffCost(s);const old=LG.staff[k];LG.staff[k]=s;LG.pool[k][i]=old;saveNow();rerender();toast(`${s.name} hired`)}));
   const dr=$('#dynRename');if(dr)dr.onchange=()=>{LG.name=dr.value.trim()||LG.name;saveNow()};
-  on('exportSave',()=>{const code=Saves.exportCode(LG);openModal(`<div class="eyebrow">Export save</div><div class="h2">Your save code</div><p class="note">Copy this code and keep it somewhere safe. Paste it into Import save code on the start screen to restore this dynasty, even on another device.</p><textarea id="codeOut" readonly>${esc(code)}</textarea><div class="btns"><button class="btn light" id="codeCopy">Copy</button><button class="btn ghost" id="codeX">Done</button></div>`);
+  on('exportSave',()=>{const code=Saves.exportCode(LG);openModal(`<div class="eyebrow">Save code</div><div class="h2">Copy your save code</div><p class="note">Paste it on the title screen (Restore › Code) to bring this dynasty back, on any device.</p><textarea id="codeOut" readonly>${esc(code)}</textarea><div class="btns"><button class="btn light" id="codeCopy">Copy</button><button class="btn ghost" id="codeX">Done</button></div>`);
     on('codeX',closeModal);on('codeCopy',()=>{const ta=$('#codeOut');navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(ta.value).then(()=>toast('Copied'),()=>{ta.select();toast('Select all and copy')}):(ta.select(),toast('Select all and copy'))})});
   on('toSlots',()=>{saveNow(true);showSlots()});
   on('backupFiles',()=>openBackupFiles());
@@ -3780,7 +4012,7 @@ function openPlayer(id){
     <div class="btns">${startIdx>0?`<button class="btn sm ghost" id="mkStart">Move to top of depth chart</button>`:''}
       ${p.yr<4&&!p.rs&&s.gp<=4?`<button class="btn sm ghost" id="rsTog">${p.redshirt?'Remove redshirt':'Redshirt this season'}</button>`:''}
       <button class="btn sm ghost" id="capTog">${isCap?'Remove captain':'Name captain'}</button></div>
-    <p class="note">Redshirted players sit out but keep a year of eligibility if they play four games or fewer. Captains steady the locker room after losses.</p>
+    <p class="note">A redshirt keeps a year of eligibility if he plays four games or fewer. Captains steady the locker room after losses.</p>
     <button class="btn light wide" id="closeP">Done</button>`);
     PATTR[p.pos].forEach(k=>on('up-'+k,()=>{const c=Math.ceil(p[k])+1;if(LG.credits>=c&&p[k]<4.95){LG.credits-=c;p[k]=r1(p[k]+.5);invalidate();saveNow();render()}}));
     on('mkStart',()=>{u.dco=u.dco||{};const ids=depth(u,p.pos).map(x=>x.id).filter(x=>x!==p.id);u.dco[p.pos]=[p.id,...ids];saveNow();render()});
@@ -3792,12 +4024,6 @@ function openPlayer(id){
 }
 /* edit a school: name, mascot, abbreviation, stadium, colors, badge designer and stadium style (10c) */
 function openEditor(id,done,L){openSchoolBuilder({mode:'edit',id,L:L||LG,done})}
-function openEvent(){
-  const e=LG.event;if(!e)return;const ev=EVENTS[e.k],p=T(LG.user).roster.find(x=>x.id===e.pid);if(!p){LG.event=null;return}
-  openModal(`<div class="eyebrow">Front office · decision</div><div class="h2">${esc(ev.text(p))}</div><div class="btns">${ev.opts.map((o,i)=>`<button class="btn ${i?'ghost':''}" id="evo-${i}">${esc(o[0])}</button>`).join('')}</div>`);
-  ev.opts.forEach((o,i)=>on('evo-'+i,()=>{const msg=o[1](LG,p);LG.fan=clamp(LG.fan,0,100);LG.morale=clamp(LG.morale,0,100);LG.event=null;saveNow();
-    openModal(`<div class="eyebrow">Decision made</div><div class="h2">${esc(o[0])}</div><p class="note">${esc(msg)}</p><button class="btn light wide" id="evX">Back to the hub</button>`);on('evX',()=>{closeModal();rerender()})}));
-}
 function openPregame(g){
   if(!g)return;const u=T(LG.user),opp=T(g.h===LG.user?g.a:g.h),home=g.h===LG.user&&!g.neutral;
   const keys=[];const ol=unitOvr(u,['OL']),odl=unitOvr(opp,['DL']),wr=unitOvr(u,['WR']),ocb=unitOvr(opp,['CB']),olb=unitOvr(opp,['LB']);
@@ -3904,7 +4130,7 @@ function stripPortal(p){const q={...p};delete q.from;delete q.signed;q.num=0;q.s
 /* ---------- v5: social feed, team pages ---------- */
 function hubFeed(){
   const f=(LG.feed||[]);
-  return `<div class="card"><div class="h2">The Feed</div><p class="note">Reactions from around college football. All accounts are fictional.</p>
+  return leagueNewsHTML()+`<div class="card"><div class="h2">The feed</div><p class="note">Fan reactions from around the country. Every account is made up.</p>
     ${f.length?f.slice(0,60).map(x=>`<div class="post"><span class="av" style="background:${x.c}">${esc(x.n.split(' ').map(w=>w[0]).join('').slice(0,2))}</span><div><div class="h">${esc(x.n)} <small>${esc(x.h)} · ${x.s} wk ${x.wk}</small></div><p>${esc(x.t)}</p><div class="eng">♥ ${x.likes.toLocaleString()} · ↻ ${Math.round(x.likes/7).toLocaleString()}${x.team!=null&&T(x.team)?` · <span data-team="${x.team}" style="color:var(--fg);text-decoration:underline">${esc(T(x.team).abbr)}</span>`:''}</div></div></div>`).join(''):'<p class="note">Play a week and the feed fills up.</p>'}</div>`;
 }
 function openTeamPage(id){
@@ -4191,7 +4417,7 @@ function rcPlayer(P){
 function rcAct(L,P,kind,arg){
   const R=L.recruit,u=L.user,U=R.u[P.i]||(R.u[P.i]={}),W=L.week,C=rcCtx(L),cost=RC_HRS[kind]||0;
   if(!rcLive(L)||P.s===2)return 'Recruiting is closed for him right now';
-  if(cost&&rcAuto(L))return 'Switch off "Let my staff handle it" to spend hours yourself';
+  if(cost&&rcAuto(L))return 'Turn off “Let my staff handle it” to spend hours yourself';
   if(cost&&R.hrs<cost)return 'Not enough hours left this week';
   const add=v=>{rcJoin(L,P);P.x[rcIdx(P,u)+1]+=Math.round(v)};
   if(kind==='scout'){if((U.sc||0)>=100||U.kw===W)return 'Already scouted this week';U.sc=Math.min(100,(U.sc||0)+(hasTrait('oc','Talent Spotter')?50:34));U.kw=W}
@@ -4233,8 +4459,7 @@ function hubRecruit(){
   const phase=live?esc(weekLabel(L)):L.phase==='offseason'?(R.done?'Signing Day is done':'National Signing Day ahead'):R.early?'Early signing period is over':'Dead period';
   const head=`<div class="card rc-head"><div class="setrow"><div><div class="eyebrow">${R.season+1} class · ${phase}</div><div class="h2">Class #${cl.rank} · ${cl.n} commit${cl.n===1?'':'s'}</div></div>
     <div class="pills"><span class="pill gold">${auto?'Staff on it':`${live?R.hrs:0}/${bud} hrs`}</span><span class="pill">${cl.pts.toFixed(1)} pts</span></div></div>
-    <div class="setrow"><span class="eyebrow">Let my staff handle it</span><div class="seg" id="rcAuto"><button data-v="1" aria-pressed="${auto}">On</button><button data-v="0" aria-pressed="${!auto}">Off</button></div></div>
-    <p class="note">${auto?'Your staff calls, offers and hosts your targets every week. Switch it off to spend the hours yourself.':`${bud} h a week · Scout ${RC_HRS.scout} · Contact ${RC_HRS.contact} · Pitch ${RC_HRS.pitch} (each once a week per prospect). Offers and visits are free; only schools that offered can land him.`}</p>
+    <div class="sr"><span class="sr-l">Let my staff handle it<small>${auto?'They scout, call, offer and host visits every week.':`${bud} hours a week. Scout ${RC_HRS.scout} h, contact ${RC_HRS.contact} h, pitch ${RC_HRS.pitch} h. Offers and visits are free.`}</small></span><div class="seg tg" id="rcAuto"><button data-v="${auto?0:1}" role="switch" aria-checked="${auto}"><i></i><span class="vh">${auto?'On':'Off'}</span></button></div></div>
     <div class="seg rc-tabs" id="rcView">${[['board','Board'],['search','Prospects'],['class','Class']].map(([k,l])=>`<button data-v="${k}" aria-pressed="${RC_VIEW===k}">${l}</button>`).join('')}</div></div>`;
   let body='';
   if(RC_VIEW==='board'){
@@ -4285,7 +4510,7 @@ function openProspect(i){
       <div class="btns"><button class="btn sm ${off?'ghost':''}" id="rcOf" ${dis(0)}>${off?'Pull offer':'Offer scholarship'}</button><button class="btn sm ghost" id="rcSc" ${dis(RC_HRS.scout)||(sc>=100||U.kw===W?'disabled':'')}>Scout · ${RC_HRS.scout} h</button><button class="btn sm ghost" id="rcCo" ${dis(RC_HRS.contact)||(U.cw===W?'disabled':'')}>Contact · ${RC_HRS.contact} h</button></div>
       <div class="eyebrow">Pitch · ${RC_HRS.pitch} h</div><div class="btns">${prefs.slice(0,4).map(([k])=>`<button class="btn sm ghost" id="rcPi-${k}" ${dis(RC_HRS.pitch)||(U.pw===W?'disabled':'')}>${RC_PREFS[k][1]} · ${rcGrade(rcScore(P,u,C,k))}</button>`).join('')}</div>
       <div class="eyebrow">Official visit to a home game</div>${U.vd?`<p class="note">He visited (${U.vr>=0?'+':''}${U.vr||0} interest).</p>`:U.v>=0&&U.v!=null?`<div class="setrow"><span>Booked: ${esc(L.weeks[U.v].label)} vs ${esc(T(L.weeks[U.v].games.find(g=>g.h===u).a).city)}</span><button class="btn sm ghost" id="rcVx">Cancel</button></div>`:`<div class="btns">${homeG.slice(0,5).map(x=>`<button class="btn sm ghost" id="rcVi-${x.wi}">Wk ${x.wi+1} vs ${esc(T(x.g.a).abbr)}${x.g.rival?' ★':''}</button>`).join('')||'<span class="note">No home games left.</span>'}</div>`}
-      <p class="note">${auto?'Your staff spends the hours while "Let my staff handle it" is on; you can still offer, book visits and manage the board. ':`${R.hrs} of ${rcBudget(L)} hours left this week. `}A win, a rivalry and a big game make visits count more.</p>`;
+      <p class="note">${auto?'Your staff spends the hours. You can still offer, book visits and manage the board. ':`${R.hrs} of ${rcBudget(L)} hours left this week. `}Wins, rivalries and big games make visits count more.</p>`;
     openModal(`<div class="eyebrow">${POS_NAME[pos]} · Class of ${R.season+1} · ${esc(rcHome(P))}</div><div class="h2" style="font-size:24px">${esc(rcName(P))} ${starStr(st)}</div>
       <div class="tags"><span class="tag gold">#${rk.nat[i]} national</span><span class="tag">${pos} #${rk.pos[i]}</span><span class="tag">${RC_STATES[P.st].st} #${rk.st[i]}</span><span class="tag">${(P.c/1e4).toFixed(4)}</span>${rcStatus(L,R,P)}</div>
       <div class="kpis"><div><em>Height</em><b>${rcHt(P.h)}</b></div><div><em>Weight</em><b>${P.w}</b></div><div><em>Scouted</em><b>${sc}%</b></div><div><em>Projected OVR</em><b>${band?`~${ex}`:ex}</b></div><div><em>Dev trait</em><b>${sc>=100?RC_DEV[P.d]:'?'}</b></div><div><em>Your interest</em><b>${rcShare(P,u)}%</b></div></div>
@@ -4303,14 +4528,14 @@ function openProspect(i){
 /* home tab card */
 function rcHomeCard(){
   const L=LG;if(L.phase!=='regular')return '';const R=rcEnsure(L);if(!R)return '';const cl=rcClass(L),last=R.log[0];
-  return `<div class="card rc-home"><div class="setrow"><div><div class="eyebrow">Recruiting · ${R.season+1} class${rcAuto(L)?' · staff on it':` · ${rcLive(L)?R.hrs:0} hrs left`}</div><div class="h2">Class #${cl.rank} · ${cl.n} commits <small class="note">${cl.stars[5]}×5★ ${cl.stars[4]}×4★ ${cl.stars[3]}×3★</small></div></div><button class="btn sm ghost" id="rcGo">Recruiting</button></div>${last?`<p class="note">${esc(last.t)}</p>`:''}</div>`}
+  return `<div class="card rc-home"><div class="setrow"><div><div class="eyebrow">Recruiting · ${R.season+1} class${rcAuto(L)?' · staff on it':` · ${rcLive(L)?R.hrs:0} hrs left`}</div><div class="h2">Class #${cl.rank} · ${cl.n} commit${cl.n===1?"":"s"} <small class="note">${cl.stars[5]}×5★ ${cl.stars[4]}×4★ ${cl.stars[3]}×3★</small></div></div><button class="btn sm ghost" id="rcGo">Recruiting</button></div>${last?`<p class="note">${esc(last.t)}</p>`:''}</div>`}
 /* offseason: class review (stage 'recruit') and National Signing Day (stage 'signing') */
 function rcReviewHTML(prog){
   const L=LG,R=rcEnsure(L),u=L.user;if(!R)return prog;const cl=rcClass(L),mine=R.p.filter(P=>P.m===u).sort((a,b)=>b.c-a.c);
   const open=R.p.filter(P=>P.s===0&&rcIdx(P,u)>=0).sort((a,b)=>rcShare(b,u)-rcShare(a,u)||b.c-a.c).slice(0,10);
   return `${prog}<div class="card hero"><div class="eyebrow">${R.season+1} recruiting class · before National Signing Day</div><div class="h1">#${cl.rank}</div>
     <div class="tags"><span class="tag gold">${cl.n} commits</span><span class="tag">${cl.stars[5]} five-star</span><span class="tag">${cl.stars[4]} four-star</span><span class="tag">${cl.stars[3]} three-star</span><span class="tag">${cl.pts.toFixed(1)} pts</span></div>
-    <p class="note">Signed in the early period or still committed. Commits who haven't signed can still flip; uncommitted prospects pick a school on Signing Day, most likely the one they're highest on.</p></div>
+    <p class="note">Commits who haven’t signed can still flip. Everyone else picks on Signing Day.</p></div>
     <div class="grid2"><div class="card"><div class="eyebrow">Your class</div><div class="list">${mine.map(P=>rcRow(L,R,P)).join('')||'<p class="note">No commitments.</p>'}</div></div>
     <div class="card"><div class="eyebrow">Still deciding</div><div class="list">${open.map(P=>rcRow(L,R,P)).join('')||'<p class="note">No open targets left.</p>'}</div></div></div>
     <button class="btn wide" id="offNext">Go to National Signing Day</button>`}
@@ -4320,8 +4545,8 @@ function rcSigningHTML(prog){
   return `${prog}<div class="card hero"><div class="eyebrow">National Signing Day · ${R.season+1} class</div><div class="h1">Class #${s.rank}</div>
     <div class="tags"><span class="tag gold">${s.n} signees</span><span class="tag">${s.stars[5]} five-star</span><span class="tag">${s.stars[4]} four-star</span><span class="tag">${s.stars[3]} three-star</span><span class="tag">${s.pts.toFixed(1)} pts</span></div>
     <div class="list">${mine.map(P=>`<div class="lrow"><span class="l"><span class="num">${POS_ORDER[P.p]}</span><span>${esc(rcName(P))} ${starStr(rcStars(P.c))}<br><small class="note">${esc(rcHome(P))} · #${rcRanks(R).nat[P.i]} national</small></span></span><span><span class="ovr">${rcTrueOvr(P)}</span> <small class="note">${RC_DEV[P.d]}</small></span></div>`).join('')||'<p class="note">Nobody signed with you.</p>'}</div>
-    <p class="note">True ratings are in as they enroll. Open roster spots are filled with walk-ons when the season starts.</p></div>
-    <div class="grid2"><div class="card"><div class="eyebrow">Gems and busts</div><div class="list">${s.gems.map(g=>gb(g,'ok')).join('')}${s.busts.map(g=>gb(g,'hot')).join('')||''}${!s.gems.length&&!s.busts.length?'<p class="note">No surprises: everyone is about what your staff expected.</p>':''}</div><p class="note">Expected: what your scouting (or the public projection) said. Scout more to find gems before Signing Day.</p></div>
+    <p class="note">True ratings arrive as they enroll. Walk-ons fill any open spots.</p></div>
+    <div class="grid2"><div class="card"><div class="eyebrow">Gems and busts</div><div class="list">${s.gems.map(g=>gb(g,'ok')).join('')}${s.busts.map(g=>gb(g,'hot')).join('')||''}${!s.gems.length&&!s.busts.length?'<p class="note">No surprises: everyone is about what your staff expected.</p>':''}</div><p class="note">Expected is what your scouting said. Scout more to find gems.</p></div>
     <div class="card"><div class="eyebrow">Top classes</div><div class="list">${s.top.map((c,i)=>`<div class="lrow ${c.id===u?'me':''}"><span class="l"><span class="rank">${i+1}</span>${tcell(T(c.id),T(c.id).city)}</span><span class="note">${c.n} signed · ${c.s5}×5★ ${c.s4}×4★ · <b>${c.pts}</b></span></div>`).join('')}</div></div></div>
     <button class="btn wide" id="offNext">Start the ${L.season+1} season</button>`}
 SETTINGS_EXTRA.push({card:'Recruiting',key:'recAuto',label:'Let my staff handle recruiting',opts:[[1,'On'],[0,'Off']],def:1,bool:true,after:v=>rcSetAuto(LG,v),note:'On: your staff recruits every week so simming never stalls. Off: spend the weekly hours yourself in the Recruiting tab.'});
@@ -4582,7 +4807,7 @@ function careerCoachHTML(){
     <div class="kv"><span>Contract</span><b>${c.yrs} yr${c.yrs===1?'':'s'} left · ${money(c.sal)}/yr</b></div>
     <div class="kv"><span>AD expectation</span><b>${tgt}+ wins${pace!=null?` · on pace for ${pace}`:''}</b></div>
     <div class="kv"><span>Hot seat</span><b class="${hc==='hot'?'res-l':''}">${hs} · ${Math.round(100-c.security)}°</b></div>${meterHTML(100-c.security,hc==='hot'?'var(--hot)':hc==='warn'?'var(--warn)':'var(--ok)')}
-    <p class="note">Security ${Math.round(c.security)}%. Each win above or below the target moves it about 7 points; playoffs and titles add more. Below 10% after two years here (or an expired contract under 40%) gets you fired.</p>
+    <p class="note">Job security ${Math.round(c.security)}%. Each win above or below the target moves it about 7 points.</p>
     <div class="kv"><span>Coach XP</span><b>${c.xp}/${lvlNeed(c.lvl)}</b></div>${meterHTML(c.xp/lvlNeed(c.lvl)*100,'var(--los)')}</div>`;
 }
 function careerBudgetHTML(){
@@ -4591,17 +4816,17 @@ function careerBudgetHTML(){
     <div class="kv"><span>Revenue sharing</span><b>${money(b.rev)}</b></div><div class="kv"><span>Collective</span><b>${money(b.col)}</b></div>${b.carry?`<div class="kv"><span>Carried over</span><b>${money(b.carry)}</b></div>`:''}
     <div class="kv"><span>${b.yr||LG.season} player budget</span><b>${money(b.total)}</b></div>${meterHTML(100-used,'var(--ok)')}
     <div class="kv"><span>Spent</span><b>${money(b.ret+b.portal+b.rec)}</b></div><p class="note">Retention ${money(b.ret)} · transfers ${money(b.portal)} · recruit pitches ${money(b.rec)}</p>
-    <p class="note">Set every offseason from your school's revenue-sharing share (the 2025-26 cap was $20.5M, rising 4% a year), plus a collective that grows with prestige, fan approval, results and facilities. It pays retention deals, transfers and NIL pitches to recruits; 10% of what's left carries over.</p></div>`;
+    <p class="note">Reset each offseason: revenue sharing plus a collective that grows with prestige, fans, results and facilities. 10% of what’s left carries over.</p></div>`;
 }
 function careerStaffHTML(){
   return `<div class="card"><div class="h2">Coordinators</div><div class="list">${coachRow('oc',LG.staff.oc)}${coachRow('dc',LG.staff.dc)}</div>
     <div class="eyebrow">Available to hire</div><div class="list">${['oc','dc'].flatMap(k=>LG.pool[k].map((s,i)=>coachRow(k,s,`<button class="btn sm" id="hire-${k}-${i}" ${LG.credits<staffCost(s)?'disabled':''}>Hire · ${staffCost(s)} CC</button>`))).join('')}</div>
-    <p class="note">Signature traits work in your games, in simulated games and over the season. Coordinator ratings help receivers get open (OC) and your simulated defense (DC). Coordinators who win get head-coaching offers.</p></div>`;
+    <p class="note">Traits work in played and simulated games. Coordinators who win get head-coaching offers.</p></div>`;
 }
 function careerTreeHTML(){
   const c=LG.coach,br=[...new Set(PERKS.map(p=>p.b))];
   return `<div class="card"><div class="setrow"><div class="h2">Coaching skill tree</div><span class="pill">${c.sp} skill point${c.sp===1?'':'s'}</span></div>
-    <p class="note">Earn coach XP from wins, bowls, titles and playoff trips. Each level gives a skill point; tier 2 and 3 perks cost 2 and 3 points, or 12 coaching credits a point.</p>
+    <p class="note">Wins, bowls and titles earn XP. Each level is a skill point; tier 2 and 3 perks cost 2 and 3 points.</p>
     <div>${br.map(b=>`<div><div class="eyebrow">${b}</div><div class="list">${PERKS.filter(p=>p.b===b).map(p=>{const has=c.perks.includes(p.id),lock=p.req&&!c.perks.includes(p.req);
       return `<div class="lrow"><span style="min-width:0"><b>${esc(p.n)}</b> <small class="note">T${p.t}</small><br><small class="note">${esc(p.d)}</small></span>${has?'<span class="tag gold">Learned</span>':`<span style="display:flex;gap:6px;flex:none"><button class="btn sm" id="perk-${p.id}" ${lock||c.sp<p.t?'disabled':''}>${p.t} pt</button><button class="btn sm ghost" id="perkcc-${p.id}" ${lock||LG.credits<p.t*12?'disabled':''}>${p.t*12} CC</button></span>`}</div>`}).join('')}</div></div>`).join('')}</div></div>`;
 }
@@ -8095,7 +8320,7 @@ function rtgStartCareer(off){
 function rtgCreateHTML(st){
   const o=st.rtg||(st.rtg={first:'',last:'',pos:'WR',arch:0,stars:4,st:0,ci:0});
   return `<div class="card rtg-new"><div class="eyebrow">Road to Glory · create your recruit</div><div class="h2">One player, one career</div>
-    <p class="note">You play only your player. The head coach calls the plays and sets the depth chart; earn his trust in practice and on Saturdays, climb from backup to starter, chase the Heisman and the NFL Draft.</p>
+    <p class="note">You play only your player. Earn the coach’s trust, win the job, chase the Heisman and the draft.</p>
     <div class="grid2 su-names"><div class="field-row"><label for="rtgFirst">First name</label><input type="text" id="rtgFirst" maxlength="14" placeholder="Jaxson" value="${esc(o.first)}"></div>
       <div class="field-row"><label for="rtgLast">Last name</label><input type="text" id="rtgLast" maxlength="16" placeholder="Merchant" value="${esc(o.last)}"></div></div>
     <div class="setrow"><span class="eyebrow">Position</span><div class="seg" id="rtgPos">${RTG_POS.map(p=>`<button data-v="${p}" aria-pressed="${o.pos===p}">${p}</button>`).join('')}</div></div>
@@ -8118,7 +8343,7 @@ function rtgOffersModal(st){
   openModal(`<div class="eyebrow">Senior season · ${esc(h.team)} · ${esc(RC_STATES[o.st].c[o.ci||0])}, ${RC_STATES[o.st].st}</div><div class="h2">${esc(o.first)} ${esc(o.last)} · ${starStr(o.stars)}</div>
     <p class="note"><b>${h.rec}</b> · ${esc(h.line)}. National rank #${h.rk} · ${o.pos} · ${esc(RTG_ARCH[o.pos][o.arch][0])}.</p><div class="tags">${h.hon.map(x=>`<span class="tag gold">${esc(x)}</span>`).join('')}</div>
     <div class="setrow"><div class="h2">Scholarship offers · ${o.offers.length}</div><span class="pill">${vis}/3 official visits</span></div>
-    <p class="note">An official visit shows you the depth chart and the NIL offer, and gives you a head start with that staff (coach trust). Commit when you are ready.</p>
+    <p class="note">A visit shows the depth chart and NIL offer, and earns trust with that staff.</p>
     <div class="list">${o.offers.map((f,i)=>{const t=L.teams[f.t],dc=f.v?t.roster.filter(p=>p.pos===o.pos).sort((a,b)=>ovr(b)-ovr(a)).slice(0,3).map(p=>`${esc(p.last)} ${ovr99(p)}`).join(' · '):'';
       return `<div class="rrow rtg-off ${f.v?'sel':''}" style="--c1:${t.c1}">${badge(t)}<span class="meta"><b>${esc(teamName(t))} ${starStr(t.prestige)}</b><small>${esc(confName(t.conf,L))} · OVR ${tOvr99(teamOvr(t))} · projected #${f.dep} ${o.pos}${f.v?` · NIL ${money(f.nil)}`:''}</small>
         <span style="display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:11px;color:var(--mute)"><span>Interest</span>${meterHTML(f.int)}<b>${f.int}%</b></span>
@@ -11030,8 +11255,8 @@ function nationalLeaders(){
 function trophyCase(){
   const u=T(LG.user),held=LG.teams.filter(t=>t.rival===u.id&&u.holder===u.id).map(()=>u.trophy).filter(Boolean);
   const heis=(LG.awards||[]).filter(a=>a.heisman&&a.heisman.team===LG.user).length+(u.roster.filter(p=>p.heisman).length?0:0);
-  const tiles=[['🏆','National titles',u.titles||0],['🥇','Conference titles',u.ccTitles||0],['🏈','Bowl wins',u.bowlWins||0],['🎖️','Heisman winners',heis],['⭐','Coach of the Year',LG.coach.coy||0],['🔔','Rivalry trophy',u.trophy?(u.holder===u.id?'Held':'Not held'):'—']];
-  return `<div class="card"><div class="h2">Trophy case</div><div class="tcase">${tiles.map(([i,l,v])=>`<div class="tile"><span class="ic">${i}</span><b>${v}</b><small>${l}</small></div>`).join('')}</div>${u.trophy?`<p class="note">${esc(u.trophy)} vs ${esc(T(u.rival).city)}.</p>`:''}</div>`;
+  const tiles=[['National titles',u.titles||0],['Conference titles',u.ccTitles||0],['Bowl wins',u.bowlWins||0],['Playoff trips',u.playoffApps||0],['Heisman winners',heis],['Coach of the Year',LG.coach.coy||0]];
+  return `<div class="card"><div class="h2">Trophy case</div><div class="tcase">${tiles.map(([l,v])=>`<div class="tile${v?' won':''}"><b>${v}</b><small>${l}</small></div>`).join('')}</div>${u.trophy&&T(u.rival)?`<div class="kv"><span>${esc(u.trophy)} vs ${esc(T(u.rival).city)}</span><b>${u.holder===u.id?'In your case':'Held by '+esc(T(u.rival).city)}</b></div>`:''}</div>`;
 }
 function gameOfWeek(){
   const w=LG.weeks[LG.week];if(!w||LG.phase!=='regular')return '';
@@ -11043,8 +11268,10 @@ function gameOfWeek(){
 /* wiring for buttons that live in the page shell */
 $('#pmBox').onclick=()=>{ac();pausePanel('box')};$('#pmPbp').onclick=()=>{ac();pausePanel('pbp')};$('#pmDrv').onclick=()=>{ac();pausePanel('drv')};
 $('#pmPhoto').onclick=()=>{ac();$('#pauseInfo').hidden=true;enterPhoto()};
-/* menu tap feedback */
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!b)return;if(LG&&LG.settings.uiSounds===false)return;sfx('tap');haptic('light')},true);
+/* tap feedback: a firmer tick for primary actions and switches, a light one for everything else.
+   Haptics follow the Haptics setting on their own; the click sound follows Menu tap sounds. */
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!b||b.disabled)return;
+  haptic(b.matches('.btn:not(.ghost):not(.sm),#snapGo,[role="switch"]')?'medium':'light');if(!(LG&&LG.settings.uiSounds===false))sfx('tap')},true);
 setTimeout(()=>{const sp=$('#splash');if(sp)sp.remove()},2200);
 
 /* =========================================================
@@ -11073,7 +11300,7 @@ function saveTextFile(name,text){
 function openBackupFiles(){
   saveNow(true);const m=Saves.meta(),used=SLOTS.filter(n=>m.slots[n]),u=LG.teams[LG.user];
   openModal(`<div class="eyebrow">Back up to Files</div><div class="h2">Save a backup file</div>
-    <p class="note">Keeps your dynasty safe outside the app: save it to iCloud Drive or On My iPhone. Restore it any time from the title screen or Settings › Saves, even on another phone.</p>
+    <p class="note">Save to iCloud Drive or On My iPhone. Restore from the title screen or Settings, on any phone.</p>
     <div class="btns"><button class="btn light" id="bkOne">This dynasty · ${esc(u.abbr)}</button>${used.length>1?`<button class="btn ghost" id="bkAll">All slots (${used.length})</button>`:''}<button class="btn ghost" id="bkX">Cancel</button></div><p class="note" id="bkMsg"></p>`);
   const go=async all=>{const msg=$('#bkMsg');msg.textContent='Preparing the file…';
     try{const text=await backupText(all?used:[SLOT]);if(!text)throw new Error('empty');
@@ -11322,7 +11549,7 @@ function openUniEditor(id,done,L){
     <div class="ue-grid"><div class="ue-prev"><canvas id="uePrev" aria-label="Uniform preview"></canvas><div class="seg" id="ueView">${[['rot','Turn'],['front','Front'],['back','Back']].map(([k,l])=>`<button data-k="${k}" aria-pressed="${k==='rot'}">${l}</button>`).join('')}</div></div>
       <div class="ue-ctl" id="ueCtl">${ueCtlHTML()}</div></div>
     ${ueRotHTML()}
-    <div class="card"><div class="h2">Share codes</div><p class="note">A set code carries one uniform; a school code carries the whole look (name, colors, badge, stadium and all four sets). Paste either one here to wear it.</p>
+    <div class="card"><div class="h2">Share codes</div><p class="note">Paste a uniform code or a whole-school code.</p>
       <div class="btns"><button class="btn sm ghost" id="ueCopySet">Copy set code</button><button class="btn sm ghost" id="ueCopyAll">Copy school code</button><button class="btn sm ghost" id="uePaste">Paste a code</button></div>
       <div id="ueShare" hidden><textarea id="ueCode" rows="3" spellcheck="false" placeholder="GLU1:… or GLS1:…"></textarea><div class="btns"><button class="btn sm" id="ueApply">Apply code</button></div><p class="note" id="ueMsg"></p></div></div>
     <div class="btns cta"><button class="btn" id="ueSave">Save uniforms</button><button class="btn ghost" id="ueX">Cancel</button></div></div>`,true);
@@ -11368,7 +11595,7 @@ function sbHTML(){
       <div class="colors"><div class="field-row"><label for="sbAbbr">Abbreviation</label><input type="text" id="sbAbbr" data-k="abbr" maxlength="4" value="${esc(s.abbr)}" placeholder="RSU" style="text-transform:uppercase;width:92px"></div>
       <div class="field-row" style="flex:1;min-width:150px"><label for="sbStad">Stadium</label><input type="text" id="sbStad" data-k="stadium" maxlength="30" value="${esc(s.stadium)}" placeholder="Riverside Stadium"></div></div></div></div>
     <div class="card"><div class="h2">Colors</div>${rowHTML('Primary',swHTML('t:c1',s.c1,SCHOOL_PAL))}${rowHTML('Secondary',swHTML('t:c2',s.c2,SCHOOL_PAL))}</div>
-    <div class="card"><div class="h2">Badge</div><p class="note">Your badge shows on every schedule, ranking and team page, at midfield and as the Shield helmet decal.</p>
+    <div class="card"><div class="h2">Badge</div><p class="note">Shows on every schedule and team page, at midfield and on Shield helmets.</p>
       ${rowHTML('Shape',segHTML('b:sh',b.sh,BDG_SH))}<div class="ue-row"><span class="eyebrow">Letters</span><input type="text" id="sbTx" maxlength="4" value="${esc(s.bdg&&s.bdg.tx!=null?s.bdg.tx:'')}" placeholder="${esc(tm.abbr)}" style="text-transform:uppercase;max-width:140px"></div>
       ${rowHTML('Background',swHTML('b:bg',b.bg,P))}${rowHTML('Rim',swHTML('b:rim',b.rim,P))}${rowHTML('Letters color',swHTML('b:fg',b.fg,P))}${rowHTML('Decoration',segHTML('b:dec',b.dec,BDG_DEC))}${rowHTML('Decoration color',swHTML('b:dc',b.dc,P))}
       ${!create&&s.bdg?'<div class="btns"><button class="btn sm ghost" id="sbClassic">Use the classic badge</button></div>':''}</div>
@@ -11377,7 +11604,7 @@ function sbHTML(){
       ${rowHTML('Turf',swHTML('s:turf',st.turf||'',['#3A8A3D','#1D4FB0','#B3262D','#6D6F76','#1B8F8C','#4F2D7F','#2B2D33'],'Natural'))}${rowHTML('Midfield badge',segHTML('s:mid',st.mid===0?0:1,[[1,'On'],[0,'Off']],1))}</div>
     ${create?`<div class="card"><div class="h2">Join the league</div><div class="field-row"><label for="sbConf">Conference</label><select id="sbConf">${confs}</select></div>
       <div class="field-row"><label for="sbRep">Takes the place of</label><select id="sbRep">${reps}</select></div>
-      ${LG&&L===LG?`${rowHTML('Roster',segHTML('x:keep',s.keep?1:0,[[1,'Keep their players'],[0,'New 1-star roster']],1))}<p class="note">The schedule stays as it is: your school plays the games already on that team's calendar, and its record so far carries over.</p>`:'<p class="note">Your school starts at one-star prestige with a thin roster.</p>'}</div>`:''}
+      ${LG&&L===LG?`${rowHTML('Roster',segHTML('x:keep',s.keep?1:0,[[1,'Keep their players'],[0,'New 1-star roster']],1))}<p class="note">Your school takes over that team’s schedule and record.</p>`:'<p class="note">Your school starts at one-star prestige with a thin roster.</p>'}</div>`:''}
     <div class="card"><div class="h2">Share</div><p class="note">${create?'Paste a school code (GLS1:) to start from someone else’s design.':'Copy a school code to rebuild this look in another dynasty.'}</p>
       <div class="btns">${create?'':'<button class="btn sm ghost" id="sbCopy">Copy school code</button>'}<button class="btn sm ghost" id="sbPaste">Paste a school code</button></div>
       <div id="sbShare" hidden><textarea id="sbCode" rows="3" spellcheck="false" placeholder="GLS1:…"></textarea><div class="btns"><button class="btn sm" id="sbApply">Apply code</button></div></div></div>
