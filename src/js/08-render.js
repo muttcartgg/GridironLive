@@ -47,12 +47,20 @@ function camFit(b,maxYd){const s0=sc*zoomMul(),pd=camPad(),land=H<=W*1.2;
 /* camera centre on one axis so [c0,c1] fits a view of size v with margins m0/m1 (bias 0..1 leans toward c1's side being roomier);
    when it cannot fit (zoom still easing out, or at the floor) keep the anchor a inside its margin. Continuous in v. */
 function camPan(c0,c1,a,v,m0,m1,bias){const lo=c1+m1-v/2,hi=c0-m0+v/2;if(lo<=hi)return lo+(hi-lo)*bias;const w=c1>c0?clamp((a-c0)/(c1-c0),0,1):0;return hi+(lo-hi)*w}
+/* screen shake: a quick damped wobble (not per-frame noise) that grows with the square of the hit, so ordinary tackles
+   barely move the picture and only the big ones are felt; off with Settings › Screen shake */
+function shakeXY(now){const s=S.shake;if(!(s>0)||LG&&LG.settings&&LG.settings.shake===false)return [0,0];const a=Math.min(1,s)*Math.min(1,s)*1.6;return [Math.sin(now*.083)*a*9,Math.cos(now*.067)*a*6]}
+/* a cut: the next frame jumps straight to the new framing (zoom and pan) and the main loop dips it in from dark (09) */
+function camCut(){cam.cut=1}
 function updateCam(dt){
   dt=Math.min(dt,.05);const retro=LG&&LG.settings.style==='retro';
+  /* between plays ('wait': a kick result, a change of possession, a flag; the try sheet; behind the kick view) the shot
+     holds instead of sliding back to a stale line of scrimmage; whatever comes next (a snap, a kickoff) cuts */
+  if((S.phase==='wait'||S.phase==='pat'||S.phase==='kick')&&!cam.cut){S.shake=Math.max(0,S.shake-dt*1.6);return}
   let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
   if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1;
     /* frame the formation: the QB, every eligible receiver and your defender stay in view on any phone (hot routes, reads) */
-    if(!retro&&OFF.length){box=[S.los,S.los,S.ballY,S.ballY];if(Q)camBox(box,Q.x,Q.y);for(const o of OFF)if(eligible(o))camBox(box,o.x,o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y);zst=.9}}
+    if(!retro&&OFF.length){box=[S.los,S.los,S.ballY,S.ballY];if(Q)camBox(box,Q.x,Q.y);for(const o of OFF)if(eligible(o))camBox(box,o._gx!=null?o._gx:o.x,o._gy!=null?o._gy:o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y);zst=.9}}
   if((S.phase==='live'||S.phase==='dead'||S.phase==='replay')&&ball){z=1;st=.42;const h=(play&&play.carrier)||Q;
     if(ball.state==='air'){const far=hyp(ball.tx-ball.fx,ball.ty-ball.fy),r=play&&play.intended;bx=ball.x;by=ball.y;z=clamp(1.04-.008*far,.8,.95);st=.36;zst=.5;
       box=camBox([bx,bx,by,by],ball.tx,ball.ty);if(r&&r.side==='o')camBox(box,r.x,r.y);if(!uOff()&&S.ctrl&&!(play&&play.st))camBox(box,S.ctrl.x,S.ctrl.y);
@@ -64,21 +72,25 @@ function updateCam(dt){
         for(const o of OFF)if(eligible(o)&&!o.blocker){const lx=o.x+clamp((o.vx||0)*.6,0,5);if(lx>far){far=lx;t=o}}
         far=t?clamp(far,Q.x,Q.x+maxRange()):Q.x+12;z=clamp(1.07-.009*(far-Q.x),.86,.95);st=.5;zst=.6;box=camBox([bx,bx,by,by],far,t?t.y:by);
         for(const o of OFF)if(eligible(o)&&!o.blocker)camBox(box,Math.min(o.x,Q.x+maxRange()),o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y)}
-      else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.97:1;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.9;st=.32;
+      else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.88:.92;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.82;st=.32;zst=play&&play.t<1.2?1.5:1.05;
         if(!retro&&!uOff()&&S.ctrl&&S.ctrl!==h&&!play.st&&S.phase==='live')box=camBox([fx,fx,fy,fy],S.ctrl.x,S.ctrl.y)}}   // your defender stays in the shot
-    const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.07}
+    const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.05;
+    /* after the whistle the zoom holds (no zooming in on the pile only to cut back out for the next snap) */
+    if(S.phase==='dead'){z=cam.z;box=null;zbox=null}}
   {const ex=S.auto&&AUTO.exempt!=null&&(S.phase==='presnap'||S.phase==='live')?autoSprite():null;if(ex&&ex.side==='o'&&!retro){if(!box)box=[fx,fx,fy,fy];camBox(box,ex.x,ex.y)}}   // Road to Glory: your player stays in the shot
-  if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box,S.phase==='presnap'?64:play&&play.type==='pass'&&!play.scramble?80:58));
-  camDamp('z',z,zst,dt);
+  if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box,S.phase==='presnap'?60:play&&play.type==='pass'&&!play.scramble?78:56));
+  const cut=cam.cut;if(cut){cam.z=z;cam.zv=0}else camDamp('z',z,zst,dt);
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY),ext=retro?0:7;
   const pd=box?camPad().map(v=>v/(s*VY)):[0,0];   // overlay pads in world yards (framing only)
   let tx=fx+vw*.1;if(box){tx=camPan(box[0],box[1],bx,vw,CAM_M.l,CAM_M.r,.62);fy=camPan(box[2],box[3],by,vh,CAM_M.t+pd[0],CAM_M.b+pd[1],.5)}
   const mn=-6-ext+vw/2,mx=126+ext-vw/2;tx=mn>mx?60:clamp(tx,mn,mx);
   const ylo=(retro?-8:-11)+vh/2,yhi=FW+3+pd[1]-vh/2,ymid=retro?CEN-3:CEN-3.6,ty=clamp(fy,Math.min(ylo,ymid),Math.max(yhi,ymid));   // whole width in view: hold mid
-  camDamp('x',tx,st,dt);camDamp('y',ty,st*1.2,dt);
-  /* keep the ball (or its carrier) on screen even when the spring lags; between plays (presnap) glide back to the new LOS instead */
-  const hw=S.phase==='presnap'?1e9:vw/2-Math.min(vw*.2,3);if(bx<cam.x-hw){cam.x=bx+hw;cam.xv=Math.min(cam.xv||0,0)}else if(bx>cam.x+hw){cam.x=bx-hw;cam.xv=Math.max(cam.xv||0,0)}
-  if(vh<FW+10){const hh=vh/2-1.5;if(by<cam.y-hh){cam.y=by+hh;cam.yv=Math.min(cam.yv||0,0)}else if(by>cam.y+hh){cam.y=by-hh;cam.yv=Math.max(cam.yv||0,0)}}
+  if(cut){cam.x=tx;cam.y=ty;cam.xv=cam.yv=0;cam.cut=0;S.cutA=1;S.cutN=(S.cutN||0)+1}
+  else{camDamp('x',tx,st,dt);camDamp('y',ty,st*1.2,dt);
+  /* keep the ball (or its carrier) on screen when the spring lags: pulled back in quickly (no snap), hard-held only at the very edge */
+  if(S.phase==='live'||S.phase==='dead'||S.phase==='replay'){const hw=vw/2-Math.min(vw*.2,3),hx=vw/2-.8;let o=bx<cam.x-hw?bx+hw-cam.x:bx>cam.x+hw?bx-hw-cam.x:0;
+    if(o){cam.x+=o*Math.min(1,dt*10);cam.x=clamp(cam.x,bx-hx,bx+hx);cam.xv=o<0?Math.min(cam.xv||0,0):Math.max(cam.xv||0,0)}
+    if(vh<FW+10){const hh=vh/2-1.5,hy=vh/2-.6;o=by<cam.y-hh?by+hh-cam.y:by>cam.y+hh?by-hh-cam.y:0;if(o){cam.y+=o*Math.min(1,dt*10);cam.y=clamp(cam.y,by-hy,by+hy);cam.yv=o<0?Math.min(cam.yv||0,0):Math.max(cam.yv||0,0)}}}}
   S.shake=Math.max(0,S.shake-dt*1.6);
 }
 
@@ -92,7 +104,7 @@ function drawModern(now){
   c.fillStyle=night?'#03050a':'#0a111d';c.fillRect(0,0,W,H);
   if(!S.home)return;
   if(!crowdM)buildCrowdModern();
-  c.save();if(S.shake>0)c.translate(R(-1,1)*S.shake*14,R(-1,1)*S.shake*10);
+  c.save();if(S.shake>0){const [ox,oy]=shakeXY(now);if(ox||oy)c.translate(ox,oy)}
   // stadium (08g): sky, light towers, press box, decks, club band, ribbon boards
   ensureStadium();drawStands(c,s,now);
   // field: cached turf + paint (08f), wear/snow, scuffs; end-zone stands beyond the end lines
@@ -114,7 +126,12 @@ function drawModern(now){
   if(aim&&S.phase==='live'&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y),h=aim.bullet?d*.03+.45:aim.lob?d*.18+1.3:d*.11+.5,col=aim.bullet?'#FF8A2A':aim.lob?'#7FD4FF':'#FFFFFF';
     c.save();c.fillStyle=col;const n=Math.max(10,Math.round(d*1.6));const ph=(now/40)%3;
     for(let k=0;k<=n;k++){const t=k/n;const z=4*h*t*(1-t);const px=X(lerp(Q.x,aim.x,t)),py=Y(lerp(Q.y,aim.y,t))-z*s*.9-s*1.6;c.globalAlpha=.25+.75*t;c.beginPath();c.arc(px,py,Math.max(1.5,s*.12)*(((k+ph)|0)%3===0?1.5:1),0,7);c.fill()}
-    c.globalAlpha=1;const ax=X(aim.x),ay=Y(aim.y);c.strokeStyle=col;c.lineWidth=2;c.beginPath();c.ellipse(ax,ay,Math.max(6,aim.err*s),Math.max(4,aim.err*s*VY),0,0,7);c.stroke();
+    c.globalAlpha=1;const ax=X(aim.x),ay=Y(aim.y);
+    /* the lead read: the receiver who gets to this spot, a dashed line to where he will be when the ball arrives, and the
+       reticle turns green when that is inside the throw's accuracy circle */
+    let rc=col;{const T=typeof flightT==='function'?flightT(d,aim.bullet,aim.lob,Q.pl.thr):d/22;let r=null,rd=7;for(const o of OFF){if(o===Q||o.blocker||!eligible(o))continue;const lx=o.x+(o.vx||0)*T,ly=o.y+(o.vy||0)*T,dd=hyp(lx-aim.x,ly-aim.y);if(dd<rd){rd=dd;r=[o,lx,ly]}}
+      if(r){const on=rd<=Math.max(1.3,aim.err+.7);if(on)rc='#5BE37D';c.strokeStyle=on?'rgba(91,227,125,.9)':'rgba(255,255,255,.55)';c.lineWidth=2;c.setLineDash([4,5]);c.beginPath();c.moveTo(X(r[0].x),Y(r[0].y));c.lineTo(X(r[1]),Y(r[2]));c.stroke();c.setLineDash([]);c.beginPath();c.ellipse(X(r[1]),Y(r[2]),s*.5,s*.5*VY,0,0,7);c.stroke()}}
+    c.strokeStyle=rc;c.lineWidth=2;c.beginPath();c.ellipse(ax,ay,Math.max(6,aim.err*s),Math.max(4,aim.err*s*VY),0,0,7);c.stroke();
     c.fillStyle=aim.bullet?'rgba(255,138,42,.15)':'rgba(255,255,255,.12)';c.fill();
     c.beginPath();c.moveTo(ax-8,ay);c.lineTo(ax+8,ay);c.moveTo(ax,ay-6);c.lineTo(ax,ay+6);c.stroke();
     c.font='800 13px -apple-system,system-ui,sans-serif';c.textAlign='center';c.fillStyle='#fff';c.shadowColor='#000';c.shadowBlur=4;c.fillText(`${Math.round(d)} YD${aim.bullet?' · BULLET':aim.lob?' · LOB':''}`,ax,ay-Math.max(10,aim.err*s*VY)-10);c.restore()}
@@ -238,7 +255,7 @@ function drawRetro(now){
   if(inGame&&ball){const bx=AX(ball.x),by=AY(ball.y);if(ball.state==='air'){c.fillStyle='rgba(0,0,0,.4)';c.fillRect(bx-1,by,3,1);const yy=by-Math.round(ball.z*A*.8)-5;c.fillStyle='#8A4A22';c.fillRect(bx-1,yy,3,2);c.fillStyle='#fff';c.fillRect(bx,yy,1,1)}else if(S.phase==='presnap'){c.fillStyle='#8A4A22';c.fillRect(bx-1,by-1,3,2)}else{const h=(play&&play.carrier)||Q;if(h){const f=h.face||1;c.fillStyle='#8A4A22';c.fillRect(AX(h.x)+f*2-1,AY(h.y)-5-Math.round((h.z||0)*A*.9),3,2)}}}
   for(const p of particles){c.fillStyle=p.c;c.fillRect(AX(p.x),AY(p.y)-Math.round(p.z*A*.9),1,1)}
   ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
-  const sx=S.shake>0?Math.round(R(-1,1)*S.shake*8):0;ctx.drawImage(low,0,0,LW,LH,sx*DPR,0,LW*PXS*DPR,LH*PXS*DPR);
+  const sx=S.shake>0?Math.round(shakeXY(performance.now())[0]*.8):0;ctx.drawImage(low,0,0,LW,LH,sx*DPR,0,LW*PXS*DPR,LH*PXS*DPR);
   ctx.setTransform(DPR,0,0,DPR,0,0);drawWeather(ctx);
 }
 function draw(now){if(LG&&LG.settings.style==='retro')drawRetro(now);else drawModern(now);if(S.phase==='replay')drawOverlay(now)}

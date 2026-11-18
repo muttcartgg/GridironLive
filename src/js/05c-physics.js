@@ -179,11 +179,14 @@ function blockAI(p,dt){
 
 /* ---------- ball carrier: moves ---------- */
 function moveMul(){const pl=play;return (pl.jukeT>0?1.04:1)*(pl.spinT>0?.93:1)*(pl.truckT>0?.92:1)*(pl.stiffT>0?.96:1)*(pl.slowT>0?.78:1)*(pl.dive>0?1.25:1)}
-function doJuke(dir){if(!play||play.jukeCD>0||play.dive>0)return;const c=play.carrier;play.jukeT=.36;play.jukeCD=c&&c.user?.7:.9;play.jukeDir=dir;play.moveId++;play.move='juke';if(c){setAnim(c,'juke');spawnTurf(c.x,c.y,5)}sfx('cut')}
-function doSpin(){if(!play||play.jukeCD>0||play.dive>0)return;const c=play.carrier;play.spinT=.45;play.jukeCD=.95;play.moveId++;play.move='spin';if(c)setAnim(c,'spin');sfx('cut')}
+/* a move pressed just before the last one recovers is buffered (a quarter second) instead of being eaten */
+const moveBuf=(k,d)=>{if(play&&play.jukeCD>0&&play.jukeCD<.25&&play.dive<=0)play.buf={k,d,t:.25}};
+const moveFeel=c=>{if(c&&c.user&&(!S.auto||typeof userCtl==='function'&&userCtl(c)))haptic('light')};
+function doJuke(dir){if(!play||play.dive>0)return;if(play.jukeCD>0)return moveBuf('juke',dir);const c=play.carrier;moveFeel(c);play.jukeT=.36;play.jukeCD=c&&c.user?.7:.9;play.jukeDir=dir;play.moveId++;play.move='juke';if(c){setAnim(c,'juke');spawnTurf(c.x,c.y,5)}sfx('cut')}
+function doSpin(){if(!play||play.dive>0)return;if(play.jukeCD>0)return moveBuf('spin');const c=play.carrier;moveFeel(c);play.spinT=.45;play.jukeCD=.95;play.moveId++;play.move='spin';if(c)setAnim(c,'spin');sfx('cut')}
 /* TRUCK lowers the shoulder into a man in front; against a pursuer from the side or behind it becomes a stiff arm */
 function doTruck(){
-  if(!play||play.jukeCD>0||play.dive>0)return;const c=play.carrier;if(!c)return;
+  if(!play||play.dive>0)return;if(play.jukeCD>0)return moveBuf('truck');const c=play.carrier;if(!c)return;moveFeel(c);
   let best=null,bd=4.5;for(const d of DEF){if(d.stun>0||d.engaged)continue;const dd=hyp(d.x-c.x,d.y-c.y);if(dd<bd){bd=dd;best=d}}
   const vc=hyp(c.vx,c.vy),side=best&&vc>1&&((best.x-c.x)*c.vx+(best.y-c.y)*c.vy)/(bd*vc)<.4;
   play.moveId++;c.stiff=.5;
@@ -265,7 +268,7 @@ function tackled(c,d){
   const md=d.mass||230,pc=(c.mass||210)*Math.max(0,c.vx)*(.7+.08*c.pl.str),pd=(md*Math.max(0,-d.vx)+md*(TK.behind?1.2:TK.head?2.6:1.8))*(.78+.075*d.pl.str)+help*1.8;
   const fp=clamp((pc-pd)/700+R(-.25,.25),-1.2,TK.behind?1.4:2.2);
   pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=fp/.4;
-  if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
+  if(big){hitStop(.075);slowMo(.28);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
   const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
   if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110){   /* Turnover Specialist (04c) */
     /* the booth's data: when the knee hit vs when the ball came out (a big hit pops it at once; falling forward or

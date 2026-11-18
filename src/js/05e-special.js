@@ -31,6 +31,7 @@ const stWind=()=>S.wind?-windX()*S.wind.mph:0;   // tail wind (mph) for a kick t
 const stDir=c=>c.side==='o'?1:-1;
 function stClear(){for(const p of P){p.engBy=null;p.eng=null;p.engaged=false;p.tgt=null;p.claim=null;p.route=null;p.recCD=p.recCD||0;p.armTried=false;p.react=0}}
 function stPrep(recv,name){
+  if(typeof camCut==='function'&&!S.ff)camCut();   // a new unit on the field: cut, don't slide over teleporting players
   S.poss=recv;S.conv=false;S.rzActive=false;S.clockRun=false;hideActs();['#call','#opt','#snapBar','#kick'].forEach(s=>$(s).hidden=true);$('#toBtn').hidden=true;
   P=[];OFF=[];DEF=[];Q=null;RB=null;KP={};aim=null;touch=null;stick=null;S.bullet=false;S.celebrate=null;S.ctrl=null;S.pc=null;
   play=newPlay({name,cat:'st'});play.type='st';play.carrier=null;
@@ -251,7 +252,7 @@ function stTackled(c,d){
   fx('tackle',{c,d,big});S.shake=.12+d.pl.str*.05+(big?.25:0);spawnTurf(c.x,c.y,big?16:10);credit(d,'tkl',1,big?6:3);haptic(big?'heavy':'medium');injuryCheck(c,d,big);
   const md=d.mass||230,pc=(c.mass||210)*Math.max(0,c.vx*dir)*(.7+.08*c.pl.str),pd=(md*Math.max(0,-d.vx*dir)+md*(TK.behind?1.2:TK.head?2.6:1.8))*(.78+.075*d.pl.str);
   const fp=clamp((pc-pd)/700+R(-.25,.25),-1.2,1.4);pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=dir*pl.fp/.4;
-  if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true}
+  if(big){hitStop(.075);slowMo(.28);toast('BIG HIT!');sfx('thump');pl.bigHit=true}
   if(Math.random()<Math.max(.004,PHY.fum*.9+(big?.03:0)+.005*(3-c.pl.car)))return stFumble(c,d,'Fumble');
   stEnd('tackle');
 }
@@ -409,7 +410,7 @@ function stEnd(kind,msg,o){
   x=clamp(x,0,120);
   const team=side==='o'?offT():defT(),ret=c&&st.rx!=null?c:null,yds=ret?Math.round((clamp(x,10,110)-st.rx)*stDir(ret)):0;
   pl.result={kind:'st',sk,x,y:clamp(y,0,FW),side,msg,team};
-  deadT=sk==='td'?2.8:st.kind==='int'||st.fumBy||st.muff||st.blocked?2.2:1.6;
+  deadT=sk==='td'?2.4:st.kind==='int'||st.fumBy||st.muff||st.blocked?1.8:1.1;S.deadAt=performance.now();S.rpOK=false;
   /* stats */
   if(ret&&!st.fumBy&&['tackle','oob','td','down','spot'].includes(sk)){
     if(st.kind==='ko'&&ret.side==='o'){sAdd(ret.team,'kr');sAdd(ret.team,'krYds',yds);if(sk==='td')sAdd(ret.team,'krTD')}
@@ -429,8 +430,9 @@ function stEnd(kind,msg,o){
   else if(sk==='safety'){banner('Safety',(team===S.home?S.away:S.home).c1)}
   else{const lost=st.fumBy&&team!==st.fumBy.team;if(lost||st.muff&&side==='d'||st.kind==='ko'&&st.sub==='onside'&&side==='d'){banner(st.kind==='ko'?'Onside kick recovered!':'Turnover!',team.c1);sfx(team===S.home?'roar':'groan');fx('turnover',{team,kind:st.kind})}else sfx('whistle')}
   if(typeof BC!=='undefined'){
-    if(st.kind==='int')BC.play({kind:'int',x,y},0);
-    else if(st.kind==='fum'&&!st.chg&&side==='o'&&sk!=='td'&&sk!=='safety')BC.play({kind:'fum',x,y,defRec:false},Math.round(x-S.los));
+    const d0=deadT;
+    if(st.kind==='int'){BC.play({kind:'int',x,y},0);replayGate(d0,true)}
+    else if(st.kind==='fum'&&!st.chg&&side==='o'&&sk!=='td'&&sk!=='safety'){BC.play({kind:'fum',x,y,defRec:false},Math.round(x-S.los));replayGate(d0,false)}
     else if(sk!=='td')BC.card(head,line,`${team.abbr} ball${sk==='safety'?'':' at the '+lab}`,team.c1,sk==='td'||st.blocked||st.muff);
     if(sk==='td'||yds>=30||st.blocked||st.muff&&side==='d'||st.fumBy&&team!==st.fumBy.team)stReplay()}
   if(st.fumBy){play.result.defRec=team!==st.fumBy.team;fx('fumble',{p:st.fumBy,x:ball.x,y:ball.y,team:st.fumBy.team})}
@@ -438,7 +440,7 @@ function stEnd(kind,msg,o){
   fx('dead',{kind:sk,p:c,x:S.los+(ret?yds:0)*(ret&&ret.side==='d'?-1:1),y,team:ret?ret.team:team,msg});
   if(st.kind==='int'||st.kind==='fum')fatSave();   // kick units are fresh legs: only scrimmage snaps count toward fatigue
 }
-function stReplay(){if(LG.settings.replay==='off'||typeof REC==='undefined'||REC.length<=20)return;if(LG.settings.replay==='auto'){deadT+=.3;setTimeout(()=>{if(S.phase==='dead')startReplay()},700)}else{$('#replayBtn').hidden=false;deadT=Math.max(deadT,3.2);setTimeout(()=>$('#replayBtn').hidden=true,3200)}}
+function stReplay(){if(LG.settings.replay==='off'||typeof REC==='undefined'||REC.length<=20)return;S.rpOK=true;if(LG.settings.replay==='auto'){deadT+=.3;setTimeout(()=>{if(S.phase==='dead')startReplay()},700)}else{$('#replayBtn').hidden=false;deadT=Math.max(deadT,2.6);clearTimeout(stReplay.t);stReplay.t=setTimeout(()=>$('#replayBtn').hidden=true,2600)}}
 /* the runner was down before the ball came out: the offense keeps it at the spot of the tackle (the fumble comes off the books) */
 function fumbleOverturn(p0){
   const pl=play,st=pl.st,r=pl.result,fr=pl.fumRev,c=st.fumBy;

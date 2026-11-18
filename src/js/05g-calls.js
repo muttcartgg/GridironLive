@@ -188,7 +188,7 @@ function renderCall(){
   const row=$('#callRow');
   row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;CALL_FORM='';renderCall()});
   row.querySelectorAll('[data-fm]').forEach(b=>b.onclick=()=>{ac();CALL_FORM=b.dataset.fm;renderCall()});
-  const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},420)};
+  const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},460)};   // just past the re-form glide
   row.querySelector('[data-coach]').onclick=()=>{ac();const p=picks[0]?picks[0].p:aiPickPlay(S.home,sitInfo());pickPlay(p)};
   row.querySelectorAll('[data-pid]').forEach(b=>b.onclick=()=>{ac();pickPlay(PLAYBOOK[+b.dataset.pid])});
   row.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{ac();callSpecial(b.dataset.sp)});
@@ -216,7 +216,7 @@ function renderDefCall(){
   row.querySelectorAll('[data-fr]').forEach(b=>b.onclick=()=>{ac();S.defFront=b.dataset.fr;renderDefCall()});
   row.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>{ac();const k=b.dataset.dc;
     if(k==='sim'){$('#call').hidden=true;S.phase='wait';return oppDrive(110-S.los,'Drive continues')}
-    S.defCall=k;if(k==='auto'&&S.defFront&&S.defFront!=='auto')S.dcPick=[S.defFront,S.dcPick[1]];setupFormation(S.aiPlay,S.flip);$('#call').hidden=true;S.phase='presnap';aiSnapT=1.3+.8*crowdNoise();if(typeof BC!=='undefined')BC.presnap();hint(crowdNoise()>.5?'Get set… it is loud in here':'Get set…')});
+    S.defCall=k;if(k==='auto'&&S.defFront&&S.defFront!=='auto')S.dcPick=[S.defFront,S.dcPick[1]];setupFormation(S.aiPlay,S.flip);$('#call').hidden=true;S.phase='presnap';aiSnapT=.75+.5*crowdNoise();if(typeof BC!=='undefined')BC.presnap();hint(crowdNoise()>.5?'Get set… it is loud in here':'Get set…')});
   scrollHint(row);$('#call').hidden=false;
 }
 
