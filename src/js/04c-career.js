@@ -254,7 +254,7 @@ function careerCoachHTML(){
     <div class="kv"><span>Contract</span><b>${c.yrs} yr${c.yrs===1?'':'s'} left · ${money(c.sal)}/yr</b></div>
     <div class="kv"><span>AD expectation</span><b>${tgt}+ wins${pace!=null?` · on pace for ${pace}`:''}</b></div>
     <div class="kv"><span>Hot seat</span><b class="${hc==='hot'?'res-l':''}">${hs} · ${Math.round(100-c.security)}°</b></div>${meterHTML(100-c.security,hc==='hot'?'var(--hot)':hc==='warn'?'var(--warn)':'var(--ok)')}
-    <p class="note">Security ${Math.round(c.security)}%. Each win above or below the target moves it about 7 points; playoffs and titles add more. Below 10% after two years here (or an expired contract under 40%) gets you fired.</p>
+    <p class="note">Job security ${Math.round(c.security)}%. Each win above or below the target moves it about 7 points.</p>
     <div class="kv"><span>Coach XP</span><b>${c.xp}/${lvlNeed(c.lvl)}</b></div>${meterHTML(c.xp/lvlNeed(c.lvl)*100,'var(--los)')}</div>`;
 }
 function careerBudgetHTML(){
@@ -263,17 +263,17 @@ function careerBudgetHTML(){
     <div class="kv"><span>Revenue sharing</span><b>${money(b.rev)}</b></div><div class="kv"><span>Collective</span><b>${money(b.col)}</b></div>${b.carry?`<div class="kv"><span>Carried over</span><b>${money(b.carry)}</b></div>`:''}
     <div class="kv"><span>${b.yr||LG.season} player budget</span><b>${money(b.total)}</b></div>${meterHTML(100-used,'var(--ok)')}
     <div class="kv"><span>Spent</span><b>${money(b.ret+b.portal+b.rec)}</b></div><p class="note">Retention ${money(b.ret)} · transfers ${money(b.portal)} · recruit pitches ${money(b.rec)}</p>
-    <p class="note">Set every offseason from your school's revenue-sharing share (the 2025-26 cap was $20.5M, rising 4% a year), plus a collective that grows with prestige, fan approval, results and facilities. It pays retention deals, transfers and NIL pitches to recruits; 10% of what's left carries over.</p></div>`;
+    <p class="note">Reset each offseason: revenue sharing plus a collective that grows with prestige, fans, results and facilities. 10% of what’s left carries over.</p></div>`;
 }
 function careerStaffHTML(){
   return `<div class="card"><div class="h2">Coordinators</div><div class="list">${coachRow('oc',LG.staff.oc)}${coachRow('dc',LG.staff.dc)}</div>
     <div class="eyebrow">Available to hire</div><div class="list">${['oc','dc'].flatMap(k=>LG.pool[k].map((s,i)=>coachRow(k,s,`<button class="btn sm" id="hire-${k}-${i}" ${LG.credits<staffCost(s)?'disabled':''}>Hire · ${staffCost(s)} CC</button>`))).join('')}</div>
-    <p class="note">Signature traits work in your games, in simulated games and over the season. Coordinator ratings help receivers get open (OC) and your simulated defense (DC). Coordinators who win get head-coaching offers.</p></div>`;
+    <p class="note">Traits work in played and simulated games. Coordinators who win get head-coaching offers.</p></div>`;
 }
 function careerTreeHTML(){
   const c=LG.coach,br=[...new Set(PERKS.map(p=>p.b))];
   return `<div class="card"><div class="setrow"><div class="h2">Coaching skill tree</div><span class="pill">${c.sp} skill point${c.sp===1?'':'s'}</span></div>
-    <p class="note">Earn coach XP from wins, bowls, titles and playoff trips. Each level gives a skill point; tier 2 and 3 perks cost 2 and 3 points, or 12 coaching credits a point.</p>
+    <p class="note">Wins, bowls and titles earn XP. Each level is a skill point; tier 2 and 3 perks cost 2 and 3 points.</p>
     <div>${br.map(b=>`<div><div class="eyebrow">${b}</div><div class="list">${PERKS.filter(p=>p.b===b).map(p=>{const has=c.perks.includes(p.id),lock=p.req&&!c.perks.includes(p.req);
       return `<div class="lrow"><span style="min-width:0"><b>${esc(p.n)}</b> <small class="note">T${p.t}</small><br><small class="note">${esc(p.d)}</small></span>${has?'<span class="tag gold">Learned</span>':`<span style="display:flex;gap:6px;flex:none"><button class="btn sm" id="perk-${p.id}" ${lock||c.sp<p.t?'disabled':''}>${p.t} pt</button><button class="btn sm ghost" id="perkcc-${p.id}" ${lock||LG.credits<p.t*12?'disabled':''}>${p.t*12} CC</button></span>`}</div>`}).join('')}</div></div>`).join('')}</div></div>`;
 }

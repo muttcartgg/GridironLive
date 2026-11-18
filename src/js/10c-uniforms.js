@@ -189,7 +189,7 @@ function openUniEditor(id,done,L){
     <div class="ue-grid"><div class="ue-prev"><canvas id="uePrev" aria-label="Uniform preview"></canvas><div class="seg" id="ueView">${[['rot','Turn'],['front','Front'],['back','Back']].map(([k,l])=>`<button data-k="${k}" aria-pressed="${k==='rot'}">${l}</button>`).join('')}</div></div>
       <div class="ue-ctl" id="ueCtl">${ueCtlHTML()}</div></div>
     ${ueRotHTML()}
-    <div class="card"><div class="h2">Share codes</div><p class="note">A set code carries one uniform; a school code carries the whole look (name, colors, badge, stadium and all four sets). Paste either one here to wear it.</p>
+    <div class="card"><div class="h2">Share codes</div><p class="note">Paste a uniform code or a whole-school code.</p>
       <div class="btns"><button class="btn sm ghost" id="ueCopySet">Copy set code</button><button class="btn sm ghost" id="ueCopyAll">Copy school code</button><button class="btn sm ghost" id="uePaste">Paste a code</button></div>
       <div id="ueShare" hidden><textarea id="ueCode" rows="3" spellcheck="false" placeholder="GLU1:… or GLS1:…"></textarea><div class="btns"><button class="btn sm" id="ueApply">Apply code</button></div><p class="note" id="ueMsg"></p></div></div>
     <div class="btns cta"><button class="btn" id="ueSave">Save uniforms</button><button class="btn ghost" id="ueX">Cancel</button></div></div>`,true);
@@ -235,7 +235,7 @@ function sbHTML(){
       <div class="colors"><div class="field-row"><label for="sbAbbr">Abbreviation</label><input type="text" id="sbAbbr" data-k="abbr" maxlength="4" value="${esc(s.abbr)}" placeholder="RSU" style="text-transform:uppercase;width:92px"></div>
       <div class="field-row" style="flex:1;min-width:150px"><label for="sbStad">Stadium</label><input type="text" id="sbStad" data-k="stadium" maxlength="30" value="${esc(s.stadium)}" placeholder="Riverside Stadium"></div></div></div></div>
     <div class="card"><div class="h2">Colors</div>${rowHTML('Primary',swHTML('t:c1',s.c1,SCHOOL_PAL))}${rowHTML('Secondary',swHTML('t:c2',s.c2,SCHOOL_PAL))}</div>
-    <div class="card"><div class="h2">Badge</div><p class="note">Your badge shows on every schedule, ranking and team page, at midfield and as the Shield helmet decal.</p>
+    <div class="card"><div class="h2">Badge</div><p class="note">Shows on every schedule and team page, at midfield and on Shield helmets.</p>
       ${rowHTML('Shape',segHTML('b:sh',b.sh,BDG_SH))}<div class="ue-row"><span class="eyebrow">Letters</span><input type="text" id="sbTx" maxlength="4" value="${esc(s.bdg&&s.bdg.tx!=null?s.bdg.tx:'')}" placeholder="${esc(tm.abbr)}" style="text-transform:uppercase;max-width:140px"></div>
       ${rowHTML('Background',swHTML('b:bg',b.bg,P))}${rowHTML('Rim',swHTML('b:rim',b.rim,P))}${rowHTML('Letters color',swHTML('b:fg',b.fg,P))}${rowHTML('Decoration',segHTML('b:dec',b.dec,BDG_DEC))}${rowHTML('Decoration color',swHTML('b:dc',b.dc,P))}
       ${!create&&s.bdg?'<div class="btns"><button class="btn sm ghost" id="sbClassic">Use the classic badge</button></div>':''}</div>
@@ -244,7 +244,7 @@ function sbHTML(){
       ${rowHTML('Turf',swHTML('s:turf',st.turf||'',['#3A8A3D','#1D4FB0','#B3262D','#6D6F76','#1B8F8C','#4F2D7F','#2B2D33'],'Natural'))}${rowHTML('Midfield badge',segHTML('s:mid',st.mid===0?0:1,[[1,'On'],[0,'Off']],1))}</div>
     ${create?`<div class="card"><div class="h2">Join the league</div><div class="field-row"><label for="sbConf">Conference</label><select id="sbConf">${confs}</select></div>
       <div class="field-row"><label for="sbRep">Takes the place of</label><select id="sbRep">${reps}</select></div>
-      ${LG&&L===LG?`${rowHTML('Roster',segHTML('x:keep',s.keep?1:0,[[1,'Keep their players'],[0,'New 1-star roster']],1))}<p class="note">The schedule stays as it is: your school plays the games already on that team's calendar, and its record so far carries over.</p>`:'<p class="note">Your school starts at one-star prestige with a thin roster.</p>'}</div>`:''}
+      ${LG&&L===LG?`${rowHTML('Roster',segHTML('x:keep',s.keep?1:0,[[1,'Keep their players'],[0,'New 1-star roster']],1))}<p class="note">Your school takes over that team’s schedule and record.</p>`:'<p class="note">Your school starts at one-star prestige with a thin roster.</p>'}</div>`:''}
     <div class="card"><div class="h2">Share</div><p class="note">${create?'Paste a school code (GLS1:) to start from someone else’s design.':'Copy a school code to rebuild this look in another dynasty.'}</p>
       <div class="btns">${create?'':'<button class="btn sm ghost" id="sbCopy">Copy school code</button>'}<button class="btn sm ghost" id="sbPaste">Paste a school code</button></div>
       <div id="sbShare" hidden><textarea id="sbCode" rows="3" spellcheck="false" placeholder="GLS1:…"></textarea><div class="btns"><button class="btn sm" id="sbApply">Apply code</button></div></div></div>

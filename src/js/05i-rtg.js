@@ -76,7 +76,7 @@ function rtgStartCareer(off){
 function rtgCreateHTML(st){
   const o=st.rtg||(st.rtg={first:'',last:'',pos:'WR',arch:0,stars:4,st:0,ci:0});
   return `<div class="card rtg-new"><div class="eyebrow">Road to Glory · create your recruit</div><div class="h2">One player, one career</div>
-    <p class="note">You play only your player. The head coach calls the plays and sets the depth chart; earn his trust in practice and on Saturdays, climb from backup to starter, chase the Heisman and the NFL Draft.</p>
+    <p class="note">You play only your player. Earn the coach’s trust, win the job, chase the Heisman and the draft.</p>
     <div class="grid2 su-names"><div class="field-row"><label for="rtgFirst">First name</label><input type="text" id="rtgFirst" maxlength="14" placeholder="Jaxson" value="${esc(o.first)}"></div>
       <div class="field-row"><label for="rtgLast">Last name</label><input type="text" id="rtgLast" maxlength="16" placeholder="Merchant" value="${esc(o.last)}"></div></div>
     <div class="setrow"><span class="eyebrow">Position</span><div class="seg" id="rtgPos">${RTG_POS.map(p=>`<button data-v="${p}" aria-pressed="${o.pos===p}">${p}</button>`).join('')}</div></div>
@@ -99,7 +99,7 @@ function rtgOffersModal(st){
   openModal(`<div class="eyebrow">Senior season · ${esc(h.team)} · ${esc(RC_STATES[o.st].c[o.ci||0])}, ${RC_STATES[o.st].st}</div><div class="h2">${esc(o.first)} ${esc(o.last)} · ${starStr(o.stars)}</div>
     <p class="note"><b>${h.rec}</b> · ${esc(h.line)}. National rank #${h.rk} · ${o.pos} · ${esc(RTG_ARCH[o.pos][o.arch][0])}.</p><div class="tags">${h.hon.map(x=>`<span class="tag gold">${esc(x)}</span>`).join('')}</div>
     <div class="setrow"><div class="h2">Scholarship offers · ${o.offers.length}</div><span class="pill">${vis}/3 official visits</span></div>
-    <p class="note">An official visit shows you the depth chart and the NIL offer, and gives you a head start with that staff (coach trust). Commit when you are ready.</p>
+    <p class="note">A visit shows the depth chart and NIL offer, and earns trust with that staff.</p>
     <div class="list">${o.offers.map((f,i)=>{const t=L.teams[f.t],dc=f.v?t.roster.filter(p=>p.pos===o.pos).sort((a,b)=>ovr(b)-ovr(a)).slice(0,3).map(p=>`${esc(p.last)} ${ovr99(p)}`).join(' · '):'';
       return `<div class="rrow rtg-off ${f.v?'sel':''}" style="--c1:${t.c1}">${badge(t)}<span class="meta"><b>${esc(teamName(t))} ${starStr(t.prestige)}</b><small>${esc(confName(t.conf,L))} · OVR ${tOvr99(teamOvr(t))} · projected #${f.dep} ${o.pos}${f.v?` · NIL ${money(f.nil)}`:''}</small>
         <span style="display:grid;grid-template-columns:auto 1fr auto;gap:8px;align-items:center;font-size:11px;color:var(--mute)"><span>Interest</span>${meterHTML(f.int)}<b>${f.int}%</b></span>

@@ -1,0 +1,154 @@
+/* =========================================================
+   90 · System: the one set of rules every menu surface agrees on. Loaded last, so it settles
+   what the earlier files left inconsistent.
+   - Type: Barlow Condensed (--tv) for names, numbers and screen titles; the system font (--body) for
+     everything you read or tap. Labels and controls are sentence case; only display type is uppercase.
+   - Color roles: --fg text, --m-mute secondary text, --m-line hairlines, --gold for rank and honors,
+     --ok / --hot for results. The team color marks the one primary action and the current place only.
+   - Space 4 · 8 · 12 · 16 · 24; radius 8 (chips) · 12 (controls) · 18 (cards) · 24 (sheets).
+   - Motion: 120 ms press, 240 ms enter, one easing; transform and opacity only; off with reduced motion.
+   ========================================================= */
+:root{--sp1:4px;--sp2:8px;--sp3:12px;--sp4:16px;--sp5:24px;--r-ch:8px;--r-ct:12px;--r-cd:18px;--r-sh:24px;
+  --ease:cubic-bezier(.2,.8,.2,1);--t-press:.12s;--t-enter:.24s;
+  --accent:color-mix(in srgb,var(--team) 62%,#fff);--on:#34C77B;--bar:rgba(7,11,20,.97)}
+
+/* ---------- hub: header, sub-tabs, tab bar (bottom on a portrait phone, a rail in landscape) ---------- */
+#hub>.hub-top{padding-bottom:10px}
+#hub>.tabs{order:9;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;overflow:visible;
+  padding:5px max(4px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));
+  background:var(--bar);border-top:1px solid var(--m-line);border-bottom:0}
+#hub>.tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:50px;padding:4px 2px;border-radius:12px;
+  background:none;box-shadow:none;font:600 11px/1.1 var(--body);letter-spacing:0;text-transform:none;color:#7C889C;transition:transform var(--t-press) var(--ease)}
+#hub>.tabs button svg{width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+#hub>.tabs button svg circle{fill:currentColor;stroke:none}
+#hub>.tabs button span:not(.dot){max-width:100%;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hub>.tabs button[aria-selected="true"]{background:none;box-shadow:none;color:var(--fg)}
+#hub>.tabs button[aria-selected="true"] svg{color:var(--accent);stroke-width:2}
+#hub>.tabs button .dot{position:absolute;top:5px;left:calc(50% + 8px);width:8px;height:8px;margin:0;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px var(--bar)}
+#hub>.tabs button:active{transform:scale(.94)}
+@media (max-width:380px){#hub>.tabs button{font-size:10.5px;padding:4px 0}}
+#hub>.subtabs{display:flex;flex:none;gap:2px;overflow-x:auto;scrollbar-width:none;touch-action:pan-x pan-y;overscroll-behavior-x:contain;
+  padding:0 max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));background:#070B14;border-bottom:1px solid var(--m-line)}
+#hub>.subtabs::-webkit-scrollbar{display:none}
+#hub>.subtabs button{position:relative;flex:none;min-height:44px;padding:0 12px;border:0;background:none;font:600 15px/1 var(--body);color:#8692A6;transition:color var(--t-press)}
+#hub>.subtabs button[aria-selected="true"]{color:var(--fg)}
+#hub>.subtabs button[aria-selected="true"]::after{content:"";position:absolute;left:12px;right:12px;bottom:0;height:3px;border-radius:3px 3px 0 0;background:var(--accent)}
+#hub>.subtabs button:active{opacity:.6}
+#hubScroll{padding-bottom:28px}
+@media (orientation:landscape) and (max-height:520px){
+  #hub{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr)}
+  #hub>.hub-top{grid-column:2;grid-row:1;padding-left:16px}
+  #hub>.subtabs{grid-column:2;grid-row:2;padding-left:10px}
+  #hub>.scroll{grid-column:2;grid-row:3;padding-left:16px}
+  #hub>.tabs{grid-column:1;grid-row:1/4;grid-auto-flow:row;grid-auto-rows:minmax(0,58px);grid-auto-columns:auto;align-content:center;gap:2px;width:calc(70px + env(safe-area-inset-left,0px));
+    padding:calc(env(safe-area-inset-top,0px) + 6px) 6px calc(env(safe-area-inset-bottom,0px) + 6px) max(6px,env(safe-area-inset-left,0px));border-top:0;border-right:1px solid var(--m-line)}
+  #hub>.tabs button{min-height:0}
+}
+
+/* ---------- type: sentence-case labels and controls ---------- */
+:where(.screen,#modal,#pausem) :is(.card,.panel)>.eyebrow:first-child::before,:where(.screen,#modal,#pausem) .card>.h2:first-child::before{display:none}
+:where(.screen,#modal,#pausem) .setrow>.eyebrow:first-child{font:600 14.5px/1.25 var(--body);letter-spacing:0;text-transform:none;color:#C9D1DE}
+:where(.screen,#modal,#pausem) .seg button{font:600 14px/1.1 var(--body);letter-spacing:0;text-transform:none}
+:where(.screen,#modal,#pausem) .chipbtn{font:600 14px/1 var(--body);letter-spacing:0;text-transform:none}
+:where(.screen,#modal,#pausem) .linkbtn{font:600 13.5px/1 var(--body);letter-spacing:0;text-transform:none;color:#B9C3D2}
+:where(.screen,#modal,#pausem) .field-row label{font:600 13px/1 var(--body);letter-spacing:0;text-transform:none;color:var(--m-mute)}
+:where(.screen,#modal,#pausem) .note{color:#97A3B6}
+
+/* ---------- buttons: one filled primary (team color); everything else is quiet ---------- */
+:where(.screen,#modal,#pausem) .btn.light{background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,0) 58%),var(--team);color:var(--btn-ink);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.2)}
+:where(.screen,#modal,#pausem) .btn{transition:transform var(--t-press) var(--ease),opacity var(--t-press)}
+:where(.screen,#modal,#pausem) :is(.rrow,.lrow[data-team],.chipbtn,.seg button,.linkbtn,.slot.empty,.tp,.res-g .rt,.bt):active{opacity:.72}
+:where(.screen,#modal,#pausem) .rrow{transition:opacity var(--t-press)}
+:where(.screen,#modal,#pausem) .btn.ghost:not(:disabled):active{background:rgba(255,255,255,.1)}
+
+/* ---------- settings ---------- */
+.set-wrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:14px;align-items:start}
+.card.set{gap:0;padding:14px 16px 6px}
+.card.set>.h2:first-child{margin-bottom:4px}
+.sr{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:52px;padding:8px 0;border-top:1px solid rgba(255,255,255,.06)}
+.card>.h2+.sr,.more-b>.sr:first-child,.sr-h+.sr,.note+.sr{border-top:0}
+.sr-l{display:flex;flex-direction:column;gap:3px;min-width:0;font:500 15px/1.25 var(--body);color:var(--fg)}
+.sr-l small{font-size:12.5px;line-height:1.35;color:var(--m-mute)}
+.sr>.seg{flex:none}
+.sr:has(>.seg:not(.tg)>button:nth-child(3)),.sr.stack{flex-direction:column;align-items:stretch;gap:9px}
+.sr>.seg:not(.tg):has(>button:nth-child(3)){display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+.sr>.seg.many{display:flex!important;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none}
+.sr>.seg.many::-webkit-scrollbar{display:none}
+.sr>.seg.many button{flex:1 0 auto}
+.sr>.seg button{padding:0 8px;white-space:nowrap}
+.sr .aud{display:flex;gap:8px;align-items:center}.sr .aud select{flex:1;min-width:0}
+.sr-h{margin:16px 0 4px;font:700 13px/1 var(--body);color:var(--m-mute)}
+.card.set .note{font-size:13px;margin:2px 0 8px}
+.card.set>.btns,.card.set .more-b>.btns{margin:8px 0 10px}
+.card.set .field-row{margin:6px 0 8px}
+.card.set>.kv{min-height:44px}
+.set details.more{border-top:1px solid rgba(255,255,255,.06);margin-top:2px}
+.set details.more>summary{list-style:none;display:flex;align-items:center;justify-content:space-between;min-height:48px;font:600 15px/1 var(--body);color:#AEB8C8;cursor:pointer}
+.set details.more>summary::-webkit-details-marker{display:none}
+.set details.more>summary::after{content:"";width:8px;height:8px;margin-right:4px;border-right:2px solid currentColor;border-bottom:2px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform var(--t-enter) var(--ease)}
+.set details.more[open]>summary::after{transform:translateY(2px) rotate(225deg)}
+.set details.more[open]>summary{color:var(--fg)}
+.more-b{padding-bottom:6px}
+/* switch: one button, the dot slides */
+.seg.tg{display:inline-flex;padding:0;border:0;background:none;gap:0}
+.seg.tg button{position:relative;width:51px;min-height:31px;height:31px;padding:0;border-radius:999px;background:rgba(255,255,255,.17);box-shadow:none;transition:background-color var(--t-enter) var(--ease)}
+.seg.tg button i{position:absolute;top:2px;left:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 5px rgba(0,0,0,.35);transition:transform var(--t-enter) var(--ease)}
+.seg.tg button[aria-checked="true"]{background:var(--on)}
+.seg.tg button[aria-checked="true"] i{transform:translateX(20px)}
+.seg.tg button:active i{transform:scale(.92)}.seg.tg button[aria-checked="true"]:active i{transform:translateX(20px) scale(.92)}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- home: tour, decision, news ---------- */
+.card.tour{gap:8px;border-color:rgba(255,210,63,.28);background:radial-gradient(120% 120% at 0 0,rgba(255,210,63,.1),transparent 60%),var(--m-p1)}
+.tour-top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.tour-dots{display:flex;gap:5px}.tour-dots i{width:16px;height:4px;border-radius:2px;background:rgba(255,255,255,.18);transition:background-color var(--t-enter)}.tour-dots i.on{background:var(--gold)}
+.card.tour .h2,.card.dec .h2{font-size:22px;line-height:1.1}
+.card.tour .note{margin:0;font-size:14.5px;color:#C3CCDA}
+.card.tour .btns .btn,.card.dec .btns .btn{flex:0 1 auto;min-width:96px}
+.card.dec{gap:10px;border-color:color-mix(in srgb,var(--gold) 34%,transparent)}
+.card.dec.done{border-color:var(--m-line)}
+.card.dec>.eyebrow:first-child{color:var(--gold)}
+.card.dec .h2{font-family:var(--body);font-style:normal;font-weight:600;font-size:16.5px;line-height:1.4;letter-spacing:0;text-transform:none}
+.news-h{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:34px}
+.news .lrow{font-size:14px;line-height:1.45}
+.news .lrow.lead{font-size:15px}
+
+/* ---------- trophy case: numbers, not emoji; empty shelves stay quiet ---------- */
+.tcase{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tcase .tile{padding:12px 6px;gap:6px}
+.tcase .tile b{font-size:28px;color:#5E6A7E}
+.tcase .tile.won b{color:var(--gold)}
+
+/* ---------- how to play ---------- */
+.card.help{gap:10px}
+.help-l{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
+.help-l li{position:relative;padding-left:15px;font-size:14.5px;line-height:1.5;color:#C3CCDA}
+.help-l li::before{content:"";position:absolute;left:1px;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--m-mute)}
+.help-l b{color:var(--fg);font-weight:700}
+
+/* ---------- loading skeleton ---------- */
+.skel{display:flex;flex-direction:column;gap:14px;padding-top:8px}
+.skel .note{text-align:center}
+.sk{display:block;border-radius:var(--r-cd);background:rgba(255,255,255,.06);animation:skPulse 1s ease-in-out infinite alternate}
+.sk-top{display:flex;align-items:center;gap:14px}.sk-top>span{flex:1;display:flex;flex-direction:column;gap:8px}
+.sk-b{width:54px;height:58px;border-radius:12px}.sk-l{height:22px;width:62%;border-radius:6px}.sk-s{height:12px;width:40%;border-radius:6px}
+.sk-card{height:220px}.sk-card.sm{height:120px}
+@keyframes skPulse{from{opacity:.45}to{opacity:1}}
+
+/* ---------- screens arrive, they don't pop ---------- */
+#setup:not([hidden]),#post:not([hidden]){animation:scrIn var(--t-enter) var(--ease)}
+@keyframes scrIn{from{opacity:0}}
+#pausem>.panel{gap:12px}
+#pausem .pm-tools{gap:8px}
+#pausem .pm-tools .btn{flex:1 1 120px}
+
+/* ---------- toasts on menu screens: small, low, out of the way ---------- */
+#app:has(>.screen:not([hidden])) #toast{top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 76px);padding:10px 16px;border-radius:999px;font:600 14px/1.2 var(--body);letter-spacing:0;text-transform:none}
+#app:has(>.screen:not([hidden])) #toast::before{display:none}
+@media (orientation:landscape) and (max-height:520px){#app:has(>.screen:not([hidden])) #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}}
+/* with a sheet open its buttons own the bottom edge, so the toast moves to the top */
+#app:has(>#modal:not([hidden])) #toast{top:calc(env(safe-area-inset-top,0px) + 10px)!important;bottom:auto}
+
+@media (prefers-reduced-motion:reduce){
+  #toast,#hint,#hub>.tabs button,.seg.tg button,.seg.tg button i,.sk{transition-duration:.01ms!important;animation:none!important}
+}
