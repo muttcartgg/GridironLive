@@ -5153,7 +5153,9 @@ function startDefDrive(los,why){S.poss='away';fatRest(2);if(typeof BC!=='undefin
 function oppPossession(dist,why){
   S.phase='wait';S.rzActive=false;S.clockRun=false;S.poss='away';hideActs();
   /* Key moments plays every opponent snap on the engine (simmed, or handed to you when it matters) */
-  const mode=playStyle()==='km'||playStyle()==='rtg'?'play':LG.settings.defMode||'ask',go=m=>m==='play'?startDefDrive(110-dist,why):oppDrive(dist,why);
+  /* 'ask' no longer stops the game with a Play / Sim sheet on every change of possession: the defensive call sheet
+     that comes up next carries "Sim the drive" (05g), so asking first was a second tap for the same choice */
+  const dm=LG.settings.defMode||'ask',mode=playStyle()==='km'||playStyle()==='rtg'||dm==='ask'?'play':dm,go=m=>m==='play'?startDefDrive(110-dist,why):oppDrive(dist,why);
   if(mode==='ask')showOpt(`<b>${esc(S.away.abbr)} ball</b>${why?' · '+esc(why):''} · ${esc(spotLabelFor(110-dist,'away'))}`,[{t:'Play defense',s:'Control a defender',f:()=>go('play')},{t:'Sim the drive',s:'Play-by-play ticker',cls:'alt',f:()=>go('sim')}]);
   else go(mode);
 }
@@ -5181,6 +5183,9 @@ function halftime(){if(typeof suspHalf==="function")suspHalf();   /* half-game t
 function presnapExpire(){['#call','#opt','#snapBar'].forEach(s=>$(s).hidden=true);S.phase='wait';boundary(()=>toPresnap())}
 
 function toPresnap(){
+  /* a new snap: the camera CUTS to the new line (broadcast style, with a short dip) instead of sliding over players
+     who would otherwise teleport into the formation on screen; re-forming within this presnap glides (formTick) */
+  S.formSer=(S.formSer||0)+1;if(typeof camCut==='function'&&!S.ff)camCut();
   S.phase='presnap';S.playClock=LG.settings.pclock||25;S.preRun=0;play=null;
   if(tmoDue())fireTMO();else if(S.clockRun&&tmoPending()&&S.clock>lateThr())S.preRun=Math.max(0,CLK.preCap-(S.clock-lateThr()));aim=null;touch=null;stick=null;S.bullet=false;S.celebrate=null;S.pc=null;
   S.lob=false;S.hurry=false;$('#bulletBtn').hidden=true;$('#bulletBtn').setAttribute('aria-pressed','false');$('#snapBar').hidden=true;hideActs();
@@ -5209,7 +5214,22 @@ function setRoute(p,name,inD){
   const pts=[[p.x,p.y],...p.route];const a=pts[pts.length-2],z=pts[pts.length-1];const ddx=z[0]-a[0],ddy=z[1]-a[1],d=hyp(ddx,ddy)||1;
   p.cont=p.stop?null:[clamp(z[0]+ddx/d*40,0,119.4),clamp(z[1]+ddy/d*40,1.2,FW-1.2)];p.rpath=pts;
 }
+/* presnap re-forms (a play picked, an audible, a flip): the same men glide from where they stood to the new spots
+   (about a third of a second) instead of popping there; the snap finishes any glide still in progress */
+function formTick(dt){for(const p of P){if(p._gx==null)continue;p._gt+=dt;const u=Math.min(1,p._gt/p._gT),k=u*u*(3-2*u),ox=p.x,oy=p.y;
+  p.x=lerp(p._g0x,p._gx,k);p.y=lerp(p._g0y,p._gy,k);if(u>=1){p._gx=p._gy=null;p.vx=p.vy=0;continue}
+  p.vx=dt>0?(p.x-ox)/dt:0;p.vy=dt>0?(p.y-oy)/dt:0;p.phase+=hyp(p.x-ox,p.y-oy)*1.85}}   // smoothstep, a quarter to under half a second
+function formSnap(){for(const p of P)if(p._gx!=null){p.x=p._gx;p.y=p._gy;p._gx=p._gy=null;p.vx=p.vy=0}}
+/* snapped mid-glide (only possible inside ~0.4 s of a re-form): everyone takes his spot, so every assignment starts
+   exactly where it was drawn and the play is the same as without the glide; a man within a foot just plays on */
+function formStop(){for(const p of P)if(p._gx!=null){if(hyp(p._gx-p.x,p._gy-p.y)>.35){p.x=p._gx;p.y=p._gy}p._gx=p._gy=null;p.vx=p.vy=0}}
 function setupFormation(pc,flip){
+  const keep=S.phase==='presnap'&&S.formDone===S.formSer&&P.length&&!S.ff?new Map(P.map(p=>[p.side+(p.pl&&p.pl.id),p])):null;
+  formSetup(pc,flip);S.formDone=S.formSer;
+  if(keep)for(const p of P){const o=keep.get(p.side+(p.pl&&p.pl.id));if(!o)continue;const d=hyp(o.x-p.x,o.y-p.y);
+    if(d>.05&&d<30){p._gx=p.x;p._gy=p.y;p._g0x=p.x=o.x;p._g0y=p.y=o.y;p._gt=0;p._gT=clamp(.24+d*.011,.24,.45);p.phase=o.phase}}
+}
+function formSetup(pc,flip){
   const L=S.los,b=S.ballY,ot=offT(),dtm=defT(),o=dcOf(ot),d=dcOf(dtm);P=[];OFF=[];DEF=[];flip=flip||1;
   const fname=(pc&&pc.form)||'Gun Doubles',form=FORMS[fname]||FORMS['Gun Doubles'],used=new Set(),F=(l,i,n)=>pickFresh(l,i,n,used)||l[0];
   [-2.2,-1.1,0,1.1,2.2].forEach((dy,i)=>add('o','OL',L-.7,b+dy,o.OL[i]||o.OL[0],ot,'OL'+i));
@@ -5291,7 +5311,7 @@ function newPlay(pc,o){
     result:null,ballT0:0,rec:null,contested:false,tipped:new Set(),startDown:S.down,readT:0,nextRead:0,intended:null,swat:0};
 }
 function startPlay(pc,o){
-  if(S.phase!=='presnap')return;
+  if(S.phase!=='presnap')return;formStop();
   /* the CPU offense runs the clock down between plays (it stops at the 2:00 mark for the two-minute timeout) */
   if(S.clockRun&&!S.ot&&!uOff()){const sit=sitInfo(),want=(sit.leadingLate?24:sit.trailingLate||sit.twoMin?3:sit.margin>=17&&S.q>=4?20:13)+2*crowdNoise();let extra=Math.max(0,want-S.preRun);if(tmoPending()&&S.clock>lateThr())extra=Math.min(extra,S.clock-lateThr());S.clock=Math.max(0,S.clock-extra);S.preRun+=extra;if(S.clock<=0){['#call','#snapBar'].forEach(s=>$(s).hidden=true);S.phase='wait';return boundary(()=>toPresnap())}}
   if(tmoDue()){fireTMO();if(!uOff()){aiSnapT=2.6;return}}
@@ -5315,6 +5335,8 @@ function startPlay(pc,o){
   if(pl.fake){for(const d of DEF){if(d.role==='CB'||d.role==='S')d.x=Math.min(119,d.x+8);if(d.role==='LB')d.x=Math.min(119,d.x+3);d.react=.7}toast(pl.fake==='fakepunt'?'Fake punt!':'Fake field goal!')}
   if(pl.run&&(pl.run.reverse||pl.run.counter||pl.run.trap)){pl.fakeY=clamp(2*S.ballY-pl.gapY,4,FW-4);for(const d of DEF)if(d.role!=='DL')d.react=pl.run.reverse?1.05:.6;else if(pl.run.trap)d.react=.4}
   coverageSnap();slideSnap(pl);
+  /* shotgun / pistol: the snap travels back to the QB (visual only, simulate) instead of popping into his hands */
+  if(Q&&Q.x<S.los-.6){pl.snapFrom={x:S.los-.35,y:S.ballY};pl.snapT=Q.x<S.los-1.8?.24:.1}S.rpOK=false;
   S.phase='live';sfx('hike');$('#sit').classList.remove('on');if(!S.conv)tstat().plays++;if(S.down===3&&!S.conv)tstat().thirdA++;
   fx('snap',{play:pl});rulesSnap(pl);
   S.wasThird=S.down===3&&!S.conv;
@@ -5334,7 +5356,7 @@ function switchDefender(target){
   if(play&&play.st&&S.phase==='live')return stSwitch(target);
   if(uOff()||S.auto&&AUTO.exempt!=null)return;   // Road to Glory: you stay with your playerlet best=target||null;
   if(!best){const fx=ball.state==='air'?ball.tx:(play&&play.carrier?play.carrier.x:S.los),fy=ball.state==='air'?ball.ty:(play&&play.carrier?play.carrier.y:S.ballY);let bd=1e9;for(const d of DEF){if(d===S.ctrl)continue;const dd=hyp(d.x-fx,d.y-fy);if(dd<bd){bd=dd;best=d}}}
-  if(best){S.ctrl=best;S.ctrlKey=best.key;sfx('cut');if(S.phase==='presnap'&&!$('#call').hidden)defHead()}
+  if(best){S.ctrl=best;S.ctrlKey=best.key;sfx('cut');haptic('light');if(S.phase==='presnap'&&!$('#call').hidden)defHead()}
 }
 function userTackle(){
   if(play&&play.st&&stTap())return;
@@ -5354,20 +5376,22 @@ function startKick(dist,kind){
     width:clamp(.34-(dist-20)*.0055,.09,.34)*(.8+.1*k.acc)*(kind==='xp'?1.25:1)*(iced?.9:1),
     need:clamp(dist/maxFG(),.22,1.02)*(S.wx==='Rain'||S.wx==='Snow'?1.05:1),drift:S.wind&&S.wind.mph>6?clamp(windY()*S.wind.mph/120,-.14,.14)*(Math.random()<.5?1:-1)*R(.5,1):0,aSpeed:1.3+dist*.018,k};
   $('#kickHead').innerHTML=`<b>${kind==='xp'?'Extra point':kind==='fck'?'Fair catch kick':'Field goal'} · ${dist} yd</b> · K ${esc(k.last)} <span class="ovr">${ovr99(k)}</span>${S.wx==='Wind'?' · wind':''}`;
-  $('#kickBtn').textContent='Tap to aim';$('#kickBtn').disabled=false;$('#kick').hidden=false;hint('Tap once to lock direction, again to lock power');
+  $('#kickBtn').textContent=kind==='xp'?'Tap to kick':'Tap to aim';$('#kickBtn').disabled=false;$('#kick').hidden=false;hint(kind==='xp'?'One tap · kick it when the arrow is in the middle':'Tap once to lock direction, again to lock power');
   /* autopilot: the kicker kicks by his rating (Coach mode shows the meter for a beat first) */
   if(S.auto){if(S.ff){$('#kick').hidden=true;autoKick()}else{$('#kickBtn').textContent='Auto-kick · K rating';$('#kickBtn').disabled=true;hint('');setTimeout(autoKick,700)}}
 }
 function kickTap(){
   if(!kick)return;
-  if(kick.stage==='aim'){kick.lockA=kick.ang;kick.stage='power';kick.t=0;$('#kickBtn').textContent='Tap for power';return}
+  if(kick.stage==='aim'){kick.lockA=kick.ang;haptic('light');
+    /* extra points are one tap: the direction is the skill, the leg is never in doubt from 15 yards */
+    if(kick.kind==='xp'&&!S.auto){kick.stage='power';kick.pow=Math.min(1,kick.need+.12)}else{kick.stage='power';kick.t=0;$('#kickBtn').textContent='Tap for power';return}}
   if(kick.stage==='power'){kick.lockP=kick.pow;kick.stage='flight';kick.flight=0;const a=kick.lockA+kick.drift;kick.aimF=a;kick.good=Math.abs(a)<kick.width&&kick.lockP>=kick.need;if(kick.kind!=='fck'&&Math.random()<stBlockP(kick.kind,kick.dist,S.home)){kick.blocked=true;kick.good=false}$('#kickBtn').disabled=true;sfx('thump')}
 }
 function updateKick(dt){
   if(!kick)return;kick.t+=dt;
   if(kick.stage==='aim')kick.ang=Math.sin(kick.t*kick.aSpeed);
   if(kick.stage==='power'){const p=(kick.t*1.15)%2;kick.pow=p<1?p:2-p}
-  if(kick.stage==='flight'){kick.flight+=dt;if(kick.flight>=1.05&&!kick.done){kick.done=true;finishKick()}}
+  if(kick.stage==='flight'){kick.flight+=dt;if(kick.flight>=1&&!kick.done){kick.done=true;finishKick()}}
 }
 function finishKick(){
   const k=kick,good=k.good,fg=k.kind!=='xp';
@@ -5380,8 +5404,8 @@ function finishKick(){
     if(fg){dres(good?'FG':'Missed FG');if(good&&typeof BC!=='undefined')BC.scoringDrive(S.home)}logPBP(`${k.k.last} ${k.dist}-yard ${k.kind==='xp'?'extra point':k.kind==='fck'?'fair catch kick':'field goal'} is ${good?'good':'no good'}.`);
     if(good){sAdd(S.home,fg?'fgm':'xpm');haptic('success');banner("It's good",S.home.c1);sfx('roar');S.score[0]+=fg?3:1;fx(fg?'fg':'xp',{good:true,dist:k.dist,team:S.home});if(typeof BC!=='undefined')BC.say(k.kind==='xp'?'xp':'fg',{good:true,dist:k.dist})}else{banner('No good','#5B6672');sfx('groan');fx(fg?'fg':'xp',{good:false,dist:k.dist,team:S.home});if(typeof BC!=='undefined')BC.say('fg',{good:false,dist:k.dist})}
     kick=null;S.clockRun=false;if(k.kind==='fg'&&!S.ot)S.clock=Math.max(0,S.clock-5);
-    setTimeout(()=>{if(k.kind==='xp'||good){if(S.ot)return otNext('home');return boundary(afterScoreKickoff)}toOpp(Math.min(S.los-10,80),k.kind==='fck'?'Missed fair catch kick':'Missed field goal')},1300);
-  },250);
+    setTimeout(()=>{if(k.kind==='xp'||good){if(S.ot)return otNext('home');return boundary(afterScoreKickoff)}toOpp(Math.min(S.los-10,80),k.kind==='fck'?'Missed fair catch kick':'Missed field goal')},k.kind==='xp'?750:1000);
+  },120);
 }
 $('#kickBtn').onclick=()=>{ac();kickTap()};
 function showPAT(){
@@ -5391,6 +5415,10 @@ function showPAT(){
 function afterScoreKickoff(){
   S.phase='wait';S.clockRun=false;const from=S.kickPen?30:45;S.kickPen=false;
   const exp=!S.ot&&S.q===4&&S.clock<=S.qlen*.3&&S.score[0]<S.score[1];
+  /* a routine kickoff needs no question: kick it deep. The choice comes up when it can matter (4th quarter, not ahead;
+     the end of the half for a squib) */
+  const ask=!S.ot&&(S.q===4&&S.score[0]<=S.score[1]||S.q===2&&S.clock<=S.qlen*.12)||(typeof apOnside==='function'&&apOnside());
+  if(!ask&&!S.ff&&playStyle()!=='rtg')return stKickoff('away','deep',from,'Kickoff');
   showOpt('Kickoff',[{t:'Kick deep',s:'Touchback or a return',f:()=>stKickoff('away','deep',from,'Kickoff')},{t:'Squib kick',s:'Low line drive · no big return',cls:'alt',f:()=>stKickoff('away','squib',from,'Squib kick')},
     {t:'Onside kick',s:exp?'They expect it · about 1 in 8':'Surprise! Better odds',cls:'warn',ai:apOnside(),f:()=>stKickoff('away','onside',from,'Onside kick')}]);
 }
@@ -5569,8 +5597,8 @@ function logPass(res){if(S.conv)return null;const r={depth:ball.tx-S.los,y:ball.
 /* ---------- main simulation step ---------- */
 function simulate(dt){
   for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,Math.min(1,dt*9));const sp=hyp(p.vx,p.vy);p.phase+=sp*dt*1.85;p.throwT=Math.max(0,p.throwT-dt);if(p.animT>0)p.animT-=dt}
-  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,4);p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
-  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.jukeCD-=dt;for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
+  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,5.5);   /* ease up within a stride or two of the whistle */p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
+  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.jukeCD-=dt;if(pl.buf){pl.buf.t-=dt;if(pl.buf.t<=0)pl.buf=null;else if(pl.jukeCD<=0){const b=pl.buf;pl.buf=null;b.k==='juke'?doJuke(b.d):b.k==='spin'?doSpin():doTruck()}}for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
   rulesTick(pl);
   if(pl.st)return stSim(dt);
   if(!S.ot&&!S.conv)S.clock=Math.max(0,S.clock-dt*CLK.play);
@@ -5593,6 +5621,7 @@ function simulate(dt){
   for(const d of DEF)defAI(d,dt);
   for(const p of P){p.x+=p.vx*dt;p.y+=p.vy*dt;
     if(p.side==='d')p.face=p.vx>2.8?1:p.vx<-.3||Math.abs(p.vx)<2.8?-1:p.face;else p.face=p.vx<-2.8?-1:1;}
+  {const cr=pl.carrier,cp=cr&&cr.catchPull;if(cp){const f=Math.min(1,dt/Math.max(dt,cp.t));cr.x+=cp.x*f;cr.y+=cp.y*f;cp.x*=1-f;cp.y*=1-f;cp.t-=dt;if(f>=1)cr.catchPull=null}}
   /* collisions: blockers give way, defenders are not shoved backwards */
   const hold=pl.carrier;
   for(let i=0;i<P.length;i++){const a=P[i];if(a===hold||a.fallen)continue;for(let j=i+1;j<P.length;j++){const c=P[j];if(c===hold||c.fallen)continue;const ddx=c.x-a.x,ddy=c.y-a.y,d=hyp(ddx,ddy);if(d<.95&&d>1e-4){const o=(.95-d);let wa=.5,wc=.5;if(a.side!==c.side&&!(ball.state==='air'&&!ball.pitch)){if(a.side==='d'){wa=.2;wc=.8}else{wa=.8;wc=.2}}a.x-=ddx/d*o*wa;a.y-=ddy/d*o*wa;c.x+=ddx/d*o*wc;c.y+=ddy/d*o*wc}}}
@@ -5609,7 +5638,9 @@ function simulate(dt){
           if(Math.random()<.06&&!S.conv){tstat().sacks++;return stFumble(Q,d,'Strip sack')}return endPlay('sack')}}}
     }
   }
-  if(ball.state==='held'){const h=pl.carrier||Q;ball.x=h.x;ball.y=h.y;ball.z=0}
+  if(ball.state==='held'){const h=pl.carrier||Q;ball.x=h.x;ball.y=h.y;ball.z=0;
+    const bf=pl.ballFrom;if(bf&&h===pl.carrier){const k=(pl.t-bf.t0)/.14;if(k<1){ball.x=lerp(bf.x,h.x,k);ball.y=lerp(bf.y,h.y,k);ball.z=bf.z*(1-k)}else pl.ballFrom=null}
+    const sf=pl.snapFrom;if(sf&&h===Q&&pl.t<pl.snapT){const k=pl.t/pl.snapT;ball.x=lerp(sf.x,h.x,k);ball.y=lerp(sf.y,h.y,k);ball.z=.9*k*(1-k)}}
   else if(ball.state==='air'){
     if(!ball.pitch)return ballFlight(dt);
     ball.t+=dt;const p=Math.min(1,ball.t/ball.T);ball.x=lerp(ball.fx,ball.tx,p);ball.y=lerp(ball.fy,ball.ty,p);ball.z=4*ball.h*p*(1-p);ball.spin+=dt*20;
@@ -5650,7 +5681,9 @@ function endPlay(kind,msg){
   if(play.ended)return;{const cc=play.carrier;
     /* goal line: where the ball really was (the reach the officials can't see in the pile) is kept for the booth (05f) */
     if(kind==='tackle'&&cc&&cc.side==='o'&&isRunner()){const sp=spotOf(cc)+(play.fp||0);if(sp>=108.6)play.glBall=spotOf(cc)+.45*(play.fp||0)+(TK.behind?R(.15,.6):TK.head?R(0,.2):R(.05,.45));if(sp>=110)kind='td'}if(kind==='td'&&cc&&cc.side==='o'){play.tdRaw=spotOf(cc);play.tdY=cc.y}}play.ended=true;S.phase='dead';hint('');touch=null;aim=null;stick=null;$('#bulletBtn').hidden=true;hideActs();
-  deadT=kind==='td'?2.8:kind==='int'||kind==='fum'?2.1:1.35;
+  /* dead ball: about a second for a routine play (the next call is up as the players ease up), a beat longer for
+     turnovers and scores; any tap on the field skips what is left (06 input) */
+  deadT=kind==='td'?2.4:kind==='int'||kind==='fum'?1.8:kind==='inc'?.9:1.05;S.deadAt=performance.now();
   const c=play.carrier||Q;let x=kind==='inc'?S.los:kind==='td'?110:spotOf(c)+(kind==='tackle'?play.fp||0:0);
   if(kind!=='td'&&kind!=='inc'&&kind!=='int')x=Math.min(x,109.9);
   play.result={kind,x,y:clamp(c.y,0,FW),msg};
@@ -5673,8 +5706,13 @@ function endPlay(kind,msg){
   fatSave();
   logPlay(play.result,gain);
   if(S.wear){S.wear.push([uOff()?play.result.x:120-play.result.x,play.result.y]);if(S.wear.length>80)S.wear.shift()}
-  if(typeof BC!=='undefined')BC.play(play.result,gain);
+  if(typeof BC!=='undefined'){const d0=deadT;BC.play(play.result,gain);replayGate(d0,kind==='td'&&(gain>=15||play.caught&&play.contested)||kind==='int'||kind==='fum'&&play.result.defRec||gain>=30||!!play.bigHit&&gain>=8)}
 }
+/* instant replays only for genuinely big plays (long scores, turnovers, 30+ yard gains, a big hit on a real gain): the
+   broadcast offers one on more plays than that (and holds the whistle 3.2 s for the button); the rest get the normal beat */
+function replayGate(d0,big){S.rpOK=!!big;const b=$('#replayBtn');
+  if(!big){if(b)b.hidden=true;if(typeof BC!=='undefined')clearTimeout(BC.rbT);deadT=d0;return}
+  if(b&&!b.hidden)deadT=Math.max(d0,2.1)}   // long enough to reach the button; a tap on the field still skips
 function showCelebrate(){if(LG.settings.celebrate===false||S.auto)return;const b=$('#celebBtn');b.hidden=false;clearTimeout(showCelebrate.t);showCelebrate.t=setTimeout(()=>{b.hidden=true},2400)}
 $('#celebBtn').onclick=()=>{ac();$('#celebBtn').hidden=true;deadT=Math.max(deadT,30);
   const poses=[['point','Point to the sky'],['heisman','Heisman pose'],['flex','Flex'],['spike','Spike it'],['leap','Leap into the stands'],['salute','Salute'],['bow','Take a bow'],['huddle','Team huddle'],['taunt','Taunt the defense']];
@@ -5959,6 +5997,8 @@ function simRest(add,ot,otPts,f){
   S.lineLast=S.score.slice();
 }
 function slowMo(d){S.slowT=Math.max(S.slowT,d);S.ts=.32}
+/* hit-stop: the world holds for a few frames at the moment of a big collision (the shake and the sound land on it) */
+function hitStop(d){if(LG&&LG.settings&&LG.settings.shake===false)d*=.6;S.hitStop=Math.max(S.hitStop||0,d)}
 function hideActs(){const a=$('#actBar');if(a)a.hidden=true}
 function showActs(){
   const a=$('#actBar');if(!a||!play)return;if(S.auto&&!autoSprite()){a.hidden=true;return}if(play.st)return stActs();
@@ -6526,11 +6566,14 @@ function blockAI(p,dt){
 
 /* ---------- ball carrier: moves ---------- */
 function moveMul(){const pl=play;return (pl.jukeT>0?1.04:1)*(pl.spinT>0?.93:1)*(pl.truckT>0?.92:1)*(pl.stiffT>0?.96:1)*(pl.slowT>0?.78:1)*(pl.dive>0?1.25:1)}
-function doJuke(dir){if(!play||play.jukeCD>0||play.dive>0)return;const c=play.carrier;play.jukeT=.36;play.jukeCD=c&&c.user?.7:.9;play.jukeDir=dir;play.moveId++;play.move='juke';if(c){setAnim(c,'juke');spawnTurf(c.x,c.y,5)}sfx('cut')}
-function doSpin(){if(!play||play.jukeCD>0||play.dive>0)return;const c=play.carrier;play.spinT=.45;play.jukeCD=.95;play.moveId++;play.move='spin';if(c)setAnim(c,'spin');sfx('cut')}
+/* a move pressed just before the last one recovers is buffered (a quarter second) instead of being eaten */
+const moveBuf=(k,d)=>{if(play&&play.jukeCD>0&&play.jukeCD<.25&&play.dive<=0)play.buf={k,d,t:.25}};
+const moveFeel=c=>{if(c&&c.user&&(!S.auto||typeof userCtl==='function'&&userCtl(c)))haptic('light')};
+function doJuke(dir){if(!play||play.dive>0)return;if(play.jukeCD>0)return moveBuf('juke',dir);const c=play.carrier;moveFeel(c);play.jukeT=.36;play.jukeCD=c&&c.user?.7:.9;play.jukeDir=dir;play.moveId++;play.move='juke';if(c){setAnim(c,'juke');spawnTurf(c.x,c.y,5)}sfx('cut')}
+function doSpin(){if(!play||play.dive>0)return;if(play.jukeCD>0)return moveBuf('spin');const c=play.carrier;moveFeel(c);play.spinT=.45;play.jukeCD=.95;play.moveId++;play.move='spin';if(c)setAnim(c,'spin');sfx('cut')}
 /* TRUCK lowers the shoulder into a man in front; against a pursuer from the side or behind it becomes a stiff arm */
 function doTruck(){
-  if(!play||play.jukeCD>0||play.dive>0)return;const c=play.carrier;if(!c)return;
+  if(!play||play.dive>0)return;if(play.jukeCD>0)return moveBuf('truck');const c=play.carrier;if(!c)return;moveFeel(c);
   let best=null,bd=4.5;for(const d of DEF){if(d.stun>0||d.engaged)continue;const dd=hyp(d.x-c.x,d.y-c.y);if(dd<bd){bd=dd;best=d}}
   const vc=hyp(c.vx,c.vy),side=best&&vc>1&&((best.x-c.x)*c.vx+(best.y-c.y)*c.vy)/(bd*vc)<.4;
   play.moveId++;c.stiff=.5;
@@ -6612,7 +6655,7 @@ function tackled(c,d){
   const md=d.mass||230,pc=(c.mass||210)*Math.max(0,c.vx)*(.7+.08*c.pl.str),pd=(md*Math.max(0,-d.vx)+md*(TK.behind?1.2:TK.head?2.6:1.8))*(.78+.075*d.pl.str)+help*1.8;
   const fp=clamp((pc-pd)/700+R(-.25,.25),-1.2,TK.behind?1.4:2.2);
   pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=fp/.4;
-  if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
+  if(big){hitStop(.075);slowMo(.28);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
   const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
   if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110){   /* Turnover Specialist (04c) */
     /* the booth's data: when the knee hit vs when the ball came out (a big hit pops it at once; falling forward or
@@ -6775,7 +6818,9 @@ function completeTo(rec,cx,cy,contested,dive){
   const pl=play;ball.state='held';pl.carrier=rec;pl.caught=true;rec.route=null;if(!S.conv){tstat().comp++;ps(Q).pc++;ps(rec).rec++}
   pl.rec=logPass('C');
   OFF.forEach(o=>{if(o===rec||o===Q)return;if(o.role==='OL'||hyp(o.x-cx,o.y-cy)<9){o.blocker=true;o.tgt=null}else{o.route=null;o.cont=null}});
-  rec.x=cx;rec.y=cy;pl.catchX=rec.x;setAnim(rec,dive?'dive':'catch');{const k=dive?.35:contested?.5:.62;rec.vx*=k;rec.vy*=k;pl.slowT=Math.max(pl.slowT,.3)}
+  /* the hands and the ball meet over a few frames (rec pulled toward the catch point, the ball eased into his hands)
+     instead of the receiver popping to the spot */
+  rec.catchPull={x:cx-rec.x,y:cy-rec.y,t:.12};pl.ballFrom={x:ball.x,y:ball.y,z:ball.z||0,t0:pl.t};pl.catchX=cx;setAnim(rec,dive?'dive':'catch');{const k=dive?.35:contested?.5:.62;rec.vx*=k;rec.vy*=k;pl.slowT=Math.max(pl.slowT,.3)}
   if(contested){toast('Contested catch!');slowMo(.3)}
   if(rec.user&&userCtl(rec))hint('Drag to steer · JUKE / SPIN / TRUCK buttons');showActs();
   fx('catch',{p:rec,contested:!!contested});
@@ -6950,6 +6995,7 @@ const stWind=()=>S.wind?-windX()*S.wind.mph:0;   // tail wind (mph) for a kick t
 const stDir=c=>c.side==='o'?1:-1;
 function stClear(){for(const p of P){p.engBy=null;p.eng=null;p.engaged=false;p.tgt=null;p.claim=null;p.route=null;p.recCD=p.recCD||0;p.armTried=false;p.react=0}}
 function stPrep(recv,name){
+  if(typeof camCut==='function'&&!S.ff)camCut();   // a new unit on the field: cut, don't slide over teleporting players
   S.poss=recv;S.conv=false;S.rzActive=false;S.clockRun=false;hideActs();['#call','#opt','#snapBar','#kick'].forEach(s=>$(s).hidden=true);$('#toBtn').hidden=true;
   P=[];OFF=[];DEF=[];Q=null;RB=null;KP={};aim=null;touch=null;stick=null;S.bullet=false;S.celebrate=null;S.ctrl=null;S.pc=null;
   play=newPlay({name,cat:'st'});play.type='st';play.carrier=null;
@@ -7170,7 +7216,7 @@ function stTackled(c,d){
   fx('tackle',{c,d,big});S.shake=.12+d.pl.str*.05+(big?.25:0);spawnTurf(c.x,c.y,big?16:10);credit(d,'tkl',1,big?6:3);haptic(big?'heavy':'medium');injuryCheck(c,d,big);
   const md=d.mass||230,pc=(c.mass||210)*Math.max(0,c.vx*dir)*(.7+.08*c.pl.str),pd=(md*Math.max(0,-d.vx*dir)+md*(TK.behind?1.2:TK.head?2.6:1.8))*(.78+.075*d.pl.str);
   const fp=clamp((pc-pd)/700+R(-.25,.25),-1.2,1.4);pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=dir*pl.fp/.4;
-  if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true}
+  if(big){hitStop(.075);slowMo(.28);toast('BIG HIT!');sfx('thump');pl.bigHit=true}
   if(Math.random()<Math.max(.004,PHY.fum*.9+(big?.03:0)+.005*(3-c.pl.car)))return stFumble(c,d,'Fumble');
   stEnd('tackle');
 }
@@ -7328,7 +7374,7 @@ function stEnd(kind,msg,o){
   x=clamp(x,0,120);
   const team=side==='o'?offT():defT(),ret=c&&st.rx!=null?c:null,yds=ret?Math.round((clamp(x,10,110)-st.rx)*stDir(ret)):0;
   pl.result={kind:'st',sk,x,y:clamp(y,0,FW),side,msg,team};
-  deadT=sk==='td'?2.8:st.kind==='int'||st.fumBy||st.muff||st.blocked?2.2:1.6;
+  deadT=sk==='td'?2.4:st.kind==='int'||st.fumBy||st.muff||st.blocked?1.8:1.1;S.deadAt=performance.now();S.rpOK=false;
   /* stats */
   if(ret&&!st.fumBy&&['tackle','oob','td','down','spot'].includes(sk)){
     if(st.kind==='ko'&&ret.side==='o'){sAdd(ret.team,'kr');sAdd(ret.team,'krYds',yds);if(sk==='td')sAdd(ret.team,'krTD')}
@@ -7348,8 +7394,9 @@ function stEnd(kind,msg,o){
   else if(sk==='safety'){banner('Safety',(team===S.home?S.away:S.home).c1)}
   else{const lost=st.fumBy&&team!==st.fumBy.team;if(lost||st.muff&&side==='d'||st.kind==='ko'&&st.sub==='onside'&&side==='d'){banner(st.kind==='ko'?'Onside kick recovered!':'Turnover!',team.c1);sfx(team===S.home?'roar':'groan');fx('turnover',{team,kind:st.kind})}else sfx('whistle')}
   if(typeof BC!=='undefined'){
-    if(st.kind==='int')BC.play({kind:'int',x,y},0);
-    else if(st.kind==='fum'&&!st.chg&&side==='o'&&sk!=='td'&&sk!=='safety')BC.play({kind:'fum',x,y,defRec:false},Math.round(x-S.los));
+    const d0=deadT;
+    if(st.kind==='int'){BC.play({kind:'int',x,y},0);replayGate(d0,true)}
+    else if(st.kind==='fum'&&!st.chg&&side==='o'&&sk!=='td'&&sk!=='safety'){BC.play({kind:'fum',x,y,defRec:false},Math.round(x-S.los));replayGate(d0,false)}
     else if(sk!=='td')BC.card(head,line,`${team.abbr} ball${sk==='safety'?'':' at the '+lab}`,team.c1,sk==='td'||st.blocked||st.muff);
     if(sk==='td'||yds>=30||st.blocked||st.muff&&side==='d'||st.fumBy&&team!==st.fumBy.team)stReplay()}
   if(st.fumBy){play.result.defRec=team!==st.fumBy.team;fx('fumble',{p:st.fumBy,x:ball.x,y:ball.y,team:st.fumBy.team})}
@@ -7357,7 +7404,7 @@ function stEnd(kind,msg,o){
   fx('dead',{kind:sk,p:c,x:S.los+(ret?yds:0)*(ret&&ret.side==='d'?-1:1),y,team:ret?ret.team:team,msg});
   if(st.kind==='int'||st.kind==='fum')fatSave();   // kick units are fresh legs: only scrimmage snaps count toward fatigue
 }
-function stReplay(){if(LG.settings.replay==='off'||typeof REC==='undefined'||REC.length<=20)return;if(LG.settings.replay==='auto'){deadT+=.3;setTimeout(()=>{if(S.phase==='dead')startReplay()},700)}else{$('#replayBtn').hidden=false;deadT=Math.max(deadT,3.2);setTimeout(()=>$('#replayBtn').hidden=true,3200)}}
+function stReplay(){if(LG.settings.replay==='off'||typeof REC==='undefined'||REC.length<=20)return;S.rpOK=true;if(LG.settings.replay==='auto'){deadT+=.3;setTimeout(()=>{if(S.phase==='dead')startReplay()},700)}else{$('#replayBtn').hidden=false;deadT=Math.max(deadT,2.6);clearTimeout(stReplay.t);stReplay.t=setTimeout(()=>$('#replayBtn').hidden=true,2600)}}
 /* the runner was down before the ball came out: the offense keeps it at the spot of the tackle (the fumble comes off the books) */
 function fumbleOverturn(p0){
   const pl=play,st=pl.st,r=pl.result,fr=pl.fumRev,c=st.fumBy;
@@ -7485,7 +7532,7 @@ function reviewBeat(what,call,res,cb){
   S.phase='wait';hideActs();$('#toBtn').hidden=true;
   const card=(a,b)=>{if(typeof BC!=='undefined'&&typeof BC.card==='function'&&LG.settings.gfx!==false)BC.card('REPLAY REVIEW',esc(a),b,'#33415C',false);else toast(a+(b?' · '+b:''))};
   card('Play under review',what);sfx('whistle');
-  setTimeout(()=>{const t=call==='overturned'?'Overturned':call==='confirmed'?'Confirmed':'Ruling stands';card(t,res);fx('review',{call,what,res});logPBP(`Replay review · ${what} · ${t}${res?' · '+res:''}`);setTimeout(cb,1100)},1500);
+  setTimeout(()=>{const t=call==='overturned'?'Overturned':call==='confirmed'?'Confirmed':'Ruling stands';card(t,res);fx('review',{call,what,res});logPBP(`Replay review · ${what} · ${t}${res?' · '+res:''}`);setTimeout(cb,850)},1150);
 }
 /* booth reviews of close calls on scrimmage plays: goal line / pylon touchdowns, goal-line spots, sideline catches.
    A call is overturned only when the engine's own data disagrees with it: pl.glBall (where the ball really was at
@@ -7554,7 +7601,7 @@ function penPre(f,extra){
   const ran=!!S.clockRun;if(S.clockRun)S.clockHold=Math.max(S.clockHold||0,1.6);   // a running clock restarts on the ready signal
   penAnnounce(`${PN[f.k]} · ${sideWord(f)} · ${y<5?'half the distance':y+' yards'} · ${ddAt(S.los,S.down,S.firstDownX)}${extra||''}`);
   fx('penalty',{name:PN[f.k],yards:y,on:f.side,team:f.team,accepted:true,k:f.k});
-  const go=()=>setTimeout(()=>{if(S.phase==='wait')toPresnap()},1000);
+  const go=()=>setTimeout(()=>{if(S.phase==='wait')toPresnap()},800);
   if(ran&&runoffDue(f))return setTimeout(()=>runoffOffer(f,go),900);
   go();
 }
@@ -7974,7 +8021,7 @@ function renderCall(){
   const row=$('#callRow');
   row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;CALL_FORM='';renderCall()});
   row.querySelectorAll('[data-fm]').forEach(b=>b.onclick=()=>{ac();CALL_FORM=b.dataset.fm;renderCall()});
-  const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},420)};
+  const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},460)};   // just past the re-form glide
   row.querySelector('[data-coach]').onclick=()=>{ac();const p=picks[0]?picks[0].p:aiPickPlay(S.home,sitInfo());pickPlay(p)};
   row.querySelectorAll('[data-pid]').forEach(b=>b.onclick=()=>{ac();pickPlay(PLAYBOOK[+b.dataset.pid])});
   row.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{ac();callSpecial(b.dataset.sp)});
@@ -8002,7 +8049,7 @@ function renderDefCall(){
   row.querySelectorAll('[data-fr]').forEach(b=>b.onclick=()=>{ac();S.defFront=b.dataset.fr;renderDefCall()});
   row.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>{ac();const k=b.dataset.dc;
     if(k==='sim'){$('#call').hidden=true;S.phase='wait';return oppDrive(110-S.los,'Drive continues')}
-    S.defCall=k;if(k==='auto'&&S.defFront&&S.defFront!=='auto')S.dcPick=[S.defFront,S.dcPick[1]];setupFormation(S.aiPlay,S.flip);$('#call').hidden=true;S.phase='presnap';aiSnapT=1.3+.8*crowdNoise();if(typeof BC!=='undefined')BC.presnap();hint(crowdNoise()>.5?'Get set… it is loud in here':'Get set…')});
+    S.defCall=k;if(k==='auto'&&S.defFront&&S.defFront!=='auto')S.dcPick=[S.defFront,S.dcPick[1]];setupFormation(S.aiPlay,S.flip);$('#call').hidden=true;S.phase='presnap';aiSnapT=.75+.5*crowdNoise();if(typeof BC!=='undefined')BC.presnap();hint(crowdNoise()>.5?'Get set… it is loud in here':'Get set…')});
   scrollHint(row);$('#call').hidden=false;
 }
 
@@ -8666,7 +8713,10 @@ function defenderAt(sx,sy){const [wx,wy]=toWorld(sx,sy);let b=null,bd=2.6;for(co
 cv.addEventListener('pointerdown',e=>{
   ac();if(S.paused)return;
   if(S.phase==='kick'){if(!S.auto)kickTap();return}
-  if(S.phase==='replay'){if(typeof teleDown==='function')teleDown(e);return}
+  /* a tap skips: the replay (unless drawing on it), or what is left of the dead-ball beat (not in the first instant,
+     so a finger still mashing TACKLE at the whistle doesn't skip the result) */
+  if(S.phase==='replay'){if(typeof RP!=='undefined'&&RP&&RP.draw){if(typeof teleDown==='function')teleDown(e)}else if(typeof endReplay==='function')endReplay();return}
+  if(S.phase==='dead'&&play&&deadT>.2&&performance.now()-(S.deadAt||0)>350&&$('#celebSheet').hidden){deadT=.12;return}
   if(S.phase==='presnap'&&!uOff()){const d=defenderAt(e.clientX,e.clientY);if(d)switchDefender(d);return}
   if(S.phase==='presnap'&&hotRouteAt(e.clientX,e.clientY))return;
   if(S.phase!=='live'||!play)return;
@@ -8842,6 +8892,9 @@ function padPoll(){
   }
   if(S.paused)return;
   if(S.phase==='kick'&&dn(PB.A)){kickTap();return}
+  /* parity with the touch taps: A skips the dead-ball beat, Y takes the offered replay, A / B end a replay */
+  if(S.phase==='replay'&&(dn(PB.A)||dn(PB.B))){if(typeof endReplay==='function')endReplay();return}
+  if(S.phase==='dead'&&play){if(dn(PB.Y)&&padVis($('#replayBtn'))){startReplay();return}if(dn(PB.A)&&deadT>.2&&now-(S.deadAt||0)>350){deadT=.12;return}}
   if(S.phase==='presnap'&&!uOff()&&dn(PB.B)&&!padVis($('#call')))switchDefender();
   /* live play: left stick = joystick (unless a finger is on the field) */
   if(S.phase==='live'&&play&&!touch){
@@ -9186,12 +9239,20 @@ function camFit(b,maxYd){const s0=sc*zoomMul(),pd=camPad(),land=H<=W*1.2;
 /* camera centre on one axis so [c0,c1] fits a view of size v with margins m0/m1 (bias 0..1 leans toward c1's side being roomier);
    when it cannot fit (zoom still easing out, or at the floor) keep the anchor a inside its margin. Continuous in v. */
 function camPan(c0,c1,a,v,m0,m1,bias){const lo=c1+m1-v/2,hi=c0-m0+v/2;if(lo<=hi)return lo+(hi-lo)*bias;const w=c1>c0?clamp((a-c0)/(c1-c0),0,1):0;return hi+(lo-hi)*w}
+/* screen shake: a quick damped wobble (not per-frame noise) that grows with the square of the hit, so ordinary tackles
+   barely move the picture and only the big ones are felt; off with Settings › Screen shake */
+function shakeXY(now){const s=S.shake;if(!(s>0)||LG&&LG.settings&&LG.settings.shake===false)return [0,0];const a=Math.min(1,s)*Math.min(1,s)*1.6;return [Math.sin(now*.083)*a*9,Math.cos(now*.067)*a*6]}
+/* a cut: the next frame jumps straight to the new framing (zoom and pan) and the main loop dips it in from dark (09) */
+function camCut(){cam.cut=1}
 function updateCam(dt){
   dt=Math.min(dt,.05);const retro=LG&&LG.settings.style==='retro';
+  /* between plays ('wait': a kick result, a change of possession, a flag; the try sheet; behind the kick view) the shot
+     holds instead of sliding back to a stale line of scrimmage; whatever comes next (a snap, a kickoff) cuts */
+  if((S.phase==='wait'||S.phase==='pat'||S.phase==='kick')&&!cam.cut){S.shake=Math.max(0,S.shake-dt*1.6);return}
   let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
   if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1;
     /* frame the formation: the QB, every eligible receiver and your defender stay in view on any phone (hot routes, reads) */
-    if(!retro&&OFF.length){box=[S.los,S.los,S.ballY,S.ballY];if(Q)camBox(box,Q.x,Q.y);for(const o of OFF)if(eligible(o))camBox(box,o.x,o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y);zst=.9}}
+    if(!retro&&OFF.length){box=[S.los,S.los,S.ballY,S.ballY];if(Q)camBox(box,Q.x,Q.y);for(const o of OFF)if(eligible(o))camBox(box,o._gx!=null?o._gx:o.x,o._gy!=null?o._gy:o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y);zst=.9}}
   if((S.phase==='live'||S.phase==='dead'||S.phase==='replay')&&ball){z=1;st=.42;const h=(play&&play.carrier)||Q;
     if(ball.state==='air'){const far=hyp(ball.tx-ball.fx,ball.ty-ball.fy),r=play&&play.intended;bx=ball.x;by=ball.y;z=clamp(1.04-.008*far,.8,.95);st=.36;zst=.5;
       box=camBox([bx,bx,by,by],ball.tx,ball.ty);if(r&&r.side==='o')camBox(box,r.x,r.y);if(!uOff()&&S.ctrl&&!(play&&play.st))camBox(box,S.ctrl.x,S.ctrl.y);
@@ -9203,21 +9264,25 @@ function updateCam(dt){
         for(const o of OFF)if(eligible(o)&&!o.blocker){const lx=o.x+clamp((o.vx||0)*.6,0,5);if(lx>far){far=lx;t=o}}
         far=t?clamp(far,Q.x,Q.x+maxRange()):Q.x+12;z=clamp(1.07-.009*(far-Q.x),.86,.95);st=.5;zst=.6;box=camBox([bx,bx,by,by],far,t?t.y:by);
         for(const o of OFF)if(eligible(o)&&!o.blocker)camBox(box,Math.min(o.x,Q.x+maxRange()),o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y)}
-      else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.97:1;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.9;st=.32;
+      else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.88:.92;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.82;st=.32;zst=play&&play.t<1.2?1.5:1.05;
         if(!retro&&!uOff()&&S.ctrl&&S.ctrl!==h&&!play.st&&S.phase==='live')box=camBox([fx,fx,fy,fy],S.ctrl.x,S.ctrl.y)}}   // your defender stays in the shot
-    const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.07}
+    const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.05;
+    /* after the whistle the zoom holds (no zooming in on the pile only to cut back out for the next snap) */
+    if(S.phase==='dead'){z=cam.z;box=null;zbox=null}}
   {const ex=S.auto&&AUTO.exempt!=null&&(S.phase==='presnap'||S.phase==='live')?autoSprite():null;if(ex&&ex.side==='o'&&!retro){if(!box)box=[fx,fx,fy,fy];camBox(box,ex.x,ex.y)}}   // Road to Glory: your player stays in the shot
-  if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box,S.phase==='presnap'?64:play&&play.type==='pass'&&!play.scramble?80:58));
-  camDamp('z',z,zst,dt);
+  if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box,S.phase==='presnap'?60:play&&play.type==='pass'&&!play.scramble?78:56));
+  const cut=cam.cut;if(cut){cam.z=z;cam.zv=0}else camDamp('z',z,zst,dt);
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY),ext=retro?0:7;
   const pd=box?camPad().map(v=>v/(s*VY)):[0,0];   // overlay pads in world yards (framing only)
   let tx=fx+vw*.1;if(box){tx=camPan(box[0],box[1],bx,vw,CAM_M.l,CAM_M.r,.62);fy=camPan(box[2],box[3],by,vh,CAM_M.t+pd[0],CAM_M.b+pd[1],.5)}
   const mn=-6-ext+vw/2,mx=126+ext-vw/2;tx=mn>mx?60:clamp(tx,mn,mx);
   const ylo=(retro?-8:-11)+vh/2,yhi=FW+3+pd[1]-vh/2,ymid=retro?CEN-3:CEN-3.6,ty=clamp(fy,Math.min(ylo,ymid),Math.max(yhi,ymid));   // whole width in view: hold mid
-  camDamp('x',tx,st,dt);camDamp('y',ty,st*1.2,dt);
-  /* keep the ball (or its carrier) on screen even when the spring lags; between plays (presnap) glide back to the new LOS instead */
-  const hw=S.phase==='presnap'?1e9:vw/2-Math.min(vw*.2,3);if(bx<cam.x-hw){cam.x=bx+hw;cam.xv=Math.min(cam.xv||0,0)}else if(bx>cam.x+hw){cam.x=bx-hw;cam.xv=Math.max(cam.xv||0,0)}
-  if(vh<FW+10){const hh=vh/2-1.5;if(by<cam.y-hh){cam.y=by+hh;cam.yv=Math.min(cam.yv||0,0)}else if(by>cam.y+hh){cam.y=by-hh;cam.yv=Math.max(cam.yv||0,0)}}
+  if(cut){cam.x=tx;cam.y=ty;cam.xv=cam.yv=0;cam.cut=0;S.cutA=1;S.cutN=(S.cutN||0)+1}
+  else{camDamp('x',tx,st,dt);camDamp('y',ty,st*1.2,dt);
+  /* keep the ball (or its carrier) on screen when the spring lags: pulled back in quickly (no snap), hard-held only at the very edge */
+  if(S.phase==='live'||S.phase==='dead'||S.phase==='replay'){const hw=vw/2-Math.min(vw*.2,3),hx=vw/2-.8;let o=bx<cam.x-hw?bx+hw-cam.x:bx>cam.x+hw?bx-hw-cam.x:0;
+    if(o){cam.x+=o*Math.min(1,dt*10);cam.x=clamp(cam.x,bx-hx,bx+hx);cam.xv=o<0?Math.min(cam.xv||0,0):Math.max(cam.xv||0,0)}
+    if(vh<FW+10){const hh=vh/2-1.5,hy=vh/2-.6;o=by<cam.y-hh?by+hh-cam.y:by>cam.y+hh?by-hh-cam.y:0;if(o){cam.y+=o*Math.min(1,dt*10);cam.y=clamp(cam.y,by-hy,by+hy);cam.yv=o<0?Math.min(cam.yv||0,0):Math.max(cam.yv||0,0)}}}}
   S.shake=Math.max(0,S.shake-dt*1.6);
 }
 
@@ -9231,7 +9296,7 @@ function drawModern(now){
   c.fillStyle=night?'#03050a':'#0a111d';c.fillRect(0,0,W,H);
   if(!S.home)return;
   if(!crowdM)buildCrowdModern();
-  c.save();if(S.shake>0)c.translate(R(-1,1)*S.shake*14,R(-1,1)*S.shake*10);
+  c.save();if(S.shake>0){const [ox,oy]=shakeXY(now);if(ox||oy)c.translate(ox,oy)}
   // stadium (08g): sky, light towers, press box, decks, club band, ribbon boards
   ensureStadium();drawStands(c,s,now);
   // field: cached turf + paint (08f), wear/snow, scuffs; end-zone stands beyond the end lines
@@ -9253,7 +9318,12 @@ function drawModern(now){
   if(aim&&S.phase==='live'&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y),h=aim.bullet?d*.03+.45:aim.lob?d*.18+1.3:d*.11+.5,col=aim.bullet?'#FF8A2A':aim.lob?'#7FD4FF':'#FFFFFF';
     c.save();c.fillStyle=col;const n=Math.max(10,Math.round(d*1.6));const ph=(now/40)%3;
     for(let k=0;k<=n;k++){const t=k/n;const z=4*h*t*(1-t);const px=X(lerp(Q.x,aim.x,t)),py=Y(lerp(Q.y,aim.y,t))-z*s*.9-s*1.6;c.globalAlpha=.25+.75*t;c.beginPath();c.arc(px,py,Math.max(1.5,s*.12)*(((k+ph)|0)%3===0?1.5:1),0,7);c.fill()}
-    c.globalAlpha=1;const ax=X(aim.x),ay=Y(aim.y);c.strokeStyle=col;c.lineWidth=2;c.beginPath();c.ellipse(ax,ay,Math.max(6,aim.err*s),Math.max(4,aim.err*s*VY),0,0,7);c.stroke();
+    c.globalAlpha=1;const ax=X(aim.x),ay=Y(aim.y);
+    /* the lead read: the receiver who gets to this spot, a dashed line to where he will be when the ball arrives, and the
+       reticle turns green when that is inside the throw's accuracy circle */
+    let rc=col;{const T=typeof flightT==='function'?flightT(d,aim.bullet,aim.lob,Q.pl.thr):d/22;let r=null,rd=7;for(const o of OFF){if(o===Q||o.blocker||!eligible(o))continue;const lx=o.x+(o.vx||0)*T,ly=o.y+(o.vy||0)*T,dd=hyp(lx-aim.x,ly-aim.y);if(dd<rd){rd=dd;r=[o,lx,ly]}}
+      if(r){const on=rd<=Math.max(1.3,aim.err+.7);if(on)rc='#5BE37D';c.strokeStyle=on?'rgba(91,227,125,.9)':'rgba(255,255,255,.55)';c.lineWidth=2;c.setLineDash([4,5]);c.beginPath();c.moveTo(X(r[0].x),Y(r[0].y));c.lineTo(X(r[1]),Y(r[2]));c.stroke();c.setLineDash([]);c.beginPath();c.ellipse(X(r[1]),Y(r[2]),s*.5,s*.5*VY,0,0,7);c.stroke()}}
+    c.strokeStyle=rc;c.lineWidth=2;c.beginPath();c.ellipse(ax,ay,Math.max(6,aim.err*s),Math.max(4,aim.err*s*VY),0,0,7);c.stroke();
     c.fillStyle=aim.bullet?'rgba(255,138,42,.15)':'rgba(255,255,255,.12)';c.fill();
     c.beginPath();c.moveTo(ax-8,ay);c.lineTo(ax+8,ay);c.moveTo(ax,ay-6);c.lineTo(ax,ay+6);c.stroke();
     c.font='800 13px -apple-system,system-ui,sans-serif';c.textAlign='center';c.fillStyle='#fff';c.shadowColor='#000';c.shadowBlur=4;c.fillText(`${Math.round(d)} YD${aim.bullet?' · BULLET':aim.lob?' · LOB':''}`,ax,ay-Math.max(10,aim.err*s*VY)-10);c.restore()}
@@ -9377,7 +9447,7 @@ function drawRetro(now){
   if(inGame&&ball){const bx=AX(ball.x),by=AY(ball.y);if(ball.state==='air'){c.fillStyle='rgba(0,0,0,.4)';c.fillRect(bx-1,by,3,1);const yy=by-Math.round(ball.z*A*.8)-5;c.fillStyle='#8A4A22';c.fillRect(bx-1,yy,3,2);c.fillStyle='#fff';c.fillRect(bx,yy,1,1)}else if(S.phase==='presnap'){c.fillStyle='#8A4A22';c.fillRect(bx-1,by-1,3,2)}else{const h=(play&&play.carrier)||Q;if(h){const f=h.face||1;c.fillStyle='#8A4A22';c.fillRect(AX(h.x)+f*2-1,AY(h.y)-5-Math.round((h.z||0)*A*.9),3,2)}}}
   for(const p of particles){c.fillStyle=p.c;c.fillRect(AX(p.x),AY(p.y)-Math.round(p.z*A*.9),1,1)}
   ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;
-  const sx=S.shake>0?Math.round(R(-1,1)*S.shake*8):0;ctx.drawImage(low,0,0,LW,LH,sx*DPR,0,LW*PXS*DPR,LH*PXS*DPR);
+  const sx=S.shake>0?Math.round(shakeXY(performance.now())[0]*.8):0;ctx.drawImage(low,0,0,LW,LH,sx*DPR,0,LW*PXS*DPR,LH*PXS*DPR);
   ctx.setTransform(DPR,0,0,DPR,0,0);drawWeather(ctx);
 }
 function draw(now){if(LG&&LG.settings.style==='retro')drawRetro(now);else drawModern(now);if(S.phase==='replay')drawOverlay(now)}
@@ -10076,12 +10146,14 @@ function athPose(p,now){
   const A=ATP,ph=S.phase,pre=ph==='presnap',rp=ph==='replay',pl=play,face=p.face||1;
   const sp=Math.sqrt(p.vx*p.vx+p.vy*p.vy),run=clamp(sp/7.5,0,1.2),car=ATH.car===p&&!pre;
   A.ph=p.phase||0;A.run=run;A.rot=0;A.kx=face;A.carry=0;A.u=0;A.ball='';
+  /* turning: the mirror eases through a narrow side-on profile (~0.15 s) instead of flipping in one frame */
+  {const t=p._ft?Math.min(.1,(now-p._ft)/1000):0;p._ft=now;const f=pre||p._fk==null?face:p._fk+(face-p._fk)*Math.min(1,t*15);p._fk=f;A.kx=f<0?Math.min(-.24,f):Math.max(.24,f)}
   if(sp>.6){A.legs='run';A.st=.06+.26*Math.min(1,run);A.lean=.08+.27*Math.min(1,run);A.cr=.04+.08*run;A.aN=A.aF='swing'}
   else{A.legs='stand';A.st=0;A.lean=.06;A.cr=.06;A.aN=A.aF='hang'}
   /* sharp deceleration: plant */
   if(!pre&&!rp){const dtm=p._pt?(now-p._pt)/1000:0;p._pt=now;if(dtm>0&&dtm<.1&&(p._sp||0)>4.5&&((p._sp||0)-sp)/dtm>16)p._pl=now+190;p._sp=sp;
     if(p._pl>now){A.legs='wide';A.lean=-.14;A.cr=.3;A.aN=A.aF='balance'}}
-  if(pre)athStance(p);
+  if(pre&&p._gx==null)athStance(p);   // a man gliding into a new spot (05 formTick) jogs there
   else if((p.side==='d'||p.role==='OL'||p===Q)&&sp>.8&&p.vx*face<-.6&&!p.engaged){A.legs='back';A.lean=-.02;A.cr=.22;A.st=.06+.1*run;A.run=run*.5}
   /* quarterback: drop, hold, aim, throw */
   if(!pre&&p===Q&&pl){const thr=rp?0:(p.throwT||0);
@@ -10946,7 +11018,7 @@ function frame(now){
   if(S.photo){draw(now);requestAnimationFrame(frame);return}
   if(lastSbHidden!==$('#sb').hidden){lastSbHidden=$('#sb').hidden;resize()}
   if(S.slowT>0){S.slowT-=real;S.ts=.32}else S.ts=Math.min(1,S.ts+real*2.5);
-  const dt=real*S.ts;
+  let dt=real*S.ts;if(S.hitStop>0){S.hitStop-=real;if(S.phase==='live'||S.phase==='dead')dt=0}   // hit-stop (05 hitStop)
   const active=!S.paused&&!['hub','boot','over','menu'].includes(S.phase);
   /* Key moments (05h): while simming, the engine fast-forwards with no field rendering */
   if(active&&!S.ff&&LG&&LG.rtg)rtgFrame();   // Road to Glory (05i): special teams are simmed
@@ -10959,7 +11031,7 @@ function frame(now){
       if(S.clockRun&&!S.ot&&!S.conv&&S.preRun<CLK.preCap){if(S.clockHold>0)S.clockHold-=real;else{const d=Math.min(real*CLK.pre,CLK.preCap-S.preRun);S.clock=Math.max(0,S.clock-d);S.preRun+=d;if(S.clock<=0)presnapExpire()}}
       if(!uOff()&&aiSnapT>0){aiSnapT-=real;if(aiSnapT<=0&&S.phase==='presnap'){aiSnapT=0;startPlay(S.aiPlay)}}
       for(const p of P){p.fallP=lerp(p.fallP,0,.12);p.z=Math.max(0,(p.z||0)-real*3)}
-      motionTick(real);
+      formTick(real);motionTick(real);
     }
     else if(S.phase==='kick'){updateKick(real);drawKick()}
     else if(S.phase==='replay'){if(typeof updateReplay==='function')updateReplay(real)}
@@ -10971,6 +11043,8 @@ function frame(now){
     else for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,.12);p.z=Math.max(0,(p.z||0)-real*3)}
     if(typeof BC!=='undefined')BC.tick(real);
     updateParticles(dt);updateWeather(real);updateCam(real);draw(now);
+    /* camera cut (08 camCut): a short dip from dark so the new shot reads as a cut, not a jump */
+    if(S.cutA>0){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=`rgba(5,8,13,${(.5*S.cutA*S.cutA).toFixed(3)})`;ctx.fillRect(0,0,W,H);S.cutA=Math.max(0,S.cutA-real*4.5)}
     hudAcc+=real;if(hudAcc>.1){hudAcc=0;hud();apBarTick()}
   }else if(S.phase==='over'&&S.stormT>0){S.stormT-=real;updateParticles(real);draw(now)}
   requestAnimationFrame(frame);
@@ -10992,8 +11066,13 @@ boot();
 function SL(k){const s=LG&&LG.settings&&LG.settings.sl;return s&&s[k]!=null?s[k]:1}
 
 /* haptics: native Taptic Engine through the iOS bridge, vibration elsewhere */
+/* one vocabulary everywhere: light = a UI tap or a cut, medium = contact (tackle, catch in traffic), heavy = a big hit or a
+   turnover, success / error = scores and misses. Never spammy: the same kind waits 90 ms, anything waits 45 ms, and a
+   heavier pulse is not followed by a lighter one inside 160 ms (it would just blur into it) */
+const HAPW={light:1,medium:2,heavy:3,success:3,error:3};let hapLast=0,hapK='',hapW=0;
 function haptic(k){
   if(!LG||LG.settings.haptics===false)return;
+  {const t=performance.now(),w=HAPW[k]||1,dt=t-hapLast;if(dt<45||k===hapK&&dt<90||w<hapW&&dt<160)return;hapLast=t;hapK=k;hapW=w}
   try{const h=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.haptic;if(h){h.postMessage(k);return}
     if(navigator.vibrate)navigator.vibrate(k==='heavy'?40:k==='medium'?22:k==='success'?[30,40,30]:k==='error'?[60,30,60]:10)}catch(e){}
 }
@@ -11045,7 +11124,7 @@ function settleInjuries(){
 
 /* pre-snap motion: the slot (or flanker) runs across the formation before the snap */
 function startMotion(){
-  if(!S.pc||S.phase!=='presnap'||S.motion)return;
+  if(!S.pc||S.phase!=='presnap'||S.motion)return;formSnap();
   const cand=[KP.H,KP.Z,KP.X].find(p=>p&&p.role==='WR'&&!p.blocker);if(!cand)return;
   const b=S.ballY,side=Math.sign(cand.y-b)||1;
   S.motion={p:cand,ty:clamp(b-side*Math.max(4,Math.abs(cand.y-b)*.45),3,FW-3),name:cand.rname,def:DEF.find(d=>d.cov&&d.cov.type==='man'&&d.cov.tgt===cand)};
@@ -11273,6 +11352,13 @@ $('#pmPhoto').onclick=()=>{ac();$('#pauseInfo').hidden=true;enterPhoto()};
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!b||b.disabled)return;
   haptic(b.matches('.btn:not(.ghost):not(.sm),#snapGo,[role="switch"]')?'medium':'light');if(!(LG&&LG.settings.uiSounds===false))sfx('tap')},true);
 setTimeout(()=>{const sp=$('#splash');if(sp)sp.remove()},2200);
+
+/* instant replay (08b): only after a play the engine marked big (05 replayGate / 05e stReplay); an automatic replay shows
+   the last couple of seconds once, a little slowed, and hands back (a tap on the field ends any replay, 06) */
+if(typeof startReplay==='function'){const _sr=startReplay;startReplay=function(){const b=$('#replayBtn'),asked=b&&!b.hidden;if(!asked&&!S.rpOK)return;_sr();
+  if(RP&&!asked){RP.auto=true;RP.slow=false;RP.t=Math.max(0,REC.length-80);const e=$('#rpSlow');if(e)e.setAttribute('aria-pressed','false')}}}
+if(typeof endReplay==='function'){const _er=endReplay;endReplay=function(){const had=typeof RP!=='undefined'&&!!RP;_er();if(had&&typeof camCut==='function')camCut()}}   // back to the live shot with a cut, not a slide
+if(typeof updateReplay==='function'){const _ur=updateReplay;updateReplay=function(real){if(RP&&RP.auto){if(RP.t>=REC.length+6)return endReplay();return _ur(real*.55)}return _ur(real)}}
 
 /* =========================================================
    10b · Back up to Files / Restore from file
