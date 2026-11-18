@@ -410,11 +410,10 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 
   <section id="pausem" class="modal" hidden>
     <div class="panel">
-      <div class="eyebrow">Timeout on the field</div>
       <div class="h1">Paused</div>
-      <p class="note">Your game is saved at every snap, so you can close the app and resume later. Sim to final plays out the rest of the game instantly, based on both rosters and the current score.</p>
+      <p class="note">Saved at every snap. Close the app any time and pick up where you left off.</p>
       <div class="btns"><button class="btn light" id="resume">Resume</button><button class="btn ghost" id="simRest">Sim to final</button><button class="btn ghost" id="quitHub">Save &amp; exit</button></div>
-      <div class="btns"><button class="btn ghost sm" id="pmBox">Box score</button><button class="btn ghost sm" id="pmPbp">Play-by-play</button><button class="btn ghost sm" id="pmDrv">Drive chart</button><button class="btn ghost sm" id="pmPhoto">Photo mode</button></div>
+      <div class="btns pm-tools"><button class="btn ghost sm" id="pmBox">Box score</button><button class="btn ghost sm" id="pmPbp">Play-by-play</button><button class="btn ghost sm" id="pmDrv">Drive chart</button><button class="btn ghost sm" id="pmPhoto">Photo mode</button></div>
       <div id="pmMode" class="pm-mode"></div>
       <div id="pauseInfo" hidden></div>
     </div>
@@ -423,8 +422,9 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
   <section id="post" class="screen" hidden><div class="scroll"><div class="wrap" id="postBody"></div></div></section>
   <section id="hub" class="screen" hidden>
     <div class="hub-top" id="hubTop"></div>
-    <nav class="tabs" id="tabs" role="tablist"></nav>
+    <nav class="subtabs" id="subtabs" role="tablist" aria-label="Sections" hidden></nav>
     <div class="scroll" id="hubScroll"><div class="wrap" id="hubBody"></div></div>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Main"></nav>
   </section>
   <section id="setup" class="screen" hidden><div class="stage" aria-hidden="true"><canvas id="stageCv" width="220" height="400"></canvas></div><div class="scroll" style="padding-top:calc(env(safe-area-inset-top,0px) + 16px)"><div class="wrap" id="setupBody"></div></div></section>
   <section id="modal" class="modal" hidden><div class="panel" id="modalBody"></div></section>

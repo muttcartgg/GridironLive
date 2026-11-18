@@ -374,7 +374,7 @@ function openProspect(i){
 /* home tab card */
 function rcHomeCard(){
   const L=LG;if(L.phase!=='regular')return '';const R=rcEnsure(L);if(!R)return '';const cl=rcClass(L),last=R.log[0];
-  return `<div class="card rc-home"><div class="setrow"><div><div class="eyebrow">Recruiting · ${R.season+1} class${rcAuto(L)?' · staff on it':` · ${rcLive(L)?R.hrs:0} hrs left`}</div><div class="h2">Class #${cl.rank} · ${cl.n} commits <small class="note">${cl.stars[5]}×5★ ${cl.stars[4]}×4★ ${cl.stars[3]}×3★</small></div></div><button class="btn sm ghost" id="rcGo">Recruiting</button></div>${last?`<p class="note">${esc(last.t)}</p>`:''}</div>`}
+  return `<div class="card rc-home"><div class="setrow"><div><div class="eyebrow">Recruiting · ${R.season+1} class${rcAuto(L)?' · staff on it':` · ${rcLive(L)?R.hrs:0} hrs left`}</div><div class="h2">Class #${cl.rank} · ${cl.n} commit${cl.n===1?"":"s"} <small class="note">${cl.stars[5]}×5★ ${cl.stars[4]}×4★ ${cl.stars[3]}×3★</small></div></div><button class="btn sm ghost" id="rcGo">Recruiting</button></div>${last?`<p class="note">${esc(last.t)}</p>`:''}</div>`}
 /* offseason: class review (stage 'recruit') and National Signing Day (stage 'signing') */
 function rcReviewHTML(prog){
   const L=LG,R=rcEnsure(L),u=L.user;if(!R)return prog;const cl=rcClass(L),mine=R.p.filter(P=>P.m===u).sort((a,b)=>b.c-a.c);

@@ -284,6 +284,8 @@ function gameOfWeek(){
 /* wiring for buttons that live in the page shell */
 $('#pmBox').onclick=()=>{ac();pausePanel('box')};$('#pmPbp').onclick=()=>{ac();pausePanel('pbp')};$('#pmDrv').onclick=()=>{ac();pausePanel('drv')};
 $('#pmPhoto').onclick=()=>{ac();$('#pauseInfo').hidden=true;enterPhoto()};
-/* menu tap feedback */
-document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!b)return;if(LG&&LG.settings.uiSounds===false)return;sfx('tap');haptic('light')},true);
+/* tap feedback: a firmer tick for primary actions and switches, a light one for everything else.
+   Haptics follow the Haptics setting on their own; the click sound follows Menu tap sounds. */
+document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!b||b.disabled)return;
+  haptic(b.matches('.btn:not(.ghost):not(.sm),#snapGo,[role="switch"]')?'medium':'light');if(!(LG&&LG.settings.uiSounds===false))sfx('tap')},true);
 setTimeout(()=>{const sp=$('#splash');if(sp)sp.remove()},2200);
