@@ -297,4 +297,5 @@ setTimeout(()=>{const sp=$('#splash');if(sp)sp.remove()},2200);
    the last couple of seconds once, a little slowed, and hands back (a tap on the field ends any replay, 06) */
 if(typeof startReplay==='function'){const _sr=startReplay;startReplay=function(){const b=$('#replayBtn'),asked=b&&!b.hidden;if(!asked&&!S.rpOK)return;_sr();
   if(RP&&!asked){RP.auto=true;RP.slow=false;RP.t=Math.max(0,REC.length-80);const e=$('#rpSlow');if(e)e.setAttribute('aria-pressed','false')}}}
+if(typeof endReplay==='function'){const _er=endReplay;endReplay=function(){const had=typeof RP!=='undefined'&&!!RP;_er();if(had&&typeof camCut==='function')camCut()}}   // back to the live shot with a cut, not a slide
 if(typeof updateReplay==='function'){const _ur=updateReplay;updateReplay=function(real){if(RP&&RP.auto){if(RP.t>=REC.length+6)return endReplay();return _ur(real*.55)}return _ur(real)}}

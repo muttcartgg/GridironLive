@@ -131,16 +131,18 @@ function setRoute(p,name,inD){
 }
 /* presnap re-forms (a play picked, an audible, a flip): the same men glide from where they stood to the new spots
    (about a third of a second) instead of popping there; the snap finishes any glide still in progress */
-function formTick(dt){for(const p of P){if(p._gx==null)continue;const ex=p._gx-p.x,ey=p._gy-p.y,d=Math.sqrt(ex*ex+ey*ey);
-  if(d<.05){p.x=p._gx;p.y=p._gy;p._gx=p._gy=null;p.vx=p.vy=0;continue}
-  const m=Math.min(d*Math.min(1,dt*9),dt*22),sx=ex/d*m,sy=ey/d*m;p.x+=sx;p.y+=sy;p.vx=dt>0?sx/dt:0;p.vy=dt>0?sy/dt:0;p.phase+=m*1.85}}   // ease in, never faster than a sprint
+function formTick(dt){for(const p of P){if(p._gx==null)continue;p._gt+=dt;const u=Math.min(1,p._gt/p._gT),k=u*u*(3-2*u),ox=p.x,oy=p.y;
+  p.x=lerp(p._g0x,p._gx,k);p.y=lerp(p._g0y,p._gy,k);if(u>=1){p._gx=p._gy=null;p.vx=p.vy=0;continue}
+  p.vx=dt>0?(p.x-ox)/dt:0;p.vy=dt>0?(p.y-oy)/dt:0;p.phase+=hyp(p.x-ox,p.y-oy)*1.85}}   // smoothstep, a quarter to under half a second
 function formSnap(){for(const p of P)if(p._gx!=null){p.x=p._gx;p.y=p._gy;p._gx=p._gy=null;p.vx=p.vy=0}}
-function formStop(){for(const p of P)if(p._gx!=null){p._gx=p._gy=null;p.vx=p.vy=0}}   // snapped mid-glide: play on from where he is (no pop)
+/* snapped mid-glide: a man nearly there plays on from where he is (no pop); one still far off (a flip) is put on his
+   spot so his assignment starts where it was drawn */
+function formStop(){for(const p of P)if(p._gx!=null){if(hyp(p._gx-p.x,p._gy-p.y)>1.5){p.x=p._gx;p.y=p._gy}p._gx=p._gy=null;p.vx=p.vy=0}}
 function setupFormation(pc,flip){
   const keep=S.phase==='presnap'&&S.formDone===S.formSer&&P.length&&!S.ff?new Map(P.map(p=>[p.side+(p.pl&&p.pl.id),p])):null;
   formSetup(pc,flip);S.formDone=S.formSer;
   if(keep)for(const p of P){const o=keep.get(p.side+(p.pl&&p.pl.id));if(!o)continue;const d=hyp(o.x-p.x,o.y-p.y);
-    if(d>.05&&d<30){p._gx=p.x;p._gy=p.y;p.x=o.x;p.y=o.y;p.phase=o.phase}}
+    if(d>.05&&d<30){p._gx=p.x;p._gy=p.y;p._g0x=p.x=o.x;p._g0y=p.y=o.y;p._gt=0;p._gT=clamp(.24+d*.011,.24,.45);p.phase=o.phase}}
 }
 function formSetup(pc,flip){
   const L=S.los,b=S.ballY,ot=offT(),dtm=defT(),o=dcOf(ot),d=dcOf(dtm);P=[];OFF=[];DEF=[];flip=flip||1;
@@ -269,7 +271,7 @@ function switchDefender(target){
   if(play&&play.st&&S.phase==='live')return stSwitch(target);
   if(uOff()||S.auto&&AUTO.exempt!=null)return;   // Road to Glory: you stay with your playerlet best=target||null;
   if(!best){const fx=ball.state==='air'?ball.tx:(play&&play.carrier?play.carrier.x:S.los),fy=ball.state==='air'?ball.ty:(play&&play.carrier?play.carrier.y:S.ballY);let bd=1e9;for(const d of DEF){if(d===S.ctrl)continue;const dd=hyp(d.x-fx,d.y-fy);if(dd<bd){bd=dd;best=d}}}
-  if(best){S.ctrl=best;S.ctrlKey=best.key;sfx('cut');if(S.phase==='presnap'&&!$('#call').hidden)defHead()}
+  if(best){S.ctrl=best;S.ctrlKey=best.key;sfx('cut');haptic('light');if(S.phase==='presnap'&&!$('#call').hidden)defHead()}
 }
 function userTackle(){
   if(play&&play.st&&stTap())return;
@@ -511,7 +513,7 @@ function logPass(res){if(S.conv)return null;const r={depth:ball.tx-S.los,y:ball.
 function simulate(dt){
   for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,Math.min(1,dt*9));const sp=hyp(p.vx,p.vy);p.phase+=sp*dt*1.85;p.throwT=Math.max(0,p.throwT-dt);if(p.animT>0)p.animT-=dt}
   if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,5.5);   /* ease up within a stride or two of the whistle */p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
-  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.jukeCD-=dt;for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
+  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.jukeCD-=dt;if(pl.buf){pl.buf.t-=dt;if(pl.buf.t<=0)pl.buf=null;else if(pl.jukeCD<=0){const b=pl.buf;pl.buf=null;b.k==='juke'?doJuke(b.d):b.k==='spin'?doSpin():doTruck()}}for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
   rulesTick(pl);
   if(pl.st)return stSim(dt);
   if(!S.ot&&!S.conv)S.clock=Math.max(0,S.clock-dt*CLK.play);
@@ -534,6 +536,7 @@ function simulate(dt){
   for(const d of DEF)defAI(d,dt);
   for(const p of P){p.x+=p.vx*dt;p.y+=p.vy*dt;
     if(p.side==='d')p.face=p.vx>2.8?1:p.vx<-.3||Math.abs(p.vx)<2.8?-1:p.face;else p.face=p.vx<-2.8?-1:1;}
+  {const cr=pl.carrier,cp=cr&&cr.catchPull;if(cp){const f=Math.min(1,dt/Math.max(dt,cp.t));cr.x+=cp.x*f;cr.y+=cp.y*f;cp.x*=1-f;cp.y*=1-f;cp.t-=dt;if(f>=1)cr.catchPull=null}}
   /* collisions: blockers give way, defenders are not shoved backwards */
   const hold=pl.carrier;
   for(let i=0;i<P.length;i++){const a=P[i];if(a===hold||a.fallen)continue;for(let j=i+1;j<P.length;j++){const c=P[j];if(c===hold||c.fallen)continue;const ddx=c.x-a.x,ddy=c.y-a.y,d=hyp(ddx,ddy);if(d<.95&&d>1e-4){const o=(.95-d);let wa=.5,wc=.5;if(a.side!==c.side&&!(ball.state==='air'&&!ball.pitch)){if(a.side==='d'){wa=.2;wc=.8}else{wa=.8;wc=.2}}a.x-=ddx/d*o*wa;a.y-=ddy/d*o*wa;c.x+=ddx/d*o*wc;c.y+=ddy/d*o*wc}}}
@@ -551,6 +554,7 @@ function simulate(dt){
     }
   }
   if(ball.state==='held'){const h=pl.carrier||Q;ball.x=h.x;ball.y=h.y;ball.z=0;
+    const bf=pl.ballFrom;if(bf&&h===pl.carrier){const k=(pl.t-bf.t0)/.14;if(k<1){ball.x=lerp(bf.x,h.x,k);ball.y=lerp(bf.y,h.y,k);ball.z=bf.z*(1-k)}else pl.ballFrom=null}
     const sf=pl.snapFrom;if(sf&&h===Q&&pl.t<pl.snapT){const k=pl.t/pl.snapT;ball.x=lerp(sf.x,h.x,k);ball.y=lerp(sf.y,h.y,k);ball.z=.9*k*(1-k)}}
   else if(ball.state==='air'){
     if(!ball.pitch)return ballFlight(dt);

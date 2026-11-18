@@ -150,7 +150,9 @@ function completeTo(rec,cx,cy,contested,dive){
   const pl=play;ball.state='held';pl.carrier=rec;pl.caught=true;rec.route=null;if(!S.conv){tstat().comp++;ps(Q).pc++;ps(rec).rec++}
   pl.rec=logPass('C');
   OFF.forEach(o=>{if(o===rec||o===Q)return;if(o.role==='OL'||hyp(o.x-cx,o.y-cy)<9){o.blocker=true;o.tgt=null}else{o.route=null;o.cont=null}});
-  rec.x=cx;rec.y=cy;pl.catchX=rec.x;setAnim(rec,dive?'dive':'catch');{const k=dive?.35:contested?.5:.62;rec.vx*=k;rec.vy*=k;pl.slowT=Math.max(pl.slowT,.3)}
+  /* the hands and the ball meet over a few frames (rec pulled toward the catch point, the ball eased into his hands)
+     instead of the receiver popping to the spot */
+  rec.catchPull={x:cx-rec.x,y:cy-rec.y,t:.12};pl.ballFrom={x:ball.x,y:ball.y,z:ball.z||0,t0:pl.t};pl.catchX=cx;setAnim(rec,dive?'dive':'catch');{const k=dive?.35:contested?.5:.62;rec.vx*=k;rec.vy*=k;pl.slowT=Math.max(pl.slowT,.3)}
   if(contested){toast('Contested catch!');slowMo(.3)}
   if(rec.user&&userCtl(rec))hint('Drag to steer · JUKE / SPIN / TRUCK buttons');showActs();
   fx('catch',{p:rec,contested:!!contested});
