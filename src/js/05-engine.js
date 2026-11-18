@@ -896,6 +896,7 @@ const ncaaRating=s=>s.att?((8.4*s.passYds)+(330*s.passTD)+(100*s.comp)-(200*s.in
 function gameOver(){
   if(S.phase==='over')return;S.phase='over';if(S.ff)kmStopFF();hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);   // a game that ends while simming stops the fast-forward right away (no frame race); the HUD comes down at the final whistle
   if(typeof BC!=='undefined')BC.stop();
+  fx('final',{won:S.score[0]>S.score[1]});   // 07b: the winner's fight song
   const g=S.game,[us,them]=S.score,won=us>them,s=S.stats,os=S.ostats||newGameStats(),rate=ncaaRating(s),u=S.home,opp=S.away;
   const storm=won&&S.userHome&&rankOf(opp.id)&&rankOf(opp.id)<=10&&(!rankOf(u.id)||rankOf(u.id)>rankOf(opp.id)+5);
   /* the user is listed first (g.h) in many neutral-site games (conference title games, bowls, playoffs), so map by g.h, not by who has home field */

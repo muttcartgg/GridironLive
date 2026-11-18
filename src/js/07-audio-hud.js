@@ -21,7 +21,7 @@ function sfx(k){if(!AC||muted)return;try{const t=AC.currentTime;
   else if(k==='roar'){noise(2.8,650,.5,.3);noise(2.4,1500,.8,.12,'bandpass',.05);if(typeof BC!=='undefined')BC.hype=Math.min(1,BC.hype+.25)}
   else if(k==='groan')noise(1.2,350,.8,.18);
   else if(k==='tap'){tone(1200,0,.03,'sine',.02)}
-  else if(k==='fight'){const d0=performance.now()-hornAt<900?1.5:0;const n=[392,523,659,784,659,784,880,784];n.forEach((f,i)=>{tone(f,d0+.15+i*.14,.13,'square',.03);tone(f/2,d0+.15+i*.14,.13,'triangle',.03)})}
+  else if(k==='fight'){if(typeof fsTakesFight==='function'&&fsTakesFight())return;/* 07b plays the team's fight song */const d0=performance.now()-hornAt<900?1.5:0;const n=[392,523,659,784,659,784,880,784];n.forEach((f,i)=>{tone(f,d0+.15+i*.14,.13,'square',.03);tone(f/2,d0+.15+i*.14,.13,'triangle',.03)})}
 }catch(e){}}
 /* stadium horn: detuned sawtooth chord through an opening low-pass */
 function stadHorn(){if(!AC||muted)return;try{hornAt=performance.now();const t=AC.currentTime+.03,lp=AC.createBiquadFilter(),g=AC.createGain();lp.type='lowpass';lp.Q.value=1.2;lp.frequency.setValueAtTime(300,t);lp.frequency.linearRampToValueAtTime(1500,t+.22);

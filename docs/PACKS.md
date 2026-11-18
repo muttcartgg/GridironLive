@@ -82,3 +82,19 @@ packs; **Use real stadium designs** (Settings › Rosters & data) switches the d
   Wikipedia's FBS stadium list (capacity, opened, surface). The architecture is a stylized description; 111 of 138 entries are `approx`.
 - QA: `NODE_PATH=$(npm root -g) node tools/qa/stadiums.js [stadiums.json] [web/index.html] [outdir]` (import through Settings, new-dynasty
   copy, the setting, landscape/portrait/kick-view screenshots of six stadiums, stadium-layer timing).
+
+## Fight songs (`gridiron-live-fight-songs`, version 1)
+
+Built by `python3 -I tools/data/build_fightsongs.py` → `gridiron-live-2026-fight-songs.json` (about 26 KB, one entry per FBS program). Import it like any pack (**Settings → Rosters & data → Import rosters & logos**), on its own or as a `"fightSongs"` list inside a roster pack. It is kept on the device for every dynasty; **Remove imported data** deletes it (your recordings stay).
+
+```json
+{"format":"gridiron-live-fight-songs","version":1,
+ "songs":[{"team":"MICH","school":"Michigan","espnId":130,"title":"The Victors","year":1898,"composer":"Louis Elbel","pd":true,
+           "alt":{"title":"…","year":1919,"pd":true},
+           "melody":{"song":"The Victors","approx":true,"tempo":208,"meter":"2/4","pickup":0,"key":"Bb","notes":[[67,2],[64,0.5],[0,1]]}}]}
+```
+
+- Teams match like pack teams (espnId, then `team`/abbr, then school). **No lyrics.** `notes` are `[midi, beats]` (0 = rest).
+- A melody is only allowed (builder check + game check) for a song marked `"pd": true`: first published before 1929, so public domain in the US. Melodies are approximate arrangements (`"approx": true`).
+- Every other song is metadata only (`"pd": false`). Add your own recording in **Settings → Fight songs → Play & upload…** (MP3/M4A/WAV under 600 KB, per team); a recording always wins over the band. Teams with neither get an original generic march.
+- The band plays the scoring team's song after a touchdown (the visiting band a little quieter), the host's opening phrase at the opening kickoff, and the winner's song at the final whistle. **Fight songs** On/Off and **Band volume** are in the same card; Sound Off mutes it.
