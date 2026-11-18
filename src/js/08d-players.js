@@ -180,12 +180,14 @@ function athPose(p,now){
   const A=ATP,ph=S.phase,pre=ph==='presnap',rp=ph==='replay',pl=play,face=p.face||1;
   const sp=Math.sqrt(p.vx*p.vx+p.vy*p.vy),run=clamp(sp/7.5,0,1.2),car=ATH.car===p&&!pre;
   A.ph=p.phase||0;A.run=run;A.rot=0;A.kx=face;A.carry=0;A.u=0;A.ball='';
+  /* turning: the mirror eases through a narrow side-on profile (~0.15 s) instead of flipping in one frame */
+  {const t=p._ft?Math.min(.1,(now-p._ft)/1000):0;p._ft=now;const f=pre||p._fk==null?face:p._fk+(face-p._fk)*Math.min(1,t*15);p._fk=f;A.kx=f<0?Math.min(-.24,f):Math.max(.24,f)}
   if(sp>.6){A.legs='run';A.st=.06+.26*Math.min(1,run);A.lean=.08+.27*Math.min(1,run);A.cr=.04+.08*run;A.aN=A.aF='swing'}
   else{A.legs='stand';A.st=0;A.lean=.06;A.cr=.06;A.aN=A.aF='hang'}
   /* sharp deceleration: plant */
   if(!pre&&!rp){const dtm=p._pt?(now-p._pt)/1000:0;p._pt=now;if(dtm>0&&dtm<.1&&(p._sp||0)>4.5&&((p._sp||0)-sp)/dtm>16)p._pl=now+190;p._sp=sp;
     if(p._pl>now){A.legs='wide';A.lean=-.14;A.cr=.3;A.aN=A.aF='balance'}}
-  if(pre)athStance(p);
+  if(pre&&p._gx==null)athStance(p);   // a man gliding into a new spot (05 formTick) jogs there
   else if((p.side==='d'||p.role==='OL'||p===Q)&&sp>.8&&p.vx*face<-.6&&!p.engaged){A.legs='back';A.lean=-.02;A.cr=.22;A.st=.06+.1*run;A.run=run*.5}
   /* quarterback: drop, hold, aim, throw */
   if(!pre&&p===Q&&pl){const thr=rp?0:(p.throwT||0);

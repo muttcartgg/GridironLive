@@ -34,7 +34,10 @@ function defenderAt(sx,sy){const [wx,wy]=toWorld(sx,sy);let b=null,bd=2.6;for(co
 cv.addEventListener('pointerdown',e=>{
   ac();if(S.paused)return;
   if(S.phase==='kick'){if(!S.auto)kickTap();return}
-  if(S.phase==='replay'){if(typeof teleDown==='function')teleDown(e);return}
+  /* a tap skips: the replay (unless drawing on it), or what is left of the dead-ball beat (not in the first instant,
+     so a finger still mashing TACKLE at the whistle doesn't skip the result) */
+  if(S.phase==='replay'){if(typeof RP!=='undefined'&&RP&&RP.draw){if(typeof teleDown==='function')teleDown(e)}else if(typeof endReplay==='function')endReplay();return}
+  if(S.phase==='dead'&&play&&deadT>.2&&performance.now()-(S.deadAt||0)>350&&$('#celebSheet').hidden){deadT=.12;return}
   if(S.phase==='presnap'&&!uOff()){const d=defenderAt(e.clientX,e.clientY);if(d)switchDefender(d);return}
   if(S.phase==='presnap'&&hotRouteAt(e.clientX,e.clientY))return;
   if(S.phase!=='live'||!play)return;

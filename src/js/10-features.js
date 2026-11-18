@@ -8,8 +8,13 @@
 function SL(k){const s=LG&&LG.settings&&LG.settings.sl;return s&&s[k]!=null?s[k]:1}
 
 /* haptics: native Taptic Engine through the iOS bridge, vibration elsewhere */
+/* one vocabulary everywhere: light = a UI tap or a cut, medium = contact (tackle, catch in traffic), heavy = a big hit or a
+   turnover, success / error = scores and misses. Never spammy: the same kind waits 90 ms, anything waits 45 ms, and a
+   heavier pulse is not followed by a lighter one inside 160 ms (it would just blur into it) */
+const HAPW={light:1,medium:2,heavy:3,success:3,error:3};let hapLast=0,hapK='',hapW=0;
 function haptic(k){
   if(!LG||LG.settings.haptics===false)return;
+  {const t=performance.now(),w=HAPW[k]||1,dt=t-hapLast;if(dt<45||k===hapK&&dt<90||w<hapW&&dt<160)return;hapLast=t;hapK=k;hapW=w}
   try{const h=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.haptic;if(h){h.postMessage(k);return}
     if(navigator.vibrate)navigator.vibrate(k==='heavy'?40:k==='medium'?22:k==='success'?[30,40,30]:k==='error'?[60,30,60]:10)}catch(e){}
 }
@@ -61,7 +66,7 @@ function settleInjuries(){
 
 /* pre-snap motion: the slot (or flanker) runs across the formation before the snap */
 function startMotion(){
-  if(!S.pc||S.phase!=='presnap'||S.motion)return;
+  if(!S.pc||S.phase!=='presnap'||S.motion)return;formSnap();
   const cand=[KP.H,KP.Z,KP.X].find(p=>p&&p.role==='WR'&&!p.blocker);if(!cand)return;
   const b=S.ballY,side=Math.sign(cand.y-b)||1;
   S.motion={p:cand,ty:clamp(b-side*Math.max(4,Math.abs(cand.y-b)*.45),3,FW-3),name:cand.rname,def:DEF.find(d=>d.cov&&d.cov.type==='man'&&d.cov.tgt===cand)};
@@ -287,3 +292,9 @@ $('#pmPhoto').onclick=()=>{ac();$('#pauseInfo').hidden=true;enterPhoto()};
 /* menu tap feedback */
 document.addEventListener('click',e=>{const b=e.target.closest&&e.target.closest('button');if(!b)return;if(LG&&LG.settings.uiSounds===false)return;sfx('tap');haptic('light')},true);
 setTimeout(()=>{const sp=$('#splash');if(sp)sp.remove()},2200);
+
+/* instant replay (08b): only after a play the engine marked big (05 replayGate / 05e stReplay); an automatic replay shows
+   the last couple of seconds once, a little slowed, and hands back (a tap on the field ends any replay, 06) */
+if(typeof startReplay==='function'){const _sr=startReplay;startReplay=function(){const b=$('#replayBtn'),asked=b&&!b.hidden;if(!asked&&!S.rpOK)return;_sr();
+  if(RP&&!asked){RP.auto=true;RP.slow=false;RP.t=Math.max(0,REC.length-80);const e=$('#rpSlow');if(e)e.setAttribute('aria-pressed','false')}}}
+if(typeof updateReplay==='function'){const _ur=updateReplay;updateReplay=function(real){if(RP&&RP.auto){if(RP.t>=REC.length+6)return endReplay();return _ur(real*.55)}return _ur(real)}}

@@ -265,7 +265,7 @@ function tackled(c,d){
   const md=d.mass||230,pc=(c.mass||210)*Math.max(0,c.vx)*(.7+.08*c.pl.str),pd=(md*Math.max(0,-d.vx)+md*(TK.behind?1.2:TK.head?2.6:1.8))*(.78+.075*d.pl.str)+help*1.8;
   const fp=clamp((pc-pd)/700+R(-.25,.25),-1.2,TK.behind?1.4:2.2);
   pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=fp/.4;
-  if(big){slowMo(.4);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
+  if(big){hitStop(.075);slowMo(.28);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
   const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
   if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110){   /* Turnover Specialist (04c) */
     /* the booth's data: when the knee hit vs when the ball came out (a big hit pops it at once; falling forward or

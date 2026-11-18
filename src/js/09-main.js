@@ -8,7 +8,7 @@ function frame(now){
   if(S.photo){draw(now);requestAnimationFrame(frame);return}
   if(lastSbHidden!==$('#sb').hidden){lastSbHidden=$('#sb').hidden;resize()}
   if(S.slowT>0){S.slowT-=real;S.ts=.32}else S.ts=Math.min(1,S.ts+real*2.5);
-  const dt=real*S.ts;
+  let dt=real*S.ts;if(S.hitStop>0){S.hitStop-=real;if(S.phase==='live'||S.phase==='dead')dt=0}   // hit-stop (05 hitStop)
   const active=!S.paused&&!['hub','boot','over','menu'].includes(S.phase);
   /* Key moments (05h): while simming, the engine fast-forwards with no field rendering */
   if(active&&!S.ff&&LG&&LG.rtg)rtgFrame();   // Road to Glory (05i): special teams are simmed
@@ -21,7 +21,7 @@ function frame(now){
       if(S.clockRun&&!S.ot&&!S.conv&&S.preRun<CLK.preCap){if(S.clockHold>0)S.clockHold-=real;else{const d=Math.min(real*CLK.pre,CLK.preCap-S.preRun);S.clock=Math.max(0,S.clock-d);S.preRun+=d;if(S.clock<=0)presnapExpire()}}
       if(!uOff()&&aiSnapT>0){aiSnapT-=real;if(aiSnapT<=0&&S.phase==='presnap'){aiSnapT=0;startPlay(S.aiPlay)}}
       for(const p of P){p.fallP=lerp(p.fallP,0,.12);p.z=Math.max(0,(p.z||0)-real*3)}
-      motionTick(real);
+      formTick(real);motionTick(real);
     }
     else if(S.phase==='kick'){updateKick(real);drawKick()}
     else if(S.phase==='replay'){if(typeof updateReplay==='function')updateReplay(real)}
@@ -33,6 +33,8 @@ function frame(now){
     else for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,.12);p.z=Math.max(0,(p.z||0)-real*3)}
     if(typeof BC!=='undefined')BC.tick(real);
     updateParticles(dt);updateWeather(real);updateCam(real);draw(now);
+    /* camera cut (08 camCut): a short dip from dark so the new shot reads as a cut, not a jump */
+    if(S.cutA>0){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=`rgba(5,8,13,${(.5*S.cutA*S.cutA).toFixed(3)})`;ctx.fillRect(0,0,W,H);S.cutA=Math.max(0,S.cutA-real*4.5)}
     hudAcc+=real;if(hudAcc>.1){hudAcc=0;hud();apBarTick()}
   }else if(S.phase==='over'&&S.stormT>0){S.stormT-=real;updateParticles(real);draw(now)}
   requestAnimationFrame(frame);

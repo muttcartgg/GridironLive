@@ -66,6 +66,9 @@ function padPoll(){
   }
   if(S.paused)return;
   if(S.phase==='kick'&&dn(PB.A)){kickTap();return}
+  /* parity with the touch taps: A skips the dead-ball beat, Y takes the offered replay, A / B end a replay */
+  if(S.phase==='replay'&&(dn(PB.A)||dn(PB.B))){if(typeof endReplay==='function')endReplay();return}
+  if(S.phase==='dead'&&play){if(dn(PB.Y)&&padVis($('#replayBtn'))){startReplay();return}if(dn(PB.A)&&deadT>.2&&now-(S.deadAt||0)>350){deadT=.12;return}}
   if(S.phase==='presnap'&&!uOff()&&dn(PB.B)&&!padVis($('#call')))switchDefender();
   /* live play: left stick = joystick (unless a finger is on the field) */
   if(S.phase==='live'&&play&&!touch){

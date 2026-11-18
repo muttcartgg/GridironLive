@@ -76,7 +76,7 @@ function reviewBeat(what,call,res,cb){
   S.phase='wait';hideActs();$('#toBtn').hidden=true;
   const card=(a,b)=>{if(typeof BC!=='undefined'&&typeof BC.card==='function'&&LG.settings.gfx!==false)BC.card('REPLAY REVIEW',esc(a),b,'#33415C',false);else toast(a+(b?' · '+b:''))};
   card('Play under review',what);sfx('whistle');
-  setTimeout(()=>{const t=call==='overturned'?'Overturned':call==='confirmed'?'Confirmed':'Ruling stands';card(t,res);fx('review',{call,what,res});logPBP(`Replay review · ${what} · ${t}${res?' · '+res:''}`);setTimeout(cb,1100)},1500);
+  setTimeout(()=>{const t=call==='overturned'?'Overturned':call==='confirmed'?'Confirmed':'Ruling stands';card(t,res);fx('review',{call,what,res});logPBP(`Replay review · ${what} · ${t}${res?' · '+res:''}`);setTimeout(cb,850)},1150);
 }
 /* booth reviews of close calls on scrimmage plays: goal line / pylon touchdowns, goal-line spots, sideline catches.
    A call is overturned only when the engine's own data disagrees with it: pl.glBall (where the ball really was at
@@ -145,7 +145,7 @@ function penPre(f,extra){
   const ran=!!S.clockRun;if(S.clockRun)S.clockHold=Math.max(S.clockHold||0,1.6);   // a running clock restarts on the ready signal
   penAnnounce(`${PN[f.k]} · ${sideWord(f)} · ${y<5?'half the distance':y+' yards'} · ${ddAt(S.los,S.down,S.firstDownX)}${extra||''}`);
   fx('penalty',{name:PN[f.k],yards:y,on:f.side,team:f.team,accepted:true,k:f.k});
-  const go=()=>setTimeout(()=>{if(S.phase==='wait')toPresnap()},1000);
+  const go=()=>setTimeout(()=>{if(S.phase==='wait')toPresnap()},800);
   if(ran&&runoffDue(f))return setTimeout(()=>runoffOffer(f,go),900);
   go();
 }

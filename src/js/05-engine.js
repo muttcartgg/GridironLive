@@ -68,7 +68,9 @@ function startDefDrive(los,why){S.poss='away';fatRest(2);if(typeof BC!=='undefin
 function oppPossession(dist,why){
   S.phase='wait';S.rzActive=false;S.clockRun=false;S.poss='away';hideActs();
   /* Key moments plays every opponent snap on the engine (simmed, or handed to you when it matters) */
-  const mode=playStyle()==='km'||playStyle()==='rtg'?'play':LG.settings.defMode||'ask',go=m=>m==='play'?startDefDrive(110-dist,why):oppDrive(dist,why);
+  /* 'ask' no longer stops the game with a Play / Sim sheet on every change of possession: the defensive call sheet
+     that comes up next carries "Sim the drive" (05g), so asking first was a second tap for the same choice */
+  const dm=LG.settings.defMode||'ask',mode=playStyle()==='km'||playStyle()==='rtg'||dm==='ask'?'play':dm,go=m=>m==='play'?startDefDrive(110-dist,why):oppDrive(dist,why);
   if(mode==='ask')showOpt(`<b>${esc(S.away.abbr)} ball</b>${why?' · '+esc(why):''} · ${esc(spotLabelFor(110-dist,'away'))}`,[{t:'Play defense',s:'Control a defender',f:()=>go('play')},{t:'Sim the drive',s:'Play-by-play ticker',cls:'alt',f:()=>go('sim')}]);
   else go(mode);
 }
@@ -96,6 +98,9 @@ function halftime(){if(typeof suspHalf==="function")suspHalf();   /* half-game t
 function presnapExpire(){['#call','#opt','#snapBar'].forEach(s=>$(s).hidden=true);S.phase='wait';boundary(()=>toPresnap())}
 
 function toPresnap(){
+  /* a new snap: the camera CUTS to the new line (broadcast style, with a short dip) instead of sliding over players
+     who would otherwise teleport into the formation on screen; re-forming within this presnap glides (formTick) */
+  S.formSer=(S.formSer||0)+1;if(typeof camCut==='function'&&!S.ff)camCut();
   S.phase='presnap';S.playClock=LG.settings.pclock||25;S.preRun=0;play=null;
   if(tmoDue())fireTMO();else if(S.clockRun&&tmoPending()&&S.clock>lateThr())S.preRun=Math.max(0,CLK.preCap-(S.clock-lateThr()));aim=null;touch=null;stick=null;S.bullet=false;S.celebrate=null;S.pc=null;
   S.lob=false;S.hurry=false;$('#bulletBtn').hidden=true;$('#bulletBtn').setAttribute('aria-pressed','false');$('#snapBar').hidden=true;hideActs();
@@ -124,7 +129,20 @@ function setRoute(p,name,inD){
   const pts=[[p.x,p.y],...p.route];const a=pts[pts.length-2],z=pts[pts.length-1];const ddx=z[0]-a[0],ddy=z[1]-a[1],d=hyp(ddx,ddy)||1;
   p.cont=p.stop?null:[clamp(z[0]+ddx/d*40,0,119.4),clamp(z[1]+ddy/d*40,1.2,FW-1.2)];p.rpath=pts;
 }
+/* presnap re-forms (a play picked, an audible, a flip): the same men glide from where they stood to the new spots
+   (about a third of a second) instead of popping there; the snap finishes any glide still in progress */
+function formTick(dt){for(const p of P){if(p._gx==null)continue;const ex=p._gx-p.x,ey=p._gy-p.y,d=Math.sqrt(ex*ex+ey*ey);
+  if(d<.05){p.x=p._gx;p.y=p._gy;p._gx=p._gy=null;p.vx=p.vy=0;continue}
+  const m=Math.min(d*Math.min(1,dt*9),dt*22),sx=ex/d*m,sy=ey/d*m;p.x+=sx;p.y+=sy;p.vx=dt>0?sx/dt:0;p.vy=dt>0?sy/dt:0;p.phase+=m*1.85}}   // ease in, never faster than a sprint
+function formSnap(){for(const p of P)if(p._gx!=null){p.x=p._gx;p.y=p._gy;p._gx=p._gy=null;p.vx=p.vy=0}}
+function formStop(){for(const p of P)if(p._gx!=null){p._gx=p._gy=null;p.vx=p.vy=0}}   // snapped mid-glide: play on from where he is (no pop)
 function setupFormation(pc,flip){
+  const keep=S.phase==='presnap'&&S.formDone===S.formSer&&P.length&&!S.ff?new Map(P.map(p=>[p.side+(p.pl&&p.pl.id),p])):null;
+  formSetup(pc,flip);S.formDone=S.formSer;
+  if(keep)for(const p of P){const o=keep.get(p.side+(p.pl&&p.pl.id));if(!o)continue;const d=hyp(o.x-p.x,o.y-p.y);
+    if(d>.05&&d<30){p._gx=p.x;p._gy=p.y;p.x=o.x;p.y=o.y;p.phase=o.phase}}
+}
+function formSetup(pc,flip){
   const L=S.los,b=S.ballY,ot=offT(),dtm=defT(),o=dcOf(ot),d=dcOf(dtm);P=[];OFF=[];DEF=[];flip=flip||1;
   const fname=(pc&&pc.form)||'Gun Doubles',form=FORMS[fname]||FORMS['Gun Doubles'],used=new Set(),F=(l,i,n)=>pickFresh(l,i,n,used)||l[0];
   [-2.2,-1.1,0,1.1,2.2].forEach((dy,i)=>add('o','OL',L-.7,b+dy,o.OL[i]||o.OL[0],ot,'OL'+i));
@@ -206,7 +224,7 @@ function newPlay(pc,o){
     result:null,ballT0:0,rec:null,contested:false,tipped:new Set(),startDown:S.down,readT:0,nextRead:0,intended:null,swat:0};
 }
 function startPlay(pc,o){
-  if(S.phase!=='presnap')return;
+  if(S.phase!=='presnap')return;formStop();
   /* the CPU offense runs the clock down between plays (it stops at the 2:00 mark for the two-minute timeout) */
   if(S.clockRun&&!S.ot&&!uOff()){const sit=sitInfo(),want=(sit.leadingLate?24:sit.trailingLate||sit.twoMin?3:sit.margin>=17&&S.q>=4?20:13)+2*crowdNoise();let extra=Math.max(0,want-S.preRun);if(tmoPending()&&S.clock>lateThr())extra=Math.min(extra,S.clock-lateThr());S.clock=Math.max(0,S.clock-extra);S.preRun+=extra;if(S.clock<=0){['#call','#snapBar'].forEach(s=>$(s).hidden=true);S.phase='wait';return boundary(()=>toPresnap())}}
   if(tmoDue()){fireTMO();if(!uOff()){aiSnapT=2.6;return}}
@@ -230,6 +248,8 @@ function startPlay(pc,o){
   if(pl.fake){for(const d of DEF){if(d.role==='CB'||d.role==='S')d.x=Math.min(119,d.x+8);if(d.role==='LB')d.x=Math.min(119,d.x+3);d.react=.7}toast(pl.fake==='fakepunt'?'Fake punt!':'Fake field goal!')}
   if(pl.run&&(pl.run.reverse||pl.run.counter||pl.run.trap)){pl.fakeY=clamp(2*S.ballY-pl.gapY,4,FW-4);for(const d of DEF)if(d.role!=='DL')d.react=pl.run.reverse?1.05:.6;else if(pl.run.trap)d.react=.4}
   coverageSnap();slideSnap(pl);
+  /* shotgun / pistol: the snap travels back to the QB (visual only, simulate) instead of popping into his hands */
+  if(Q&&Q.x<S.los-.6){pl.snapFrom={x:S.los-.35,y:S.ballY};pl.snapT=Q.x<S.los-1.8?.24:.1}S.rpOK=false;
   S.phase='live';sfx('hike');$('#sit').classList.remove('on');if(!S.conv)tstat().plays++;if(S.down===3&&!S.conv)tstat().thirdA++;
   fx('snap',{play:pl});rulesSnap(pl);
   S.wasThird=S.down===3&&!S.conv;
@@ -269,20 +289,22 @@ function startKick(dist,kind){
     width:clamp(.34-(dist-20)*.0055,.09,.34)*(.8+.1*k.acc)*(kind==='xp'?1.25:1)*(iced?.9:1),
     need:clamp(dist/maxFG(),.22,1.02)*(S.wx==='Rain'||S.wx==='Snow'?1.05:1),drift:S.wind&&S.wind.mph>6?clamp(windY()*S.wind.mph/120,-.14,.14)*(Math.random()<.5?1:-1)*R(.5,1):0,aSpeed:1.3+dist*.018,k};
   $('#kickHead').innerHTML=`<b>${kind==='xp'?'Extra point':kind==='fck'?'Fair catch kick':'Field goal'} · ${dist} yd</b> · K ${esc(k.last)} <span class="ovr">${ovr99(k)}</span>${S.wx==='Wind'?' · wind':''}`;
-  $('#kickBtn').textContent='Tap to aim';$('#kickBtn').disabled=false;$('#kick').hidden=false;hint('Tap once to lock direction, again to lock power');
+  $('#kickBtn').textContent=kind==='xp'?'Tap to kick':'Tap to aim';$('#kickBtn').disabled=false;$('#kick').hidden=false;hint(kind==='xp'?'One tap · kick it when the arrow is in the middle':'Tap once to lock direction, again to lock power');
   /* autopilot: the kicker kicks by his rating (Coach mode shows the meter for a beat first) */
   if(S.auto){if(S.ff){$('#kick').hidden=true;autoKick()}else{$('#kickBtn').textContent='Auto-kick · K rating';$('#kickBtn').disabled=true;hint('');setTimeout(autoKick,700)}}
 }
 function kickTap(){
   if(!kick)return;
-  if(kick.stage==='aim'){kick.lockA=kick.ang;kick.stage='power';kick.t=0;$('#kickBtn').textContent='Tap for power';return}
+  if(kick.stage==='aim'){kick.lockA=kick.ang;haptic('light');
+    /* extra points are one tap: the direction is the skill, the leg is never in doubt from 15 yards */
+    if(kick.kind==='xp'&&!S.auto){kick.stage='power';kick.pow=Math.min(1,kick.need+.12)}else{kick.stage='power';kick.t=0;$('#kickBtn').textContent='Tap for power';return}}
   if(kick.stage==='power'){kick.lockP=kick.pow;kick.stage='flight';kick.flight=0;const a=kick.lockA+kick.drift;kick.aimF=a;kick.good=Math.abs(a)<kick.width&&kick.lockP>=kick.need;if(kick.kind!=='fck'&&Math.random()<stBlockP(kick.kind,kick.dist,S.home)){kick.blocked=true;kick.good=false}$('#kickBtn').disabled=true;sfx('thump')}
 }
 function updateKick(dt){
   if(!kick)return;kick.t+=dt;
   if(kick.stage==='aim')kick.ang=Math.sin(kick.t*kick.aSpeed);
   if(kick.stage==='power'){const p=(kick.t*1.15)%2;kick.pow=p<1?p:2-p}
-  if(kick.stage==='flight'){kick.flight+=dt;if(kick.flight>=1.05&&!kick.done){kick.done=true;finishKick()}}
+  if(kick.stage==='flight'){kick.flight+=dt;if(kick.flight>=1&&!kick.done){kick.done=true;finishKick()}}
 }
 function finishKick(){
   const k=kick,good=k.good,fg=k.kind!=='xp';
@@ -295,8 +317,8 @@ function finishKick(){
     if(fg){dres(good?'FG':'Missed FG');if(good&&typeof BC!=='undefined')BC.scoringDrive(S.home)}logPBP(`${k.k.last} ${k.dist}-yard ${k.kind==='xp'?'extra point':k.kind==='fck'?'fair catch kick':'field goal'} is ${good?'good':'no good'}.`);
     if(good){sAdd(S.home,fg?'fgm':'xpm');haptic('success');banner("It's good",S.home.c1);sfx('roar');S.score[0]+=fg?3:1;fx(fg?'fg':'xp',{good:true,dist:k.dist,team:S.home});if(typeof BC!=='undefined')BC.say(k.kind==='xp'?'xp':'fg',{good:true,dist:k.dist})}else{banner('No good','#5B6672');sfx('groan');fx(fg?'fg':'xp',{good:false,dist:k.dist,team:S.home});if(typeof BC!=='undefined')BC.say('fg',{good:false,dist:k.dist})}
     kick=null;S.clockRun=false;if(k.kind==='fg'&&!S.ot)S.clock=Math.max(0,S.clock-5);
-    setTimeout(()=>{if(k.kind==='xp'||good){if(S.ot)return otNext('home');return boundary(afterScoreKickoff)}toOpp(Math.min(S.los-10,80),k.kind==='fck'?'Missed fair catch kick':'Missed field goal')},1300);
-  },250);
+    setTimeout(()=>{if(k.kind==='xp'||good){if(S.ot)return otNext('home');return boundary(afterScoreKickoff)}toOpp(Math.min(S.los-10,80),k.kind==='fck'?'Missed fair catch kick':'Missed field goal')},k.kind==='xp'?750:1000);
+  },120);
 }
 $('#kickBtn').onclick=()=>{ac();kickTap()};
 function showPAT(){
@@ -306,6 +328,10 @@ function showPAT(){
 function afterScoreKickoff(){
   S.phase='wait';S.clockRun=false;const from=S.kickPen?30:45;S.kickPen=false;
   const exp=!S.ot&&S.q===4&&S.clock<=S.qlen*.3&&S.score[0]<S.score[1];
+  /* a routine kickoff needs no question: kick it deep. The choice comes up when it can matter (4th quarter, not ahead;
+     the end of the half for a squib) */
+  const ask=!S.ot&&(S.q===4&&S.score[0]<=S.score[1]||S.q===2&&S.clock<=S.qlen*.12)||(typeof apOnside==='function'&&apOnside());
+  if(!ask&&!S.ff&&playStyle()!=='rtg')return stKickoff('away','deep',from,'Kickoff');
   showOpt('Kickoff',[{t:'Kick deep',s:'Touchback or a return',f:()=>stKickoff('away','deep',from,'Kickoff')},{t:'Squib kick',s:'Low line drive · no big return',cls:'alt',f:()=>stKickoff('away','squib',from,'Squib kick')},
     {t:'Onside kick',s:exp?'They expect it · about 1 in 8':'Surprise! Better odds',cls:'warn',ai:apOnside(),f:()=>stKickoff('away','onside',from,'Onside kick')}]);
 }
@@ -484,7 +510,7 @@ function logPass(res){if(S.conv)return null;const r={depth:ball.tx-S.los,y:ball.
 /* ---------- main simulation step ---------- */
 function simulate(dt){
   for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,Math.min(1,dt*9));const sp=hyp(p.vx,p.vy);p.phase+=sp*dt*1.85;p.throwT=Math.max(0,p.throwT-dt);if(p.animT>0)p.animT-=dt}
-  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,4);p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
+  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,5.5);   /* ease up within a stride or two of the whistle */p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
   const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.jukeCD-=dt;for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
   rulesTick(pl);
   if(pl.st)return stSim(dt);
@@ -524,7 +550,8 @@ function simulate(dt){
           if(Math.random()<.06&&!S.conv){tstat().sacks++;return stFumble(Q,d,'Strip sack')}return endPlay('sack')}}}
     }
   }
-  if(ball.state==='held'){const h=pl.carrier||Q;ball.x=h.x;ball.y=h.y;ball.z=0}
+  if(ball.state==='held'){const h=pl.carrier||Q;ball.x=h.x;ball.y=h.y;ball.z=0;
+    const sf=pl.snapFrom;if(sf&&h===Q&&pl.t<pl.snapT){const k=pl.t/pl.snapT;ball.x=lerp(sf.x,h.x,k);ball.y=lerp(sf.y,h.y,k);ball.z=.9*k*(1-k)}}
   else if(ball.state==='air'){
     if(!ball.pitch)return ballFlight(dt);
     ball.t+=dt;const p=Math.min(1,ball.t/ball.T);ball.x=lerp(ball.fx,ball.tx,p);ball.y=lerp(ball.fy,ball.ty,p);ball.z=4*ball.h*p*(1-p);ball.spin+=dt*20;
@@ -565,7 +592,9 @@ function endPlay(kind,msg){
   if(play.ended)return;{const cc=play.carrier;
     /* goal line: where the ball really was (the reach the officials can't see in the pile) is kept for the booth (05f) */
     if(kind==='tackle'&&cc&&cc.side==='o'&&isRunner()){const sp=spotOf(cc)+(play.fp||0);if(sp>=108.6)play.glBall=spotOf(cc)+.45*(play.fp||0)+(TK.behind?R(.15,.6):TK.head?R(0,.2):R(.05,.45));if(sp>=110)kind='td'}if(kind==='td'&&cc&&cc.side==='o'){play.tdRaw=spotOf(cc);play.tdY=cc.y}}play.ended=true;S.phase='dead';hint('');touch=null;aim=null;stick=null;$('#bulletBtn').hidden=true;hideActs();
-  deadT=kind==='td'?2.8:kind==='int'||kind==='fum'?2.1:1.35;
+  /* dead ball: about a second for a routine play (the next call is up as the players ease up), a beat longer for
+     turnovers and scores; any tap on the field skips what is left (06 input) */
+  deadT=kind==='td'?2.4:kind==='int'||kind==='fum'?1.8:kind==='inc'?.9:1.05;S.deadAt=performance.now();
   const c=play.carrier||Q;let x=kind==='inc'?S.los:kind==='td'?110:spotOf(c)+(kind==='tackle'?play.fp||0:0);
   if(kind!=='td'&&kind!=='inc'&&kind!=='int')x=Math.min(x,109.9);
   play.result={kind,x,y:clamp(c.y,0,FW),msg};
@@ -588,8 +617,13 @@ function endPlay(kind,msg){
   fatSave();
   logPlay(play.result,gain);
   if(S.wear){S.wear.push([uOff()?play.result.x:120-play.result.x,play.result.y]);if(S.wear.length>80)S.wear.shift()}
-  if(typeof BC!=='undefined')BC.play(play.result,gain);
+  if(typeof BC!=='undefined'){const d0=deadT;BC.play(play.result,gain);replayGate(d0,kind==='td'&&(gain>=15||play.caught&&play.contested)||kind==='int'||kind==='fum'&&play.result.defRec||gain>=30||!!play.bigHit&&gain>=8)}
 }
+/* instant replays only for genuinely big plays (long scores, turnovers, 30+ yard gains, a big hit on a real gain): the
+   broadcast offers one on more plays than that (and holds the whistle 3.2 s for the button); the rest get the normal beat */
+function replayGate(d0,big){S.rpOK=!!big;const b=$('#replayBtn');
+  if(!big){if(b)b.hidden=true;if(typeof BC!=='undefined')clearTimeout(BC.rbT);deadT=d0;return}
+  if(b&&!b.hidden)deadT=Math.max(d0,2.1)}   // long enough to reach the button; a tap on the field still skips
 function showCelebrate(){if(LG.settings.celebrate===false||S.auto)return;const b=$('#celebBtn');b.hidden=false;clearTimeout(showCelebrate.t);showCelebrate.t=setTimeout(()=>{b.hidden=true},2400)}
 $('#celebBtn').onclick=()=>{ac();$('#celebBtn').hidden=true;deadT=Math.max(deadT,30);
   const poses=[['point','Point to the sky'],['heisman','Heisman pose'],['flex','Flex'],['spike','Spike it'],['leap','Leap into the stands'],['salute','Salute'],['bow','Take a bow'],['huddle','Team huddle'],['taunt','Taunt the defense']];
@@ -874,6 +908,8 @@ function simRest(add,ot,otPts,f){
   S.lineLast=S.score.slice();
 }
 function slowMo(d){S.slowT=Math.max(S.slowT,d);S.ts=.32}
+/* hit-stop: the world holds for a few frames at the moment of a big collision (the shake and the sound land on it) */
+function hitStop(d){if(LG&&LG.settings&&LG.settings.shake===false)d*=.6;S.hitStop=Math.max(S.hitStop||0,d)}
 function hideActs(){const a=$('#actBar');if(a)a.hidden=true}
 function showActs(){
   const a=$('#actBar');if(!a||!play)return;if(S.auto&&!autoSprite()){a.hidden=true;return}if(play.st)return stActs();
