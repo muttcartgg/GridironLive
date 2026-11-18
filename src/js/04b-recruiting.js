@@ -262,7 +262,7 @@ function rcPlayer(P){
 function rcAct(L,P,kind,arg){
   const R=L.recruit,u=L.user,U=R.u[P.i]||(R.u[P.i]={}),W=L.week,C=rcCtx(L),cost=RC_HRS[kind]||0;
   if(!rcLive(L)||P.s===2)return 'Recruiting is closed for him right now';
-  if(cost&&rcAuto(L))return 'Switch off "Let my staff handle it" to spend hours yourself';
+  if(cost&&rcAuto(L))return 'Turn off “Let my staff handle it” to spend hours yourself';
   if(cost&&R.hrs<cost)return 'Not enough hours left this week';
   const add=v=>{rcJoin(L,P);P.x[rcIdx(P,u)+1]+=Math.round(v)};
   if(kind==='scout'){if((U.sc||0)>=100||U.kw===W)return 'Already scouted this week';U.sc=Math.min(100,(U.sc||0)+(hasTrait('oc','Talent Spotter')?50:34));U.kw=W}
@@ -304,8 +304,7 @@ function hubRecruit(){
   const phase=live?esc(weekLabel(L)):L.phase==='offseason'?(R.done?'Signing Day is done':'National Signing Day ahead'):R.early?'Early signing period is over':'Dead period';
   const head=`<div class="card rc-head"><div class="setrow"><div><div class="eyebrow">${R.season+1} class · ${phase}</div><div class="h2">Class #${cl.rank} · ${cl.n} commit${cl.n===1?'':'s'}</div></div>
     <div class="pills"><span class="pill gold">${auto?'Staff on it':`${live?R.hrs:0}/${bud} hrs`}</span><span class="pill">${cl.pts.toFixed(1)} pts</span></div></div>
-    <div class="setrow"><span class="eyebrow">Let my staff handle it</span><div class="seg" id="rcAuto"><button data-v="1" aria-pressed="${auto}">On</button><button data-v="0" aria-pressed="${!auto}">Off</button></div></div>
-    <p class="note">${auto?'Your staff calls, offers and hosts your targets every week. Switch it off to spend the hours yourself.':`${bud} h a week · Scout ${RC_HRS.scout} · Contact ${RC_HRS.contact} · Pitch ${RC_HRS.pitch} (each once a week per prospect). Offers and visits are free; only schools that offered can land him.`}</p>
+    <div class="sr"><span class="sr-l">Let my staff handle it<small>${auto?'They scout, call, offer and host visits every week.':`${bud} hours a week. Scout ${RC_HRS.scout} h, contact ${RC_HRS.contact} h, pitch ${RC_HRS.pitch} h. Offers and visits are free.`}</small></span><div class="seg tg" id="rcAuto"><button data-v="${auto?0:1}" role="switch" aria-checked="${auto}"><i></i><span class="vh">${auto?'On':'Off'}</span></button></div></div>
     <div class="seg rc-tabs" id="rcView">${[['board','Board'],['search','Prospects'],['class','Class']].map(([k,l])=>`<button data-v="${k}" aria-pressed="${RC_VIEW===k}">${l}</button>`).join('')}</div></div>`;
   let body='';
   if(RC_VIEW==='board'){
@@ -356,7 +355,7 @@ function openProspect(i){
       <div class="btns"><button class="btn sm ${off?'ghost':''}" id="rcOf" ${dis(0)}>${off?'Pull offer':'Offer scholarship'}</button><button class="btn sm ghost" id="rcSc" ${dis(RC_HRS.scout)||(sc>=100||U.kw===W?'disabled':'')}>Scout · ${RC_HRS.scout} h</button><button class="btn sm ghost" id="rcCo" ${dis(RC_HRS.contact)||(U.cw===W?'disabled':'')}>Contact · ${RC_HRS.contact} h</button></div>
       <div class="eyebrow">Pitch · ${RC_HRS.pitch} h</div><div class="btns">${prefs.slice(0,4).map(([k])=>`<button class="btn sm ghost" id="rcPi-${k}" ${dis(RC_HRS.pitch)||(U.pw===W?'disabled':'')}>${RC_PREFS[k][1]} · ${rcGrade(rcScore(P,u,C,k))}</button>`).join('')}</div>
       <div class="eyebrow">Official visit to a home game</div>${U.vd?`<p class="note">He visited (${U.vr>=0?'+':''}${U.vr||0} interest).</p>`:U.v>=0&&U.v!=null?`<div class="setrow"><span>Booked: ${esc(L.weeks[U.v].label)} vs ${esc(T(L.weeks[U.v].games.find(g=>g.h===u).a).city)}</span><button class="btn sm ghost" id="rcVx">Cancel</button></div>`:`<div class="btns">${homeG.slice(0,5).map(x=>`<button class="btn sm ghost" id="rcVi-${x.wi}">Wk ${x.wi+1} vs ${esc(T(x.g.a).abbr)}${x.g.rival?' ★':''}</button>`).join('')||'<span class="note">No home games left.</span>'}</div>`}
-      <p class="note">${auto?'Your staff spends the hours while "Let my staff handle it" is on; you can still offer, book visits and manage the board. ':`${R.hrs} of ${rcBudget(L)} hours left this week. `}A win, a rivalry and a big game make visits count more.</p>`;
+      <p class="note">${auto?'Your staff spends the hours. You can still offer, book visits and manage the board. ':`${R.hrs} of ${rcBudget(L)} hours left this week. `}Wins, rivalries and big games make visits count more.</p>`;
     openModal(`<div class="eyebrow">${POS_NAME[pos]} · Class of ${R.season+1} · ${esc(rcHome(P))}</div><div class="h2" style="font-size:24px">${esc(rcName(P))} ${starStr(st)}</div>
       <div class="tags"><span class="tag gold">#${rk.nat[i]} national</span><span class="tag">${pos} #${rk.pos[i]}</span><span class="tag">${RC_STATES[P.st].st} #${rk.st[i]}</span><span class="tag">${(P.c/1e4).toFixed(4)}</span>${rcStatus(L,R,P)}</div>
       <div class="kpis"><div><em>Height</em><b>${rcHt(P.h)}</b></div><div><em>Weight</em><b>${P.w}</b></div><div><em>Scouted</em><b>${sc}%</b></div><div><em>Projected OVR</em><b>${band?`~${ex}`:ex}</b></div><div><em>Dev trait</em><b>${sc>=100?RC_DEV[P.d]:'?'}</b></div><div><em>Your interest</em><b>${rcShare(P,u)}%</b></div></div>
@@ -381,7 +380,7 @@ function rcReviewHTML(prog){
   const open=R.p.filter(P=>P.s===0&&rcIdx(P,u)>=0).sort((a,b)=>rcShare(b,u)-rcShare(a,u)||b.c-a.c).slice(0,10);
   return `${prog}<div class="card hero"><div class="eyebrow">${R.season+1} recruiting class · before National Signing Day</div><div class="h1">#${cl.rank}</div>
     <div class="tags"><span class="tag gold">${cl.n} commits</span><span class="tag">${cl.stars[5]} five-star</span><span class="tag">${cl.stars[4]} four-star</span><span class="tag">${cl.stars[3]} three-star</span><span class="tag">${cl.pts.toFixed(1)} pts</span></div>
-    <p class="note">Signed in the early period or still committed. Commits who haven't signed can still flip; uncommitted prospects pick a school on Signing Day, most likely the one they're highest on.</p></div>
+    <p class="note">Commits who haven’t signed can still flip. Everyone else picks on Signing Day.</p></div>
     <div class="grid2"><div class="card"><div class="eyebrow">Your class</div><div class="list">${mine.map(P=>rcRow(L,R,P)).join('')||'<p class="note">No commitments.</p>'}</div></div>
     <div class="card"><div class="eyebrow">Still deciding</div><div class="list">${open.map(P=>rcRow(L,R,P)).join('')||'<p class="note">No open targets left.</p>'}</div></div></div>
     <button class="btn wide" id="offNext">Go to National Signing Day</button>`}
@@ -391,8 +390,8 @@ function rcSigningHTML(prog){
   return `${prog}<div class="card hero"><div class="eyebrow">National Signing Day · ${R.season+1} class</div><div class="h1">Class #${s.rank}</div>
     <div class="tags"><span class="tag gold">${s.n} signees</span><span class="tag">${s.stars[5]} five-star</span><span class="tag">${s.stars[4]} four-star</span><span class="tag">${s.stars[3]} three-star</span><span class="tag">${s.pts.toFixed(1)} pts</span></div>
     <div class="list">${mine.map(P=>`<div class="lrow"><span class="l"><span class="num">${POS_ORDER[P.p]}</span><span>${esc(rcName(P))} ${starStr(rcStars(P.c))}<br><small class="note">${esc(rcHome(P))} · #${rcRanks(R).nat[P.i]} national</small></span></span><span><span class="ovr">${rcTrueOvr(P)}</span> <small class="note">${RC_DEV[P.d]}</small></span></div>`).join('')||'<p class="note">Nobody signed with you.</p>'}</div>
-    <p class="note">True ratings are in as they enroll. Open roster spots are filled with walk-ons when the season starts.</p></div>
-    <div class="grid2"><div class="card"><div class="eyebrow">Gems and busts</div><div class="list">${s.gems.map(g=>gb(g,'ok')).join('')}${s.busts.map(g=>gb(g,'hot')).join('')||''}${!s.gems.length&&!s.busts.length?'<p class="note">No surprises: everyone is about what your staff expected.</p>':''}</div><p class="note">Expected: what your scouting (or the public projection) said. Scout more to find gems before Signing Day.</p></div>
+    <p class="note">True ratings arrive as they enroll. Walk-ons fill any open spots.</p></div>
+    <div class="grid2"><div class="card"><div class="eyebrow">Gems and busts</div><div class="list">${s.gems.map(g=>gb(g,'ok')).join('')}${s.busts.map(g=>gb(g,'hot')).join('')||''}${!s.gems.length&&!s.busts.length?'<p class="note">No surprises: everyone is about what your staff expected.</p>':''}</div><p class="note">Expected is what your scouting said. Scout more to find gems.</p></div>
     <div class="card"><div class="eyebrow">Top classes</div><div class="list">${s.top.map((c,i)=>`<div class="lrow ${c.id===u?'me':''}"><span class="l"><span class="rank">${i+1}</span>${tcell(T(c.id),T(c.id).city)}</span><span class="note">${c.n} signed · ${c.s5}×5★ ${c.s4}×4★ · <b>${c.pts}</b></span></div>`).join('')}</div></div></div>
     <button class="btn wide" id="offNext">Start the ${L.season+1} season</button>`}
 SETTINGS_EXTRA.push({card:'Recruiting',key:'recAuto',label:'Let my staff handle recruiting',opts:[[1,'On'],[0,'Off']],def:1,bool:true,after:v=>rcSetAuto(LG,v),note:'On: your staff recruits every week so simming never stalls. Off: spend the weekly hours yourself in the Recruiting tab.'});

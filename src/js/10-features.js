@@ -271,8 +271,8 @@ function nationalLeaders(){
 function trophyCase(){
   const u=T(LG.user),held=LG.teams.filter(t=>t.rival===u.id&&u.holder===u.id).map(()=>u.trophy).filter(Boolean);
   const heis=(LG.awards||[]).filter(a=>a.heisman&&a.heisman.team===LG.user).length+(u.roster.filter(p=>p.heisman).length?0:0);
-  const tiles=[['🏆','National titles',u.titles||0],['🥇','Conference titles',u.ccTitles||0],['🏈','Bowl wins',u.bowlWins||0],['🎖️','Heisman winners',heis],['⭐','Coach of the Year',LG.coach.coy||0],['🔔','Rivalry trophy',u.trophy?(u.holder===u.id?'Held':'Not held'):'—']];
-  return `<div class="card"><div class="h2">Trophy case</div><div class="tcase">${tiles.map(([i,l,v])=>`<div class="tile"><span class="ic">${i}</span><b>${v}</b><small>${l}</small></div>`).join('')}</div>${u.trophy?`<p class="note">${esc(u.trophy)} vs ${esc(T(u.rival).city)}.</p>`:''}</div>`;
+  const tiles=[['National titles',u.titles||0],['Conference titles',u.ccTitles||0],['Bowl wins',u.bowlWins||0],['Playoff trips',u.playoffApps||0],['Heisman winners',heis],['Coach of the Year',LG.coach.coy||0]];
+  return `<div class="card"><div class="h2">Trophy case</div><div class="tcase">${tiles.map(([l,v])=>`<div class="tile${v?' won':''}"><b>${v}</b><small>${l}</small></div>`).join('')}</div>${u.trophy&&T(u.rival)?`<div class="kv"><span>${esc(u.trophy)} vs ${esc(T(u.rival).city)}</span><b>${u.holder===u.id?'In your case':'Held by '+esc(T(u.rival).city)}</b></div>`:''}</div>`;
 }
 function gameOfWeek(){
   const w=LG.weeks[LG.week];if(!w||LG.phase!=='regular')return '';

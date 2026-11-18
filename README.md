@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 7.8: editorial pass
+
+- The hub has six places to go, in a tab bar at the bottom (a rail in landscape): Home, Team (Roster, Stats), Season (Schedule, Rankings, Playoff, News, League), Recruiting, Program and More (Settings, How to play).
+- Home is a dashboard: this week's game, any decision waiting on you (no more popups), your season at a glance, this week's news and recruiting. League-wide cards moved to Season › News.
+- Settings in eight sections (Gameplay, Controls & camera, Graphics & sound, Broadcast, Rosters & data, Saves & backups, Accessibility, About), with the rarely used options under More and switches for On/Off settings.
+- A short tour on first launch, a rewritten How to play, loading placeholders for saves, quieter toasts, consistent buttons, labels and pressed states, and haptics that follow the Haptics setting.
+
 ## Version 7.7: UI polish and real stadium designs
 
 - UI polish: stat comparison bars line up on shared columns; the drive chart is drawn to scale with correct starts, ends and yards; halftime turnovers match the box score; quarter and two-minute cards wait for a dead ball; only one center graphic at a time; the score bug hides after the final; readable route lines for dark-colored teams.

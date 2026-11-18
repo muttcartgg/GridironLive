@@ -14,8 +14,8 @@
 
 /* ---------- hub: header, sub-tabs, tab bar (bottom on a portrait phone, a rail in landscape) ---------- */
 #hub>.hub-top{padding-bottom:10px}
-#hub>.tabs{order:9;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:2px;overflow:visible;
-  padding:5px max(8px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px));
+#hub>.tabs{order:9;display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr);gap:0;overflow:visible;
+  padding:5px max(4px,env(safe-area-inset-right,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));
   background:var(--bar);border-top:1px solid var(--m-line);border-bottom:0}
 #hub>.tabs button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:50px;padding:4px 2px;border-radius:12px;
   background:none;box-shadow:none;font:600 11px/1.1 var(--body);letter-spacing:0;text-transform:none;color:#7C889C;transition:transform var(--t-press) var(--ease)}
@@ -26,6 +26,7 @@
 #hub>.tabs button[aria-selected="true"] svg{color:var(--accent);stroke-width:2}
 #hub>.tabs button .dot{position:absolute;top:5px;left:calc(50% + 8px);width:8px;height:8px;margin:0;border-radius:50%;background:var(--gold);box-shadow:0 0 0 2px var(--bar)}
 #hub>.tabs button:active{transform:scale(.94)}
+@media (max-width:380px){#hub>.tabs button{font-size:10.5px;padding:4px 0}}
 #hub>.subtabs{display:flex;flex:none;gap:2px;overflow-x:auto;scrollbar-width:none;touch-action:pan-x pan-y;overscroll-behavior-x:contain;
   padding:0 max(10px,env(safe-area-inset-right,0px)) 0 max(10px,env(safe-area-inset-left,0px));background:#070B14;border-bottom:1px solid var(--m-line)}
 #hub>.subtabs::-webkit-scrollbar{display:none}
@@ -112,6 +113,12 @@
 .news .lrow{font-size:14px;line-height:1.45}
 .news .lrow.lead{font-size:15px}
 
+/* ---------- trophy case: numbers, not emoji; empty shelves stay quiet ---------- */
+.tcase{grid-template-columns:repeat(3,minmax(0,1fr))}
+.tcase .tile{padding:12px 6px;gap:6px}
+.tcase .tile b{font-size:28px;color:#5E6A7E}
+.tcase .tile.won b{color:var(--gold)}
+
 /* ---------- how to play ---------- */
 .card.help{gap:10px}
 .help-l{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px}
@@ -139,6 +146,8 @@
 #app:has(>.screen:not([hidden])) #toast{top:auto!important;bottom:calc(env(safe-area-inset-bottom,0px) + 76px);padding:10px 16px;border-radius:999px;font:600 14px/1.2 var(--body);letter-spacing:0;text-transform:none}
 #app:has(>.screen:not([hidden])) #toast::before{display:none}
 @media (orientation:landscape) and (max-height:520px){#app:has(>.screen:not([hidden])) #toast{bottom:calc(env(safe-area-inset-bottom,0px) + 16px)}}
+/* with a sheet open its buttons own the bottom edge, so the toast moves to the top */
+#app:has(>#modal:not([hidden])) #toast{top:calc(env(safe-area-inset-top,0px) + 10px)!important;bottom:auto}
 
 @media (prefers-reduced-motion:reduce){
   #toast,#hint,#hub>.tabs button,.seg.tg button,.seg.tg button i,.sk{transition-duration:.01ms!important;animation:none!important}

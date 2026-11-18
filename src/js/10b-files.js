@@ -24,7 +24,7 @@ function saveTextFile(name,text){
 function openBackupFiles(){
   saveNow(true);const m=Saves.meta(),used=SLOTS.filter(n=>m.slots[n]),u=LG.teams[LG.user];
   openModal(`<div class="eyebrow">Back up to Files</div><div class="h2">Save a backup file</div>
-    <p class="note">Keeps your dynasty safe outside the app: save it to iCloud Drive or On My iPhone. Restore it any time from the title screen or Settings › Saves, even on another phone.</p>
+    <p class="note">Save to iCloud Drive or On My iPhone. Restore from the title screen or Settings, on any phone.</p>
     <div class="btns"><button class="btn light" id="bkOne">This dynasty · ${esc(u.abbr)}</button>${used.length>1?`<button class="btn ghost" id="bkAll">All slots (${used.length})</button>`:''}<button class="btn ghost" id="bkX">Cancel</button></div><p class="note" id="bkMsg"></p>`);
   const go=async all=>{const msg=$('#bkMsg');msg.textContent='Preparing the file…';
     try{const text=await backupText(all?used:[SLOT]);if(!text)throw new Error('empty');
