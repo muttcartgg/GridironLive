@@ -54,8 +54,9 @@ function shakeXY(now){const s=S.shake;if(!(s>0)||LG&&LG.settings&&LG.settings.sh
 function camCut(){cam.cut=1}
 function updateCam(dt){
   dt=Math.min(dt,.05);const retro=LG&&LG.settings.style==='retro';
-  /* between plays ('wait': a kick result, a change of possession, a flag) the shot holds; the next snap or kick cuts */
-  if(S.phase==='wait'&&!cam.cut){S.shake=Math.max(0,S.shake-dt*1.6);return}
+  /* between plays ('wait': a kick result, a change of possession, a flag; the try sheet; behind the kick view) the shot
+     holds instead of sliding back to a stale line of scrimmage; whatever comes next (a snap, a kickoff) cuts */
+  if((S.phase==='wait'||S.phase==='pat'||S.phase==='kick')&&!cam.cut){S.shake=Math.max(0,S.shake-dt*1.6);return}
   let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
   if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1;
     /* frame the formation: the QB, every eligible receiver and your defender stay in view on any phone (hot routes, reads) */
