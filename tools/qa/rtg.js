@@ -69,6 +69,10 @@ console.log('HIS GAME',JSON.stringify(game.pst),'grade',JSON.stringify(game.grad
 bad.push(...lg.errs);if(game.phase!=='over')bad.push('game did not finish');if(!(lg.live>0))bad.push('never on the field');if(lg.others)bad.push('another player answered to the stick');if(lg.qbUser)bad.push('QB under user control');
 if(!game.grade||!game.grade.live)bad.push('no live game grade');if(!game.post)bad.push('no grade card on the post-game screen');if(!game.exempt)bad.push('autopilot exemption not set');if(!(lg.ffSnaps>20))bad.push('little simming ('+lg.ffSnaps+')');
 await p.evaluate(()=>{const g=document.querySelector('#postGo');if(g)g.click()});await p.waitForTimeout(200);
+/* for the season: drop him from above to #4, just behind the third starter, so rising trust and skill points move him */
+const re=await p.evaluate(()=>{const me=rtgMe(),w=W8[me.pos];me.inj=0;for(const k in w)me[k]=clamp(me[k]+.6,1,5);let d=rtgDepth(LG,true),n=0;
+  while(d<3&&n<800){for(const k in w)me[k]=clamp(me[k]-.01,1,5);d=rtgDepth(LG,true);n++}LG.rtg.moves=[];return {depth:d,steps:n}});
+if(re.depth!==3)bad.push('could not place the recruit at #4 for the season '+JSON.stringify(re));
 /* the rest of the season: sim, spending skill points on the lowest key rating */
 const season=await p.evaluate(async()=>{const out={weeks:0,errs:[],spent:0};
   const modal=()=>{const m=document.querySelector('#modal');if(m&&!m.hidden){const x=document.querySelector('#evX')||document.querySelector('#closeP');if(x)x.click();else closeModal();return true}return false};
