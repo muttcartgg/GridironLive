@@ -119,7 +119,7 @@ function ctlTip(k){
   if(!LG||!LG.settings||LG.settings.ctlTips===false||S.ff||S.auto&&!autoSprite()||!arcade()||!TIPS[k])return;
   const seen=LG.settings.tipsSeen||(LG.settings.tipsSeen={});if(seen[k])return;seen[k]=1;
   let el=$('#ctlTip');if(!el){el=document.createElement('div');el.id='ctlTip';el.setAttribute('role','status');document.body.appendChild(el)}
-  el.innerHTML=`<b>Tip</b>${esc(TIPS[k])}`;el.hidden=false;el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
+  el.innerHTML=`<b>Tip</b>${esc(TIPS[k])}`;el.hidden=false;el.classList.remove('on');void el.offsetWidth;el.classList.add('on');hint('');   // the tip says it all: no second line at the bottom the first time
   clearTimeout(ctlTip.t);ctlTip.t=setTimeout(()=>{el.classList.remove('on');setTimeout(()=>{el.hidden=true},300)},4200);
 }
 function arcSnap(pl){if(!arcade())return;if(uOff()){if(pl.type==='pass'&&arcQB())ctlTip('pass')}else if(S.ctrl)ctlTip('def')}

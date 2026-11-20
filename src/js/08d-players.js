@@ -21,8 +21,8 @@
    gait is re-derived from the restored positions. Per-frame work allocates nothing.
    ========================================================= */
 const TAU2=6.2832;
-/* visual height vs the previous figures (2.9 yd standing): 0.9 → ≈2.6 yd standing, ≈2.4 yd in a full run */
-const PLAYER_SCALE=.9;
+/* visual height vs the previous figures (2.9 yd standing): 1 → ≈2.9 yd standing, ≈2.7 yd in a full run (big, readable sprites) */
+const PLAYER_SCALE=1;
 const PL_H=2.9*PLAYER_SCALE;
 const PB_AH=.04,PB_LT=.245,PB_LS=.235,PB_SP=.29,PB_NK=.118,PB_LU=.172,PB_LF=.148;
 const ATH={now:-1,f:0,a:1,b:0,c:0,d:1,e:0,ff:0,L:null,Lk:null,dirs:[],rots:[],sh:'',glow:'',tn:null,sk:null,cols:new Map(),nums:new Map(),deadPlay:null,deadAt:0,car:null,gu:0,dt:0,t0:0,gen:1,lf:0,ref:null};

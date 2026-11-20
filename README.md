@@ -9,6 +9,13 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 9: Arcade feel and new players
+
+- New players: a skeletal figure with football proportions (broad pads, smaller helmet, thick legs; linemen bulkier, DBs leaner), shaded uniforms from the scene light, and keyframed animation that blends between states — run cycles tied to ground speed (no foot sliding), dropback and throw, catch, jukes, spins, stiff arms, hurdles, dives, blocks, tackles, falls and get-ups, celebrations. Officials use the same figure.
+- Arcade controls (default): pull back anywhere to throw, with a dotted arc that lands on the receiver's lead spot, or tap a receiver's badge for a bullet (badges show how open he is). Runners go upfield on their own: drag to steer, flick to juke or spin, tap to burst, stiff-arm or hurdle, two fingers to dive. On defense your man plays his assignment until you drag; tap to switch, flick at the carrier to dive. Settings › Controls & camera › Controls: Simulation keeps the joystick and move buttons.
+- Steady side-view camera: fixed zoom per orientation, one small pull-out on passes, smooth horizontal follow. Crisper starts, cuts and stops for everyone, with even-game stats still realistic (about 4.6 yards per carry, 66% completions, 7.3 yards per attempt).
+- A one-time tip the first time each control comes up (Settings › Controls & camera › Control tips).
+
 ## Version 7.8: editorial pass
 
 - The hub has six places to go, in a tab bar at the bottom (a rail in landscape): Home, Team (Roster, Stats), Season (Schedule, Rankings, Playoff, News, League), Recruiting, Program and More (Settings, How to play).
