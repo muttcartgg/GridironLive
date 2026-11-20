@@ -4,7 +4,7 @@
      composer,pd,alt:{title,year,composer,pd},melody:{song,tempo,meter,pickup,key,notes:[[midi,beats]…]}}]} on its own,
      or as "fightSongs" inside a roster pack. Imported through Settings › Rosters & data (02c calls fsList/fsPreview/fsSave).
    No real music ships with the app: melodies come only from the imported file, and the game plays a melody only for a
-   song the file marks public domain ("pd"). Any other song plays from the user's own recording (Settings › Fight songs,
+   song the file marks public domain ("pd"). Any other song plays from the user's own recording (Settings › Graphics & sound › Team songs,
    stored per team in KV like the custom stadium sounds) or, with neither, an ORIGINAL generic march written for this game.
    When it plays: the scoring team's song after a touchdown (fx td), a short intro of the host's song at the opening
    kickoff (fx kickoff), the winner's song at the final whistle (fx final). Respects `muted` and LG.settings.fightSongs.
@@ -36,7 +36,7 @@ function fsFor(t){
 function fsPreview(L,pk){const l=fsList(pk);if(!l)return null;const c=fsClean(l),m=fsMatch(L,c);return {teams:m.pairs.length,total:c.length,mel:m.pairs.filter(([,e])=>e.melody).length,miss:m.miss}}
 const fsKpi=p=>p&&p.fs?`<div><em>Fight songs</em><b>${p.fs.teams}<small>/${p.fs.total}</small></b></div>`:'';
 function fsPrevHTML(p){const f=p.fs;return `<div class="ri-prev"><div class="kpis">${fsKpi(p)}<div><em>With a melody</em><b>${f.mel}</b></div></div>
-  <p class="note">Fight-song titles for each school. Public-domain songs (published before 1929) come with a melody the band plays; for any other song, add your own recording in Settings › Fight songs. Kept on this device for every dynasty.</p>
+  <p class="note">Fight-song titles for each school. Public-domain songs (published before 1929) come with a melody the band plays; for any other song, add your own recording in Settings › Graphics &amp; sound › Team songs. Kept on this device for every dynasty.</p>
   ${f.miss.length?`<p class="note">Not in this league (skipped): ${esc(f.miss.slice(0,8).join(', '))}${f.miss.length>8?` and ${f.miss.length-8} more`:''}</p>`:''}</div>`}
 /* per-team recordings (data: URLs under 600 KB, lazy KV keys like gl.aud.*) */
 const fsKey=t=>FS_AUD+(t.espnId?'e'+t.espnId:'a'+String(t.abbr||t.id).toUpperCase());
@@ -128,7 +128,7 @@ if(typeof onFx==='function'){
   onFx('final',e=>{if(!fsOn()||!S.home)return;const w=S.score[0]===S.score[1]?null:S.score[0]>S.score[1]?S.home:S.away;if(w)setTimeout(()=>fsPlay(w,'win',{visitor:!S.neutral&&w!==fsHost()&&w!==S.home}),900);else fsStop(.6)});
 }
 
-/* ---------- Settings › Fight songs (right after the Stadium sounds card) ---------- */
+/* ---------- Settings › Graphics & sound (fight-song rows after Crowd) ---------- */
 function fsStatus(t){const e=fsFor(t);return fsHasAudio(t)?'Your recording':e&&e.melody?'Band melody · public domain':e?'Generic march · add your recording':'Generic march'}
 function fsOpenManager(){
   let q='';const T0=LG.teams,me=T(LG.user),g=typeof userGameThisWeek==='function'?userGameThisWeek():null,opp=g?T(g.h===LG.user?g.a:g.h):null;

@@ -16,8 +16,14 @@ const offers=await p.evaluate(()=>SETUP.rtg.offers.map(f=>`${SETUP.L.teams[f.t].
 console.log('OFFERS',offers.length);offers.forEach(o=>console.log('   ',o));if(offers.length<5||offers.length>8)bad.push('offer count '+offers.length);
 await p.click('#rtgVis-0');await p.waitForTimeout(60);await p.click('#rtgVis-1');await p.waitForTimeout(60);
 const visits=await p.evaluate(()=>SETUP.rtg.offers.filter(f=>f.v).length);if(visits!==2)bad.push('visits '+visits);
-const best=await p.evaluate(()=>{const o=SETUP.rtg.offers;let b=0;o.forEach((f,i)=>{if(f.dep<o[b].dep)b=i});return b});   // the most playing time
+const best=await p.evaluate(()=>{const o=SETUP.rtg.offers;let b=0;o.forEach((f,i)=>{if(Math.abs(f.dep-3)<Math.abs(o[b].dep-3))b=i});return b});   // closest to #3 on the depth chart
 await p.click('#rtgCom-'+best);await p.waitForTimeout(400);
+/* deterministic start: the offer's depth is only a projection, and a recruit who opens camp as WR1 has nowhere to move
+   while one buried at #6 may never see the field. Nudge his ratings until he opens camp #3 (the third starting WR). */
+const placed=await p.evaluate(()=>{const me=rtgMe(),w=W8[me.pos],want=2;let d=rtgDepth(LG,true),n=0;
+  while(d!==want&&n<400){const s=d<want?-.01:.01;for(const k in w)me[k]=clamp(me[k]+s,1,5);d=rtgDepth(LG,true);n++}
+  LG.rtg.moves=[];saveNow(true);showHub('home');return {depth:d,steps:n}});
+if(placed.depth!==2)bad.push('could not place the recruit at #3 '+JSON.stringify(placed));
 const start=await p.evaluate(()=>{const r=LG.rtg,me=rtgMe(),u=T(LG.user);return {team:u.abbr,ovr:ovr99(me),depth:r.depth,trust:r.trust,yr:me.yr,num:me.num,hub:!!document.querySelector('.rtg-card'),tabs:[...document.querySelectorAll('#tabs button')].map(b=>b.textContent).join(',')}});
 console.log('COMMIT',JSON.stringify(start));if(!start.hub)bad.push('no career hub');
 /* to his first game */

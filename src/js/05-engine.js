@@ -112,7 +112,7 @@ function toPresnap(){
   if(uOff()){kmCheck(null);setupFormation(null,S.flip);if(!S.ff)rtg?rtgSnap():showCall()}
   else{const pc=aiChoosePlay();S.aiPlay=pc;kmCheck(pc);if(pc.special){S.phase='wait';return aiSpecial(pc.special)}if(S.ff||rtg){S.defCall='auto';S.defFront='auto'}setupFormation(pc,S.flip);if(!S.ff)rtg?rtgSnap():showDefCall()}
   snapshot();
-  $('#toBtn').hidden=!(S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0);
+  $('#toBtn').hidden=!(S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0&&$('#call').hidden);
 }
 
 function add(side,role,x,y,pl0,team,key){
