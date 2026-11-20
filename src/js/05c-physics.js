@@ -17,7 +17,7 @@
    car/str/agi decide wrap or broken tackle (stumble + fx brokenTackle); a second man in reach nearly always
    finishes; play.fp = forward progress from the pile's momentum battle; tackles behind the line = stats.tfl.
    ========================================================= */
-const PHY={a0:8,aAgi:2.6,lat0:10,latAgi:2.6,brk0:15,brkAgi:2.4,kc0:.6,kcAgi:.085,vturn:1.2,user:1.3,
+const PHY={a0:10,aAgi:3,lat0:13,latAgi:3,brk0:19,brkAgi:2.8,kc0:.48,kcAgi:.07,vturn:1.2,user:1.3,
   fd:.045,snap:.05,huddle:.9,huddleK:.015,bench:.7,benchK:.07,subAt:.45,backAt:.3,
   pk:.2,pDrift:.07,pLuck:.12,q0:.13,qk:.13,rk:.24,rDrift:.07,
   pen:.055,bHead:.05,bSide:.1,bBehind:.2,gang:.3,open:.1,fum:.016};
@@ -178,7 +178,7 @@ function blockAI(p,dt){
 }
 
 /* ---------- ball carrier: moves ---------- */
-function moveMul(){const pl=play;return (pl.jukeT>0?1.04:1)*(pl.spinT>0?.93:1)*(pl.truckT>0?.92:1)*(pl.stiffT>0?.96:1)*(pl.slowT>0?.78:1)*(pl.dive>0?1.25:1)}
+function moveMul(){const pl=play;return (pl.jukeT>0?1.04:1)*(pl.spinT>0?.93:1)*(pl.truckT>0?.92:1)*(pl.stiffT>0?.96:1)*(pl.slowT>0?.78:1)*(pl.dive>0?1.25:1)*(pl.burstT>0?1.07:1)}
 /* a move pressed just before the last one recovers is buffered (a quarter second) instead of being eaten */
 const moveBuf=(k,d)=>{if(play&&play.jukeCD>0&&play.jukeCD<.25&&play.dive<=0)play.buf={k,d,t:.25}};
 const moveFeel=c=>{if(c&&c.user&&(!S.auto||typeof userCtl==='function'&&userCtl(c)))haptic('light')};
@@ -268,6 +268,7 @@ function tackled(c,d){
   const md=d.mass||230,pc=(c.mass||210)*Math.max(0,c.vx)*(.7+.08*c.pl.str),pd=(md*Math.max(0,-d.vx)+md*(TK.behind?1.2:TK.head?2.6:1.8))*(.78+.075*d.pl.str)+help*1.8;
   const fp=clamp((pc-pd)/700+R(-.25,.25),-1.2,TK.behind?1.4:2.2);
   pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=fp/.4;
+  if(!big&&(userCtl(c)||d===S.ctrl))hitStop(.035);   // a beat on every tackle you are part of: the hit reads
   if(big){hitStop(.075);slowMo(.28);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
   const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
   if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110){   /* Turnover Specialist (04c) */

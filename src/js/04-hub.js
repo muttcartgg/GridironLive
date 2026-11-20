@@ -508,7 +508,7 @@ function bindSettingsExtra(seg){
 /* Settings: eight sections, most-used first; the rest of each section folds under "More".
    Registry entries (SETTINGS_EXTRA) land in the section their card maps to; unknown cards get their own section before About. */
 const SET_OPEN=new Set();
-const SET_CARD={'Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Fight songs':'fs','Rosters & data':'data'};
+const SET_CARD={'Controls & camera':'ctl','Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Fight songs':'fs','Rosters & data':'data'};
 const SET_MORE=new Set(['penalties','recAuto','officials','showLogos','expRoster','rmPack']);
 const SET_NOTE={playStyle:'Coach mode: you call the plays and the AI runs them. Key moments: drives are simmed and you take over when it counts.',
   penalties:'',recAuto:'Your staff spends the weekly recruiting hours for you.',gfxQ:'Battery saver keeps the crowd still and skips stadium extras.',
@@ -542,13 +542,13 @@ function hubSettings(){
     +regs('play','more')
     +`<div class="sr-h">Sliders</div>`+sl)
   +sec('ctl','Controls & camera',
-     row('Camera zoom',seg('setZ',[['auto','Auto'],[.85,'Wide'],[1,'Normal'],[1.15,'Close']],typeof s.zoom==='number'?s.zoom:'auto'),`Auto fits ${esc(devLabel())}.`)
+     regs('ctl','main')+row('Camera zoom',seg('setZ',[['auto','Auto'],[.85,'Wide'],[1,'Normal'],[1.15,'Close']],typeof s.zoom==='number'?s.zoom:'auto'),`Auto fits ${esc(devLabel())}.`)
     +row('Default defender',seg('setDP',[['LB0','Linebacker'],['S0','Safety'],['CB0','Corner'],['DL1','D-line']],s.defPlayer||'LB0'))
     +row('Haptics',tg('setHap',s.haptics!==false)),
      row('Joystick ring',tg('setStk',s.stickUI!==false))
     +row('Route lines',tg('setRt',s.routes!==false))
     +row('Celebration button',tg('setCel',s.celebrate!==false))
-    +row('Camera shake',tg('setShk',s.shake!==false)))
+    +row('Camera shake',tg('setShk',s.shake!==false))+regs('ctl','more'))
   +sec('gfx','Graphics & sound',
      row('Art style',seg('setS',[['modern','Modern HD'],['retro','Retro pixel']],s.style))
     +row('Sound',tg('setM',!s.muted,s.muted?0:1))
