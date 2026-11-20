@@ -15,8 +15,8 @@ const pxHash=(a,b)=>{let h=(a*374761393+b*668265263)|0;h=(h^(h>>>13))*1274126177
 function pxLight(){const st=typeof lightStage==='function'?lightStage():'day';return st}
 function pxTurf(){const night=pxLight()==='night',tc=typeof turfColors==='function'?turfColors(false):['#3a8a3d','#2e7633'];
   /* brighten the stadium's turf into the bright pixel range, then two flat mowing tones */
-  let a=pxMix(tc[0],'#5BC24F',.55),b=pxMix(tc[1],'#4AAE45',.55);if(night){a=pxMix(a,'#1B3A5C',.28);b=pxMix(b,'#1B3A5C',.28)}
-  return {a,b,apron:pxMix(b,'#1E3B22',.25),line:night?'#E6E9F2':PXU.line,lineD:night?'#AEB6C6':'#CFD3C8'}}
+  let a=pxMix(tc[0],'#5BC24F',.55),b=pxMix(tc[1],'#4AAE45',.55);const snow=typeof wxKind==='function'&&wxKind()==='snow';if(snow){a=pxMix(a,'#DCE6EC',.22);b=pxMix(b,'#DCE6EC',.22)}if(night){a=pxMix(a,'#16264A',.42);b=pxMix(b,'#16264A',.42)}
+  return {a,b,apron:pxMix(b,'#14233A',.3),line:night?'#DCE3F0':PXU.line,lineD:night?'#AEB6C6':'#CFD3C8',night}}
 /* ---------- world → art pixels (camera snapped to whole pixels) ---------- */
 function pxCam(){PCX=Math.round(cam.x*A)-(LW>>1);PCY=Math.round(cam.y*A*VY)-Math.round(midY()/PXS)}
 const pxX=x=>Math.round(x*A),pxY=y=>Math.round(y*A*VY);
@@ -31,11 +31,13 @@ function pxField(){
   for(let i=-2;i<26;i++){const a=X0(i*5),b=X0(i*5+5);fr(a,Y0(-5),b-a,Y0(FW+5)-Y0(-5),i%2?T.b:T.a)}
   /* apron beyond the sidelines a touch darker (flat) */
   fr(0,0,w,t0-3,T.apron);fr(0,t1+3,w,hh-t1-3,T.apron);
+  if(wx==='snow'){g.fillStyle='#F2F6FA';for(let y=0;y<hh;y++)for(let x=(y*7)%3;x<w;x+=3)if(pxHash(x,y)<.2)g.fillRect(x,y,pxHash(y,x)<.3?2:1,1)}
   /* end zones in the host's colours with the abbreviation in big pixel letters */
   const ec=pxH(h.c1),ed=pxShade(ec,-.18),ink=contrasty(h.c1,h.c2)?pxH(h.c2):inkOn(h.c1);
   for(const ex of [0,110]){const a=X0(ex),b=X0(ex+10);fr(a,t0,b-a,t1-t0,ec);
     for(let y=t0;y<t1;y++)for(let x=a+((y-t0)%6);x<b;x+=6)if(((x-a)+(y-t0))%6===0)fr(x,y,1,1,ed);   // fine diagonal weave
-    const ab=String(h.abbr||'').toUpperCase().slice(0,4),n=ab.length,s=Math.max(2,Math.min(Math.floor((t1-t0-12)/(n*6)),Math.floor((b-a-10)/3)));
+    const ab=String(h.abbr||'').toUpperCase().slice(0,4),n=ab.length,s=Math.max(2,Math.min(6,Math.floor((t1-t0-24)/(n*6)),Math.floor((b-a-16)/3)));
+    {const fc=pxMix(ink,ec,.45);fr(a+4,t0+4,b-a-8,1,fc);fr(a+4,t1-5,b-a-8,1,fc);fr(a+4,t0+4,1,t1-t0-8,fc);fr(b-5,t0+4,1,t1-t0-8,fc)}
     const tx=Math.round((a+b)/2-1.5*s),ty=Math.round((t0+t1)/2-(n*6*s-s)/2);
     for(let i=0;i<n;i++){const ch=ex?ab[i]:ab[i];pxText(g,ch,tx+s,ty+i*6*s+s,s,pxShade(ec,-.4));pxText(g,ch,tx,ty+i*6*s,s,ink)}}
   /* yard lines, goal lines, end lines, sidelines */
@@ -49,10 +51,8 @@ function pxField(){
       if(x!==60){const dir=x<60?-1:1,ax=dir<0?cx-Math.round(wd/2)-5:cx+Math.round(wd/2)+3;g.fillStyle=T.line;g.fillRect(ax,y+4,1,2);g.fillRect(ax+(dir<0?1:-1),y+3,1,4)}}}
   for(const x of [13,107])fr(X0(x),Y0(CEN),2,1,T.line);
   /* midfield: the host's abbreviation in a flat tone between team colour and turf */
-  {const ab=String(h.abbr||'').toUpperCase().slice(0,4),s=Math.max(3,Math.round(A*.6)),wd=pxW(ab,s),c1=pxMix(h.c1,T.a,.25),c2=pxMix(pxShade(h.c1,-.45),T.a,.2);
+  {const ab=String(h.abbr||'').toUpperCase().slice(0,4),s=Math.max(2,Math.round(A*.34)),wd=pxW(ab,s),base=lum(h.c1)<.12?h.c2:h.c1,c1=pxMix(base,T.a,.45),c2=pxMix(pxShade(base,-.5),T.a,.55);
     const x=X0(60)-Math.round(wd/2),y=Y0(CEN)-Math.round(2.5*s);pxText(g,ab,x+1,y+1,s,c2);pxText(g,ab,x,y,s,c1)}
-  /* snow cover: a static dither on the turf */
-  if(wx==='snow'){g.fillStyle='#EEF3FA';for(let y=0;y<hh;y++)for(let x=(y*7)%5;x<w;x+=5)if(pxHash(x,y)<.55)g.fillRect(x,y,1,1)}
   PXR.fk=k;PXR.fcv=cv;return cv;
 }
 /* ---------- crowd tiles (rest + standing), the wall ---------- */
@@ -165,9 +165,9 @@ function pxTag(c,cx,cy,txt,col,hi){const s=String(txt),w=pxW(s,1)+4,h=9,x=cx-(w>
   c.fillStyle=PXO;c.fillRect(cx-1,y+h+1,3,1);c.fillStyle=col;c.fillRect(cx,y+h,1,2)}
 /* effects (dust, sparks, confetti) live in PXR.fx */
 function pxFx(kind,x,y,n){if(!isPix())return;for(let i=0;i<(n||1);i++)PXR.fx.push({k:kind,x,y,t:0,T:kind==='spark'?.22:kind==='dust'?.4:2.6,vx:R(-1,1),vy:R(-1,1),z:kind==='conf'?R(2,5):0,vz:kind==='conf'?R(3,8):0,c:i})}
-onFx('tackle',e=>{const c=e.c||(play&&play.carrier);if(!c)return;pxFx('dust',c.x,c.y,1);if(e.big){pxFx('spark',(c.x+(e.d?e.d.x:c.x))/2,(c.y+(e.d?e.d.y:c.y))/2,1)}});
-onFx('sack',()=>{if(Q)pxFx('spark',Q.x,Q.y,1)});
-onFx('td',e=>{const c=play&&play.carrier;const x=c?c.x:ball.x,y=c?c.y:ball.y;pxFx('conf',x,y,70)});
+onFx('tackle',e=>{if(!isPix())return;const c=e.c||(play&&play.carrier);if(!c)return;pxFx('dust',c.x,c.y,1);if(e.big){pxFx('spark',(c.x+(e.d?e.d.x:c.x))/2,(c.y+(e.d?e.d.y:c.y))/2,1)}});
+onFx('sack',()=>{if(isPix()&&Q)pxFx('spark',Q.x,Q.y,1)});
+onFx('td',e=>{if(!isPix())return;const c=play&&play.carrier;if(!c&&!ball)return;const x=c?c.x:ball.x,y=c?c.y:ball.y;pxFx('conf',x,y,70)});
 function pxFxDraw(c,dt,team){const cols=[team.c1,team.c2,'#F4F1E8','#FFD23F'];
   for(const f of PXR.fx){f.t+=dt;const x=pxX(f.x)-PCX,y=pxY(f.y)-PCY;
     if(f.k==='dust'){const r=Math.floor(f.t/f.T*3);c.fillStyle=f.t<f.T*.6?'#E8DDC0':'#C8BC9C';if(r===0){c.fillRect(x-2,y-1,5,2)}else if(r===1){c.fillRect(x-4,y-2,2,2);c.fillRect(x+3,y-2,2,2);c.fillRect(x-1,y-3,3,2)}else{c.fillRect(x-6,y-1,2,1);c.fillRect(x+5,y-1,2,1);c.fillRect(x-2,y-5,1,1);c.fillRect(x+2,y-5,1,1)}}
@@ -279,8 +279,11 @@ function drawPix(now){
   pxFxDraw(c,dt,host);
   pxAim(c,now);pxBadges(c);
   pxWeather(c,dt,now);
+  /* the floating stick (Simulation controls) as a pixel ring + knob */
+  if(stick&&!stick.key&&stick.ox!=null&&LG.settings.stickUI!==false){const ox=Math.round(stick.ox/PXS),oy=Math.round(stick.oy/PXS),kx=Math.round(stick.x/PXS),ky=Math.round(stick.y/PXS),r=Math.round(70/PXS);
+    c.globalAlpha=.55;pxEll(c,ox,oy+1,r,r,PXO);pxEll(c,ox,oy,r,r,PXU.text);c.globalAlpha=.7;for(let y=-5;y<=5;y++){const w=Math.round(Math.sqrt(30-y*y));c.fillStyle=PXU.text;c.fillRect(kx-w,ky+y,w*2+1,1)}c.globalAlpha=1}
   pxPresent();
-  ctx.setTransform(DPR,0,0,DPR,0,0);if(typeof drawStick==='function')drawStick(ctx);
+  ctx.setTransform(DPR,0,0,DPR,0,0);if(typeof padDraw==='function')padDraw(ctx);
 }
 /* blow the art buffer up by a whole number of device pixels */
 function pxPresent(){ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;ctx.drawImage(low,0,0,LW,LH,0,0,LW*PDS,LH*PDS)}

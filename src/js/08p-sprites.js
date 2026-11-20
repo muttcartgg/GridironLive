@@ -16,8 +16,8 @@ pxPart('head',4,7,[
   ".HHiiHHHH.",
   ".HiHHHHHHH",
   "HHHHHHHHHM",
-  "HHHDDHHSSM",
-  "HHHDDHHSMM",
+  "HHDDHHHSSM",
+  "HHHHHHHSMM",
   "hHHHHHhSSM",
   ".hhhhhhMMM"]);
 pxPart('cap',4,7,[
@@ -286,7 +286,8 @@ function pxPal(team,U,ref,tone){const sk=TONES[tone|0]||TONES[1],sks=pxShade(sk,
   if(ref)return {H:'#1C2230',h:'#141A26',i:'#3A4256',Y:'#1C2230',D:'#1C2230',M:'#5A6272',J:'#F4F1E8',j:'#C9C6BE',N:'#C9C6BE',P:'#1E2432',p:'#151A26',T:'#1E2432',K:'#1E2432',k:'#151A26',C:'#141A26',G:'#F4F1E8',g:'#C9C6BE',Q:ref==='R'?'#F4F1E8':'#1E2432',S:sk,s:sks,E:sk,A:'#F4F1E8',n:'#141A26',F:'#F4F1E8'};
   const j=athHex(U.j),n=athHex(U.n),h=athHex(U.h),p=athHex(U.p),k=athHex(U.k||U.p);
   const gl=lum(j)>.8?athHex(team.c1):n;
-  return {H:h,h:pxShade(h,-.32),i:pxShade(h,.45),Y:U.hs?athHex(U.hc):h,D:athHex(U.dc||U.hc||n),M:athHex(U.m||'#C9CED6'),J:j,j:pxShade(j,-.26),N:U.sl?athHex(U.sc):pxShade(j,-.26),
+  const m0=athHex(U.m||'#C9CED6'),mk=contrasty(m0,h)?m0:(lum(h)<.4?'#C9CED6':'#2A3142');
+  return {H:h,h:pxShade(h,-.32),i:pxShade(h,lum(h)<.2?.9:.45),Y:U.hs?athHex(U.hc):h,D:athHex(U.dc||U.hc||n),M:mk,J:j,j:pxShade(j,-.26),N:U.sl?athHex(U.sc):pxShade(j,-.26),
     P:p,p:pxShade(p,-.24),T:U.ps?athHex(U.pc):p,K:k,k:pxShade(k,-.24),C:'#232836',G:gl,g:pxShade(gl,-.3),num:n,numO:pxShade(j,lum(j)>.5?-.45:.4),Q:h,S:sk,s:sks,E:sk,A:j,n:U.sl?athHex(U.sc):j,F:gl}}
 /* 3×5 digits */
 const PXD={0:[7,5,5,5,7],1:[2,6,2,2,7],2:[7,1,7,4,7],3:[7,1,3,1,7],4:[5,5,7,1,1],5:[7,4,7,1,7],6:[7,4,7,5,7],7:[7,1,1,2,2],8:[7,5,7,5,7],9:[7,5,7,1,7]};
@@ -308,7 +309,7 @@ function pxSprite(pal,pk,bd,frame,num,ref,tone){
     if(ref&&(ch==='J'||ch==='j'||ch==='N'||ch==='A'||ch==='n'))c=((x-x0)%2)?'o':(ch==='j'?'j':'J');
     put(x-x0+1,y-y0+1,c==='o'?'o':c)}
   /* jersey number (3×5) on the back half of the torso when it fits */
-  if(num!=null&&!ref&&!PXF[frame].rot){const s=String(num).slice(-2),nw=s.length*4-1;
+  if(num!=null&&!ref&&!(PXF[frame]||PXF.idle).rot){const s=String(num).slice(-2),nw=s.length*4-1;
     let bx0=1e9,bx1=-1e9,by0=1e9,cnt=0;for(const [k,ch] of G){if(ch!=='J')continue;const [x,y]=k.split(',').map(Number);if(y<by0)by0=y}
     const rows=[];for(let r=0;r<5;r++){let a=1e9,b=-1e9;for(const [k,ch] of G){if(ch!=='J'&&ch!=='j')continue;const [x,y]=k.split(',').map(Number);if(y!==by0+1+r)continue;if(x<a)a=x;if(x>b)b=x}rows.push([a,b])}
     for(const [a,b] of rows){if(a<bx0)bx0=a;if(b>bx1)bx1=b;if(b-a+1>=nw+1)cnt++}
