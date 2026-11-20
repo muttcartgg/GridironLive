@@ -16,6 +16,15 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - Settings in eight sections (Gameplay, Controls & camera, Graphics & sound, Broadcast, Rosters & data, Saves & backups, Accessibility, About), with the rarely used options under More and switches for On/Off settings.
 - A short tour on first launch, a rewritten How to play, loading placeholders for saves, quieter toasts, consistent buttons, labels and pressed states, and haptics that follow the Haptics setting.
 
+## Version 8: polished and lighter
+
+- One cohesive design: a bottom tab bar (side rail in landscape) — Home · Team · Season · Recruiting · Program · More — a focused Home dashboard, Settings in clear sections with switches, rewritten text, fewer popups, a short first-run tour.
+- Lighter play calling (Retro Bowl feel): a 30-play Core playbook by default in three groups (Run · Pass · Special) with big cards, three Coach's picks and one-tap Repeat; simple defense calls (Coach's call, Base, Cover 3, Cover 2, Man, Blitz, Prevent, Goal line, Sim drive); nothing scrolls. Settings › Gameplay › Playbook: Full (112) brings back every play. Tap the field to snap.
+- Game feel: about 1 second from whistle to the next play call, tap to skip anything, broadcast-style camera cuts with no jumpy zoom, players jog into formation and turn smoothly, catches meet the ball, early button presses count, an aim marker that shows the receiver's spot, brief hit-stop on big hits.
+- Clean field during plays: only the score bug shows while the ball is live; faint routes; bigger selection rings.
+- Fight songs (separate file): brass-band versions of public-domain fight songs, your own recordings for any team, an original march for the rest.
+- Fixes: timeout buttons inside both play-call sheets, the pause button no longer covers tabs, and many smaller bugs from an independent test pass.
+
 ## Version 7.7: UI polish and real stadium designs
 
 - UI polish: stat comparison bars line up on shared columns; the drive chart is drawn to scale with correct starts, ends and yards; halftime turnovers match the box score; quarter and two-minute cards wait for a dead ball; only one center graphic at a time; the score bug hides after the final; readable route lines for dark-colored teams.

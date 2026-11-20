@@ -979,6 +979,9 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 
 /* game controller focus ring (06b) */
 .padfocus{outline:3px solid #FFD23F!important;outline-offset:2px;box-shadow:0 0 0 6px rgba(255,210,63,.28)!important}
+/* ball live (07 hud sets :root.lv): the score bug alone. The ticker, win probability, lower thirds, decibel meter,
+   watermark, drive tracker, situation chip and the bug's sub-strip step aside and come back between plays */
+:root.lv #ticker,:root.lv #wpG,:root.lv #lower,:root.lv #dbm,:root.lv #wm,:root.lv #drv,:root.lv #sit,:root.lv #sb .sb-sub{opacity:0!important;visibility:hidden;transition:opacity .2s,visibility 0s .2s}
 
 /* Play-call sheets (offense + defense): a dark broadcast panel anchored to the bottom that grows to the full
    height when needed; only the play list scrolls (finger-friendly, never clipped) and a pill says there is more */
@@ -1085,6 +1088,38 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
    and in landscape (the sheet covers the score bug and repeats the score in its header) hide the bug underneath */
 #call h3,#opt h3{padding:0 46px;max-width:100%;box-sizing:border-box}
 @media (max-height:480px){body:has(#call:not([hidden])) #sb{visibility:hidden}}
+/* ---------- Core playbook sheets (05g renderCallCore / renderDefCore): three big group tabs, compact coach's picks and
+   every card on screen without scrolling on a phone (844x390: seven across, two rows; 390x844: three across) ---------- */
+.cs-bar.core{flex-direction:row;flex-wrap:wrap}
+.cs-bar.core .cs-quick{display:flex;margin-left:auto}
+.cs-bar.core .cs-quick:empty{display:none}
+.cs-groups{flex:1 1 200px}
+.cs-groups button{flex:1 1 0;min-height:46px;font-size:18px;letter-spacing:.06em}
+.cs-bar.core .cs-q{min-height:46px;max-width:170px}
+.cs-bar.core .cs-q.nh{color:#8CC4FF;border-color:color-mix(in srgb,#8CC4FF 45%,transparent)}
+.cs-picks.core{gap:6px;margin-bottom:6px}
+.cs-picks.core .cp{min-height:44px;padding:5px 10px 6px 12px;gap:2px;justify-content:center}
+.cs-picks.core .cp b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp b i{font-style:normal;color:var(--gold)}
+.cs-picks.core .cp small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
+#callRow .pbgrid.core{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.pbgrid.core .pcard{padding:4px 4px 6px;gap:2px;border-radius:12px}
+.pbgrid.core .pcard svg{height:46px;aspect-ratio:auto}
+.pbgrid.core .pcard b{font:700 15px/1.05 var(--tv);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 2px}
+.pbgrid.core .pcard small{font-size:10.5px;line-height:1.15;padding:0 2px}
+.cs-kicks{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin-bottom:6px}
+.cs-kicks .play{min-height:50px;padding:6px 12px;justify-content:center}
+.cs-kicks .play small,.pbgrid.dcore .play small{display:block}
+#callRow .pbgrid.dcore{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.pbgrid.dcore .dcard{min-height:64px;padding:8px 12px 8px 14px;justify-content:center;gap:3px}
+.pbgrid.dcore .dcard b{font-size:20px}
+.pbgrid.dcore .dcard small{font-size:12px;line-height:1.2;color:#c5cdd8}
+@media (orientation:portrait){#callRow .pbgrid.core{grid-template-columns:repeat(3,minmax(0,1fr))}#callRow .pbgrid.dcore{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cs-picks.core .cp{padding:5px 6px 6px 10px}.cs-picks.core .cp b{font-size:14px}.cs-picks.core .cp small{font-size:11px}}
+@media (orientation:portrait) and (max-height:700px){.pbgrid.core .pcard svg{height:34px}}
+/* landscape: the pause button sits over the sheet's top-left corner once a sheet runs (near) full height, so the
+   tab / front bar starts clear of it (it used to cover the corner of the first tab) */
+@media (max-height:480px){#callRow .cs-bar{padding-left:46px}}
 
 /* rankings: résumé hint under the team name in the AP / CFP Top 25 (lines up with the name, past the 26px badge) */
 .rtab .rhint{margin:3px 0 0 34px;font:600 11.5px/1.3 var(--body);color:var(--mute);white-space:normal;min-width:150px}
@@ -5284,7 +5319,8 @@ function pickPlay(pc){
   setupFormation(pc,S.flip);
   $('#snapName').textContent=pc.name;$('#snapBar').hidden=false;if(typeof BC!=='undefined')BC.presnap();
   if(S.auto){if(!S.ff){hint('Coach mode · snapping…');coachSnap(pc)}return}
-  hint(pc.run&&(pc.run.rpo||pc.run.read||pc.run.triple)?'Tap SNAP · the QB reads the defense for you':pc.cat==='run'?'Tap SNAP · then drag anywhere to steer':'Tap SNAP · drag back from anywhere to aim, release to throw');
+  const sn=LG.settings.tapSnap!==false?'Tap the field to snap':'Tap SNAP';
+  hint(pc.run&&(pc.run.rpo||pc.run.read||pc.run.triple)?sn+' · the QB reads it for you':pc.cat==='run'?sn+' · then drag to steer':sn+' · then drag back to aim');
 }
 $('#snapGo').onclick=()=>{ac();if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;adjClose();startPlay(S.pc)}};
 $('#snapAdj').onclick=()=>{ac();if(S.phase==='presnap'&&S.pc)adjToggle()};
@@ -6244,6 +6280,20 @@ const SIDE_R=new Set(['out','qout','deepout','comeback','corner','sail','fade','
 PLAYBOOK.forEach((p,i)=>{p.id=i;p.tab=tabOf(p);let dp=0,sd=0;for(const k in p.r){const rt=ROUTES[p.r[k]];if(!rt)continue;const m=Math.max(...rt.w.map(w=>w[0]));dp=Math.max(dp,rt.stop?m:Math.max(m,22));if(SIDE_R.has(p.r[k]))sd++}
   p.depth=dp;p.side=sd;p.quick=p.cat==='pass'&&dp<=8&&!p.pa;p.v=p.v||''});
 const playByName=n=>PLAYBOOK.find(p=>p.name===n);
+/* the Core playbook (default call sheet, 05g): 30 of the plays above in three groups, each with a plain-language tag.
+   The CPU still calls from the whole book; Settings › Gameplay › Playbook › Full brings back every play. */
+const CORE_PLAYS=[
+  ['Inside Zone','run','Inside run'],['Power','run','Downhill · lead'],['Outside Zone','run','Outside run'],['Toss','run','Sweep · edge'],
+  ['Counter','run','Misdirection'],['HB Draw','run','Beats the rush'],['Jet Sweep','run','WR on the edge'],['Zone Read','run','QB option'],
+  ['QB Draw','run','QB up the middle'],['RPO Glance','run','Run or throw'],
+  ['Slants','pass','Quick · inside'],['Quick Outs','pass','Quick · sideline'],['Stick','pass','Quick · short'],['Curl Flat','pass','Short · vs zone'],
+  ['Mesh','pass','Crossers · vs man'],['Smash','pass','Beats Cover 2'],['Flood','pass','Beats Cover 3'],['Dagger','pass','Deep middle'],
+  ['Deep Outs','pass','Sideline · 2-min'],['Four Verticals','pass','Deep shot'],['PA Boot','pass','Fake · roll out'],['PA Deep Shot','pass','Fake run · go deep'],
+  ['RB Screen','pass','Screen · vs rush'],['Bubble Screen','pass','Quick screen · WR'],
+  ['QB Sneak','special','Need a yard'],['Jumbo Power','special','Goal line run'],['Goal Line Fade','special','Goal line throw'],['Goal Line PA','special','Goal line fake'],
+  ['Flea Flicker','special','Trick · deep'],['Hail Mary','special','Last play']
+];
+const CORE=CORE_PLAYS.map(([n,g,t])=>{const p=playByName(n);if(p){p.core=g;p.tag=t}return p}).filter(Boolean);
 /* defensive calls (05d assignCoverage / alignDefense). shell = safeties shown pre-snap ('1' single-high, '2' two-high;
    05d sometimes disguises it and rotates at the snap), press = corners may press. 'blitz' is Cover 0 (old saves keep it). */
 const COVS={
@@ -7938,13 +7988,23 @@ function readCov(){
   if(typeof covWeights==='function'){const w=covWeights(defT(),sitInfo());let bv=-1;for(const k in w)if(w[k]>bv){bv=w[k];top=k}}
   return S.readCov=Math.random()<.7&&S.cov?S.cov:top;
 }
-function coachPicks(n,filter){
+/* one short reason per pick (the call sheet; the long line stays for the Adjust menu) */
+const WHY_SHORT=[[/^vs (.+?) · (beats|attacks the)/,m=>'Beats '+m[1]],[/two deep safeties/,'Two-deep shell · run'],[/pressure coming/,'Beats the blitz'],[/between the safeties/,'Splits the safeties'],
+  [/take the underneath/,'Take the underneath'],[/before the corner/,'Quick vs man'],[/turn and chase/,'Run vs man'],[/light box/,'Light box · run it'],[/pulls the linebackers/,'Pulls the LBs up'],
+  [/linebackers in coverage/,'Throw on the LBs'],[/six DBs/,'Screen vs dime'],[/get out of bounds/,'Gets out of bounds'],[/then hurry up/,'Quick, then hurry'],[/^Bleed the clock/,'Bleeds the clock'],
+  [/^Goal line/,'Goal-line power'],[/power it/,'Power for a yard'],[/stacked box/,'Quick vs a loaded box'],[/run for the first/,'Run for the first'],[/high-percentage/,'Safe throw'],
+  [/free shot/,'Free shot deep'],[/past the sticks/,'Past the sticks'],[/screen vs a rush/,'Screen vs the rush'],[/draw vs/,'Draw vs the rush'],[/at the sticks/,'Sits at the sticks'],
+  [/on a run down/,'Play-action on 1st'],[/compressed field/,'Red-zone beater'],[/pound it/,'Pound it in'],[/window closes/,'Quick red-zone hit'],[/^Backed up/,'Safe when backed up'],
+  [/flip the field/,'Flip the field'],[/no sacks/,'No sacks · stay in range'],[/expect pass/,'They expect pass'],[/freezes the safeties/,'They expect run'],[/crowding the box/,'Box is crowded'],
+  [/^Change it up/,'Change it up'],[/^(.+ staple)/,m=>m[1]],[/reads the overhang/,'QB reads it'],[/make the end choose/,'Make the end choose'],[/rush run past/,'Let the rush run past'],[/hold the safeties/,'Holds the safeties']];
+function whyShort(t){t=String(t||'');for(const [re,r] of WHY_SHORT){const m=t.match(re);if(m)return typeof r==='function'?r(m):r}const s=t.split(' · ').pop();return s.charAt(0).toUpperCase()+s.slice(1)}
+function coachPicks(n,filter,pool){
   const sit=sitInfo(),cov=readCov(),last=(S.uHist||[]).slice(-2).map(h=>h.id),out=[],tabs={};
-  const list=PLAYBOOK.filter(p=>!(S.conv&&p.hail)&&(!filter||filter(p))).map(p=>{const [s,why]=rateCall(p,sit,S.home,cov);return {p,s:s*(last.includes(p.id)?.35:1)*(1+((p.id*37)%11)/60),why}}).filter(x=>x.s>0).sort((a,c)=>c.s-a.s);
+  const list=(pool||PLAYBOOK).filter(p=>!(S.conv&&p.hail)&&(!filter||filter(p))).map(p=>{const [s,why]=rateCall(p,sit,S.home,cov);return {p,s:s*(last.includes(p.id)?.35:1)*(1+((p.id*37)%11)/60),why}}).filter(x=>x.s>0).sort((a,c)=>c.s-a.s);
   for(const x of list){if(out.length>=n)break;if((tabs[x.p.tab]||0)>=2)continue;if(out.length===n-1&&out.every(o=>o.p.cat===x.p.cat)&&list.some(y=>y.p.cat!==x.p.cat&&y.s>x.s*.5&&!out.includes(y)))continue;tabs[x.p.tab]=(tabs[x.p.tab]||0)+1;out.push(x)}
   /* each pick says why in its own words: the most specific reason whose angle (and text) no earlier pick used */
   const usedT=new Set(),usedC=new Set();
-  return out.map(x=>{const rs=pickReasons(x.p,sit,cov,x.why),r=rs.find(([c,t])=>!usedT.has(t)&&!usedC.has(c))||rs.find(([,t])=>!usedT.has(t))||['gen',`${x.why} · ${x.p.name}`];usedT.add(r[1]);usedC.add(r[0]);return {p:x.p,why:`${ddShort()} · ${r[1]}`}});
+  return out.map(x=>{const rs=pickReasons(x.p,sit,cov,x.why),r=rs.find(([c,t])=>!usedT.has(t)&&!usedC.has(c))||rs.find(([,t])=>!usedT.has(t))||['gen',`${x.why} · ${x.p.name}`];usedT.add(r[1]);usedC.add(r[0]);return {p:x.p,why:`${ddShort()} · ${r[1]}`,short:whyShort(r[1])}});
 }
 /* the front the defense should show against a play's personnel (aiPickFront without the dice) */
 function expFront(p){const pers=(FORMS[p.form]||{}).pers||'11',heavy=['21','12','22','23','30'].includes(pers),tg=S.firstDownX-S.los;
@@ -8006,8 +8066,62 @@ const toAvail=()=>S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0;
 const toQuick=()=>toAvail()?`<button class="cs-q to" data-to="1">Timeout<small>${S.to[0]} left</small></button>`:'';
 function bindToQuick(row,re){const b=row.querySelector('[data-to]');if(b)b.onclick=()=>{ac();$('#toBtn').onclick();re()}}
 
+/* ---------- Core / Full playbook (Settings › Gameplay › Playbook). Core: 30 plays in Run · Pass · Special and
+   eight one-tap defenses, every card on screen without scrolling. Full: every play (category tabs, formation chips)
+   and fronts × coverages. The CPU always calls from the whole book. ---------- */
+const coreMode=()=>!(LG&&LG.settings&&LG.settings.playbook==='full');
+SETTINGS_EXTRA.push({card:'Gameplay',key:'playbook',label:'Playbook',opts:[['core','Core · '+CORE.length],['full','Full · '+PLAYBOOK.length]],def:'core',note:'Core: '+CORE.length+' plays in Run · Pass · Special and one-tap defenses. Full: every play, formation filters, fronts × coverages.'});
+SETTINGS_EXTRA.push({card:'Gameplay',key:'tapSnap',label:'Tap the field to snap',opts:[[1,'On'],[0,'Off']],def:1,bool:true,note:'Once a play is called, a tap anywhere on the field (not on a receiver) snaps the ball.'});
+/* the one-tap repeat: the last play again, straight to the snap (no huddle) */
+function repeatLast(){S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},460)}   // just past the re-form glide
+function callSpecials(){
+  const late=!S.ot&&S.q>=4&&S.clock<=S.qlen*.25&&S.score[0]>S.score[1],fourth=S.down===4&&!S.conv,out=[];
+  if(fourth){if(!S.ot)out.push(['punt','Punt','Flip the field'],['fakepunt','Fake punt','Catch them napping']);const fd=fgDist();if(fd<=maxFG()+3)out.push(['fg','Field goal',fd+' yd attempt'],['fakefg','Fake FG','Surprise run'])}
+  if(late&&!S.conv)out.push(['kneel','Kneel','Run clock · −1 yd']);
+  if(!S.conv&&S.clockRun&&!S.ot&&S.down<4)out.push(['spike','Spike','Stop the clock']);
+  return out;
+}
+function renderCallCore(){
+  const fourth=S.down===4&&!S.conv,specials=callSpecials();
+  $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(ddText())}</b> · ${S.conv?'from the 3':esc(spotLabel(S.los))}${fourth?` · <span class="tag gold">Go for it ${Math.round(convChance()*100)}%</span>`:''}${playStyle()!=='full'?modeTag():''}`;
+  if(!['run','pass','special'].includes(CALL_TAB))CALL_TAB={rpo:'run',pa:'pass',screen:'pass',goal:'special',trick:'special'}[CALL_TAB]||'pass';   // a Full tab keeps its kind
+  const g=CALL_TAB,list=CORE.filter(p=>p.core===g&&!(S.conv&&p.hail)),picks=coachPicks(3,null,CORE),nh=S.lastPc&&!S.conv&&S.down<4;
+  const kicks=g==='special'&&specials.length?`<div class="cs-kicks">${specials.map(([k,t,s])=>`<button class="play ${k.startsWith('fake')?'warn':'alt'}" data-sp="${k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>`:'';
+  $('#callRow').innerHTML=`<div class="cs-bar core"><div class="cs-tabs cs-groups">${[['run','Run'],['pass','Pass'],['special','Special']].map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===g}">${l}</button>`).join('')}</div>`+
+    `<div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Run the last play again, straight to the snap">Repeat<small>${esc(S.lastPc.name)}</small></button>`:''}${toQuick()}</div></div>`+
+    `<div class="cs-scroll"><div class="cs-picks core" aria-label="Coach's picks">${picks.map((x,i)=>`<button class="cp" data-pid="${x.p.id}"${i?'':' data-coach="1"'}><b><i>★</i> ${esc(x.p.name)}</b><small>${esc(x.short)}</small></button>`).join('')}</div>${kicks}`+
+    `<div class="pbgrid core">${list.map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b>${esc(p.name)}</b><small>${esc(p.tag)}</small></button>`).join('')}</div></div><div class="cs-more" aria-hidden="true">More ▾</div>`;
+  const row=$('#callRow');
+  row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;renderCall()});
+  const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();repeatLast()};
+  row.querySelectorAll('[data-pid]').forEach(b=>b.onclick=()=>{ac();pickPlay(PLAYBOOK[+b.dataset.pid])});
+  row.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{ac();callSpecial(b.dataset.sp)});
+  bindToQuick(row,renderCall);
+  scrollHint(row);$('#call').hidden=false;
+}
+/* Core defense: eight one-tap calls in plain words; each sets the front and the coverage (Full: fronts × coverages) */
+const DEF_CORE=[['base','Base','Three linebackers · stop the run',()=>[S.home.oddLean?'34':'43','cover3']],['cover3','Cover 3','Three deep · keep it in front',()=>['auto','cover3']],
+  ['cover2','Cover 2','Two deep · guard the sidelines',()=>['auto','cover2']],['man','Man','Stick to every receiver',()=>['auto','man']],['blitz','Blitz','Send five · three deep behind',()=>['auto','firezone']],
+  ['prevent','Prevent','Everyone deep · no big play',()=>['dime','prevent']],['goal','Goal line','Load the box · stop the run',()=>['goal','man']]];
+function renderDefCore(){
+  defHead();const sit=sitInfo(),pc=S.aiPlay;
+  if(!S.dcPick)S.dcPick=[aiPickFront(S.home,sit,pc),aiPickCoverage(S.home,sit)];
+  const [pf,pv]=S.dcPick,why=sit.twoMin?'Two-minute':sit.redzone?'Red zone':sit.toGo<=2?'Run down':sit.down>=2&&sit.toGo>=7?'Passing down':'Best fit';
+  $('#callRow').innerHTML=`<div class="cs-bar core"><div class="cs-quick"><button class="cs-q" data-dc="sim" title="Sim this drive">Sim drive<small>Skip to the result</small></button>${toQuick()}</div></div>`+
+    `<div class="cs-scroll"><div class="pbgrid dcore"><button class="play dcard cp ${S.defCore==='auto'?'sel':''}" data-dc="auto"><b><i>★</i> Coach's call</b><small>${esc(why)} · ${esc(COVS[pv].n)}</small></button>`+
+    `${DEF_CORE.map(([k,t,s])=>`<button class="play dcard ${k===S.defCore?'sel':''}" data-dc="${k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div></div><div class="cs-more" aria-hidden="true">More ▾</div>`;
+  const row=$('#callRow');
+  row.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>{ac();const k=b.dataset.dc;
+    if(k==='sim'){$('#call').hidden=true;S.phase='wait';return oppDrive(110-S.los,'Drive continues')}
+    const c=DEF_CORE.find(x=>x[0]===k),[fr,cv]=c?c[3]():['auto','auto'];S.defCore=k;S.defCall=cv;S.defFront=fr;
+    setupFormation(S.aiPlay,S.flip);$('#call').hidden=true;S.phase='presnap';aiSnapT=.75+.5*crowdNoise();if(typeof BC!=='undefined')BC.presnap();hint(crowdNoise()>.5?'Get set… it is loud in here':'Get set…')});
+  bindToQuick(row,renderDefCall);
+  scrollHint(row);$('#call').hidden=false;
+}
+
 /* ---------- offense call sheet ---------- */
 function renderCall(){
+  if(coreMode())return renderCallCore();
   const late=!S.ot&&S.q>=4&&S.clock<=S.qlen*.25&&S.score[0]>S.score[1],fourth=S.down===4&&!S.conv;
   $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(ddText())}</b> · ${S.conv?'from the 3':esc(spotLabel(S.los))} · QB ${esc(Q.pl.last)} <span class="ovr">${Q.ovr}</span>${S.wx!=='Clear'?' · '+WX_ICON[S.wx]+' '+S.wx:''}${fourth?` · <span class="tag gold">Go-for-it ${Math.round(convChance()*100)}%</span>`:''}${modeTag()}`;
   const specials=[];
@@ -8024,7 +8138,7 @@ function renderCall(){
   const picks=coachPicks(3),nh=S.lastPc&&!S.conv&&S.down<4;
   $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}</div><div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Repeat the last play at the line">No huddle<small>${esc(S.lastPc.name)}</small></button>`:''}<button class="cs-q coach" data-coach="1">Coach's pick<small>${esc(picks[0]?picks[0].p.name:'')}</small></button>${toQuick()}</div></div>`+
     (chips?`<div class="cs-chips">${chips}</div>`:'')+
-    `<div class="cs-scroll"><div class="cs-picks">${picks.map(x=>`<button class="cp" data-pid="${x.p.id}"><em>Coach's pick</em><b>${esc(x.p.name)}</b><small>${esc(x.why)}</small></button>`).join('')}</div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div></div><div class="cs-more" aria-hidden="true">Swipe up · more plays ▾</div>`;
+    `<div class="cs-scroll"><div class="cs-picks">${picks.map(x=>`<button class="cp" data-pid="${x.p.id}"><em>Coach's pick</em><b>${esc(x.p.name)}</b><small>${esc(x.short)}</small></button>`).join('')}</div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div></div><div class="cs-more" aria-hidden="true">Swipe up · more plays ▾</div>`;
   const row=$('#callRow');
   row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;CALL_FORM='';renderCall()});
   row.querySelectorAll('[data-fm]').forEach(b=>b.onclick=()=>{ac();CALL_FORM=b.dataset.fm;renderCall()});
@@ -8042,9 +8156,11 @@ function scrollHint(row){const sc=row.querySelector('.cs-scroll'),m=row.querySel
 /* ---------- defense call sheet: fronts × coverages ---------- */
 function defHead(){
   const pc=S.aiPlay,f=pc&&FORMS[pc.form];
+  if(coreMode())return $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(S.away.abbr)} ball</b> · ${esc(ddText())} · ${esc(spotLabelFor(S.los,'away'))}${S.auto?'':S.ctrl?` · you: <b>#${S.ctrl.num} ${esc(S.ctrl.pl.last)}</b>`:''}${playStyle()!=='full'?modeTag():''}`;
   $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(S.away.abbr)} ball</b> · ${esc(ddText())} · ${esc(spotLabelFor(S.los,'away'))} · <span class="tag">${esc(pc?pc.form:'')} · ${f?f.pers:'11'} personnel</span>${S.auto?' · the AI plays it out':S.ctrl?` · you control <b>#${S.ctrl.num} ${esc(S.ctrl.pl.last)}</b> <span class="ovr">${S.ctrl.ovr}</span>`:''}${modeTag()}`;
 }
 function renderDefCall(){
+  if(coreMode())return renderDefCore();
   defHead();const sit=sitInfo(),pc=S.aiPlay;
   if(!S.dcPick)S.dcPick=[aiPickFront(S.home,sit,pc),aiPickCoverage(S.home,sit)];
   const [pf,pv]=S.dcPick,f=pc&&FORMS[pc.form],why=`${ddShort()} · ${f?f.pers:'11'} personnel${sit.down>=2&&sit.toGo>=7?' · passing down':sit.toGo<=2?' · run down':sit.redzone?' · red zone':''}`;
@@ -8194,10 +8310,12 @@ function setPlayStyle(v){
   autoSync();if(S.phase==='presnap'&&!S.paused)toPresnap();
 }
 function pauseModeHTML(){if(playStyle()==='rtg')return `<div class="setrow"><span class="eyebrow">Road to Glory</span><span class="note">You play only your player; the AI plays the rest and sims the snaps you sit out.</span></div>`;const st=playStyle(),dm=LG.settings.defMode||'ask',seg=(id,o,v)=>`<div class="seg" id="${id}">${o.map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===v}">${l}</button>`).join('')}</div>`;
-  return `<div class="setrow"><span class="eyebrow">Play style</span>${seg('pmStyle',[['full','Full control'],['coach','Coach'],['km','Key moments']],st)}</div><div class="setrow"><span class="eyebrow">Opponent drives</span>${seg('pmDef',[['ask','Ask'],['play','Play D'],['sim','Sim']],dm)}</div>`}
+  return `<div class="setrow"><span class="eyebrow">Play style</span>${seg('pmStyle',[['full','Full control'],['coach','Coach'],['km','Key moments']],st)}</div><div class="setrow"><span class="eyebrow">Opponent drives</span>${seg('pmDef',[['ask','Ask'],['play','Play D'],['sim','Sim']],dm)}</div><div class="setrow"><span class="eyebrow">Playbook</span>${seg('pmPB',[['core','Core'],['full','Full']],LG.settings.playbook==='full'?'full':'core')}</div>`}
 function pauseModeRender(){const box=$('#pmMode');if(!box||!LG)return;box.innerHTML=pauseModeHTML();
   box.querySelectorAll('#pmStyle [data-v]').forEach(b=>b.onclick=()=>{ac();const v=b.dataset.v;S.paused=false;setPlayStyle(v);S.paused=true;pauseModeRender();toast(STYLE_N[v])});
-  box.querySelectorAll('#pmDef [data-v]').forEach(b=>b.onclick=()=>{ac();LG.settings.defMode=b.dataset.v;if(typeof saveNow==='function')saveNow();pauseModeRender()})}
+  box.querySelectorAll('#pmDef [data-v]').forEach(b=>b.onclick=()=>{ac();LG.settings.defMode=b.dataset.v;if(typeof saveNow==='function')saveNow();pauseModeRender()});
+  /* Core / Full playbook (05g): an open call sheet re-draws in the new book */
+  box.querySelectorAll('#pmPB [data-v]').forEach(b=>b.onclick=()=>{ac();LG.settings.playbook=b.dataset.v;if(typeof saveNow==='function')saveNow();pauseModeRender();if(S.phase==='presnap'&&!$('#call').hidden)uOff()?renderCall():renderDefCall()})}
 
 /* ---------- KEY MOMENTS ---------- */
 /* how much one possession can move the user's win probability (05w): the swing of a touchdown for the offense */
@@ -8729,6 +8847,8 @@ cv.addEventListener('pointerdown',e=>{
   if(S.phase==='dead'&&play&&deadT>.2&&performance.now()-(S.deadAt||0)>350&&$('#celebSheet').hidden){deadT=.12;return}
   if(S.phase==='presnap'&&!uOff()){const d=defenderAt(e.clientX,e.clientY);if(d)switchDefender(d);return}
   if(S.phase==='presnap'&&hotRouteAt(e.clientX,e.clientY))return;
+  /* a play is called: tapping the field (anywhere but a receiver, who takes a hot route) snaps it (Settings › Gameplay) */
+  if(S.phase==='presnap'&&uOff()&&S.pc&&!S.auto&&LG.settings.tapSnap!==false&&!$('#snapBar').hidden&&$('#adjMenu').hidden&&$('#hotBar').hidden&&!S.motion){$('#snapGo').click();return}
   if(S.phase!=='live'||!play)return;
   if(S.auto&&!autoSprite())return;   // autopilot (05h): the AI has every player
   if(touch&&touch.mode==='aim'&&e.pointerId!==touch.id){S.bullet=!S.bullet;$('#bulletBtn').setAttribute('aria-pressed',String(S.bullet));updateAim();return}
@@ -9035,6 +9155,7 @@ function hud(){
   const pc=$('#pclk'),show=S.phase==='presnap'&&!S.conv&&uOff();pc.textContent=show?':'+String(Math.ceil(S.playClock)).padStart(2,'0'):':--';pc.classList.toggle('low',show&&S.playClock<6);pc.classList.toggle('off',!show);
   $('#dd').textContent=ddText();$('#spot').textContent=S.conv?'Conversion':spotLabel(S.los);sb.classList.toggle('rz',!S.conv&&S.los>=90&&S.phase!=='over');
   $('#gclk').classList.toggle('run',!!S.clockRun&&!S.ot);$('#toBtn').hidden=!(S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0&&$('#call').hidden);   // an open call sheet carries its own Timeout button (05g)
+  {const lv=S.phase==='live';if(lv!==hud.lv){hud.lv=lv;document.documentElement.classList.toggle('lv',lv)}}   // ball live: only the score bug (10-ui)
   if(typeof BC!=='undefined')BC.hud();
   const st=teamStamina();const se=$('#stam');se.textContent='STA '+Math.round(st*100)+'%';se.style.color=st>.85?'var(--ok)':st>.75?'var(--warn)':'var(--hot)';
   const wx=windHTML();if($('#wxs').dataset.w!==wx){$('#wxs').dataset.w=wx;$('#wxs').innerHTML=wx}
@@ -9318,7 +9439,10 @@ function drawModern(now){
   // routes
   if(uOff()&&LG.settings.routes!==false&&(S.phase==='presnap'||(S.phase==='live'&&play&&play.type==='pass'&&!play.thrown&&!play.scramble))){
     c.save();c.strokeStyle=c.fillStyle=tvCol(S.home);c.lineWidth=Math.max(1.5,s*.16);   /* TV-safe colour: a navy or black team's routes stay visible on the turf */
-    c.setLineDash([s*.7,s*.45]);c.globalAlpha=.6;c.lineJoin='round';
+    c.setLineDash([s*.7,s*.45]);c.globalAlpha=S.phase==='presnap'?.55:.32;c.lineJoin='round';
+    const rp=S.phase==='presnap'&&S.pc&&S.pc.run,cr=rp&&KP[rp.carrier==='QB'?'QB':rp.carrier];
+    if(cr){const L=S.los,gy=clamp(S.ballY+rp.gap*S.flip,3,FW-3),pts=[[cr.x,cr.y],[L+1.2,gy],[L+5.5,gy]];c.save();c.setLineDash([]);c.lineWidth=Math.max(2,s*.2);c.globalAlpha=.5;c.beginPath();c.moveTo(X(pts[0][0]),Y(pts[0][1]));for(let i=1;i<3;i++)c.lineTo(X(pts[i][0]),Y(pts[i][1]));c.stroke();
+      c.translate(X(pts[2][0]),Y(pts[2][1]));c.beginPath();c.moveTo(s*.75,0);c.lineTo(-s*.4,s*.5);c.lineTo(-s*.4,-s*.5);c.closePath();c.fill();c.restore()}
     for(const p of OFF){if(!p.rpath||(play&&play.type==='run'))continue;const pts=p.rpath.slice();if(p.cont){const a=pts[pts.length-1],b=p.cont,d=hyp(b[0]-a[0],b[1]-a[1])||1;pts.push([a[0]+(b[0]-a[0])/d*5,a[1]+(b[1]-a[1])/d*5])}
       c.beginPath();c.moveTo(X(pts[0][0]),Y(pts[0][1]));for(let i=1;i<pts.length;i++)c.lineTo(X(pts[i][0]),Y(pts[i][1]));c.stroke();
       const e=pts[pts.length-1],f=pts[pts.length-2],ang=Math.atan2(Y(e[1])-Y(f[1]),X(e[0])-X(f[0]));c.save();c.setLineDash([]);c.translate(X(e[0]),Y(e[1]));c.rotate(ang);c.beginPath();c.moveTo(s*.6,0);c.lineTo(-s*.4,s*.4);c.lineTo(-s*.4,-s*.4);c.closePath();c.fill();c.restore()}
@@ -9343,9 +9467,9 @@ function drawModern(now){
   const sorted=P.slice().sort((a,b)=>a.y-b.y);
   if(typeof prepPlayers==='function')prepPlayers(c,sorted,now);
   for(const p of sorted){
-    if(passLive&&eligible(p)){const [,nd]=nearest(DEF,p.x,p.y);const col=openCol(nd);c.save();c.strokeStyle=col;c.shadowColor=col;c.shadowBlur=10;c.lineWidth=2.5;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*.85,s*.85*VY,0,0,7);c.stroke();c.restore()}
+    if(passLive&&eligible(p)){const [,nd]=nearest(DEF,p.x,p.y);const col=openCol(nd);c.save();c.beginPath();c.ellipse(X(p.x),Y(p.y),s*1.02,s*1.02*VY,0,0,7);c.strokeStyle='rgba(0,0,0,.45)';c.lineWidth=Math.max(4.5,s*.3);c.stroke();c.strokeStyle=col;c.shadowColor=col;c.shadowBlur=10;c.lineWidth=Math.max(3,s*.19);c.stroke();c.restore()}
     if(play&&p===play.carrier&&isRunner()){c.save();c.strokeStyle='rgba(255,255,255,.75)';c.lineWidth=2;const pr=s*(.9+.12*Math.sin(now/120));c.beginPath();c.ellipse(X(p.x),Y(p.y),pr,pr*VY,0,0,7);c.stroke();if(play.jukeT>0||play.hurdle>0){c.strokeStyle=S.home.c1;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),pr*1.3,pr*1.3*VY,0,0,7);c.stroke()}c.restore()}
-    if((p===S.ctrl&&ctrlRing(p)||rtgMine(p)&&p.side==='o')&&S.phase!=='dead'){c.save();c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=12;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*1.05,s*1.05*VY,0,0,7);c.stroke();c.beginPath();c.moveTo(X(p.x),Y(p.y)-s*3.6);c.lineTo(X(p.x)-s*.45,Y(p.y)-s*4.3);c.lineTo(X(p.x)+s*.45,Y(p.y)-s*4.3);c.closePath();c.fillStyle='#FFD23F';c.fill();c.restore()}
+    if((p===S.ctrl&&ctrlRing(p)||rtgMine(p)&&p.side==='o')&&S.phase!=='dead'){selRing(c,X(p.x),Y(p.y),s,now)}
     drawAthlete(c,p,now);
   }
   drawSideline(c,s,now,true);drawStick(c);
@@ -9461,6 +9585,10 @@ function drawRetro(now){
   ctx.setTransform(DPR,0,0,DPR,0,0);drawWeather(ctx);
 }
 function draw(now){if(LG&&LG.settings.style==='retro')drawRetro(now);else drawModern(now);if(S.phase==='replay')drawOverlay(now)}
+/* the man you control: a bold ring with a dark under-stroke and a bobbing marker over his head (larger and clearer on a phone) */
+function selRing(c,x,y,s,now){const r=s*1.32,b=Math.sin(now/180)*s*.12;c.save();c.beginPath();c.ellipse(x,y,r,r*VY,0,0,7);c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=Math.max(6,s*.42);c.stroke();
+  c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=14;c.lineWidth=Math.max(3.5,s*.26);c.stroke();c.shadowBlur=0;
+  const ty=y-s*4.1+b;c.beginPath();c.moveTo(x,ty);c.lineTo(x-s*.7,ty-s*.95);c.lineTo(x+s*.7,ty-s*.95);c.closePath();c.fillStyle='#FFD23F';c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=Math.max(1.5,s*.1);c.stroke();c.fill();c.restore()}
 
 /* =========================================================
    08b · Broadcast presentation (graphics only, no commentators): score bug packages,
@@ -9600,7 +9728,7 @@ const BC={
     const hostDef=defT()===hostT();
     if(S.down===3&&!S.conv){if(hostDef){this.setRibbon('3RD DOWN · MAKE SOME NOISE',5);this.sound('third');this.setRibbon('DE-FENSE · DE-FENSE',5)}else this.setRibbon('3RD DOWN',3)}
     if(S.down===4&&!S.conv)this.setRibbon('4TH DOWN',4);
-    if(LG.settings.lower!==false&&Math.random()<.4){const cands=OFF.concat(DEF).filter(p=>p.ovr>=84&&!this.shown.has(p.pl.id)&&['QB','RB','WR','TE','CB','S','LB','DL'].includes(p.role));if(cands.length){const p=cands.sort((a,b)=>b.ovr-a.ovr)[0];this.shown.add(p.pl.id);this.lower(p)}}
+    /* no star lower third at the snap any more: the ball-live screen keeps only the score bug (10-ui :root.lv) */
   },
   /* situation graphic before the snap: 3rd/4th down odds, red zone, goal to go, late-half clock */
   presnap(){
@@ -10251,7 +10379,7 @@ function drawAthlete(c,p,now){
   const s=scE(),sx=X(p.x),sy=Y(p.y);athBody(p);const hh=s*2.75*p._bh,bw=p._bw;
   if(sx<-hh*1.5||sx>W+hh*1.5||sy<-hh*.5||sy>H+hh*2)return;
   const team=p.team||(p.side==='o'?offT():defT()),e=athCols(team),sk=ATH.sk[(p.pl&&p.pl.tone)|0]||ATH.sk[1];
-  if(LG.settings.stars!==false&&p.ovr>=86&&S.phase!=='kick'){const n=p.ovr>=94?3:p.ovr>=90?2:1;for(let i=0;i<n;i++){const x=sx+(i-(n-1)/2)*hh*.2,y=sy+hh*.16;c.fillStyle='rgba(0,0,0,.45)';starPath(c,x+1,y+1,hh*.075);c.fillStyle='#FFD23F';starPath(c,x,y,hh*.075)}}
+  if(LG.settings.stars!==false&&p.ovr>=86&&S.phase!=='kick'&&S.phase!=='live'){const n=p.ovr>=94?3:p.ovr>=90?2:1;for(let i=0;i<n;i++){const x=sx+(i-(n-1)/2)*hh*.2,y=sy+hh*.16;c.fillStyle='rgba(0,0,0,.45)';starPath(c,x+1,y+1,hh*.075);c.fillStyle='#FFD23F';starPath(c,x,y,hh*.075)}}
   athPose(p,now);athRig(hh,bw);athXf(c,sx,sy-(p.z||0)*s*.9,ATP.kx,ATP.rot);
   const A=ATP,J=ATJ,fs=A.kx<0?-1:1,acc=p._acc|0,slv=(acc>>4)%5,wc=(acc>>8)%6===0,spat=(acc>>11)%4===0;
   const vis=(acc%9)<((p.role==='WR'||p.role==='CB'||p.role==='S'||p.role==='RB')?3:1);
