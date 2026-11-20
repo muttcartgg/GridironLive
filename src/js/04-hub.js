@@ -7,7 +7,8 @@ const badge=(t,cls='')=>{if(t.bdg&&typeof bdgURL==='function')return `<span clas
 const recStr=t=>`${t.rec.w}–${t.rec.l}`;
 const tcell=(t,label)=>`<div class="tname" data-team="${t.id}" style="cursor:pointer">${badge(t,'sm')}<span>${esc(label||rankTag(t.id)+t.city)}</span></div>`;
 function applyTeamTheme(t){const r=document.documentElement.style;r.setProperty('--team',t.c1);r.setProperty('--team2',t.c2);r.setProperty('--btn-ink',inkOn(t.c1))}
-function applyStyle(){document.documentElement.dataset.style=(LG&&LG.settings.style)||'modern'}
+/* art style: 'retro' = Pixel (the default), 'modern' = Modern HD. Existing dynasties switch to Pixel once (settings.pix1). */
+function applyStyle(){if(LG&&LG.settings&&!LG.settings.pix1){LG.settings.pix1=1;LG.settings.style='retro'}document.documentElement.dataset.style=(LG&&LG.settings.style)||'retro';if(typeof resize==='function'&&W)resize()}
 let saveTimer=null;
 function saveNow(now){if(!LG||!SLOT)return;clearTimeout(saveTimer);saveTimer=null;if(now){Saves.save(SLOT,LG);return}saveTimer=setTimeout(()=>{saveTimer=null;Saves.save(SLOT,LG)},700)}
 function flushSave(){if(saveTimer){clearTimeout(saveTimer);saveTimer=null;Saves.save(SLOT,LG)}}
@@ -83,7 +84,7 @@ function showLoading(label){hideAll();const s=$('#setup');s.classList.remove('ti
 
 /* ---------- title screen + save slots ---------- */
 function showSlots(){
-  hideAll();S.phase='menu';LG=null;SLOT=null;document.documentElement.dataset.style='modern';
+  hideAll();S.phase='menu';LG=null;SLOT=null;document.documentElement.dataset.style='retro';
   const m=Saves.meta();$('#setup').classList.add('title');
   const card=n=>{const s=m.slots[n];
     if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="sl-et"><span class="h2">New dynasty</span><span class="note">Slot ${n} · empty</span></span></button>`;
@@ -551,7 +552,7 @@ function hubSettings(){
     +row('Celebration button',tg('setCel',s.celebrate!==false))
     +row('Camera shake',tg('setShk',s.shake!==false))+regs('ctl','more'))
   +sec('gfx','Graphics & sound',
-     row('Art style',seg('setS',[['modern','Modern HD'],['retro','Retro pixel']],s.style))
+     row('Art style',seg('setS',[['retro','Pixel (default)'],['modern','Modern']],s.style==='modern'?'modern':'retro'))
     +row('Sound',tg('setM',!s.muted,s.muted?0:1))
     +regs('gfx','main')
     +row('Crowd',seg('setCr',[['low','Sparse'],['normal','Normal'],['high','Rowdy']],s.crowd||'normal'))
@@ -626,7 +627,7 @@ function bindHub(){
   document.querySelectorAll('[id^="pl-"]').forEach(b=>b.onclick=()=>openPlayer(+b.id.slice(3)));
   document.querySelectorAll('[id^="edit-"]').forEach(b=>b.onclick=()=>openEditor(+b.id.slice(5),()=>{saveNow();rerender()}));
   const seg=(id,f)=>{const e=document.getElementById(id);if(!e)return;e.querySelectorAll('button').forEach(b=>b.onclick=()=>{f(b.dataset.v);saveNow();rerender()})};
-  seg('setQ',v=>LG.settings.qlen=+v);seg('setD',v=>LG.settings.diff=+v);seg('setM',v=>{LG.settings.muted=v==='1';muted=LG.settings.muted});seg('setS',v=>{LG.settings.style=v;applyStyle()});
+  seg('setQ',v=>LG.settings.qlen=+v);seg('setD',v=>LG.settings.diff=+v);seg('setM',v=>{LG.settings.muted=v==='1';muted=LG.settings.muted});seg('setS',v=>{LG.settings.style=v;LG.settings.pix1=1;applyStyle()});
   const S2=(id,k,f)=>seg(id,v=>{LG.settings[k]=f?f(v):v});const B=v=>v==='1';
   S2('setDef','defMode');S2('setDP','defPlayer');S2('setPC','pclock',v=>+v);S2('setZ','zoom',v=>v==='auto'?'auto':+v);S2('setCel','celebrate',B);S2('setPre','pregame',B);S2('setHalf','halftime',B);S2('setTk','ticker',B);S2('setPkg','pkg');S2('setGfx','gfx',B);S2('setCoin','coin',B);S2('setInj','injuries',B);S2('setHap','haptics',B);S2('setTap','uiSounds',B);S2('setBig','bigText',B);S2('setCB','cb',B);
   for(const k of ['acc','run','cov','tkl','inj'])seg('sl-'+k,v=>{LG.settings.sl=LG.settings.sl||{};LG.settings.sl[k]=+v});S2('setRp','replay');S2('setLow','lower',B);S2('setWP','wp',v=>v==='0'?false:v);S2('setDB','db',B);S2('setBug','bugPos');S2('setBS','bugSize');S2('setBA','hudAlpha',v=>+v);S2('setCr','crowd');S2('setSt','studentTheme');S2('setSide','sideline',B);S2('setPy','pyro',B);S2('setStar','stars',B);S2('setRt','routes',B);S2('setStk','stickUI',B);S2('setTurf','specialTurf',B);S2('setShk','shake',B);
