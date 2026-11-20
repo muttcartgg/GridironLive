@@ -5,14 +5,12 @@
    SJ side judge (near) and FJ field judge (far) ~18 yd deep, on the goal line inside the 20 ·
    BJ back judge ~25 yd deep in the middle (end line in goal-to-go).
    offiFrame(now) moves them (once per frame, from prepPlayers in 08d) and returns the list that is depth-sorted
-   with the players; drawAthlete hands them to drawOfficial, which reuses the 08d rig.
+   with the players; drawAthlete draws them with the 08d puppet (athFig, athPoseRef) in the official's kit.
    Signals come from the play result (touchdown: both arms up · incomplete: arms waving · first down: point
    toward the offense's direction of attack · spotting the ball) and fx events (01b): flag (a yellow flag is
    tossed in an arc toward the foul and stays until the next snap), firstDown, snap.
    ========================================================= */
 const OFFI={list:null,t:0,poss:'',flag:null,fd:0,fdWing:'HL',incPlay:null};
-const OFFI_KIT={shirt:'#F2F3F5',shirtD:'#C3C7CE',stripe:'#15171B',pants:'#ECEEF2',pantsD:'#BFC3CA',sock:'#15171B'};
-const OFFI_ST=[-.52,.04,.6];
 function offiMake(){OFFI.list=['R','U','HL','LJ','SJ','FJ','BJ'].map((r,i)=>({ref:r,id:i,x:S.los,y:CEN,vx:0,vy:0,z:0,phase:i*1.7,face:1,fallP:0,tx:S.los,ty:CEN,sig:'',sigEnd:0,sigT0:0,_bh:.97,_bw:.9,tone:(i*3+1)%4,_inc:false}));OFFI.poss=''}
 function offiHome(o){const L=S.los,b=S.ballY,dp=Math.min(L+18,110);
   switch(o.ref){case 'R':o.tx=Math.max(-3,L-12.5);o.ty=clamp(b+5.5,2,FW-2);break;case 'U':o.tx=Math.min(L+7.5,119);o.ty=clamp(b-1.6,2,FW-2);break;
@@ -66,32 +64,8 @@ function offiFrame(now){
   const f=OFFI.flag;if(f&&f.t<f.T)f.t+=dt;
   return L;
 }
-function offiPose(o,now){const A=ATP,sp=Math.hypot(o.vx,o.vy),run=clamp(sp/7.5,0,1);
-  A.ph=o.phase;A.run=run;A.rot=0;A.kx=o.face;A.carry=0;A.u=0;A.ball='';
-  if(sp>.45){A.legs=o.vx*o.face<-.4?'back':'run';A.st=.05+.22*run;A.lean=.05+.2*run;A.cr=.04+.05*run;A.aN=A.aF='swing'}
-  else{A.legs='stand';A.st=0;A.lean=.03;A.cr=.03;A.aN=A.aF='hang';if(S.phase==='presnap'&&(o.ref==='HL'||o.ref==='LJ'||o.ref==='U')){A.legs='gun';A.cr=.25;A.lean=.32;A.aN=A.aF='knees'}}
-  if(o.sig&&now<o.sigEnd){const m=o.sig;A.u=clamp((now-o.sigT0)/420,0,1);
-    if(m==='up'||m==='wave')A.aN=A.aF=m;else if(m==='fwd'){A.kx=1;A.aN='fwd';A.aF='hang'}else A.aN=m}}
-function drawOfficial(c,o,now){
-  const s=scE(),sx=X(o.x),sy=Y(o.y),hh=s*2.75*o._bh,bw=o._bw;if(sx<-hh||sx>W+hh||sy<-hh*.3||sy>H+hh*2)return;
-  offiPose(o,now);athRig(hh,bw);athXf(c,sx,sy,ATP.kx,0);
-  const K=OFFI_KIT,J=ATJ,sk=ATH.sk[o.tone]||ATH.sk[1],ln=ATP.lean,nx=Math.cos(ln),ny=Math.sin(ln),hw=hh*.085*bw,cw=hh*.1*bw;
-  athLegP(c,0,hh,bw*.85,K.pantsD,K.sock,'',false,false);
-  athArmP(c,0,hh,bw*.85,K.shirtD,sk[1],sk[1],sk[1]);
-  athTorso(c,hh,bw*.88,K.shirt,'',K.shirtD);
-  c.strokeStyle=K.stripe;c.lineWidth=Math.max(1,hh*.03);c.beginPath();
-  for(const f of OFFI_ST){c.moveTo(J.hx+nx*hw*f,J.hy+ny*hw*f);c.lineTo(J.sx+nx*cw*f,J.sy+ny*cw*f)}c.stroke();
-  athSeg(c,J.hx-nx*hw,J.hy-ny*hw,J.hx+nx*hw,J.hy+ny*hw,hh*.1,K.pants);
-  {const bx=J.hx+ny*hh*.05,by=J.hy-nx*hh*.05;athSeg(c,bx-nx*hw,by-ny*hw,bx+nx*hw,by+ny*hw,Math.max(1,hh*.026),K.stripe)}
-  athLegP(c,1,hh,bw*.85,K.pants,K.sock,'',false,false);
-  const r=hh*.112,x=J.nx,y=J.ny+hh*.01,cap=o.ref==='R'?'#F4F5F7':'#121417';
-  c.fillStyle=sk[0];c.beginPath();c.arc(x,y,r*.92,0,TAU2);c.fill();
-  c.fillStyle=cap;c.beginPath();c.arc(x,y-r*.08,r*.96,Math.PI,TAU2);c.closePath();c.fill();
-  athSeg(c,x+r*.2,y-r*.1,x+r*1.3,y-r*.02,r*.24,cap);
-  if(o.ref==='R'){c.strokeStyle='#15171B';c.lineWidth=Math.max(.7,r*.12);c.beginPath();c.arc(x,y-r*.08,r*.96,Math.PI*1.05,Math.PI*1.95);c.stroke()}
-  athArmP(c,1,hh,bw*.85,K.shirt,sk[0],sk[0],sk[0]);
-  athReset(c);
-}
+/* drawn by the 08d puppet in the official's kit (striped shirt, black pants, cap; the referee's cap is white); poses in athPoseRef */
+function drawOfficial(c,o,now){athFig(c,o,now)}
 /* penalty flag: tossed toward the foul, then left lying on the turf until the next snap */
 function offiFlagDraw(c,now){const f=OFFI.flag;if(!f||f.t<0)return;const s=scE(),q=clamp(f.t/f.T,0,1);
   const x=lerp(f.x0,f.x1,q),y=lerp(f.y0,f.y1,q),z=q<1?(1-q)*2.1+q*(1-q)*6.4:0,px=X(x),py=Y(y)-z*s*.9;if(px<-30||px>W+30)return;
