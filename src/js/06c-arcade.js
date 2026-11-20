@@ -155,10 +155,11 @@ function camArc(dt){
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY);
   /* focus: what the shot follows, and where across the view it sits (0 = left edge) */
   let fx=S.los,fy=S.ballY,an=.36,st=.42;
-  if(ph==='presnap'){const qx=Q?Q.x:S.los-1;fx=o?(pass?qx:S.los):S.los;an=o?(pass?.27:.36):.52}
+  const pa=port?.2:.27;   // passes: the QB sits further left in the narrow portrait view (more of the routes ahead)
+  if(ph==='presnap'){const qx=Q?Q.x:S.los-1;fx=o?(pass?qx:S.los):S.los;an=o?(pass?pa:.36):.52}
   else if(ball.state==='air'&&!ball.pitch){fx=ball.x+(ball.tx-ball.x)*.4;fy=lerp(ball.y,ball.ty,.4);an=.5;st=.32}
   else{const h=(play&&play.carrier)||Q;if(h){fx=h.x;fy=h.y;
-    if(play&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){an=.27;if(aim)fy=lerp(Q.y,aim.y,.4)}
+    if(play&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){an=pa;if(aim)fy=lerp(Q.y,aim.y,.4)}
     else{fx+=clamp((h.vx||0)*.4,-3,5);an=o?.4:.45;st=.34}}}
   let tx=fx+vw*(.5-an);
   /* dead zone: the target only moves once the focus leaves a window around the current aim */
