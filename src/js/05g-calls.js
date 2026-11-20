@@ -194,7 +194,7 @@ function callSpecials(){
 function renderCallCore(){
   const fourth=S.down===4&&!S.conv,specials=callSpecials();
   $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(ddText())}</b> · ${S.conv?'from the 3':esc(spotLabel(S.los))}${fourth?` · <span class="tag gold">Go for it ${Math.round(convChance()*100)}%</span>`:''}${playStyle()!=='full'?modeTag():''}`;
-  if(!['run','pass','special'].includes(CALL_TAB))CALL_TAB='pass';
+  if(!['run','pass','special'].includes(CALL_TAB))CALL_TAB={rpo:'run',pa:'pass',screen:'pass',goal:'special',trick:'special'}[CALL_TAB]||'pass';   // a Full tab keeps its kind
   const g=CALL_TAB,list=CORE.filter(p=>p.core===g&&!(S.conv&&p.hail)),picks=coachPicks(3,null,CORE),nh=S.lastPc&&!S.conv&&S.down<4;
   const kicks=g==='special'&&specials.length?`<div class="cs-kicks">${specials.map(([k,t,s])=>`<button class="play ${k.startsWith('fake')?'warn':'alt'}" data-sp="${k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>`:'';
   $('#callRow').innerHTML=`<div class="cs-bar core"><div class="cs-tabs cs-groups">${[['run','Run'],['pass','Pass'],['special','Special']].map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===g}">${l}</button>`).join('')}</div>`+
