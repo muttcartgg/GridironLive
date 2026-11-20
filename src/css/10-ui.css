@@ -280,3 +280,6 @@
 
 /* game controller focus ring (06b) */
 .padfocus{outline:3px solid #FFD23F!important;outline-offset:2px;box-shadow:0 0 0 6px rgba(255,210,63,.28)!important}
+/* ball live (07 hud sets :root.lv): the score bug alone. The ticker, win probability, lower thirds, decibel meter,
+   watermark, drive tracker, situation chip and the bug's sub-strip step aside and come back between plays */
+:root.lv #ticker,:root.lv #wpG,:root.lv #lower,:root.lv #dbm,:root.lv #wm,:root.lv #drv,:root.lv #sit,:root.lv #sb .sb-sub{opacity:0!important;visibility:hidden;transition:opacity .2s,visibility 0s .2s}

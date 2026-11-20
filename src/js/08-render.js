@@ -116,7 +116,10 @@ function drawModern(now){
   // routes
   if(uOff()&&LG.settings.routes!==false&&(S.phase==='presnap'||(S.phase==='live'&&play&&play.type==='pass'&&!play.thrown&&!play.scramble))){
     c.save();c.strokeStyle=c.fillStyle=tvCol(S.home);c.lineWidth=Math.max(1.5,s*.16);   /* TV-safe colour: a navy or black team's routes stay visible on the turf */
-    c.setLineDash([s*.7,s*.45]);c.globalAlpha=.6;c.lineJoin='round';
+    c.setLineDash([s*.7,s*.45]);c.globalAlpha=S.phase==='presnap'?.55:.32;c.lineJoin='round';
+    const rp=S.phase==='presnap'&&S.pc&&S.pc.run,cr=rp&&KP[rp.carrier==='QB'?'QB':rp.carrier];
+    if(cr){const L=S.los,gy=clamp(S.ballY+rp.gap*S.flip,3,FW-3),pts=[[cr.x,cr.y],[L+1.2,gy],[L+5.5,gy]];c.save();c.setLineDash([]);c.lineWidth=Math.max(2,s*.2);c.globalAlpha=.5;c.beginPath();c.moveTo(X(pts[0][0]),Y(pts[0][1]));for(let i=1;i<3;i++)c.lineTo(X(pts[i][0]),Y(pts[i][1]));c.stroke();
+      c.translate(X(pts[2][0]),Y(pts[2][1]));c.beginPath();c.moveTo(s*.75,0);c.lineTo(-s*.4,s*.5);c.lineTo(-s*.4,-s*.5);c.closePath();c.fill();c.restore()}
     for(const p of OFF){if(!p.rpath||(play&&play.type==='run'))continue;const pts=p.rpath.slice();if(p.cont){const a=pts[pts.length-1],b=p.cont,d=hyp(b[0]-a[0],b[1]-a[1])||1;pts.push([a[0]+(b[0]-a[0])/d*5,a[1]+(b[1]-a[1])/d*5])}
       c.beginPath();c.moveTo(X(pts[0][0]),Y(pts[0][1]));for(let i=1;i<pts.length;i++)c.lineTo(X(pts[i][0]),Y(pts[i][1]));c.stroke();
       const e=pts[pts.length-1],f=pts[pts.length-2],ang=Math.atan2(Y(e[1])-Y(f[1]),X(e[0])-X(f[0]));c.save();c.setLineDash([]);c.translate(X(e[0]),Y(e[1]));c.rotate(ang);c.beginPath();c.moveTo(s*.6,0);c.lineTo(-s*.4,s*.4);c.lineTo(-s*.4,-s*.4);c.closePath();c.fill();c.restore()}
@@ -141,9 +144,9 @@ function drawModern(now){
   const sorted=P.slice().sort((a,b)=>a.y-b.y);
   if(typeof prepPlayers==='function')prepPlayers(c,sorted,now);
   for(const p of sorted){
-    if(passLive&&eligible(p)){const [,nd]=nearest(DEF,p.x,p.y);const col=openCol(nd);c.save();c.strokeStyle=col;c.shadowColor=col;c.shadowBlur=10;c.lineWidth=2.5;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*.85,s*.85*VY,0,0,7);c.stroke();c.restore()}
+    if(passLive&&eligible(p)){const [,nd]=nearest(DEF,p.x,p.y);const col=openCol(nd);c.save();c.beginPath();c.ellipse(X(p.x),Y(p.y),s*1.02,s*1.02*VY,0,0,7);c.strokeStyle='rgba(0,0,0,.45)';c.lineWidth=Math.max(4.5,s*.3);c.stroke();c.strokeStyle=col;c.shadowColor=col;c.shadowBlur=10;c.lineWidth=Math.max(3,s*.19);c.stroke();c.restore()}
     if(play&&p===play.carrier&&isRunner()){c.save();c.strokeStyle='rgba(255,255,255,.75)';c.lineWidth=2;const pr=s*(.9+.12*Math.sin(now/120));c.beginPath();c.ellipse(X(p.x),Y(p.y),pr,pr*VY,0,0,7);c.stroke();if(play.jukeT>0||play.hurdle>0){c.strokeStyle=S.home.c1;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),pr*1.3,pr*1.3*VY,0,0,7);c.stroke()}c.restore()}
-    if((p===S.ctrl&&ctrlRing(p)||rtgMine(p)&&p.side==='o')&&S.phase!=='dead'){c.save();c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=12;c.lineWidth=3;c.beginPath();c.ellipse(X(p.x),Y(p.y),s*1.05,s*1.05*VY,0,0,7);c.stroke();c.beginPath();c.moveTo(X(p.x),Y(p.y)-s*3.6);c.lineTo(X(p.x)-s*.45,Y(p.y)-s*4.3);c.lineTo(X(p.x)+s*.45,Y(p.y)-s*4.3);c.closePath();c.fillStyle='#FFD23F';c.fill();c.restore()}
+    if((p===S.ctrl&&ctrlRing(p)||rtgMine(p)&&p.side==='o')&&S.phase!=='dead'){selRing(c,X(p.x),Y(p.y),s,now)}
     drawAthlete(c,p,now);
   }
   drawSideline(c,s,now,true);drawStick(c);
@@ -259,3 +262,7 @@ function drawRetro(now){
   ctx.setTransform(DPR,0,0,DPR,0,0);drawWeather(ctx);
 }
 function draw(now){if(LG&&LG.settings.style==='retro')drawRetro(now);else drawModern(now);if(S.phase==='replay')drawOverlay(now)}
+/* the man you control: a bold ring with a dark under-stroke and a bobbing marker over his head (larger and clearer on a phone) */
+function selRing(c,x,y,s,now){const r=s*1.32,b=Math.sin(now/180)*s*.12;c.save();c.beginPath();c.ellipse(x,y,r,r*VY,0,0,7);c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=Math.max(6,s*.42);c.stroke();
+  c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=14;c.lineWidth=Math.max(3.5,s*.26);c.stroke();c.shadowBlur=0;
+  const ty=y-s*4.1+b;c.beginPath();c.moveTo(x,ty);c.lineTo(x-s*.7,ty-s*.95);c.lineTo(x+s*.7,ty-s*.95);c.closePath();c.fillStyle='#FFD23F';c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=Math.max(1.5,s*.1);c.stroke();c.fill();c.restore()}

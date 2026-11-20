@@ -104,13 +104,23 @@ function readCov(){
   if(typeof covWeights==='function'){const w=covWeights(defT(),sitInfo());let bv=-1;for(const k in w)if(w[k]>bv){bv=w[k];top=k}}
   return S.readCov=Math.random()<.7&&S.cov?S.cov:top;
 }
-function coachPicks(n,filter){
+/* one short reason per pick (the call sheet; the long line stays for the Adjust menu) */
+const WHY_SHORT=[[/^vs (.+?) · (beats|attacks the)/,m=>'Beats '+m[1]],[/two deep safeties/,'Two-deep shell · run'],[/pressure coming/,'Beats the blitz'],[/between the safeties/,'Splits the safeties'],
+  [/take the underneath/,'Take the underneath'],[/before the corner/,'Quick vs man'],[/turn and chase/,'Run vs man'],[/light box/,'Light box · run it'],[/pulls the linebackers/,'Pulls the LBs up'],
+  [/linebackers in coverage/,'Throw on the LBs'],[/six DBs/,'Screen vs dime'],[/get out of bounds/,'Gets out of bounds'],[/then hurry up/,'Quick, then hurry'],[/^Bleed the clock/,'Bleeds the clock'],
+  [/^Goal line/,'Goal-line power'],[/power it/,'Power for a yard'],[/stacked box/,'Quick vs a loaded box'],[/run for the first/,'Run for the first'],[/high-percentage/,'Safe throw'],
+  [/free shot/,'Free shot deep'],[/past the sticks/,'Past the sticks'],[/screen vs a rush/,'Screen vs the rush'],[/draw vs/,'Draw vs the rush'],[/at the sticks/,'Sits at the sticks'],
+  [/on a run down/,'Play-action on 1st'],[/compressed field/,'Red-zone beater'],[/pound it/,'Pound it in'],[/window closes/,'Quick red-zone hit'],[/^Backed up/,'Safe when backed up'],
+  [/flip the field/,'Flip the field'],[/no sacks/,'No sacks · stay in range'],[/expect pass/,'They expect pass'],[/freezes the safeties/,'They expect run'],[/crowding the box/,'Box is crowded'],
+  [/^Change it up/,'Change it up'],[/^(.+ staple)/,m=>m[1]],[/reads the overhang/,'QB reads it'],[/make the end choose/,'Make the end choose'],[/rush run past/,'Let the rush run past'],[/hold the safeties/,'Holds the safeties']];
+function whyShort(t){t=String(t||'');for(const [re,r] of WHY_SHORT){const m=t.match(re);if(m)return typeof r==='function'?r(m):r}const s=t.split(' · ').pop();return s.charAt(0).toUpperCase()+s.slice(1)}
+function coachPicks(n,filter,pool){
   const sit=sitInfo(),cov=readCov(),last=(S.uHist||[]).slice(-2).map(h=>h.id),out=[],tabs={};
-  const list=PLAYBOOK.filter(p=>!(S.conv&&p.hail)&&(!filter||filter(p))).map(p=>{const [s,why]=rateCall(p,sit,S.home,cov);return {p,s:s*(last.includes(p.id)?.35:1)*(1+((p.id*37)%11)/60),why}}).filter(x=>x.s>0).sort((a,c)=>c.s-a.s);
+  const list=(pool||PLAYBOOK).filter(p=>!(S.conv&&p.hail)&&(!filter||filter(p))).map(p=>{const [s,why]=rateCall(p,sit,S.home,cov);return {p,s:s*(last.includes(p.id)?.35:1)*(1+((p.id*37)%11)/60),why}}).filter(x=>x.s>0).sort((a,c)=>c.s-a.s);
   for(const x of list){if(out.length>=n)break;if((tabs[x.p.tab]||0)>=2)continue;if(out.length===n-1&&out.every(o=>o.p.cat===x.p.cat)&&list.some(y=>y.p.cat!==x.p.cat&&y.s>x.s*.5&&!out.includes(y)))continue;tabs[x.p.tab]=(tabs[x.p.tab]||0)+1;out.push(x)}
   /* each pick says why in its own words: the most specific reason whose angle (and text) no earlier pick used */
   const usedT=new Set(),usedC=new Set();
-  return out.map(x=>{const rs=pickReasons(x.p,sit,cov,x.why),r=rs.find(([c,t])=>!usedT.has(t)&&!usedC.has(c))||rs.find(([,t])=>!usedT.has(t))||['gen',`${x.why} · ${x.p.name}`];usedT.add(r[1]);usedC.add(r[0]);return {p:x.p,why:`${ddShort()} · ${r[1]}`}});
+  return out.map(x=>{const rs=pickReasons(x.p,sit,cov,x.why),r=rs.find(([c,t])=>!usedT.has(t)&&!usedC.has(c))||rs.find(([,t])=>!usedT.has(t))||['gen',`${x.why} · ${x.p.name}`];usedT.add(r[1]);usedC.add(r[0]);return {p:x.p,why:`${ddShort()} · ${r[1]}`,short:whyShort(r[1])}});
 }
 /* the front the defense should show against a play's personnel (aiPickFront without the dice) */
 function expFront(p){const pers=(FORMS[p.form]||{}).pers||'11',heavy=['21','12','22','23','30'].includes(pers),tg=S.firstDownX-S.los;
@@ -166,8 +176,60 @@ function pickReasons(p,sit,cov,why0){
   return out;
 }
 
+/* ---------- Core / Full playbook (Settings › Gameplay › Playbook). Core: 30 plays in Run · Pass · Special and
+   eight one-tap defenses, every card on screen without scrolling. Full: every play (category tabs, formation chips)
+   and fronts × coverages. The CPU always calls from the whole book. ---------- */
+const coreMode=()=>!(LG&&LG.settings&&LG.settings.playbook==='full');
+SETTINGS_EXTRA.push({card:'Gameplay',key:'playbook',label:'Playbook',opts:[['core','Core · '+CORE.length],['full','Full · '+PLAYBOOK.length]],def:'core',note:'Core: '+CORE.length+' plays in Run · Pass · Special and one-tap defenses. Full: every play, formation filters, fronts × coverages.'});
+SETTINGS_EXTRA.push({card:'Gameplay',key:'tapSnap',label:'Tap the field to snap',opts:[[1,'On'],[0,'Off']],def:1,bool:true,note:'Once a play is called, a tap anywhere on the field (not on a receiver) snaps the ball.'});
+/* the one-tap repeat: the last play again, straight to the snap (no huddle) */
+function repeatLast(){S.hurry=true;pickPlay(S.lastPc);setTimeout(()=>{if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;startPlay(S.pc)}},460)}   // just past the re-form glide
+function callSpecials(){
+  const late=!S.ot&&S.q>=4&&S.clock<=S.qlen*.25&&S.score[0]>S.score[1],fourth=S.down===4&&!S.conv,out=[];
+  if(fourth){if(!S.ot)out.push(['punt','Punt','Flip the field'],['fakepunt','Fake punt','Catch them napping']);const fd=fgDist();if(fd<=maxFG()+3)out.push(['fg','Field goal',fd+' yd attempt'],['fakefg','Fake FG','Surprise run'])}
+  if(late&&!S.conv)out.push(['kneel','Kneel','Run clock · −1 yd']);
+  if(!S.conv&&S.clockRun&&!S.ot&&S.down<4)out.push(['spike','Spike','Stop the clock']);
+  return out;
+}
+function renderCallCore(){
+  const fourth=S.down===4&&!S.conv,specials=callSpecials();
+  $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(ddText())}</b> · ${S.conv?'from the 3':esc(spotLabel(S.los))}${fourth?` · <span class="tag gold">Go for it ${Math.round(convChance()*100)}%</span>`:''}${playStyle()!=='full'?modeTag():''}`;
+  if(!['run','pass','special'].includes(CALL_TAB))CALL_TAB='pass';
+  const g=CALL_TAB,list=CORE.filter(p=>p.core===g&&!(S.conv&&p.hail)),picks=coachPicks(3,null,CORE),nh=S.lastPc&&!S.conv&&S.down<4;
+  const kicks=g==='special'&&specials.length?`<div class="cs-kicks">${specials.map(([k,t,s])=>`<button class="play ${k.startsWith('fake')?'warn':'alt'}" data-sp="${k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>`:'';
+  $('#callRow').innerHTML=`<div class="cs-bar core"><div class="cs-tabs cs-groups">${[['run','Run'],['pass','Pass'],['special','Special']].map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===g}">${l}</button>`).join('')}</div>`+
+    `<div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Run the last play again, straight to the snap">Repeat<small>${esc(S.lastPc.name)}</small></button>`:''}</div></div>`+
+    `<div class="cs-scroll"><div class="cs-picks core" aria-label="Coach's picks">${picks.map((x,i)=>`<button class="cp" data-pid="${x.p.id}"${i?'':' data-coach="1"'}><b><i>★</i> ${esc(x.p.name)}</b><small>${esc(x.short)}</small></button>`).join('')}</div>${kicks}`+
+    `<div class="pbgrid core">${list.map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b>${esc(p.name)}</b><small>${esc(p.tag)}</small></button>`).join('')}</div></div><div class="cs-more" aria-hidden="true">More ▾</div>`;
+  const row=$('#callRow');
+  row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;renderCall()});
+  const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();repeatLast()};
+  row.querySelectorAll('[data-pid]').forEach(b=>b.onclick=()=>{ac();pickPlay(PLAYBOOK[+b.dataset.pid])});
+  row.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{ac();callSpecial(b.dataset.sp)});
+  scrollHint(row);$('#call').hidden=false;
+}
+/* Core defense: eight one-tap calls in plain words; each sets the front and the coverage (Full: fronts × coverages) */
+const DEF_CORE=[['base','Base','Three linebackers · stop the run',()=>[S.home.oddLean?'34':'43','cover3']],['cover3','Cover 3','Three deep · keep it in front',()=>['auto','cover3']],
+  ['cover2','Cover 2','Two deep · guard the sidelines',()=>['auto','cover2']],['man','Man','Stick to every receiver',()=>['auto','man']],['blitz','Blitz','Send five · three deep behind',()=>['auto','firezone']],
+  ['prevent','Prevent','Everyone deep · no big play',()=>['dime','prevent']],['goal','Goal line','Load the box · stop the run',()=>['goal','man']]];
+function renderDefCore(){
+  defHead();const sit=sitInfo(),pc=S.aiPlay;
+  if(!S.dcPick)S.dcPick=[aiPickFront(S.home,sit,pc),aiPickCoverage(S.home,sit)];
+  const [pf,pv]=S.dcPick,why=sit.twoMin?'Two-minute':sit.redzone?'Red zone':sit.toGo<=2?'Run down':sit.down>=2&&sit.toGo>=7?'Passing down':'Best fit';
+  $('#callRow').innerHTML=`<div class="cs-bar core"><div class="cs-quick"><button class="cs-q" data-dc="sim" title="Sim this drive">Sim drive<small>Skip to the result</small></button></div></div>`+
+    `<div class="cs-scroll"><div class="pbgrid dcore"><button class="play dcard cp ${S.defCore==='auto'?'sel':''}" data-dc="auto"><b><i>★</i> Coach's call</b><small>${esc(why)} · ${esc(COVS[pv].n)}</small></button>`+
+    `${DEF_CORE.map(([k,t,s])=>`<button class="play dcard ${k===S.defCore?'sel':''}" data-dc="${k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div></div><div class="cs-more" aria-hidden="true">More ▾</div>`;
+  const row=$('#callRow');
+  row.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>{ac();const k=b.dataset.dc;
+    if(k==='sim'){$('#call').hidden=true;S.phase='wait';return oppDrive(110-S.los,'Drive continues')}
+    const c=DEF_CORE.find(x=>x[0]===k),[fr,cv]=c?c[3]():['auto','auto'];S.defCore=k;S.defCall=cv;S.defFront=fr;
+    setupFormation(S.aiPlay,S.flip);$('#call').hidden=true;S.phase='presnap';aiSnapT=.75+.5*crowdNoise();if(typeof BC!=='undefined')BC.presnap();hint(crowdNoise()>.5?'Get set… it is loud in here':'Get set…')});
+  scrollHint(row);$('#call').hidden=false;
+}
+
 /* ---------- offense call sheet ---------- */
 function renderCall(){
+  if(coreMode())return renderCallCore();
   const late=!S.ot&&S.q>=4&&S.clock<=S.qlen*.25&&S.score[0]>S.score[1],fourth=S.down===4&&!S.conv;
   $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(ddText())}</b> · ${S.conv?'from the 3':esc(spotLabel(S.los))} · QB ${esc(Q.pl.last)} <span class="ovr">${Q.ovr}</span>${S.wx!=='Clear'?' · '+WX_ICON[S.wx]+' '+S.wx:''}${fourth?` · <span class="tag gold">Go-for-it ${Math.round(convChance()*100)}%</span>`:''}${modeTag()}`;
   const specials=[];
@@ -184,7 +246,7 @@ function renderCall(){
   const picks=coachPicks(3),nh=S.lastPc&&!S.conv&&S.down<4;
   $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}</div><div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Repeat the last play at the line">No huddle<small>${esc(S.lastPc.name)}</small></button>`:''}<button class="cs-q coach" data-coach="1">Coach's pick<small>${esc(picks[0]?picks[0].p.name:'')}</small></button></div></div>`+
     (chips?`<div class="cs-chips">${chips}</div>`:'')+
-    `<div class="cs-scroll"><div class="cs-picks">${picks.map(x=>`<button class="cp" data-pid="${x.p.id}"><em>Coach's pick</em><b>${esc(x.p.name)}</b><small>${esc(x.why)}</small></button>`).join('')}</div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div></div><div class="cs-more" aria-hidden="true">Swipe up · more plays ▾</div>`;
+    `<div class="cs-scroll"><div class="cs-picks">${picks.map(x=>`<button class="cp" data-pid="${x.p.id}"><em>Coach's pick</em><b>${esc(x.p.name)}</b><small>${esc(x.short)}</small></button>`).join('')}</div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div></div><div class="cs-more" aria-hidden="true">Swipe up · more plays ▾</div>`;
   const row=$('#callRow');
   row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;CALL_FORM='';renderCall()});
   row.querySelectorAll('[data-fm]').forEach(b=>b.onclick=()=>{ac();CALL_FORM=b.dataset.fm;renderCall()});
@@ -201,9 +263,11 @@ function scrollHint(row){const sc=row.querySelector('.cs-scroll'),m=row.querySel
 /* ---------- defense call sheet: fronts × coverages ---------- */
 function defHead(){
   const pc=S.aiPlay,f=pc&&FORMS[pc.form];
+  if(coreMode())return $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(S.away.abbr)} ball</b> · ${esc(ddText())} · ${esc(spotLabelFor(S.los,'away'))}${S.auto?'':S.ctrl?` · you: <b>#${S.ctrl.num} ${esc(S.ctrl.pl.last)}</b>`:''}${playStyle()!=='full'?modeTag():''}`;
   $('#callHead').innerHTML=`<span class="cs-sb">${esc(S.home.abbr)} ${S.score[0]}–${S.score[1]} ${esc(S.away.abbr)} · ${S.ot?'OT':ordQ(S.q)+' '+fmtClock(S.clock)} · </span><b>${esc(S.away.abbr)} ball</b> · ${esc(ddText())} · ${esc(spotLabelFor(S.los,'away'))} · <span class="tag">${esc(pc?pc.form:'')} · ${f?f.pers:'11'} personnel</span>${S.auto?' · the AI plays it out':S.ctrl?` · you control <b>#${S.ctrl.num} ${esc(S.ctrl.pl.last)}</b> <span class="ovr">${S.ctrl.ovr}</span>`:''}${modeTag()}`;
 }
 function renderDefCall(){
+  if(coreMode())return renderDefCore();
   defHead();const sit=sitInfo(),pc=S.aiPlay;
   if(!S.dcPick)S.dcPick=[aiPickFront(S.home,sit,pc),aiPickCoverage(S.home,sit)];
   const [pf,pv]=S.dcPick,f=pc&&FORMS[pc.form],why=`${ddShort()} · ${f?f.pers:'11'} personnel${sit.down>=2&&sit.toGo>=7?' · passing down':sit.toGo<=2?' · run down':sit.redzone?' · red zone':''}`;

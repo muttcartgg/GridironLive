@@ -167,6 +167,20 @@ const SIDE_R=new Set(['out','qout','deepout','comeback','corner','sail','fade','
 PLAYBOOK.forEach((p,i)=>{p.id=i;p.tab=tabOf(p);let dp=0,sd=0;for(const k in p.r){const rt=ROUTES[p.r[k]];if(!rt)continue;const m=Math.max(...rt.w.map(w=>w[0]));dp=Math.max(dp,rt.stop?m:Math.max(m,22));if(SIDE_R.has(p.r[k]))sd++}
   p.depth=dp;p.side=sd;p.quick=p.cat==='pass'&&dp<=8&&!p.pa;p.v=p.v||''});
 const playByName=n=>PLAYBOOK.find(p=>p.name===n);
+/* the Core playbook (default call sheet, 05g): 30 of the plays above in three groups, each with a plain-language tag.
+   The CPU still calls from the whole book; Settings › Gameplay › Playbook › Full brings back every play. */
+const CORE_PLAYS=[
+  ['Inside Zone','run','Inside run'],['Power','run','Downhill · lead'],['Outside Zone','run','Outside run'],['Toss','run','Sweep · edge'],
+  ['Counter','run','Misdirection'],['HB Draw','run','Beats the rush'],['Jet Sweep','run','WR on the edge'],['Zone Read','run','QB option'],
+  ['QB Draw','run','QB up the middle'],['RPO Glance','run','Run or throw'],
+  ['Slants','pass','Quick · inside'],['Quick Outs','pass','Quick · sideline'],['Stick','pass','Quick · short'],['Curl Flat','pass','Short · vs zone'],
+  ['Mesh','pass','Crossers · vs man'],['Smash','pass','Beats Cover 2'],['Flood','pass','Beats Cover 3'],['Dagger','pass','Deep middle'],
+  ['Deep Outs','pass','Sideline · 2-min'],['Four Verticals','pass','Deep shot'],['PA Boot','pass','Fake · roll out'],['PA Deep Shot','pass','Fake run · go deep'],
+  ['RB Screen','pass','Screen · vs rush'],['Bubble Screen','pass','Quick screen · WR'],
+  ['QB Sneak','special','Need a yard'],['Jumbo Power','special','Goal line run'],['Goal Line Fade','special','Goal line throw'],['Goal Line PA','special','Goal line fake'],
+  ['Flea Flicker','special','Trick · deep'],['Hail Mary','special','Last play']
+];
+const CORE=CORE_PLAYS.map(([n,g,t])=>{const p=playByName(n);if(p){p.core=g;p.tag=t}return p}).filter(Boolean);
 /* defensive calls (05d assignCoverage / alignDefense). shell = safeties shown pre-snap ('1' single-high, '2' two-high;
    05d sometimes disguises it and rotates at the snap), press = corners may press. 'blitz' is Cover 0 (old saves keep it). */
 const COVS={

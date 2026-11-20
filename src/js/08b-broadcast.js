@@ -136,6 +136,10 @@ const BC={
     const hostDef=defT()===hostT();
     if(S.down===3&&!S.conv){if(hostDef){this.setRibbon('3RD DOWN · MAKE SOME NOISE',5);this.sound('third');this.setRibbon('DE-FENSE · DE-FENSE',5)}else this.setRibbon('3RD DOWN',3)}
     if(S.down===4&&!S.conv)this.setRibbon('4TH DOWN',4);
+  },
+  /* a star's lower third: before the snap (the ball-live screen stays clean; 10-ui hides the extras while it is live) */
+  starIntro(){
+    if(S.drive&&S.drive.plays>0)return;   // once a drive, on its first snap (a broadcast staple, not a running overlay)
     if(LG.settings.lower!==false&&Math.random()<.4){const cands=OFF.concat(DEF).filter(p=>p.ovr>=84&&!this.shown.has(p.pl.id)&&['QB','RB','WR','TE','CB','S','LB','DL'].includes(p.role));if(cands.length){const p=cands.sort((a,b)=>b.ovr-a.ovr)[0];this.shown.add(p.pl.id);this.lower(p)}}
   },
   /* situation graphic before the snap: 3rd/4th down odds, red zone, goal to go, late-half clock */
@@ -145,6 +149,7 @@ const BC={
     if(!S.ot&&(S.q===2||S.q===4)&&S.clock<=Math.max(30,S.qlen*.17)&&S.clock>0&&!this.lateShown[S.q]){this.lateShown[S.q]=true;this.twoMin();return}
     if(S.down>=3){const p=convChance();this.chip(`${ord(S.down)} & ${goal?'Goal':Math.max(1,Math.round(togo))}`,offT().c1,`${offT().abbr} converts ${Math.round(p*100)}% from here`,S.down===4?'d4':'');return}
     if(S.los>=90&&!this.rzShown){this.rzShown=true;this.chip(goal?'Goal to go':'Red zone','#E5383B',`${offT().abbr} red zone: ${offT()===S.home?S.stats.rzTD+'/'+S.stats.rzA:S.ostats.rzTD+'/'+S.ostats.rzA} TD`,'rz');return}
+    this.starIntro();
   },
   chant(t){this.setRibbon(t,4)},
   /* the lower third's number block: the jersey number, with the player's real headshot over it when there is one (02c playerPhoto) */

@@ -103,3 +103,32 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
    and in landscape (the sheet covers the score bug and repeats the score in its header) hide the bug underneath */
 #call h3,#opt h3{padding:0 46px;max-width:100%;box-sizing:border-box}
 @media (max-height:480px){body:has(#call:not([hidden])) #sb{visibility:hidden}}
+/* ---------- Core playbook sheets (05g renderCallCore / renderDefCore): three big group tabs, compact coach's picks and
+   every card on screen without scrolling on a phone (844x390: seven across, two rows; 390x844: three across) ---------- */
+.cs-bar.core{flex-direction:row;flex-wrap:wrap}
+.cs-bar.core .cs-quick{display:flex;margin-left:auto}
+.cs-bar.core .cs-quick:empty{display:none}
+.cs-groups{flex:1 1 200px}
+.cs-groups button{flex:1 1 0;min-height:46px;font-size:18px;letter-spacing:.06em}
+.cs-bar.core .cs-q{min-height:46px;max-width:170px}
+.cs-bar.core .cs-q.nh{color:#8CC4FF;border-color:color-mix(in srgb,#8CC4FF 45%,transparent)}
+.cs-picks.core{gap:6px;margin-bottom:6px}
+.cs-picks.core .cp{min-height:44px;padding:5px 10px 6px 12px;gap:2px;justify-content:center}
+.cs-picks.core .cp b{font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp b i{font-style:normal;color:var(--gold)}
+.cs-picks.core .cp small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:11.5px}
+#callRow .pbgrid.core{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.pbgrid.core .pcard{padding:4px 4px 6px;gap:2px;border-radius:12px}
+.pbgrid.core .pcard svg{height:46px;aspect-ratio:auto}
+.pbgrid.core .pcard b{font:700 15px/1.05 var(--tv);letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;padding:0 2px}
+.pbgrid.core .pcard small{font-size:10.5px;line-height:1.15;padding:0 2px}
+.cs-kicks{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px;margin-bottom:6px}
+.cs-kicks .play{min-height:50px;padding:6px 12px;justify-content:center}
+.cs-kicks .play small,.pbgrid.dcore .play small{display:block}
+#callRow .pbgrid.dcore{grid-template-columns:repeat(4,minmax(0,1fr));gap:7px}
+.pbgrid.dcore .dcard{min-height:64px;padding:8px 12px 8px 14px;justify-content:center;gap:3px}
+.pbgrid.dcore .dcard b{font-size:20px}
+.pbgrid.dcore .dcard small{font-size:12px;line-height:1.2;color:#c5cdd8}
+@media (orientation:portrait){#callRow .pbgrid.core{grid-template-columns:repeat(3,minmax(0,1fr))}#callRow .pbgrid.dcore{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .cs-picks.core .cp{padding:5px 6px 6px 10px}.cs-picks.core .cp b{font-size:14px}.cs-picks.core .cp small{font-size:11px}}
+@media (orientation:portrait) and (max-height:700px){.pbgrid.core .pcard svg{height:34px}}

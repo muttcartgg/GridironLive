@@ -275,7 +275,7 @@ function drawAthlete(c,p,now){
   const s=scE(),sx=X(p.x),sy=Y(p.y);athBody(p);const hh=s*2.75*p._bh,bw=p._bw;
   if(sx<-hh*1.5||sx>W+hh*1.5||sy<-hh*.5||sy>H+hh*2)return;
   const team=p.team||(p.side==='o'?offT():defT()),e=athCols(team),sk=ATH.sk[(p.pl&&p.pl.tone)|0]||ATH.sk[1];
-  if(LG.settings.stars!==false&&p.ovr>=86&&S.phase!=='kick'){const n=p.ovr>=94?3:p.ovr>=90?2:1;for(let i=0;i<n;i++){const x=sx+(i-(n-1)/2)*hh*.2,y=sy+hh*.16;c.fillStyle='rgba(0,0,0,.45)';starPath(c,x+1,y+1,hh*.075);c.fillStyle='#FFD23F';starPath(c,x,y,hh*.075)}}
+  if(LG.settings.stars!==false&&p.ovr>=86&&S.phase!=='kick'&&S.phase!=='live'){const n=p.ovr>=94?3:p.ovr>=90?2:1;for(let i=0;i<n;i++){const x=sx+(i-(n-1)/2)*hh*.2,y=sy+hh*.16;c.fillStyle='rgba(0,0,0,.45)';starPath(c,x+1,y+1,hh*.075);c.fillStyle='#FFD23F';starPath(c,x,y,hh*.075)}}
   athPose(p,now);athRig(hh,bw);athXf(c,sx,sy-(p.z||0)*s*.9,ATP.kx,ATP.rot);
   const A=ATP,J=ATJ,fs=A.kx<0?-1:1,acc=p._acc|0,slv=(acc>>4)%5,wc=(acc>>8)%6===0,spat=(acc>>11)%4===0;
   const vis=(acc%9)<((p.role==='WR'||p.role==='CB'||p.role==='S'||p.role==='RB')?3:1);

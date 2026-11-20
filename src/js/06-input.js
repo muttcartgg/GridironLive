@@ -40,6 +40,8 @@ cv.addEventListener('pointerdown',e=>{
   if(S.phase==='dead'&&play&&deadT>.2&&performance.now()-(S.deadAt||0)>350&&$('#celebSheet').hidden){deadT=.12;return}
   if(S.phase==='presnap'&&!uOff()){const d=defenderAt(e.clientX,e.clientY);if(d)switchDefender(d);return}
   if(S.phase==='presnap'&&hotRouteAt(e.clientX,e.clientY))return;
+  /* a play is called: tapping the field (anywhere but a receiver, who takes a hot route) snaps it (Settings › Gameplay) */
+  if(S.phase==='presnap'&&uOff()&&S.pc&&!S.auto&&LG.settings.tapSnap!==false&&!$('#snapBar').hidden&&$('#adjMenu').hidden&&$('#hotBar').hidden&&!S.motion){$('#snapGo').click();return}
   if(S.phase!=='live'||!play)return;
   if(S.auto&&!autoSprite())return;   // autopilot (05h): the AI has every player
   if(touch&&touch.mode==='aim'&&e.pointerId!==touch.id){S.bullet=!S.bullet;$('#bulletBtn').setAttribute('aria-pressed',String(S.bullet));updateAim();return}

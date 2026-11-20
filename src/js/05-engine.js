@@ -198,7 +198,8 @@ function pickPlay(pc){
   setupFormation(pc,S.flip);
   $('#snapName').textContent=pc.name;$('#snapBar').hidden=false;if(typeof BC!=='undefined')BC.presnap();
   if(S.auto){if(!S.ff){hint('Coach mode · snapping…');coachSnap(pc)}return}
-  hint(pc.run&&(pc.run.rpo||pc.run.read||pc.run.triple)?'Tap SNAP · the QB reads the defense for you':pc.cat==='run'?'Tap SNAP · then drag anywhere to steer':'Tap SNAP · drag back from anywhere to aim, release to throw');
+  const sn=LG.settings.tapSnap!==false?'Tap the field to snap':'Tap SNAP';
+  hint(pc.run&&(pc.run.rpo||pc.run.read||pc.run.triple)?sn+' · the QB reads it for you':pc.cat==='run'?sn+' · then drag to steer':sn+' · then drag back to aim');
 }
 $('#snapGo').onclick=()=>{ac();if(S.phase==='presnap'&&S.pc){$('#snapBar').hidden=true;adjClose();startPlay(S.pc)}};
 $('#snapAdj').onclick=()=>{ac();if(S.phase==='presnap'&&S.pc)adjToggle()};

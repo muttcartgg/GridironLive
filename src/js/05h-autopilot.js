@@ -106,10 +106,12 @@ function setPlayStyle(v){
   autoSync();if(S.phase==='presnap'&&!S.paused)toPresnap();
 }
 function pauseModeHTML(){if(playStyle()==='rtg')return `<div class="setrow"><span class="eyebrow">Road to Glory</span><span class="note">You play only your player; the AI plays the rest and sims the snaps you sit out.</span></div>`;const st=playStyle(),dm=LG.settings.defMode||'ask',seg=(id,o,v)=>`<div class="seg" id="${id}">${o.map(([k,l])=>`<button data-v="${k}" aria-pressed="${k===v}">${l}</button>`).join('')}</div>`;
-  return `<div class="setrow"><span class="eyebrow">Play style</span>${seg('pmStyle',[['full','Full control'],['coach','Coach'],['km','Key moments']],st)}</div><div class="setrow"><span class="eyebrow">Opponent drives</span>${seg('pmDef',[['ask','Ask'],['play','Play D'],['sim','Sim']],dm)}</div>`}
+  return `<div class="setrow"><span class="eyebrow">Play style</span>${seg('pmStyle',[['full','Full control'],['coach','Coach'],['km','Key moments']],st)}</div><div class="setrow"><span class="eyebrow">Opponent drives</span>${seg('pmDef',[['ask','Ask'],['play','Play D'],['sim','Sim']],dm)}</div><div class="setrow"><span class="eyebrow">Playbook</span>${seg('pmPB',[['core','Core'],['full','Full']],LG.settings.playbook==='full'?'full':'core')}</div>`}
 function pauseModeRender(){const box=$('#pmMode');if(!box||!LG)return;box.innerHTML=pauseModeHTML();
   box.querySelectorAll('#pmStyle [data-v]').forEach(b=>b.onclick=()=>{ac();const v=b.dataset.v;S.paused=false;setPlayStyle(v);S.paused=true;pauseModeRender();toast(STYLE_N[v])});
-  box.querySelectorAll('#pmDef [data-v]').forEach(b=>b.onclick=()=>{ac();LG.settings.defMode=b.dataset.v;if(typeof saveNow==='function')saveNow();pauseModeRender()})}
+  box.querySelectorAll('#pmDef [data-v]').forEach(b=>b.onclick=()=>{ac();LG.settings.defMode=b.dataset.v;if(typeof saveNow==='function')saveNow();pauseModeRender()});
+  /* Core / Full playbook (05g): an open call sheet re-draws in the new book */
+  box.querySelectorAll('#pmPB [data-v]').forEach(b=>b.onclick=()=>{ac();LG.settings.playbook=b.dataset.v;if(typeof saveNow==='function')saveNow();pauseModeRender();if(S.phase==='presnap'&&!$('#call').hidden)uOff()?renderCall():renderDefCall()})}
 
 /* ---------- KEY MOMENTS ---------- */
 /* how much one possession can move the user's win probability (05w): the swing of a touchdown for the offense */
