@@ -435,3 +435,7 @@
 :root[data-style="retro"] .pph>.pph-n{font-family:var(--disp);font-weight:700}
 :root[data-style="retro"] .pph.ok>.pph-n{background:var(--c1);border:2px solid #0A0F1A;padding:2px 3px 1px}
 :root[data-style="retro"] #lower .num.ph{background:var(--lc,var(--team))}
+:root[data-style="retro"] .matchup .side b,:root[data-style="retro"] .gotw .matchup .side b{font:700 var(--t3)/1.15 var(--disp);overflow-wrap:anywhere;text-transform:uppercase}
+:root[data-style="retro"] .matchup .vs,:root[data-style="retro"] .gotw .matchup .vs{font:700 var(--t4)/1 var(--disp)}
+:root[data-style="retro"] td:not(:first-child):not(:nth-child(2)),:root[data-style="retro"] td.n,:root[data-style="retro"] th.n{white-space:nowrap}
+:root[data-style="retro"] #app #toast,:root[data-style="retro"] #app:has(>.screen:not([hidden])) #toast{background:#F4F1E8;color:#10182B;border:2px solid #0A0F1A;font:700 var(--t2)/1 var(--disp);text-transform:uppercase;padding:10px 14px;box-shadow:var(--sh2)!important}
