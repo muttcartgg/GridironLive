@@ -74,10 +74,10 @@
 :root[data-style="retro"] :is(.chipbtn,.chip,.cs-chips .chip,.cs-fronts .chip){min-height:40px;padding:8px 12px;border:2px solid #0A0F1A;background:var(--panel2);color:var(--fg);font:400 var(--t2)/1 var(--disp);text-transform:uppercase;box-shadow:inset 0 2px 0 rgba(255,255,255,.08),var(--sh)!important}
 :root[data-style="retro"] :is(.chipbtn,.chip):active{transform:translateY(2px);box-shadow:none!important}
 :root[data-style="retro"] :is(.chipbtn,.chip,.cs-chips .chip,.cs-fronts .chip)[aria-pressed="true"]{background:#FFD23F;color:#10182B;border-color:#0A0F1A}
-:root[data-style="retro"] .seg,:root[data-style="retro"] :where(.screen,#modal,#pausem) .seg{display:inline-flex;gap:0;padding:0;background:#0A0F1A;border:2px solid #0A0F1A;box-shadow:var(--sh)!important}
-:root[data-style="retro"] .seg button,:root[data-style="retro"] :where(.screen,#modal,#pausem) .seg button{min-height:40px;padding:8px 10px;background:#243659;color:var(--mute);font:400 var(--t2)/1 var(--disp);text-transform:uppercase;border:0;margin:0 2px 0 0}
-:root[data-style="retro"] .seg button:last-child{margin-right:0}
-:root[data-style="retro"] .seg button[aria-pressed="true"],:root[data-style="retro"] :where(.screen,#modal,#pausem) .seg button[aria-pressed="true"]{background:#FFD23F;color:#10182B;box-shadow:inset 0 -3px 0 #C99A00!important}
+:root[data-style="retro"] .seg,:root[data-style="retro"] :where(.screen,#modal,#pausem) .seg{display:inline-flex;flex-wrap:wrap;gap:4px;padding:0 0 4px;background:none;border:0;box-shadow:none!important}
+:root[data-style="retro"] .seg button,:root[data-style="retro"] :where(.screen,#modal,#pausem) .seg button{flex:1 1 auto;min-height:40px;margin:0;padding:8px 10px;border:2px solid #0A0F1A;background:#243659;color:#C9D2E3;font:400 var(--t1)/1.2 var(--disp);text-transform:uppercase;white-space:normal;overflow:visible;text-overflow:clip;box-shadow:inset 0 2px 0 rgba(255,255,255,.08),var(--sh)!important}
+:root[data-style="retro"] .seg button:active{transform:translateY(2px);box-shadow:none!important}
+:root[data-style="retro"] .seg button[aria-pressed="true"],:root[data-style="retro"] :where(.screen,#modal,#pausem) .seg button[aria-pressed="true"]{background:#FFD23F;color:#10182B;box-shadow:inset 0 -4px 0 #C99A00,var(--sh)!important}
 :root[data-style="retro"] .setrow{gap:10px 12px}
 :root[data-style="retro"] .setrow>span:first-child,:root[data-style="retro"] .setrow>label{font:400 var(--t2)/1.25 var(--disp);text-transform:uppercase;color:var(--fg)}
 
@@ -118,7 +118,7 @@
 :root[data-style="retro"] .mv{font:400 var(--t2) var(--body)}
 
 /* team marks: flat shield, logo in a pixel frame */
-:root[data-style="retro"] .badge{background:var(--c1);border-style:solid;clip-path:polygon(0 0,100% 0,100% 70%,85% 70%,85% 80%,70% 80%,70% 90%,58% 90%,58% 100%,42% 100%,42% 90%,30% 90%,30% 80%,15% 80%,15% 70%,0 70%);font-family:var(--disp);font-weight:700}
+:root[data-style="retro"] .badge{background:var(--c1);clip-path:none;border:2px solid #0A0F1A!important;box-shadow:inset 0 0 0 2px var(--c2),inset 0 -6px 0 var(--c2)!important;font-family:var(--disp);font-weight:700;padding-bottom:4px}
 :root[data-style="retro"] .badge:has(img){clip-path:none;background:#F4F1E8;border:2px solid #0A0F1A!important;box-shadow:inset 0 0 0 2px #fff!important}
 :root[data-style="retro"] .badge img{image-rendering:auto}
 :root[data-style="retro"] .tvl{border:2px solid #0A0F1A;background:var(--c,#243659)}
@@ -178,7 +178,9 @@
 /* ---------- hub: header, tab bar, sub tabs ---------- */
 :root[data-style="retro"] #hub .hub-top{background:var(--hd,var(--team));border-bottom:2px solid #0A0F1A;box-shadow:inset 0 -4px 0 rgba(0,0,0,.25)!important}
 :root[data-style="retro"] #hub .ht-wm{font-family:var(--disp);font-weight:700;opacity:.12}
-:root[data-style="retro"] #hub .hub-top .who b{font:700 var(--t5)/1.1 var(--disp);text-transform:uppercase}
+:root[data-style="retro"] #hub .hub-top .who b{font:700 var(--t5)/1.15 var(--disp);text-transform:uppercase;white-space:normal;overflow:visible}
+:root[data-style="retro"] #hub .hub-top .who b span{display:inline;color:inherit;opacity:.85}
+@media (max-width:540px){:root[data-style="retro"] #hub .hub-top .who b{font-size:var(--t4)}}
 :root[data-style="retro"] #hub .hub-top .who b span{font-weight:700}
 :root[data-style="retro"] #hub .hub-top .who small{font:400 var(--t2)/1.2 var(--body);color:rgba(255,255,255,.82)}
 :root[data-style="retro"] #hub .ht-stats div{background:rgba(10,15,26,.45);border:2px solid #0A0F1A;padding:6px 8px}
@@ -293,8 +295,8 @@
 :root[data-style="retro"] #lower .num{font:700 var(--t6)/1 var(--disp);background:var(--team);color:var(--btn-ink)}
 :root[data-style="retro"] #lower .txt b{font:700 var(--t3)/1.1 var(--disp);text-transform:uppercase}
 :root[data-style="retro"] #lower .txt small{font:400 var(--t2)/1.2 var(--body)}
-:root[data-style="retro"] #hint{background:#10182B;border:2px solid #0A0F1A;color:#F4F1E8;font:400 var(--t2)/1.2 var(--disp);text-transform:uppercase;box-shadow:var(--sh2)!important;padding:8px 12px}
-:root[data-style="retro"] #ctlTip{background:#10182B;border:2px solid #0A0F1A;color:#F4F1E8;font:400 var(--t2)/1.25 var(--body);box-shadow:var(--sh2)!important;padding:8px 12px}
+:root[data-style="retro"] #hint{background:#10182B;border:2px solid #0A0F1A;color:#F4F1E8;font:400 var(--t3)/1.2 var(--body);text-transform:none;white-space:normal;text-align:center;max-width:min(560px,calc(100% - 24px));box-shadow:var(--sh2)!important;padding:8px 12px}
+:root[data-style="retro"] #ctlTip{top:calc(env(safe-area-inset-top,0px) + 92px);background:#10182B;border:2px solid #0A0F1A;color:#F4F1E8;font:400 var(--t2)/1.25 var(--body);box-shadow:var(--sh2)!important;padding:8px 12px}
 :root[data-style="retro"] #ctlTip b{background:#FFD23F;color:#10182B;font:700 var(--t1)/1 var(--disp);padding:4px 6px 3px}
 :root[data-style="retro"] #wm{font:700 var(--t2)/1 var(--disp);opacity:.75}
 :root[data-style="retro"] #wm b{background:#E8413A;color:#fff;padding:2px 4px}
@@ -314,9 +316,12 @@
 :root[data-style="retro"] #banner.k-gen .ti{font-size:var(--t7)}
 :root[data-style="retro"] #banner.on .bk,:root[data-style="retro"] #banner.on .bl,:root[data-style="retro"] #banner.on .bt,:root[data-style="retro"] #banner.on .pt{animation-timing-function:steps(6)}
 @media (max-width:540px){
-  :root[data-style="retro"] #banner .ti{font-size:var(--t7)}
-  :root[data-style="retro"] #banner .bl{width:64px}
-  :root[data-style="retro"] #banner .pt{padding:0 10px;font-size:var(--t6)}
+  :root[data-style="retro"] #banner .ti,:root[data-style="retro"] #banner.k-gen .ti{font-size:var(--t6)}
+  :root[data-style="retro"] #banner .bn{min-height:72px}
+  :root[data-style="retro"] #banner .bt{padding:8px 10px}
+  :root[data-style="retro"] #banner .bl{width:60px}
+  :root[data-style="retro"] #banner .bl .x{width:40px;height:40px;font-size:var(--t6)}
+  :root[data-style="retro"] #banner .pt{padding:0 10px;font-size:var(--t5)}
 }
 
 /* win prob, decibels, ticker, quarter cards */
@@ -423,3 +428,10 @@
   :root[data-style="retro"] .sheet{padding-top:6px}
   :root[data-style="retro"] .play b{font-size:var(--t3)}
 }
+
+/* player photos: square pixel frame, flat team colour behind the silhouette */
+:root[data-style="retro"] .pph>.pph-c{background:var(--c1);border:2px solid #0A0F1A;box-shadow:inset 0 0 0 2px var(--c2)!important}
+:root[data-style="retro"] .pph>.pph-c::after{box-shadow:inset 0 0 0 2px var(--c2)!important}
+:root[data-style="retro"] .pph>.pph-n{font-family:var(--disp);font-weight:700}
+:root[data-style="retro"] .pph.ok>.pph-n{background:var(--c1);border:2px solid #0A0F1A;padding:2px 3px 1px}
+:root[data-style="retro"] #lower .num.ph{background:var(--lc,var(--team))}

@@ -40,7 +40,7 @@ const Stage={raf:0,
     const loop=t=>{this.raf=0;if(sc.hidden||!sc.classList.contains('title'))return;if(t-last>=32){last=t;this.draw(cv,t/1000)}if(!rm)this.raf=requestAnimationFrame(loop)};
     this.raf=requestAnimationFrame(loop)},
   draw(cv,t){
-    const W=220,H=clamp(Math.round(W*innerHeight/Math.max(1,innerWidth)),90,520);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+    const px=document.documentElement.dataset.style==='retro',W=px?110:220,H=clamp(Math.round(W*innerHeight/Math.max(1,innerWidth)),45,520);   /* Pixel: half-res, banded light (see the end) */if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
     const x=cv.getContext('2d');x.clearRect(0,0,W,H);x.globalCompositeOperation='lighter';
     const port=H>W,ty=H*(port?.075:.13),len=Math.hypot(W,H)*1.15;
     for(const [tx,s] of [[W*.1,1],[W*.9,-1]]){
@@ -57,6 +57,7 @@ const Stage={raf:0,
     for(const [cx,cy,r,c] of [[.32+.12*Math.sin(t*.07),.5,.75,'rgba(90,130,210,.07)'],[.7+.1*Math.cos(t*.05),.68,.6,'rgba(120,150,220,.06)'],[.5,.98,.7,'rgba(70,170,110,.08)']]){
       const h=x.createRadialGradient(cx*W,cy*H,0,cx*W,cy*H,r*Math.max(W,H*.6));h.addColorStop(0,c);h.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=h;x.fillRect(0,0,W,H)}
     x.globalCompositeOperation='source-over';
+    if(px){const d=x.getImageData(0,0,W,H),q=d.data;for(let i=3;i<q.length;i+=4){const v=q[i];q[i]=v<14?0:v<40?40:v<90?80:v<160?140:220}x.putImageData(d,0,0)}
   }};
 addEventListener('resize',()=>{const sc=$('#setup');if(sc&&!sc.hidden&&sc.classList.contains('title'))Stage.run()});
 
