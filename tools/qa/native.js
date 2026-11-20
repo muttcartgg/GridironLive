@@ -50,6 +50,7 @@ await Q.toUserGame(p);const kb=await p.$('#kickoff');if(kb)await kb.click();awai
 const got=await p.evaluate(async()=>{const vis=s=>{const e=document.querySelector(s);return e&&!e.hidden};
   for(let n=0;n<6000;n++){if(vis('#studio')&&document.querySelector('#studioGo')){document.querySelector('#studioGo').click();await new Promise(r=>setTimeout(r,60));continue}
     if(vis('#opt')){const bs=[...document.querySelectorAll('#optRow button')];if(bs[0])bs[0].click();await new Promise(r=>setTimeout(r,60));continue}
+    if(vis('#card')&&document.querySelector('#dcGo')){document.querySelector('#dcGo').click();await new Promise(r=>setTimeout(r,60));continue}   /* a simmed opponent drive ends on the drive card (user kicked off first) */
     if(S.phase==='presnap'&&uOff()&&vis('#call'))return 'call';if(S.phase==='presnap'&&!uOff()&&vis('#call')){const a=document.querySelector('[data-dc="sim"]');if(a)a.click()}
     if(S.phase==='kick'&&kick){kick.ang=0;if(kick.stage==='aim')kickTap();else if(kick.stage==='power'){kick.pow=.97;kickTap()}}await new Promise(r=>setTimeout(r,16))}return 'timeout'});
 ok(got==='call','reached the play-call sheet');

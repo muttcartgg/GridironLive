@@ -98,7 +98,7 @@ function hud(){
   $('#qtr').textContent=S.ot?(S.otRound>1?S.otRound:'')+'OT':qName(S.q);$('#gclk').textContent=S.ot?'—':fmtClock(S.clock);
   const pc=$('#pclk'),show=S.phase==='presnap'&&!S.conv&&uOff();pc.textContent=show?':'+String(Math.ceil(S.playClock)).padStart(2,'0'):':--';pc.classList.toggle('low',show&&S.playClock<6);pc.classList.toggle('off',!show);
   $('#dd').textContent=ddText();$('#spot').textContent=S.conv?'Conversion':spotLabel(S.los);sb.classList.toggle('rz',!S.conv&&S.los>=90&&S.phase!=='over');
-  $('#gclk').classList.toggle('run',!!S.clockRun&&!S.ot);$('#toBtn').hidden=!(S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0);
+  $('#gclk').classList.toggle('run',!!S.clockRun&&!S.ot);$('#toBtn').hidden=!(S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0&&$('#call').hidden);   // an open call sheet carries its own Timeout button (05g)
   {const lv=S.phase==='live';if(lv!==hud.lv){hud.lv=lv;document.documentElement.classList.toggle('lv',lv)}}   // ball live: only the score bug (10-ui)
   if(typeof BC!=='undefined')BC.hud();
   const st=teamStamina();const se=$('#stam');se.textContent='STA '+Math.round(st*100)+'%';se.style.color=st>.85?'var(--ok)':st>.75?'var(--warn)':'var(--hot)';

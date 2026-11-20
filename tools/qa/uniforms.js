@@ -51,6 +51,9 @@ for(const [w,h,tag] of [[844,390,'L'],[390,844,'P']]){
       const valid=LG.weeks.every(w=>w.games.every(g=>LG.teams[g.h]&&LG.teams[g.a]));return {city:t.city,custom:t.custom,n:LG.teams.length===n,valid,user:rep!==LG.user}});
     ok(cr.city==='Harbor Point'&&cr.custom&&cr.n&&cr.valid&&cr.user,'create a school '+JSON.stringify(cr));
     /* pregame picker + kickoff in the custom Home set */
+    /* UNI_FIRST=home|away flips the user's first game to check either branch on purpose */
+    if(process.env.UNI_FIRST)await p.evaluate(([want,clash])=>{for(const w of LG.weeks){const g=w.games.find(x=>x.h===LG.user||x.a===LG.user);if(!g)continue;if(g.neutral)g.neutral=false;if((want==='away')===(g.h===LG.user)){const t=g.h;g.h=g.a;g.a=t}
+      if(clash){const o=LG.teams[g.h===LG.user?g.a:g.h];o.c1='#161A24';delete o.uni}break}},[process.env.UNI_FIRST,process.env.UNI_CLASH]);   /* UNI_CLASH=1: the opponent's home jersey as dark as the custom set */
     await p.evaluate(()=>showHub('home'));await Q.toUserGame(p);
     await p.evaluate(()=>{const b=document.querySelector('#uniSeg [data-v="H"]');if(b)b.click();document.querySelector('.pg-uni').scrollIntoView({block:'center'})});await p.waitForTimeout(300);await shot('06-pregame');
     await p.evaluate(()=>{LG.settings.pregame=false});const kb=await p.$('#kickoff');if(kb)await kb.click();await p.waitForTimeout(2400);
@@ -63,7 +66,12 @@ for(const [w,h,tag] of [[844,390,'L'],[390,844,'P']]){
         if(S.phase==='kick'&&kick){kick.ang=0;if(kick.stage==='aim')kickTap();else if(kick.stage==='power'){kick.pow=.97;kickTap()}}
         await new Promise(r=>setTimeout(r,16));}});
     await p.evaluate(()=>{pickPlay(PLAYBOOK.find(x=>x.cat==='pass'&&!x.hail)||PLAYBOOK[0])});await p.waitForTimeout(700);
-    ok(await p.evaluate(()=>{const e=athCols(S.home);return e.fin==='c'&&e.hn===3&&e.sl===2&&e.pn===3}),'game uses the custom set');
+    /* home (or a road game whose host jersey reads differently): the custom set as designed. A road game against a host
+       whose jersey is as dark as the custom one: the clash check must switch the user into a set that reads clearly. */
+    const ug=await p.evaluate(()=>{const e=athCols(S.home),x=uniCtxS(),away=x.host!==S.home,o=uniSet(x.host,uniStyle(x.host,x)),own=uniSet(S.home,uniStyle(S.home,x));
+      const clash=away&&uniDist(own.j,o.j)<.2;return {away,clash,custom:e.fin==='c'&&e.hn===3&&e.sl===2&&e.pn===3,dj:+uniDist(uniColors(S.home,x).j,o.j).toFixed(2)}});
+    console.log('in-game set',JSON.stringify(ug));
+    ok(ug.clash?ug.dj>=.2:ug.custom,'game uses the custom set (or the clash set on the road) '+JSON.stringify(ug));
     await p.evaluate(()=>{LG.settings.zoom=1.15});await p.waitForTimeout(900);await shot('07-ingame');
     await p.evaluate(()=>{startPlay(S.pc)});await p.waitForTimeout(1300);await shot('08-ingame-play');
   }

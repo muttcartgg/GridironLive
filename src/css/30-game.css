@@ -132,3 +132,6 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
 @media (orientation:portrait){#callRow .pbgrid.core{grid-template-columns:repeat(3,minmax(0,1fr))}#callRow .pbgrid.dcore{grid-template-columns:repeat(2,minmax(0,1fr))}
   .cs-picks.core .cp{padding:5px 6px 6px 10px}.cs-picks.core .cp b{font-size:14px}.cs-picks.core .cp small{font-size:11px}}
 @media (orientation:portrait) and (max-height:700px){.pbgrid.core .pcard svg{height:34px}}
+/* landscape: the pause button sits over the sheet's top-left corner once a sheet runs (near) full height, so the
+   tab / front bar starts clear of it (it used to cover the corner of the first tab) */
+@media (max-height:480px){#callRow .cs-bar{padding-left:46px}}

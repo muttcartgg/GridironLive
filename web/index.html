@@ -3858,7 +3858,7 @@ function bindSettingsExtra(seg){
 /* Settings: eight sections, most-used first; the rest of each section folds under "More".
    Registry entries (SETTINGS_EXTRA) land in the section their card maps to; unknown cards get their own section before About. */
 const SET_OPEN=new Set();
-const SET_CARD={'Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Rosters & data':'data'};
+const SET_CARD={'Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Fight songs':'fs','Rosters & data':'data'};
 const SET_MORE=new Set(['penalties','recAuto','officials','showLogos','expRoster','rmPack']);
 const SET_NOTE={playStyle:'Coach mode: you call the plays and the AI runs them. Key moments: drives are simmed and you take over when it counts.',
   penalties:'',recAuto:'Your staff spends the weekly recruiting hours for you.',gfxQ:'Battery saver keeps the crowd still and skips stadium extras.',
@@ -3903,7 +3903,8 @@ function hubSettings(){
      row('Art style',seg('setS',[['modern','Modern HD'],['retro','Retro pixel']],s.style))
     +row('Sound',tg('setM',!s.muted,s.muted?0:1))
     +regs('gfx','main')
-    +row('Crowd',seg('setCr',[['low','Sparse'],['normal','Normal'],['high','Rowdy']],s.crowd||'normal')),
+    +row('Crowd',seg('setCr',[['low','Sparse'],['normal','Normal'],['high','Rowdy']],s.crowd||'normal'))
+    +regs('fs','main')+regs('fs','more'),
      row('Menu tap sounds',tg('setTap',s.uiSounds!==false))
     +row('Student section',seg('setSt',[['auto','Auto'],['white','White-out'],['black','Blackout'],['stripe','Stripe-out'],['neon','Neon'],['none','None']],s.studentTheme||'auto'))
     +row('Cheerleaders, mascot and chains',tg('setSide',s.sideline!==false))
@@ -5197,7 +5198,7 @@ function toPresnap(){
   if(uOff()){kmCheck(null);setupFormation(null,S.flip);if(!S.ff)rtg?rtgSnap():showCall()}
   else{const pc=aiChoosePlay();S.aiPlay=pc;kmCheck(pc);if(pc.special){S.phase='wait';return aiSpecial(pc.special)}if(S.ff||rtg){S.defCall='auto';S.defFront='auto'}setupFormation(pc,S.flip);if(!S.ff)rtg?rtgSnap():showDefCall()}
   snapshot();
-  $('#toBtn').hidden=!(S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0);
+  $('#toBtn').hidden=!(S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0&&$('#call').hidden);
 }
 
 function add(side,role,x,y,pl0,team,key){
@@ -7999,6 +8000,12 @@ function pickReasons(p,sit,cov,why0){
   return out;
 }
 
+/* Timeout from the call sheet: the floating TIMEOUT button sits under an open sheet (and the defense sheet is the
+   only pre-snap moment on defense), so the sheet carries its own button while a timeout can be called */
+const toAvail=()=>S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0;
+const toQuick=()=>toAvail()?`<button class="cs-q to" data-to="1">Timeout<small>${S.to[0]} left</small></button>`:'';
+function bindToQuick(row,re){const b=row.querySelector('[data-to]');if(b)b.onclick=()=>{ac();$('#toBtn').onclick();re()}}
+
 /* ---------- offense call sheet ---------- */
 function renderCall(){
   const late=!S.ot&&S.q>=4&&S.clock<=S.qlen*.25&&S.score[0]>S.score[1],fourth=S.down===4&&!S.conv;
@@ -8015,7 +8022,7 @@ function renderCall(){
     if(fams.length>1)chips=`<button class="chip" data-fm="" aria-pressed="${!CALL_FORM}">All</button>`+fams.map(f=>`<button class="chip" data-fm="${f}" aria-pressed="${CALL_FORM===f}">${f}</button>`).join('');
     body=list.filter(p=>!CALL_FORM||FORMS[p.form].g===CALL_FORM).map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b>${esc(p.name)}</b><small>${esc(p.form)}${p.run&&p.run.rpo?' · RPO':p.run&&(p.run.read||p.run.triple||p.run.option)?' · option':p.two?' · 2-min':''}</small></button>`).join('')}
   const picks=coachPicks(3),nh=S.lastPc&&!S.conv&&S.down<4;
-  $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}</div><div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Repeat the last play at the line">No huddle<small>${esc(S.lastPc.name)}</small></button>`:''}<button class="cs-q coach" data-coach="1">Coach's pick<small>${esc(picks[0]?picks[0].p.name:'')}</small></button></div></div>`+
+  $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}</div><div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Repeat the last play at the line">No huddle<small>${esc(S.lastPc.name)}</small></button>`:''}<button class="cs-q coach" data-coach="1">Coach's pick<small>${esc(picks[0]?picks[0].p.name:'')}</small></button>${toQuick()}</div></div>`+
     (chips?`<div class="cs-chips">${chips}</div>`:'')+
     `<div class="cs-scroll"><div class="cs-picks">${picks.map(x=>`<button class="cp" data-pid="${x.p.id}"><em>Coach's pick</em><b>${esc(x.p.name)}</b><small>${esc(x.why)}</small></button>`).join('')}</div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div></div><div class="cs-more" aria-hidden="true">Swipe up · more plays ▾</div>`;
   const row=$('#callRow');
@@ -8025,6 +8032,7 @@ function renderCall(){
   row.querySelector('[data-coach]').onclick=()=>{ac();const p=picks[0]?picks[0].p:aiPickPlay(S.home,sitInfo());pickPlay(p)};
   row.querySelectorAll('[data-pid]').forEach(b=>b.onclick=()=>{ac();pickPlay(PLAYBOOK[+b.dataset.pid])});
   row.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{ac();callSpecial(b.dataset.sp)});
+  bindToQuick(row,renderCall);
   scrollHint(row);$('#call').hidden=false;
 }
 /* the "more below" pill fades once the list is scrolled to the end (or fits) */
@@ -8042,7 +8050,8 @@ function renderDefCall(){
   const [pf,pv]=S.dcPick,f=pc&&FORMS[pc.form],why=`${ddShort()} · ${f?f.pers:'11'} personnel${sit.down>=2&&sit.toGo>=7?' · passing down':sit.toGo<=2?' · run down':sit.redzone?' · red zone':''}`;
   const fr=S.defFront||'auto';
   const fronts=[['auto','Auto'],...Object.entries(FRONTS).map(([k,v])=>[k,v.n])].map(([k,l])=>`<button class="chip" data-fr="${k}" aria-pressed="${fr===k}">${l}</button>`).join('');
-  $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs cs-fronts"><span class="cs-lbl">Front</span>${fronts}</div></div>`+
+  const tq=toQuick();
+  $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs cs-fronts"><span class="cs-lbl">Front</span>${fronts}</div>${tq?`<div class="cs-quick">${tq}</div>`:''}</div>`+
     `<div class="cs-scroll"><div class="cs-picks one"><button class="cp" data-dc="auto"><em>Coach's call</em><b>${esc(FRONTS[pf].n)} · ${esc(COVS[pv].n)}</b><small>${esc(why)}</small></button></div>`+
     `<div class="pbgrid sp">${DEF_CALLS.map(([k,t,s])=>`<button class="play dcard ${k===S.defCall?'sel':''}" data-dc="${k}"><b>${t}</b><small>${s}</small><i class="shell s${COVS[k].shell}">${COVS[k].shell==='1'?'1-high':'2-high'}${COV_FAM[k].includes('b')?' · pressure':''}</i></button>`).join('')}<button class="play alt" data-dc="sim"><b>Sim the drive</b><small>Skip to the result</small></button></div></div><div class="cs-more" aria-hidden="true">Swipe up · more calls ▾</div>`;
   const row=$('#callRow');
@@ -8050,6 +8059,7 @@ function renderDefCall(){
   row.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>{ac();const k=b.dataset.dc;
     if(k==='sim'){$('#call').hidden=true;S.phase='wait';return oppDrive(110-S.los,'Drive continues')}
     S.defCall=k;if(k==='auto'&&S.defFront&&S.defFront!=='auto')S.dcPick=[S.defFront,S.dcPick[1]];setupFormation(S.aiPlay,S.flip);$('#call').hidden=true;S.phase='presnap';aiSnapT=.75+.5*crowdNoise();if(typeof BC!=='undefined')BC.presnap();hint(crowdNoise()>.5?'Get set… it is loud in here':'Get set…')});
+  bindToQuick(row,renderDefCall);
   scrollHint(row);$('#call').hidden=false;
 }
 
@@ -9024,7 +9034,7 @@ function hud(){
   $('#qtr').textContent=S.ot?(S.otRound>1?S.otRound:'')+'OT':qName(S.q);$('#gclk').textContent=S.ot?'—':fmtClock(S.clock);
   const pc=$('#pclk'),show=S.phase==='presnap'&&!S.conv&&uOff();pc.textContent=show?':'+String(Math.ceil(S.playClock)).padStart(2,'0'):':--';pc.classList.toggle('low',show&&S.playClock<6);pc.classList.toggle('off',!show);
   $('#dd').textContent=ddText();$('#spot').textContent=S.conv?'Conversion':spotLabel(S.los);sb.classList.toggle('rz',!S.conv&&S.los>=90&&S.phase!=='over');
-  $('#gclk').classList.toggle('run',!!S.clockRun&&!S.ot);$('#toBtn').hidden=!(S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0);
+  $('#gclk').classList.toggle('run',!!S.clockRun&&!S.ot);$('#toBtn').hidden=!(S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0&&$('#call').hidden);   // an open call sheet carries its own Timeout button (05g)
   if(typeof BC!=='undefined')BC.hud();
   const st=teamStamina();const se=$('#stam');se.textContent='STA '+Math.round(st*100)+'%';se.style.color=st>.85?'var(--ok)':st>.75?'var(--warn)':'var(--hot)';
   const wx=windHTML();if($('#wxs').dataset.w!==wx){$('#wxs').dataset.w=wx;$('#wxs').innerHTML=wx}
@@ -9040,7 +9050,7 @@ function flyout(el,txt){el.querySelectorAll('.fly').forEach(x=>x.remove());const
      composer,pd,alt:{title,year,composer,pd},melody:{song,tempo,meter,pickup,key,notes:[[midi,beats]…]}}]} on its own,
      or as "fightSongs" inside a roster pack. Imported through Settings › Rosters & data (02c calls fsList/fsPreview/fsSave).
    No real music ships with the app: melodies come only from the imported file, and the game plays a melody only for a
-   song the file marks public domain ("pd"). Any other song plays from the user's own recording (Settings › Fight songs,
+   song the file marks public domain ("pd"). Any other song plays from the user's own recording (Settings › Graphics & sound › Team songs,
    stored per team in KV like the custom stadium sounds) or, with neither, an ORIGINAL generic march written for this game.
    When it plays: the scoring team's song after a touchdown (fx td), a short intro of the host's song at the opening
    kickoff (fx kickoff), the winner's song at the final whistle (fx final). Respects `muted` and LG.settings.fightSongs.
@@ -9072,7 +9082,7 @@ function fsFor(t){
 function fsPreview(L,pk){const l=fsList(pk);if(!l)return null;const c=fsClean(l),m=fsMatch(L,c);return {teams:m.pairs.length,total:c.length,mel:m.pairs.filter(([,e])=>e.melody).length,miss:m.miss}}
 const fsKpi=p=>p&&p.fs?`<div><em>Fight songs</em><b>${p.fs.teams}<small>/${p.fs.total}</small></b></div>`:'';
 function fsPrevHTML(p){const f=p.fs;return `<div class="ri-prev"><div class="kpis">${fsKpi(p)}<div><em>With a melody</em><b>${f.mel}</b></div></div>
-  <p class="note">Fight-song titles for each school. Public-domain songs (published before 1929) come with a melody the band plays; for any other song, add your own recording in Settings › Fight songs. Kept on this device for every dynasty.</p>
+  <p class="note">Fight-song titles for each school. Public-domain songs (published before 1929) come with a melody the band plays; for any other song, add your own recording in Settings › Graphics &amp; sound › Team songs. Kept on this device for every dynasty.</p>
   ${f.miss.length?`<p class="note">Not in this league (skipped): ${esc(f.miss.slice(0,8).join(', '))}${f.miss.length>8?` and ${f.miss.length-8} more`:''}</p>`:''}</div>`}
 /* per-team recordings (data: URLs under 600 KB, lazy KV keys like gl.aud.*) */
 const fsKey=t=>FS_AUD+(t.espnId?'e'+t.espnId:'a'+String(t.abbr||t.id).toUpperCase());
@@ -9164,7 +9174,7 @@ if(typeof onFx==='function'){
   onFx('final',e=>{if(!fsOn()||!S.home)return;const w=S.score[0]===S.score[1]?null:S.score[0]>S.score[1]?S.home:S.away;if(w)setTimeout(()=>fsPlay(w,'win',{visitor:!S.neutral&&w!==fsHost()&&w!==S.home}),900);else fsStop(.6)});
 }
 
-/* ---------- Settings › Fight songs (right after the Stadium sounds card) ---------- */
+/* ---------- Settings › Graphics & sound (fight-song rows after Crowd) ---------- */
 function fsStatus(t){const e=fsFor(t);return fsHasAudio(t)?'Your recording':e&&e.melody?'Band melody · public domain':e?'Generic march · add your recording':'Generic march'}
 function fsOpenManager(){
   let q='';const T0=LG.teams,me=T(LG.user),g=typeof userGameThisWeek==='function'?userGameThisWeek():null,opp=g?T(g.h===LG.user?g.a:g.h):null;
@@ -11179,7 +11189,7 @@ function logPlay(r,gain){
   logPBP(`${dd} · ${play.name}: ${t}`,['td','int','fum'].includes(r.kind)?'big':'');
 }
 function dres(r){if(S.drive&&!S.drive.res)S.drive.res=r}
-function closeDrive(){const d=S.drive;if(d&&(d.plays||d.res)){S.drives=S.drives||[];S.drives.push({team:d.team,start:d.start!=null?d.start:0,end:d.end!=null?d.end:(d.start||0),plays:d.plays,yds:d.yds,res:d.res||'End of half',q:d.q})}S.drive=null}
+function closeDrive(){const d=S.drive;if(d&&(d.plays||d.res)){S.drives=S.drives||[];S.drives.push({team:d.team,start:d.start!=null?d.start:0,end:d.end!=null?d.end:(d.start||0),plays:d.plays,yds:d.yds,res:d.res||(S.phase==='over'?'Clock runs out':'End of half'),q:d.q})}S.drive=null}
 function simDriveLog(d,yds,plays,label,time){
   logPBP(`${S.away.abbr} drive (simulated): ${plays} plays, ${yds} yards, ${fmtClock(time)} · ${label}`,'sim');
   closeDrive();(S.drives=S.drives||[]).push({team:'away',start:100-d,end:Math.min(100,100-d+yds),plays,yds,res:label,sim:true,q:S.q});

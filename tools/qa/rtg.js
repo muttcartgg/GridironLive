@@ -16,8 +16,14 @@ const offers=await p.evaluate(()=>SETUP.rtg.offers.map(f=>`${SETUP.L.teams[f.t].
 console.log('OFFERS',offers.length);offers.forEach(o=>console.log('   ',o));if(offers.length<5||offers.length>8)bad.push('offer count '+offers.length);
 await p.click('#rtgVis-0');await p.waitForTimeout(60);await p.click('#rtgVis-1');await p.waitForTimeout(60);
 const visits=await p.evaluate(()=>SETUP.rtg.offers.filter(f=>f.v).length);if(visits!==2)bad.push('visits '+visits);
-const best=await p.evaluate(()=>{const o=SETUP.rtg.offers;let b=0;o.forEach((f,i)=>{if(f.dep<o[b].dep)b=i});return b});   // the most playing time
+const best=await p.evaluate(()=>{const o=SETUP.rtg.offers;let b=0;o.forEach((f,i)=>{if(Math.abs(f.dep-3)<Math.abs(o[b].dep-3))b=i});return b});   // closest to #3 on the depth chart
 await p.click('#rtgCom-'+best);await p.waitForTimeout(400);
+/* deterministic start: the offer's depth is only a projection, and a recruit who opens camp as WR1 has nowhere to move
+   while one buried at #6 may never see the field. Nudge his ratings until he opens camp #3 (the third starting WR). */
+const placed=await p.evaluate(()=>{const me=rtgMe(),w=W8[me.pos],want=2;let d=rtgDepth(LG,true),n=0;
+  while(d!==want&&n<400){const s=d<want?-.01:.01;for(const k in w)me[k]=clamp(me[k]+s,1,5);d=rtgDepth(LG,true);n++}
+  LG.rtg.moves=[];saveNow(true);showHub('home');return {depth:d,steps:n}});
+if(placed.depth!==2)bad.push('could not place the recruit at #3 '+JSON.stringify(placed));
 const start=await p.evaluate(()=>{const r=LG.rtg,me=rtgMe(),u=T(LG.user);return {team:u.abbr,ovr:ovr99(me),depth:r.depth,trust:r.trust,yr:me.yr,num:me.num,hub:!!document.querySelector('.rtg-card'),tabs:[...document.querySelectorAll('#tabs button')].map(b=>b.textContent).join(',')}});
 console.log('COMMIT',JSON.stringify(start));if(!start.hub)bad.push('no career hub');
 /* to his first game */
@@ -63,6 +69,10 @@ console.log('HIS GAME',JSON.stringify(game.pst),'grade',JSON.stringify(game.grad
 bad.push(...lg.errs);if(game.phase!=='over')bad.push('game did not finish');if(!(lg.live>0))bad.push('never on the field');if(lg.others)bad.push('another player answered to the stick');if(lg.qbUser)bad.push('QB under user control');
 if(!game.grade||!game.grade.live)bad.push('no live game grade');if(!game.post)bad.push('no grade card on the post-game screen');if(!game.exempt)bad.push('autopilot exemption not set');if(!(lg.ffSnaps>20))bad.push('little simming ('+lg.ffSnaps+')');
 await p.evaluate(()=>{const g=document.querySelector('#postGo');if(g)g.click()});await p.waitForTimeout(200);
+/* for the season: drop him from above to #4, just behind the third starter, so rising trust and skill points move him */
+const re=await p.evaluate(()=>{const me=rtgMe(),w=W8[me.pos];me.inj=0;for(const k in w)me[k]=clamp(me[k]+.6,1,5);let d=rtgDepth(LG,true),n=0;
+  while(d<3&&n<800){for(const k in w)me[k]=clamp(me[k]-.01,1,5);d=rtgDepth(LG,true);n++}LG.rtg.moves=[];return {depth:d,steps:n}});
+if(re.depth!==3)bad.push('could not place the recruit at #4 for the season '+JSON.stringify(re));
 /* the rest of the season: sim, spending skill points on the lowest key rating */
 const season=await p.evaluate(async()=>{const out={weeks:0,errs:[],spent:0};
   const modal=()=>{const m=document.querySelector('#modal');if(m&&!m.hidden){const x=document.querySelector('#evX')||document.querySelector('#closeP');if(x)x.click();else closeModal();return true}return false};

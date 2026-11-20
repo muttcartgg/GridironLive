@@ -121,7 +121,7 @@ function logPlay(r,gain){
   logPBP(`${dd} · ${play.name}: ${t}`,['td','int','fum'].includes(r.kind)?'big':'');
 }
 function dres(r){if(S.drive&&!S.drive.res)S.drive.res=r}
-function closeDrive(){const d=S.drive;if(d&&(d.plays||d.res)){S.drives=S.drives||[];S.drives.push({team:d.team,start:d.start!=null?d.start:0,end:d.end!=null?d.end:(d.start||0),plays:d.plays,yds:d.yds,res:d.res||'End of half',q:d.q})}S.drive=null}
+function closeDrive(){const d=S.drive;if(d&&(d.plays||d.res)){S.drives=S.drives||[];S.drives.push({team:d.team,start:d.start!=null?d.start:0,end:d.end!=null?d.end:(d.start||0),plays:d.plays,yds:d.yds,res:d.res||(S.phase==='over'?'Clock runs out':'End of half'),q:d.q})}S.drive=null}
 function simDriveLog(d,yds,plays,label,time){
   logPBP(`${S.away.abbr} drive (simulated): ${plays} plays, ${yds} yards, ${fmtClock(time)} · ${label}`,'sim');
   closeDrive();(S.drives=S.drives||[]).push({team:'away',start:100-d,end:Math.min(100,100-d+yds),plays,yds,res:label,sim:true,q:S.q});

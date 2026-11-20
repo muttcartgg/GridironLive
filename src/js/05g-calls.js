@@ -176,6 +176,12 @@ function pickReasons(p,sit,cov,why0){
   return out;
 }
 
+/* Timeout from the call sheet: the floating TIMEOUT button sits under an open sheet (and the defense sheet is the
+   only pre-snap moment on defense), so the sheet carries its own button while a timeout can be called */
+const toAvail=()=>S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0;
+const toQuick=()=>toAvail()?`<button class="cs-q to" data-to="1">Timeout<small>${S.to[0]} left</small></button>`:'';
+function bindToQuick(row,re){const b=row.querySelector('[data-to]');if(b)b.onclick=()=>{ac();$('#toBtn').onclick();re()}}
+
 /* ---------- Core / Full playbook (Settings › Gameplay › Playbook). Core: 30 plays in Run · Pass · Special and
    eight one-tap defenses, every card on screen without scrolling. Full: every play (category tabs, formation chips)
    and fronts × coverages. The CPU always calls from the whole book. ---------- */
@@ -198,7 +204,7 @@ function renderCallCore(){
   const g=CALL_TAB,list=CORE.filter(p=>p.core===g&&!(S.conv&&p.hail)),picks=coachPicks(3,null,CORE),nh=S.lastPc&&!S.conv&&S.down<4;
   const kicks=g==='special'&&specials.length?`<div class="cs-kicks">${specials.map(([k,t,s])=>`<button class="play ${k.startsWith('fake')?'warn':'alt'}" data-sp="${k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div>`:'';
   $('#callRow').innerHTML=`<div class="cs-bar core"><div class="cs-tabs cs-groups">${[['run','Run'],['pass','Pass'],['special','Special']].map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===g}">${l}</button>`).join('')}</div>`+
-    `<div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Run the last play again, straight to the snap">Repeat<small>${esc(S.lastPc.name)}</small></button>`:''}</div></div>`+
+    `<div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Run the last play again, straight to the snap">Repeat<small>${esc(S.lastPc.name)}</small></button>`:''}${toQuick()}</div></div>`+
     `<div class="cs-scroll"><div class="cs-picks core" aria-label="Coach's picks">${picks.map((x,i)=>`<button class="cp" data-pid="${x.p.id}"${i?'':' data-coach="1"'}><b><i>★</i> ${esc(x.p.name)}</b><small>${esc(x.short)}</small></button>`).join('')}</div>${kicks}`+
     `<div class="pbgrid core">${list.map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b>${esc(p.name)}</b><small>${esc(p.tag)}</small></button>`).join('')}</div></div><div class="cs-more" aria-hidden="true">More ▾</div>`;
   const row=$('#callRow');
@@ -206,6 +212,7 @@ function renderCallCore(){
   const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();repeatLast()};
   row.querySelectorAll('[data-pid]').forEach(b=>b.onclick=()=>{ac();pickPlay(PLAYBOOK[+b.dataset.pid])});
   row.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{ac();callSpecial(b.dataset.sp)});
+  bindToQuick(row,renderCall);
   scrollHint(row);$('#call').hidden=false;
 }
 /* Core defense: eight one-tap calls in plain words; each sets the front and the coverage (Full: fronts × coverages) */
@@ -216,7 +223,7 @@ function renderDefCore(){
   defHead();const sit=sitInfo(),pc=S.aiPlay;
   if(!S.dcPick)S.dcPick=[aiPickFront(S.home,sit,pc),aiPickCoverage(S.home,sit)];
   const [pf,pv]=S.dcPick,why=sit.twoMin?'Two-minute':sit.redzone?'Red zone':sit.toGo<=2?'Run down':sit.down>=2&&sit.toGo>=7?'Passing down':'Best fit';
-  $('#callRow').innerHTML=`<div class="cs-bar core"><div class="cs-quick"><button class="cs-q" data-dc="sim" title="Sim this drive">Sim drive<small>Skip to the result</small></button></div></div>`+
+  $('#callRow').innerHTML=`<div class="cs-bar core"><div class="cs-quick"><button class="cs-q" data-dc="sim" title="Sim this drive">Sim drive<small>Skip to the result</small></button>${toQuick()}</div></div>`+
     `<div class="cs-scroll"><div class="pbgrid dcore"><button class="play dcard cp ${S.defCore==='auto'?'sel':''}" data-dc="auto"><b><i>★</i> Coach's call</b><small>${esc(why)} · ${esc(COVS[pv].n)}</small></button>`+
     `${DEF_CORE.map(([k,t,s])=>`<button class="play dcard ${k===S.defCore?'sel':''}" data-dc="${k}"><b>${t}</b><small>${s}</small></button>`).join('')}</div></div><div class="cs-more" aria-hidden="true">More ▾</div>`;
   const row=$('#callRow');
@@ -224,6 +231,7 @@ function renderDefCore(){
     if(k==='sim'){$('#call').hidden=true;S.phase='wait';return oppDrive(110-S.los,'Drive continues')}
     const c=DEF_CORE.find(x=>x[0]===k),[fr,cv]=c?c[3]():['auto','auto'];S.defCore=k;S.defCall=cv;S.defFront=fr;
     setupFormation(S.aiPlay,S.flip);$('#call').hidden=true;S.phase='presnap';aiSnapT=.75+.5*crowdNoise();if(typeof BC!=='undefined')BC.presnap();hint(crowdNoise()>.5?'Get set… it is loud in here':'Get set…')});
+  bindToQuick(row,renderDefCall);
   scrollHint(row);$('#call').hidden=false;
 }
 
@@ -244,7 +252,7 @@ function renderCall(){
     if(fams.length>1)chips=`<button class="chip" data-fm="" aria-pressed="${!CALL_FORM}">All</button>`+fams.map(f=>`<button class="chip" data-fm="${f}" aria-pressed="${CALL_FORM===f}">${f}</button>`).join('');
     body=list.filter(p=>!CALL_FORM||FORMS[p.form].g===CALL_FORM).map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b>${esc(p.name)}</b><small>${esc(p.form)}${p.run&&p.run.rpo?' · RPO':p.run&&(p.run.read||p.run.triple||p.run.option)?' · option':p.two?' · 2-min':''}</small></button>`).join('')}
   const picks=coachPicks(3),nh=S.lastPc&&!S.conv&&S.down<4;
-  $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}</div><div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Repeat the last play at the line">No huddle<small>${esc(S.lastPc.name)}</small></button>`:''}<button class="cs-q coach" data-coach="1">Coach's pick<small>${esc(picks[0]?picks[0].p.name:'')}</small></button></div></div>`+
+  $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}</div><div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Repeat the last play at the line">No huddle<small>${esc(S.lastPc.name)}</small></button>`:''}<button class="cs-q coach" data-coach="1">Coach's pick<small>${esc(picks[0]?picks[0].p.name:'')}</small></button>${toQuick()}</div></div>`+
     (chips?`<div class="cs-chips">${chips}</div>`:'')+
     `<div class="cs-scroll"><div class="cs-picks">${picks.map(x=>`<button class="cp" data-pid="${x.p.id}"><em>Coach's pick</em><b>${esc(x.p.name)}</b><small>${esc(x.short)}</small></button>`).join('')}</div><div class="pbgrid ${CALL_TAB==='special'?'sp':''}">${body}</div></div><div class="cs-more" aria-hidden="true">Swipe up · more plays ▾</div>`;
   const row=$('#callRow');
@@ -254,6 +262,7 @@ function renderCall(){
   row.querySelector('[data-coach]').onclick=()=>{ac();const p=picks[0]?picks[0].p:aiPickPlay(S.home,sitInfo());pickPlay(p)};
   row.querySelectorAll('[data-pid]').forEach(b=>b.onclick=()=>{ac();pickPlay(PLAYBOOK[+b.dataset.pid])});
   row.querySelectorAll('[data-sp]').forEach(b=>b.onclick=()=>{ac();callSpecial(b.dataset.sp)});
+  bindToQuick(row,renderCall);
   scrollHint(row);$('#call').hidden=false;
 }
 /* the "more below" pill fades once the list is scrolled to the end (or fits) */
@@ -273,7 +282,8 @@ function renderDefCall(){
   const [pf,pv]=S.dcPick,f=pc&&FORMS[pc.form],why=`${ddShort()} · ${f?f.pers:'11'} personnel${sit.down>=2&&sit.toGo>=7?' · passing down':sit.toGo<=2?' · run down':sit.redzone?' · red zone':''}`;
   const fr=S.defFront||'auto';
   const fronts=[['auto','Auto'],...Object.entries(FRONTS).map(([k,v])=>[k,v.n])].map(([k,l])=>`<button class="chip" data-fr="${k}" aria-pressed="${fr===k}">${l}</button>`).join('');
-  $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs cs-fronts"><span class="cs-lbl">Front</span>${fronts}</div></div>`+
+  const tq=toQuick();
+  $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs cs-fronts"><span class="cs-lbl">Front</span>${fronts}</div>${tq?`<div class="cs-quick">${tq}</div>`:''}</div>`+
     `<div class="cs-scroll"><div class="cs-picks one"><button class="cp" data-dc="auto"><em>Coach's call</em><b>${esc(FRONTS[pf].n)} · ${esc(COVS[pv].n)}</b><small>${esc(why)}</small></button></div>`+
     `<div class="pbgrid sp">${DEF_CALLS.map(([k,t,s])=>`<button class="play dcard ${k===S.defCall?'sel':''}" data-dc="${k}"><b>${t}</b><small>${s}</small><i class="shell s${COVS[k].shell}">${COVS[k].shell==='1'?'1-high':'2-high'}${COV_FAM[k].includes('b')?' · pressure':''}</i></button>`).join('')}<button class="play alt" data-dc="sim"><b>Sim the drive</b><small>Skip to the result</small></button></div></div><div class="cs-more" aria-hidden="true">Swipe up · more calls ▾</div>`;
   const row=$('#callRow');
@@ -281,6 +291,7 @@ function renderDefCall(){
   row.querySelectorAll('[data-dc]').forEach(b=>b.onclick=()=>{ac();const k=b.dataset.dc;
     if(k==='sim'){$('#call').hidden=true;S.phase='wait';return oppDrive(110-S.los,'Drive continues')}
     S.defCall=k;if(k==='auto'&&S.defFront&&S.defFront!=='auto')S.dcPick=[S.defFront,S.dcPick[1]];setupFormation(S.aiPlay,S.flip);$('#call').hidden=true;S.phase='presnap';aiSnapT=.75+.5*crowdNoise();if(typeof BC!=='undefined')BC.presnap();hint(crowdNoise()>.5?'Get set… it is loud in here':'Get set…')});
+  bindToQuick(row,renderDefCall);
   scrollHint(row);$('#call').hidden=false;
 }
 

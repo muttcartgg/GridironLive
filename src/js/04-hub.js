@@ -508,7 +508,7 @@ function bindSettingsExtra(seg){
 /* Settings: eight sections, most-used first; the rest of each section folds under "More".
    Registry entries (SETTINGS_EXTRA) land in the section their card maps to; unknown cards get their own section before About. */
 const SET_OPEN=new Set();
-const SET_CARD={'Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Rosters & data':'data'};
+const SET_CARD={'Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Fight songs':'fs','Rosters & data':'data'};
 const SET_MORE=new Set(['penalties','recAuto','officials','showLogos','expRoster','rmPack']);
 const SET_NOTE={playStyle:'Coach mode: you call the plays and the AI runs them. Key moments: drives are simmed and you take over when it counts.',
   penalties:'',recAuto:'Your staff spends the weekly recruiting hours for you.',gfxQ:'Battery saver keeps the crowd still and skips stadium extras.',
@@ -553,7 +553,8 @@ function hubSettings(){
      row('Art style',seg('setS',[['modern','Modern HD'],['retro','Retro pixel']],s.style))
     +row('Sound',tg('setM',!s.muted,s.muted?0:1))
     +regs('gfx','main')
-    +row('Crowd',seg('setCr',[['low','Sparse'],['normal','Normal'],['high','Rowdy']],s.crowd||'normal')),
+    +row('Crowd',seg('setCr',[['low','Sparse'],['normal','Normal'],['high','Rowdy']],s.crowd||'normal'))
+    +regs('fs','main')+regs('fs','more'),
      row('Menu tap sounds',tg('setTap',s.uiSounds!==false))
     +row('Student section',seg('setSt',[['auto','Auto'],['white','White-out'],['black','Blackout'],['stripe','Stripe-out'],['neon','Neon'],['none','None']],s.studentTheme||'auto'))
     +row('Cheerleaders, mascot and chains',tg('setSide',s.sideline!==false))
