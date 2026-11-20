@@ -1120,6 +1120,13 @@ body.ff #banner,body.ff #toast,body.ff #flag,body.ff #hint,body.ff #lower,body.f
 /* landscape: the pause button sits over the sheet's top-left corner once a sheet runs (near) full height, so the
    tab / front bar starts clear of it (it used to cover the corner of the first tab) */
 @media (max-height:480px){#callRow .cs-bar{padding-left:46px}}
+/* Arcade controls (06c): the one-line control tip the first time each control comes up */
+#ctlTip{position:absolute;top:calc(env(safe-area-inset-top,0px) + 62px);left:50%;transform:translate(-50%,-6px);opacity:0;transition:opacity .3s,transform .3s;z-index:6;pointer-events:none;
+  max-width:min(560px,calc(100% - 32px));padding:9px 14px;border-radius:14px;background:rgba(10,15,24,.9);box-shadow:inset 0 0 0 1px rgba(255,255,255,.14),0 6px 22px rgba(0,0,0,.4);
+  font:600 13px/1.35 var(--body,system-ui);color:#E8EDF3;text-align:center}
+#ctlTip.on{opacity:1;transform:translate(-50%,0)}
+#ctlTip b{display:inline-block;margin-right:8px;padding:1px 7px;border-radius:6px;background:#FFD23F;color:#141414;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+body.ff #ctlTip{visibility:hidden}
 
 /* rankings: résumé hint under the team name in the AP / CFP Top 25 (lines up with the name, past the 26px badge) */
 .rtab .rhint{margin:3px 0 0 34px;font:600 11.5px/1.3 var(--body);color:var(--mute);white-space:normal;min-width:150px}
@@ -3893,7 +3900,7 @@ function bindSettingsExtra(seg){
 /* Settings: eight sections, most-used first; the rest of each section folds under "More".
    Registry entries (SETTINGS_EXTRA) land in the section their card maps to; unknown cards get their own section before About. */
 const SET_OPEN=new Set();
-const SET_CARD={'Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Fight songs':'fs','Rosters & data':'data'};
+const SET_CARD={'Controls & camera':'ctl','Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Fight songs':'fs','Rosters & data':'data'};
 const SET_MORE=new Set(['penalties','recAuto','officials','showLogos','expRoster','rmPack']);
 const SET_NOTE={playStyle:'Coach mode: you call the plays and the AI runs them. Key moments: drives are simmed and you take over when it counts.',
   penalties:'',recAuto:'Your staff spends the weekly recruiting hours for you.',gfxQ:'Battery saver keeps the crowd still and skips stadium extras.',
@@ -3927,13 +3934,13 @@ function hubSettings(){
     +regs('play','more')
     +`<div class="sr-h">Sliders</div>`+sl)
   +sec('ctl','Controls & camera',
-     row('Camera zoom',seg('setZ',[['auto','Auto'],[.85,'Wide'],[1,'Normal'],[1.15,'Close']],typeof s.zoom==='number'?s.zoom:'auto'),`Auto fits ${esc(devLabel())}.`)
+     regs('ctl','main')+row('Camera zoom',seg('setZ',[['auto','Auto'],[.85,'Wide'],[1,'Normal'],[1.15,'Close']],typeof s.zoom==='number'?s.zoom:'auto'),`Auto fits ${esc(devLabel())}.`)
     +row('Default defender',seg('setDP',[['LB0','Linebacker'],['S0','Safety'],['CB0','Corner'],['DL1','D-line']],s.defPlayer||'LB0'))
     +row('Haptics',tg('setHap',s.haptics!==false)),
      row('Joystick ring',tg('setStk',s.stickUI!==false))
     +row('Route lines',tg('setRt',s.routes!==false))
     +row('Celebration button',tg('setCel',s.celebrate!==false))
-    +row('Camera shake',tg('setShk',s.shake!==false)))
+    +row('Camera shake',tg('setShk',s.shake!==false))+regs('ctl','more'))
   +sec('gfx','Graphics & sound',
      row('Art style',seg('setS',[['modern','Modern HD'],['retro','Retro pixel']],s.style))
     +row('Sound',tg('setM',!s.muted,s.muted?0:1))
@@ -5380,6 +5387,7 @@ function startPlay(pc,o){
   if(typeof BC!=='undefined'){BC.snap();recStart()}
   autoSnapCtl();showActs();
   if(S.auto&&!autoSprite())hint('');
+  else if(arcade()){hint(arcHint(pl));arcSnap(pl)}
   else if(uOff())hint(pl.type==='pass'?'Drag back to aim · release to throw · tap the field to scramble':'Drag to steer · use the buttons to juke, spin or truck');
   else if(S.ctrl)hint(`You are #${S.ctrl.num} ${S.ctrl.pl.last} · drag to move · TACKLE to dive · SWITCH for the nearest man`);
 }
@@ -5391,7 +5399,8 @@ $('#bulletBtn').onclick=()=>{S.bullet=!S.bullet;$('#bulletBtn').setAttribute('ar
 function showDefCall(){renderDefCall()}
 function switchDefender(target){
   if(play&&play.st&&S.phase==='live')return stSwitch(target);
-  if(uOff()||S.auto&&AUTO.exempt!=null)return;   // Road to Glory: you stay with your playerlet best=target||null;
+  if(uOff()||S.auto&&AUTO.exempt!=null)return;   // Road to Glory: you stay with your player
+  let best=target||null;
   if(!best){const fx=ball.state==='air'?ball.tx:(play&&play.carrier?play.carrier.x:S.los),fy=ball.state==='air'?ball.ty:(play&&play.carrier?play.carrier.y:S.ballY);let bd=1e9;for(const d of DEF){if(d===S.ctrl)continue;const dd=hyp(d.x-fx,d.y-fy);if(dd<bd){bd=dd;best=d}}}
   if(best){S.ctrl=best;S.ctrlKey=best.key;sfx('cut');haptic('light');if(S.phase==='presnap'&&!$('#call').hidden)defHead()}
 }
@@ -5544,7 +5553,8 @@ function defAI(d,dt){
   if(d.lunge>0){d.lunge-=dt;steer(d,d.lx,d.ly,d.spd*1.6,dt,18);if(d.lunge<=0&&!play.ended){d.stun=d.userLunge?.55:.75;d.userLunge=false;d.fallen=true;spawnTurf(d.x,d.y,5)}return}
   /* engaged with a blocker: 05c moves the pair; the user can lean on the rep with the stick */
   if(blockCheck(d,dt)){if(d===S.ctrl&&stick&&stick.m>12){d.vx+=stick.dx*4*dt;d.vy+=stick.dy*4*dt}return}
-  if(d===S.ctrl&&stick&&stick.m>12){steer(d,d.x+stick.dx*3,d.y+stick.dy*3,d.spd,dt,12.5);return}
+  if(d===S.ctrl&&stick&&stick.m>12){let gx=d.x+stick.dx*3,gy=d.y+stick.dy*3;const ar=arcade();if(ar)[gx,gy]=arcAssist(d,gx,gy);steer(d,gx,gy,d.spd,dt,ar?15:12.5);return}
+  const idle=d!==S.ctrl||arcade()&&!stick;   // Arcade: the highlighted man plays his assignment until you drag
   if(d.rdMode&&play.type==='run'&&!play.handed&&play.t<1.2&&rdMove(d,dt))return;
   const eng=false;let spd=d.spd*(d.freeT>0?1.1:1);
   if(d.react>0&&play.t<d.react){if(play.fakeY!=null&&d.role!=='DL'){steer(d,d.x-.2,play.fakeY,d.spd*.55,dt);return}spd*=.35}
@@ -5561,12 +5571,12 @@ function defAI(d,dt){
     if(pursue&&c&&play.type==='run'&&d.role!=='DL'&&c.x<L+.3&&!(d.cov&&d.cov.type==='rush')){tx=L+2.4;ty=lerp(c.y,play.gapY,.6)}
     else if(pursue&&c){
       const n=hyp(c.x-d.x,c.y-d.y);[tx,ty]=intercept(d,c,spd);
-      if(runner&&n<2.2&&n>1.05&&d.lungeCD<=0&&!eng&&d!==S.ctrl){d.lunge=.28;d.lungeCD=1.5;d.lx=c.x+c.vx*.26;d.ly=c.y+c.vy*.26}
+      if(runner&&n<2.2&&n>1.05&&d.lungeCD<=0&&!eng&&idle){d.lunge=.28;d.lungeCD=1.5;d.lx=c.x+c.vx*.26;d.ly=c.y+c.vy*.26}
     }else{
       const cv=d.cov||{type:'rush'};
       if(cv.type==='rush'){const t=c||Q;tx=t.x;ty=t.y;if(cv.gy!=null&&t===Q&&d.x>L-.5){tx=L-1;ty=cv.gy}
         /* a free rusher closing on the pocket QB dives to wrap him up (the sack check honours the longer lunge reach) */
-        if(t===Q&&play.type==='pass'&&!play.thrown&&!play.scramble&&d.lungeCD<=0&&d!==S.ctrl){const n=hyp(Q.x-d.x,Q.y-d.y);if(n<2&&n>1){d.lunge=.28;d.lungeCD=1.5;d.lx=Q.x+Q.vx*.2;d.ly=Q.y+Q.vy*.2;return}}}
+        if(t===Q&&play.type==='pass'&&!play.thrown&&!play.scramble&&d.lungeCD<=0&&idle){const n=hyp(Q.x-d.x,Q.y-d.y);if(n<2&&n>1){d.lunge=.28;d.lungeCD=1.5;d.lx=Q.x+Q.vx*.2;d.ly=Q.y+Q.vy*.2;return}}}
       else if(play.fleaHold&&play.t<.65&&(d.role==='LB'||d.role==='S')){tx=L+1.5;ty=d.y}
       else{const g=covTarget(d,cv,dt);return steer(d,g[0],g[1],spd*(g[2]||1),dt,g[3]||9.5+1.2*d.pl.cov)}
       return steer(d,tx,ty,spd,dt,9.5+1.2*d.pl.cov);
@@ -5584,7 +5594,8 @@ function controlRunner(c,dt){
   const n=hyp(dxv,dyv)||1;let vx=dxv/n*spd,vy=dyv/n*spd;
   if(pl.dive>0){vy*=.3;vx=Math.max(vx,spd*.9)}
   /* momentum (05c), a little more forgiving than the CPU; a juke is a hard plant-and-go */
-  phyMove(c,vx,vy,dt,pl.jukeT>0?2.6:pl.spinT>0?1.8:PHY.user);
+  const f=arcade()&&userCtl(c)?ARC.f:PHY.user;if(f===ARC.f&&!pl.tipR){pl.tipR=1;ctlTip('run')}
+  phyMove(c,vx,vy,dt,pl.jukeT>0?Math.max(2.6,f):pl.spinT>0?Math.max(1.8,f*.8):f);
   carrierAnim(c,dt);
 }
 function aiRunner(c,dt){
@@ -5634,8 +5645,8 @@ function logPass(res){if(S.conv)return null;const r={depth:ball.tx-S.los,y:ball.
 /* ---------- main simulation step ---------- */
 function simulate(dt){
   for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,Math.min(1,dt*9));const sp=hyp(p.vx,p.vy);p.phase+=sp*dt*1.85;p.throwT=Math.max(0,p.throwT-dt);if(p.animT>0)p.animT-=dt}
-  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,5.5);   /* ease up within a stride or two of the whistle */p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
-  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.jukeCD-=dt;if(pl.buf){pl.buf.t-=dt;if(pl.buf.t<=0)pl.buf=null;else if(pl.jukeCD<=0){const b=pl.buf;pl.buf=null;b.k==='juke'?doJuke(b.d):b.k==='spin'?doSpin():doTruck()}}for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
+  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,8.5);   /* ease up within a stride of the whistle (no sliding) */p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
+  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.burstT=Math.max(0,(pl.burstT||0)-dt);pl.burstCD=(pl.burstCD||0)-dt;pl.jukeCD-=dt;if(pl.buf){pl.buf.t-=dt;if(pl.buf.t<=0)pl.buf=null;else if(pl.jukeCD<=0){const b=pl.buf;pl.buf=null;b.k==='juke'?doJuke(b.d):b.k==='spin'?doSpin():doTruck()}}for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
   rulesTick(pl);
   if(pl.st)return stSim(dt);
   if(!S.ot&&!S.conv)S.clock=Math.max(0,S.clock-dt*CLK.play);
@@ -6046,6 +6057,7 @@ function showActs(){
   else if(userQB)html=`<button data-a="bullet" aria-pressed="${!!S.bullet}">BULLET</button><button data-a="lob" aria-pressed="${!!S.lob}">LOB</button><button data-a="scramble" class="big">RUN</button>`;
   else if(play.type==='run'&&!play.handed&&!play.caught)html='';
   if(uOff()&&(userRunner||play.type==='run'&&(!ex||KP[play.ckey]===ex))){html=`<button data-a="juke-1">JUKE ▲</button><button data-a="juke1">JUKE ▼</button><button data-a="spin">SPIN</button><button data-a="truck">TRUCK</button><button data-a="hurdle">HURDLE</button><button data-a="dive">DIVE</button>${play.pitchMan&&!play.pitched&&!(play.run&&play.run.triple&&!play.qbCarry)?'<button data-a="pitch" class="big">PITCH</button>':''}`}
+  if(arcade()&&!play.st){const pb=html.includes('data-a="pitch"')?'<button data-a="pitch" class="big">PITCH</button>':'';html=userQB?'<button data-a="scramble" class="big">RUN</button>':uOff()?pb:''}
   a.innerHTML=html;a.hidden=!html;
   a.querySelectorAll('[data-a]').forEach(b=>b.onpointerdown=e=>{e.preventDefault();e.stopPropagation();ac();const k=b.dataset.a;
     if(k==='bullet'||k==='lob'){if(k==='bullet'){S.bullet=!S.bullet;S.lob=false}else{S.lob=!S.lob;S.bullet=false}haptic('light');updateAim();showActs();return}
@@ -6455,7 +6467,7 @@ function playSVG(p){
    car/str/agi decide wrap or broken tackle (stumble + fx brokenTackle); a second man in reach nearly always
    finishes; play.fp = forward progress from the pile's momentum battle; tackles behind the line = stats.tfl.
    ========================================================= */
-const PHY={a0:8,aAgi:2.6,lat0:10,latAgi:2.6,brk0:15,brkAgi:2.4,kc0:.6,kcAgi:.085,vturn:1.2,user:1.3,
+const PHY={a0:10,aAgi:3,lat0:13,latAgi:3,brk0:19,brkAgi:2.8,kc0:.48,kcAgi:.07,vturn:1.2,user:1.3,
   fd:.045,snap:.05,huddle:.9,huddleK:.015,bench:.7,benchK:.07,subAt:.45,backAt:.3,
   pk:.2,pDrift:.07,pLuck:.12,q0:.13,qk:.13,rk:.24,rDrift:.07,
   pen:.055,bHead:.05,bSide:.1,bBehind:.2,gang:.3,open:.1,fum:.016};
@@ -6616,7 +6628,7 @@ function blockAI(p,dt){
 }
 
 /* ---------- ball carrier: moves ---------- */
-function moveMul(){const pl=play;return (pl.jukeT>0?1.04:1)*(pl.spinT>0?.93:1)*(pl.truckT>0?.92:1)*(pl.stiffT>0?.96:1)*(pl.slowT>0?.78:1)*(pl.dive>0?1.25:1)}
+function moveMul(){const pl=play;return (pl.jukeT>0?1.04:1)*(pl.spinT>0?.93:1)*(pl.truckT>0?.92:1)*(pl.stiffT>0?.96:1)*(pl.slowT>0?.78:1)*(pl.dive>0?1.25:1)*(pl.burstT>0?1.07:1)}
 /* a move pressed just before the last one recovers is buffered (a quarter second) instead of being eaten */
 const moveBuf=(k,d)=>{if(play&&play.jukeCD>0&&play.jukeCD<.25&&play.dive<=0)play.buf={k,d,t:.25}};
 const moveFeel=c=>{if(c&&c.user&&(!S.auto||typeof userCtl==='function'&&userCtl(c)))haptic('light')};
@@ -6706,6 +6718,7 @@ function tackled(c,d){
   const md=d.mass||230,pc=(c.mass||210)*Math.max(0,c.vx)*(.7+.08*c.pl.str),pd=(md*Math.max(0,-d.vx)+md*(TK.behind?1.2:TK.head?2.6:1.8))*(.78+.075*d.pl.str)+help*1.8;
   const fp=clamp((pc-pd)/700+R(-.25,.25),-1.2,TK.behind?1.4:2.2);
   pl.fp=Math.max(0,fp);c.pile=d.pile=.4;c.pileV=d.pileV=fp/.4;
+  if(!big&&(userCtl(c)||d===S.ctrl))hitStop(.035);   // a beat on every tackle you are part of: the hit reads
   if(big){hitStop(.075);slowMo(.28);toast('BIG HIT!');sfx('thump');pl.bigHit=true;if(typeof BC!=='undefined')BC.say('bighit',{d,c})}
   const fumP=Math.max(.004,PHY.fum+(big?.03:0)+.005*(3-c.pl.car)+(help?.004:0)+(S.wx==='Rain'||S.wx==='Snow'?.005:0));
   if(Math.random()<fumP*coachMod(d.team,'fum')&&spotOf(c)+pl.fp<110){   /* Turnover Specialist (04c) */
@@ -6749,7 +6762,7 @@ function aimError(d,bullet,lob){
   const plat=1+Math.min(1,v/5.5)*.6*(1.15-.05*qb.pl.agi)+(1-set)*.15;
   const acc=play&&play.dblDone?Math.max(qb.pl.acc,2.8):qb.pl.acc;   // the trick-play passer is the back or receiver who can throw
   const e=(.3+d*.0074*(6.3-acc))*(1+pressure()*.9)*plat*(1+strain*.6)*(bullet?1.15:lob?.92:1)*wx;
-  return e*(qb.user?(focus('passing')?.8:1)/SL('acc'):1.6-S.aiSkill*.3)/coachMod(qb.team,'acc');   // CPU passers: a touch less pinpoint than the user's drag-to-aim
+  return e*(qb.user?(focus('passing')?.8:1)/SL('acc')*(arcade()&&(!S.auto||autoSprite()===qb)?ARC.acc:1):1.6-S.aiSkill*.3)/coachMod(qb.team,'acc');   // CPU passers: a touch less pinpoint than the user's drag-to-aim
 }
 function flightT(d,bullet,lob,thr){let T=(.2+d*.028+d*d*.00028)*(1.1-.035*thr);if(bullet)T*=.72;else if(lob)T=T*1.28+.08;const mr=maxRange();if(d>mr*.8)T*=1+(d/mr-.8)*.8;return Math.max(.28,T)}
 function throwBall(tx,ty,bullet,intended,lob){
@@ -6757,7 +6770,7 @@ function throwBall(tx,ty,bullet,intended,lob){
   if(d>mr){tx=qb.x+(tx-qb.x)*mr/d;ty=qb.y+(ty-qb.y)*mr/d;d=mr}
   const er=pl.throwAway?0:aimError(d,bullet,lob),ux=(tx-qb.x)/(d||1),uy=(ty-qb.y)/(d||1),a=Math.random()*Math.PI*2,r=er*Math.sqrt(Math.random());
   const along=Math.cos(a)*r*.75,perp=Math.sin(a)*r;tx+=ux*along-uy*perp;ty+=uy*along+ux*perp;
-  const T=flightT(Math.max(1,d+along),bullet,lob,qb.pl.thr);
+  const T=flightT(Math.max(1,d+along),bullet,lob,qb.pl.thr)*(pl.tMul||1);   // Arcade sling: a longer pull throws faster (06c)
   if(S.wind&&S.wind.mph>3){const k=S.wind.mph/20*.55*T*(lob?1.5:bullet?.4:1);tx+=windX()*k;ty+=windY()*k}
   const dd=hyp(tx-qb.x,ty-qb.y);
   ball={state:'air',fx:qb.x,fy:qb.y,x:qb.x,y:qb.y,z:0,tx,ty,t:0,T,h:bullet?dd*.03+.45:lob?dd*.18+1.3:dd*.11+.5,bullet,lob,spin:0,err:along};haptic('light');
@@ -6772,7 +6785,8 @@ function throwAway(){play.throwAway=true;throwBall(Q.x+10,Q.y<CEN?-4:FW+4,false,
 function aiThrow(r){
   const pl=play,[df,dd]=nearest(DEF,r.x,r.y,o=>o.stun<=0);let d=hyp(r.x-Q.x,r.y-Q.y),bullet=false,lob=false;
   const deep=r.x-S.los>15&&d>20,trail=df&&df.x<r.x-.3;
-  if(deep&&(trail||Math.random()<.3)&&!(pl.dblDone&&dd>3))lob=true;   // a trick passer with a man open lets it go on a lineelse if(d<18&&dd<2.6&&Math.random()<.6)bullet=true;else if(d<11&&Math.random()<.25)bullet=true;
+  if(deep&&(trail||Math.random()<.3)&&!(pl.dblDone&&dd>3))lob=true;   // a trick passer with a man open lets it go on a line
+  else if(d<18&&dd<2.6&&Math.random()<.6)bullet=true;else if(d<11&&Math.random()<.25)bullet=true;
   let T=flightT(d,bullet,lob,Q.pl.thr),tx=r.x,ty=r.y;
   for(let i=0;i<2;i++){tx=r.x+r.vx*T*.92;ty=r.y+r.vy*T*.92;d=hyp(tx-Q.x,ty-Q.y);T=flightT(d,bullet,lob,Q.pl.thr)}
   throwBall(Math.min(tx,119),clamp(ty,.8,FW-.8),bullet,r,lob);
@@ -8851,6 +8865,7 @@ cv.addEventListener('pointerdown',e=>{
   if(S.phase==='presnap'&&uOff()&&S.pc&&!S.auto&&LG.settings.tapSnap!==false&&!$('#snapBar').hidden&&$('#adjMenu').hidden&&$('#hotBar').hidden&&!S.motion){$('#snapGo').click();return}
   if(S.phase!=='live'||!play)return;
   if(S.auto&&!autoSprite())return;   // autopilot (05h): the AI has every player
+  if(arcade()&&arcDown(e))return;   // Arcade controls (06c)
   if(touch&&touch.mode==='aim'&&e.pointerId!==touch.id){S.bullet=!S.bullet;$('#bulletBtn').setAttribute('aria-pressed',String(S.bullet));updateAim();return}
   if(touch)return;
   try{cv.setPointerCapture(e.pointerId)}catch(_){}
@@ -8865,6 +8880,7 @@ cv.addEventListener('pointerdown',e=>{
 cv.addEventListener('pointermove',e=>{
   if(S.phase==='replay'&&typeof teleMove==='function'){teleMove(e);return}
   if(!touch||e.pointerId!==touch.id)return;
+  if(touch.arc){arcMove(e);return}
   touch.x=e.clientX;touch.y=e.clientY;touch.moved=Math.max(touch.moved,hyp(touch.x-touch.sx,touch.y-touch.sy));
   if(touch.mode==='aim?'&&touch.moved>10)touch.mode='aim';
   if(touch.mode==='aim')updateAim();
@@ -8873,6 +8889,7 @@ cv.addEventListener('pointermove',e=>{
 function up(e){
   if(S.phase==='replay'&&typeof teleUp==='function'){teleUp(e);return}
   if(!touch||e.pointerId!==touch.id)return;const t=touch;touch=null;stick=null;
+  if(t.arc){arcUp(t);return}
   if(S.phase!=='live'||!play){aim=null;return}
   if(t.mode==='aim'&&aim&&!play.thrown){if(hyp(aim.x-Q.x,aim.y-Q.y)>2.5)throwBall(aim.x,aim.y,S.bullet);aim=null;return}
   if(t.mode==='aim?'&&!play.thrown){play.scramble=true;play.scrT=play.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}hint('Scramble! Drag to steer · JUKE / SPIN / TRUCK');$('#bulletBtn').hidden=true;aim=null;hideActs();showActs();return}
@@ -9053,6 +9070,196 @@ function padDraw(c){
   const t=PAD.target;if(!PAD.on||!t||!padQB())return;const x=X(t.x),y=Y(t.y),r=scE()*1.15;
   c.save();c.strokeStyle='#FFD23F';c.lineWidth=3;c.globalAlpha=.9;c.beginPath();c.ellipse(x,y,r,r*VY,0,0,6.283);c.stroke();c.restore();
 }
+
+/* =========================================================
+   06c · Arcade controls (the default scheme) + the steady side-view camera + first-use control tips
+   Settings › Controls & camera › Controls: Arcade | Simulation (06-input's floating stick, drag-aim and the move
+   buttons). Camera: Auto (follows the scheme) | Steady | Broadcast (08 updateCam's auto-framing).
+   PASS    touch anywhere and pull back like a slingshot: the ball goes the other way, a longer pull throws deeper and
+           faster. The dotted arc lands exactly where the ball will come down: pointing near a receiver locks it onto
+           his lead spot (arcLead, the same flight time the throw uses). Release to throw; a pull under ARC.pull px
+           cancels. Tap a receiver (his badge or his body) for a quick bullet on his lead. Badges over the receivers
+           show how open each one is; RUN scrambles. Accuracy stays the QB's (aimError), a little more forgiving.
+   RUN     the carrier runs upfield on his own; drag up / down anywhere to steer between lanes (drag back to reverse
+           field). A quick flick up / down = juke that way, flick back = spin, flick toward the goal line or a
+           two-finger tap = dive; a tap = the move the moment needs (hurdle a diving tackler, truck / stiff-arm a man in
+           reach, otherwise a short burst). The user's runner turns with little momentum (ARC.f); the AI keeps it all.
+   DEFENSE the highlighted defender plays his assignment until you drag (then the stick drives him, snapping to the
+           pursuit angle when you point roughly at the carrier); tap = the defender nearest the ball, a swipe toward
+           the carrier = dive tackle (near a thrown ball: go for the ball), two-finger tap = dive.
+   TIPS    ctlTip(key) shows a one-line tip the first time each control comes up (Settings › Control tips).
+   ========================================================= */
+const arcade=()=>!(LG&&LG.settings&&LG.settings.ctl==='sim');
+const camSteady=()=>{const m=LG&&LG.settings&&LG.settings.camMode;return m==='steady'||m!=='broadcast'&&arcade()};
+const ARC={f:2.6,R:58,flickT:260,flickD:28,tapT:240,tapD:14,pull:20,acc:.9,mag:3.2};
+const arcPS=()=>typeof PLAYER_SCALE==='number'&&PLAYER_SCALE>0?PLAYER_SCALE:1;
+/* the user's QB is in the pocket with the ball (career mode: only when the QB is your player) */
+function arcQB(){if(!play||!uOff()||play.st||play.type!=='pass'||play.thrown||play.scramble||play.carrier!==Q)return false;const ex=S.auto?autoSprite():null;return S.auto?ex===Q:true}
+/* where receiver o will be when a ball thrown now arrives (tm = the throw's speed factor) */
+function arcLead(o,bullet,tm){let tx=o.x,ty=o.y,T=0;for(let i=0;i<3;i++){T=flightT(hyp(tx-Q.x,ty-Q.y),bullet,false,Q.pl.thr)*(tm||1);tx=o.x+(o.vx||0)*T*.92;ty=o.y+(o.vy||0)*T*.92}return [Math.min(tx,119.5),clamp(ty,.8,FW-.8),T]}
+const arcRcvs=()=>OFF.filter(o=>eligible(o)&&!o.blocker&&o!==Q);
+/* screen position of a receiver's badge (over his helmet) */
+function arcBadge(o){const s=scE();return [X(o.x),Y(o.y)-s*(2.75*arcPS()+.55)-9]}
+function arcRcvAt(sx,sy){let b=null,bd=34;for(const o of arcRcvs()){const [bx,by]=arcBadge(o),s=scE();const d=Math.min(hyp(bx-sx,by-sy),hyp(X(o.x)-sx,Y(o.y)-s*1.3*arcPS()-sy)*1.1);if(d<bd){bd=d;b=o}}return b}
+/* slingshot aim from the pull (start - finger) */
+function arcAim(t){
+  const px=t.sx-t.x,py=t.sy-t.y,pull=hyp(px,py),span=Math.min(W,H)*.5;
+  if(pull<ARC.pull){aim=null;return}
+  const mr=maxRange(),k=mr/span;let ax=px*k,ay=py*k/VY,d=hyp(ax,ay);if(d>mr){ax*=mr/d;ay*=mr/d;d=mr}
+  const pr=clamp(pull/span,0,1),tm=lerp(1.08,.9,pr);let tx=Q.x+ax,ty=Q.y+ay,r=null,bd=ARC.mag+d*.1;
+  for(const o of arcRcvs()){const L=arcLead(o,false,tm),e=hyp(L[0]-tx,L[1]-ty);if(e<bd){bd=e;r=o;t.lx=L[0];t.ly=L[1]}}
+  if(r){tx=t.lx;ty=t.ly;d=hyp(tx-Q.x,ty-Q.y)}
+  tx=Math.min(tx,119.5);ty=clamp(ty,.6,FW-.6);
+  aim={x:tx,y:ty,err:aimError(Math.min(d,mr),false,false),bullet:false,lob:false,arc:true,r,tm};
+}
+function arcThrow(){if(!aim||!play||play.thrown)return;const a=aim;aim=null;play.tMul=a.tm;throwBall(a.x,a.y,false,a.r||null,false);play.tMul=null;ctlTip('passed')}
+function arcBullet(r){if(!play||play.thrown)return;const L=arcLead(r,true,1);aim=null;throwBall(L[0],L[1],true,r,false)}
+/* runner: vertical lane steering from a floating origin */
+function arcSteer(t){
+  let dx=t.x-t.ox,dy=t.y-t.oy;const R=ARC.R,m=hyp(dx,dy);if(m>R){t.ox=t.x-dx/m*R;t.oy=t.y-dy/m*R;dx=t.x-t.ox;dy=t.y-t.oy}
+  const ux=dx/R,uy=dy/R;let hx,hy;
+  if(ux<-.6){const n=hyp(ux,uy)||1;hx=ux/n;hy=uy/n}   // dragged back: reverse field
+  else{hy=Math.abs(uy)<.1?0:clamp((uy-Math.sign(uy)*.1)*1.25,-.94,.94);hx=Math.sqrt(1-hy*hy)}
+  stick={dx:hx,dy:hy,m:60,ox:t.ox,oy:t.oy,x:t.x,y:t.y,arc:1};
+}
+function arcBurst(){const pl=play,c=pl&&pl.carrier;if(!c||pl.dive>0||(pl.burstCD||0)>0)return;pl.burstT=.6;pl.burstCD=2;c.fat=(c.fat||0)+.03;haptic('light');sfx('cut');toast('Burst!')}
+/* one tap: the move the moment needs */
+function arcTap(){
+  const pl=play,c=pl&&pl.carrier;if(!c)return;let lunger=null,near=null,nd=2.9;
+  for(const d of DEF){if(d.stun>0||d.engaged)continue;const dd=hyp(d.x-c.x,d.y-c.y);if(d.lunge>0&&dd<3.4&&d.x>c.x-1.2)lunger=d;if(dd<nd){nd=dd;near=d}}
+  if(lunger&&(c.pl.agi||3)>=2.5)return doHurdle();
+  if(near)return doTruck();
+  arcBurst();
+}
+/* defense: switch to the man nearest the ball (he may already be yours) */
+function arcSwitch(){if(play&&play.st&&S.phase==='live')return switchDefender();const fx=ball.state==='air'?ball.tx:play&&play.carrier?play.carrier.x:S.los,fy=ball.state==='air'?ball.ty:play&&play.carrier?play.carrier.y:S.ballY;
+  const [d]=nearest(DEF,fx,fy,o=>o.stun<=0||o===S.ctrl);if(d&&d!==S.ctrl)switchDefender(d)}
+function arcDive(fx,fy){
+  const d=S.ctrl;if(!d||!play||play.st||d.engaged&&d.engBy||ball.state==='air'||d.stun>0||d.lunge>0||d.lungeCD>0)return userTackle();
+  const c=play.carrier;let tx=d.x+fx*2.4,ty=d.y+fy*2.4;
+  if(c&&c.side!==d.side){const rx=c.x-d.x,ry=c.y-d.y,n=hyp(rx,ry)||1;if(n<4.8&&(rx*fx+ry*fy)/n>.45){tx=c.x+c.vx*.25;ty=c.y+c.vy*.25}}
+  d.lunge=.32;d.lungeCD=1.1;d.lx=tx;d.ly=ty;d.userLunge=true;sfx('cut');haptic('light');
+}
+/* the user steering his defender: pointing roughly at the play takes the pursuit angle (or the ball's landing spot) */
+function arcAssist(d,gx,gy){
+  let px,py;const c=play.carrier;
+  if(ball.state==='air'&&!ball.pitch){px=ball.tx;py=ball.ty}else if(c&&c.side!==d.side&&isRunner()){[px,py]=intercept(d,c,d.spd)}else return [gx,gy];
+  const ux=gx-d.x,uy=gy-d.y,vx=px-d.x,vy=py-d.y,cs=(ux*vx+uy*vy)/((hyp(ux,uy)||1)*(hyp(vx,vy)||1));return cs>.8?[px,py]:[gx,gy];
+}
+/* ---------- pointer handling (06-input hands every live-play touch here while arcade() is on) ---------- */
+function arcDown(e){
+  const now=performance.now();
+  if(touch&&touch.arc){   // a second finger
+    if(touch.arc==='run'&&isRunner())doDive();else if(touch.arc==='def')arcDive(-1,0);return true}
+  if(touch)return false;
+  const ex=S.auto?autoSprite():null;let mode=null;
+  if(!uOff())mode=ex&&ex.side!=='d'?null:'def';
+  else if(arcQB())mode='sling';
+  else if(isRunner()&&userCtl(play.carrier))mode='run';
+  if(!mode)return false;
+  try{cv.setPointerCapture(e.pointerId)}catch(_){}
+  touch={id:e.pointerId,x:e.clientX,y:e.clientY,sx:e.clientX,sy:e.clientY,ox:e.clientX,oy:e.clientY,t0:now,moved:0,arc:mode,mode:'arc',rcv:mode==='sling'?arcRcvAt(e.clientX,e.clientY):null};
+  return true;
+}
+function arcMove(e){
+  const t=touch;t.x=e.clientX;t.y=e.clientY;t.moved=Math.max(t.moved,hyp(t.x-t.sx,t.y-t.sy));
+  if(t.arc==='sling'){if(!arcQB()){aim=null;return}if(t.moved>10)arcAim(t)}
+  else if(t.arc==='run'){if(isRunner())arcSteer(t)}
+  else if(t.arc==='def'&&t.moved>10)updateStick(t);
+}
+function arcUp(t){
+  stick=null;const dtm=performance.now()-t.t0,ddx=t.x-t.sx,ddy=t.y-t.sy,tap=dtm<ARC.tapT&&t.moved<ARC.tapD,flick=dtm<ARC.flickT&&t.moved>ARC.flickD;
+  if(S.phase!=='live'||!play){aim=null;return}
+  if(t.arc==='sling'){
+    if(!arcQB()){aim=null;return}
+    if(tap&&t.rcv){arcBullet(t.rcv);return}
+    if(aim&&t.moved>=ARC.pull){arcThrow();return}
+    aim=null;if(tap)hint('Pull back to throw · tap a receiver for a bullet · RUN to scramble');return}
+  if(t.arc==='run'){if(!isRunner())return;
+    if(flick){if(Math.abs(ddy)>=Math.abs(ddx)*.8)doJuke(Math.sign(ddy)||1);else if(ddx>0)doDive();else doSpin();return}
+    if(tap)arcTap();return}
+  if(t.arc==='def'){
+    if(tap){const d=defenderAt(t.x,t.y);if(d&&d!==S.ctrl)switchDefender(d);else arcSwitch();return}
+    if(flick){const wx=ddx,wy=ddy/VY,n=hyp(wx,wy)||1;arcDive(wx/n,wy/n)}}
+}
+/* ---------- snap / carry hooks: the right one-line tip, once ---------- */
+const TIPS={pass:'Pull back anywhere to aim · let go to throw · tap a receiver for a bullet',
+  run:'Drag up or down to steer · flick to juke · tap to burst or stiff-arm · two fingers to dive',
+  def:'Drag to take over your man · flick at the ball carrier to dive · tap to switch',
+  passed:'The arc shows the landing spot · green badge = open',
+  sim:'Drag to steer · use the buttons for moves'};
+function ctlTip(k){
+  if(!LG||!LG.settings||LG.settings.ctlTips===false||S.ff||S.auto&&!autoSprite()||!arcade()||!TIPS[k])return;
+  const seen=LG.settings.tipsSeen||(LG.settings.tipsSeen={});if(seen[k])return;seen[k]=1;
+  let el=$('#ctlTip');if(!el){el=document.createElement('div');el.id='ctlTip';el.setAttribute('role','status');document.body.appendChild(el)}
+  el.innerHTML=`<b>Tip</b>${esc(TIPS[k])}`;el.hidden=false;el.classList.remove('on');void el.offsetWidth;el.classList.add('on');
+  clearTimeout(ctlTip.t);ctlTip.t=setTimeout(()=>{el.classList.remove('on');setTimeout(()=>{el.hidden=true},300)},4200);
+}
+function arcSnap(pl){if(!arcade())return;if(uOff()){if(pl.type==='pass'&&arcQB())ctlTip('pass')}else if(S.ctrl)ctlTip('def')}
+function arcHint(pl){
+  if(uOff())return pl.type==='pass'?'Pull back to aim · release to throw · tap a receiver for a bullet':'Drag up / down to steer · flick to juke · tap to burst';
+  return S.ctrl?`You are #${S.ctrl.num} ${S.ctrl.pl.last} · drag to move · flick at the carrier to dive · tap to switch`:'';
+}
+/* ---------- overlay: receiver badges (openness), the sling pull, off-screen receivers ---------- */
+function arcDraw(c,s,now){
+  if(!arcade()||S.phase!=='live'||!play||play.st)return;
+  if(arcQB()){
+    c.save();c.font=`800 ${Math.round(clamp(s*.55,11,15))}px -apple-system,system-ui,sans-serif`;c.textAlign='center';c.textBaseline='middle';
+    for(const o of arcRcvs()){const [,nd]=nearest(DEF,o.x,o.y,d=>d.stun<=0),col=openCol(nd);let [bx,by]=arcBadge(o);const r=clamp(s*.62,11,17),off=bx>W-r-4||bx<r+4;bx=clamp(bx,r+4,W-r-4);by=clamp(by,r+4,H-r-4);
+      const hi=aim&&aim.r===o;c.globalAlpha=1;c.fillStyle='rgba(8,12,20,.78)';c.beginPath();c.arc(bx,by,r+(hi?3:0),0,7);c.fill();c.lineWidth=hi?4:3;c.strokeStyle=col;c.stroke();
+      c.fillStyle='#fff';c.fillText(String(o.num!=null?o.num:''),bx,by+.5);
+      if(off){c.fillStyle=col;c.beginPath();const ax=bx>W/2?bx+r+2:bx-r-2,dir=bx>W/2?1:-1;c.moveTo(ax+dir*7,by);c.lineTo(ax,by-6);c.lineTo(ax,by+6);c.closePath();c.fill()}}
+    c.restore();
+  }
+  const t=touch;if(t&&t.arc==='sling'&&aim){c.save();c.globalAlpha=.4;c.strokeStyle='#fff';c.lineWidth=2;c.setLineDash([5,6]);c.beginPath();c.moveTo(t.sx,t.sy);c.lineTo(t.x,t.y);c.stroke();c.setLineDash([]);c.globalAlpha=.7;c.fillStyle='#fff';c.beginPath();c.arc(t.sx,t.sy,6,0,7);c.fill();c.restore()}
+}
+
+/* ---------- steady side-view camera (Retro Bowl style) ----------
+   Fixed zoom per orientation and situation (runs, passes one fixed step wider, defense in between), set once and eased;
+   the pan follows the ball horizontally with a gentle lead and a dead zone, vertically only a little (more when the
+   field is taller than the view); the ball is kept on screen. Special teams, replays and the retro style use 08's camera. */
+const CAMA={L:{run:1.06,pass:.9,def:.95},P:{run:1,pass:.9,def:.94},dz:.07};
+function camArc(dt){
+  const ph=S.phase;if(!(ph==='presnap'||ph==='live'||ph==='dead')||play&&play.st&&ph!=='presnap'||!S.home)return false;
+  const port=H>W*1.2,Z=port?CAMA.P:CAMA.L,o=uOff();
+  const pass=ph==='presnap'?!!(S.pc&&S.pc.cat==='pass'&&!S.pc.special):!!(play&&play.type==='pass');
+  let z=!o?Z.def:pass?Z.pass:Z.run;if(ph==='dead')z=cam.az||z;cam.az=z;
+  const cut=cam.cut;if(cut){cam.z=z;cam.zv=0}else camDamp('z',z,.55,dt);
+  const s=scE(),vw=W/s,vh=(H-topY)/(s*VY);
+  /* focus: what the shot follows, and where across the view it sits (0 = left edge) */
+  let fx=S.los,fy=S.ballY,an=.36,st=.42;
+  const pa=port?.2:.27;   // passes: the QB sits further left in the narrow portrait view (more of the routes ahead)
+  if(ph==='presnap'){const qx=Q?Q.x:S.los-1;fx=o?(pass?qx:S.los):S.los;an=o?(pass?pa:.36):.52}
+  else if(ball.state==='air'&&!ball.pitch){fx=ball.x+(ball.tx-ball.x)*.4;fy=lerp(ball.y,ball.ty,.4);an=.5;st=.32}
+  else{const h=(play&&play.carrier)||Q;if(h){fx=h.x;fy=h.y;
+    if(play&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){an=pa;if(aim)fy=lerp(Q.y,aim.y,.4)}
+    else{fx+=clamp((h.vx||0)*.4,-3,5);an=o?.4:.45;st=.34}}}
+  let tx=fx+vw*(.5-an);
+  /* dead zone: the target only moves once the focus leaves a window around the current aim */
+  const dz=vw*CAMA.dz;if(cut||cam.ax==null)cam.ax=tx;else if(tx>cam.ax+dz)cam.ax=tx-dz;else if(tx<cam.ax-dz)cam.ax=tx+dz;
+  if(ph==='dead')tx=cam.x;else tx=cam.ax;
+  const mn=-13+vw/2,mx=133-vw/2;tx=mn>mx?60:clamp(tx,mn,mx);
+  /* vertical: slight follow; whole width in view holds mid */
+  const ylo=-11+vh/2,yhi=FW+4-vh/2,ymid=CEN-3.6,full=ylo>=yhi,k=vh>FW*.8?.45:.8;
+  let ty=full?ymid:clamp(CEN-1.5+(fy-CEN)*k,Math.min(ylo,ymid),Math.max(yhi,ymid));
+  if(ph==='dead')ty=cam.y;
+  if(cut){cam.x=tx;cam.y=ty;cam.xv=cam.yv=0;cam.cut=0;S.cutA=1;S.cutN=(S.cutN||0)+1}
+  else{camDamp('x',tx,st,dt);camDamp('y',ty,st*1.6,dt)}
+  /* keep the ball / carrier inside the frame when the spring lags (pulled in quickly, never snapped) */
+  if(ph!=='presnap'){const b=ball.state==='air'?ball:(play&&play.carrier)||Q;if(b){const hw=vw/2-Math.min(vw*.18,4),hh=vh/2-2.2*arcPS()-1;
+    let d=b.x<cam.x-hw?b.x+hw-cam.x:b.x>cam.x+hw?b.x-hw-cam.x:0;if(d){cam.x+=d*Math.min(1,dt*9);cam.xv=0}
+    if(!full){d=b.y<cam.y-hh?b.y+hh-cam.y:b.y>cam.y+hh?b.y-hh-cam.y:0;if(d){cam.y+=d*Math.min(1,dt*9);cam.yv=0}}}}
+  S.shake=Math.max(0,S.shake-dt*1.6);return true;
+}
+
+/* ---------- settings ---------- */
+SETTINGS_EXTRA.push({card:'Controls & camera',key:'ctl',label:'Controls',opts:[['arcade','Arcade'],['sim','Simulation']],def:'arcade',
+  note:'<b>Arcade</b>: pull back anywhere to throw (tap a receiver for a bullet), drag up / down to steer the runner, flick to juke, tap to burst; on defense drag to take over, flick at the carrier to dive, tap to switch. <b>Simulation</b>: the floating joystick, drag-to-aim passing and the move buttons.',
+  after:()=>{if(typeof hideActs==='function'&&play&&S.phase==='live'){hideActs();showActs()}}});
+SETTINGS_EXTRA.push({card:'Controls & camera',key:'camMode',label:'Camera',opts:[['auto','Auto'],['steady','Steady side view'],['broadcast','Broadcast']],def:'auto',
+  note:'Auto: the steady side view with Arcade controls, the auto-framing broadcast camera with Simulation.'});
+SETTINGS_EXTRA.push({card:'Controls & camera',key:'ctlTips',label:'Control tips',opts:[[1,'On'],[0,'Off']],def:1,bool:true,
+  note:'A one-line tip the first time each control comes up.',after:v=>{if(v&&LG)LG.settings.tipsSeen={}}});
 
 /* =========================================================
    07 · Synthesized audio + broadcast HUD
@@ -9380,6 +9587,7 @@ function updateCam(dt){
   /* between plays ('wait': a kick result, a change of possession, a flag; the try sheet; behind the kick view) the shot
      holds instead of sliding back to a stale line of scrimmage; whatever comes next (a snap, a kickoff) cuts */
   if((S.phase==='wait'||S.phase==='pat'||S.phase==='kick')&&!cam.cut){S.shake=Math.max(0,S.shake-dt*1.6);return}
+  if(!retro&&camSteady()&&camArc(dt))return;   // the steady side view (06c)
   let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
   if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1;
     /* frame the formation: the QB, every eligible receiver and your defender stay in view on any phone (hot routes, reads) */
@@ -9472,7 +9680,7 @@ function drawModern(now){
     if((p===S.ctrl&&ctrlRing(p)||rtgMine(p)&&p.side==='o')&&S.phase!=='dead'){selRing(c,X(p.x),Y(p.y),s,now)}
     drawAthlete(c,p,now);
   }
-  drawSideline(c,s,now,true);drawStick(c);
+  drawSideline(c,s,now,true);drawStick(c);arcDraw(c,s,now);
   // ball in flight / at rest
   if(inGame&&ball){
     if(ball.state==='air'){const bx=X(ball.x),by=Y(ball.y);{const sh=1-Math.min(.6,ball.z/12);c.fillStyle=`rgba(0,0,0,${.35*sh})`;c.beginPath();c.ellipse(bx,by,s*.3*sh,s*.12*sh,0,0,7);c.fill()}if(!ball.bullet&&ball.T>.9&&!ball.pitch)drawBallTrail(c,s);const yy=by-ball.z*s*.9-s*1.6;const ang=Math.atan2((ball.ty-ball.fy)*VY,ball.tx-ball.fx);
