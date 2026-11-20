@@ -26,7 +26,7 @@ function arcQB(){if(!play||!uOff()||play.st||play.type!=='pass'||play.thrown||pl
 function arcLead(o,bullet,tm){let tx=o.x,ty=o.y,T=0;for(let i=0;i<3;i++){T=flightT(hyp(tx-Q.x,ty-Q.y),bullet,false,Q.pl.thr)*(tm||1);tx=o.x+(o.vx||0)*T*.92;ty=o.y+(o.vy||0)*T*.92}return [Math.min(tx,119.5),clamp(ty,.8,FW-.8),T]}
 const arcRcvs=()=>OFF.filter(o=>eligible(o)&&!o.blocker&&o!==Q);
 /* screen position of a receiver's badge (over his helmet) */
-function arcBadge(o){const s=scE();return [X(o.x),Y(o.y)-s*(2.75*arcPS()+.55)-9]}
+function arcBadge(o){if(isPix()){const b=pxBadgeAt(o);return [b[0]*PXS,b[1]*PXS]}const s=scE();return [X(o.x),Y(o.y)-s*(2.75*arcPS()+.55)-9]}
 function arcRcvAt(sx,sy){let b=null,bd=34;for(const o of arcRcvs()){const [bx,by]=arcBadge(o),s=scE();const d=Math.min(hyp(bx-sx,by-sy),hyp(X(o.x)-sx,Y(o.y)-s*1.3*arcPS()-sy)*1.1);if(d<bd){bd=d;b=o}}return b}
 /* slingshot aim from the pull (start - finger) */
 function arcAim(t){
@@ -129,6 +129,7 @@ function arcHint(pl){
 }
 /* ---------- overlay: receiver badges (openness), the sling pull, off-screen receivers ---------- */
 function arcDraw(c,s,now){
+  if(isPix())return;   // the pixel style draws its own tags (08p pxBadges)
   if(!arcade()||S.phase!=='live'||!play||play.st)return;
   if(arcQB()){
     c.save();c.font=`800 ${Math.round(clamp(s*.55,11,15))}px -apple-system,system-ui,sans-serif`;c.textAlign='center';c.textBaseline='middle';
@@ -151,7 +152,7 @@ function camArc(dt){
   const port=H>W*1.2,Z=port?CAMA.P:CAMA.L,o=uOff();
   const pass=ph==='presnap'?!!(S.pc&&S.pc.cat==='pass'&&!S.pc.special):!!(play&&play.type==='pass');
   let z=!o?Z.def:pass?Z.pass:Z.run;if(ph==='dead')z=cam.az||z;cam.az=z;
-  const cut=cam.cut;if(cut){cam.z=z;cam.zv=0}else camDamp('z',z,.55,dt);
+  const cut=cam.cut;if(isPix()){cam.z=1;cam.zv=0}else if(cut){cam.z=z;cam.zv=0}else camDamp('z',z,.55,dt);   // pixel style: one fixed scale, no zoom
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY);
   /* focus: what the shot follows, and where across the view it sits (0 = left edge) */
   let fx=S.los,fy=S.ballY,an=.36,st=.42;
