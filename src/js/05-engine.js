@@ -259,6 +259,7 @@ function startPlay(pc,o){
   if(typeof BC!=='undefined'){BC.snap();recStart()}
   autoSnapCtl();showActs();
   if(S.auto&&!autoSprite())hint('');
+  else if(arcade()){hint(arcHint(pl));arcSnap(pl)}
   else if(uOff())hint(pl.type==='pass'?'Drag back to aim · release to throw · tap the field to scramble':'Drag to steer · use the buttons to juke, spin or truck');
   else if(S.ctrl)hint(`You are #${S.ctrl.num} ${S.ctrl.pl.last} · drag to move · TACKLE to dive · SWITCH for the nearest man`);
 }
@@ -270,7 +271,8 @@ $('#bulletBtn').onclick=()=>{S.bullet=!S.bullet;$('#bulletBtn').setAttribute('ar
 function showDefCall(){renderDefCall()}
 function switchDefender(target){
   if(play&&play.st&&S.phase==='live')return stSwitch(target);
-  if(uOff()||S.auto&&AUTO.exempt!=null)return;   // Road to Glory: you stay with your playerlet best=target||null;
+  if(uOff()||S.auto&&AUTO.exempt!=null)return;   // Road to Glory: you stay with your player
+  let best=target||null;
   if(!best){const fx=ball.state==='air'?ball.tx:(play&&play.carrier?play.carrier.x:S.los),fy=ball.state==='air'?ball.ty:(play&&play.carrier?play.carrier.y:S.ballY);let bd=1e9;for(const d of DEF){if(d===S.ctrl)continue;const dd=hyp(d.x-fx,d.y-fy);if(dd<bd){bd=dd;best=d}}}
   if(best){S.ctrl=best;S.ctrlKey=best.key;sfx('cut');haptic('light');if(S.phase==='presnap'&&!$('#call').hidden)defHead()}
 }
@@ -423,7 +425,8 @@ function defAI(d,dt){
   if(d.lunge>0){d.lunge-=dt;steer(d,d.lx,d.ly,d.spd*1.6,dt,18);if(d.lunge<=0&&!play.ended){d.stun=d.userLunge?.55:.75;d.userLunge=false;d.fallen=true;spawnTurf(d.x,d.y,5)}return}
   /* engaged with a blocker: 05c moves the pair; the user can lean on the rep with the stick */
   if(blockCheck(d,dt)){if(d===S.ctrl&&stick&&stick.m>12){d.vx+=stick.dx*4*dt;d.vy+=stick.dy*4*dt}return}
-  if(d===S.ctrl&&stick&&stick.m>12){steer(d,d.x+stick.dx*3,d.y+stick.dy*3,d.spd,dt,12.5);return}
+  if(d===S.ctrl&&stick&&stick.m>12){let gx=d.x+stick.dx*3,gy=d.y+stick.dy*3;const ar=arcade();if(ar)[gx,gy]=arcAssist(d,gx,gy);steer(d,gx,gy,d.spd,dt,ar?15:12.5);return}
+  const idle=d!==S.ctrl||arcade()&&!stick;   // Arcade: the highlighted man plays his assignment until you drag
   if(d.rdMode&&play.type==='run'&&!play.handed&&play.t<1.2&&rdMove(d,dt))return;
   const eng=false;let spd=d.spd*(d.freeT>0?1.1:1);
   if(d.react>0&&play.t<d.react){if(play.fakeY!=null&&d.role!=='DL'){steer(d,d.x-.2,play.fakeY,d.spd*.55,dt);return}spd*=.35}
@@ -440,12 +443,12 @@ function defAI(d,dt){
     if(pursue&&c&&play.type==='run'&&d.role!=='DL'&&c.x<L+.3&&!(d.cov&&d.cov.type==='rush')){tx=L+2.4;ty=lerp(c.y,play.gapY,.6)}
     else if(pursue&&c){
       const n=hyp(c.x-d.x,c.y-d.y);[tx,ty]=intercept(d,c,spd);
-      if(runner&&n<2.2&&n>1.05&&d.lungeCD<=0&&!eng&&d!==S.ctrl){d.lunge=.28;d.lungeCD=1.5;d.lx=c.x+c.vx*.26;d.ly=c.y+c.vy*.26}
+      if(runner&&n<2.2&&n>1.05&&d.lungeCD<=0&&!eng&&idle){d.lunge=.28;d.lungeCD=1.5;d.lx=c.x+c.vx*.26;d.ly=c.y+c.vy*.26}
     }else{
       const cv=d.cov||{type:'rush'};
       if(cv.type==='rush'){const t=c||Q;tx=t.x;ty=t.y;if(cv.gy!=null&&t===Q&&d.x>L-.5){tx=L-1;ty=cv.gy}
         /* a free rusher closing on the pocket QB dives to wrap him up (the sack check honours the longer lunge reach) */
-        if(t===Q&&play.type==='pass'&&!play.thrown&&!play.scramble&&d.lungeCD<=0&&d!==S.ctrl){const n=hyp(Q.x-d.x,Q.y-d.y);if(n<2&&n>1){d.lunge=.28;d.lungeCD=1.5;d.lx=Q.x+Q.vx*.2;d.ly=Q.y+Q.vy*.2;return}}}
+        if(t===Q&&play.type==='pass'&&!play.thrown&&!play.scramble&&d.lungeCD<=0&&idle){const n=hyp(Q.x-d.x,Q.y-d.y);if(n<2&&n>1){d.lunge=.28;d.lungeCD=1.5;d.lx=Q.x+Q.vx*.2;d.ly=Q.y+Q.vy*.2;return}}}
       else if(play.fleaHold&&play.t<.65&&(d.role==='LB'||d.role==='S')){tx=L+1.5;ty=d.y}
       else{const g=covTarget(d,cv,dt);return steer(d,g[0],g[1],spd*(g[2]||1),dt,g[3]||9.5+1.2*d.pl.cov)}
       return steer(d,tx,ty,spd,dt,9.5+1.2*d.pl.cov);
@@ -463,7 +466,8 @@ function controlRunner(c,dt){
   const n=hyp(dxv,dyv)||1;let vx=dxv/n*spd,vy=dyv/n*spd;
   if(pl.dive>0){vy*=.3;vx=Math.max(vx,spd*.9)}
   /* momentum (05c), a little more forgiving than the CPU; a juke is a hard plant-and-go */
-  phyMove(c,vx,vy,dt,pl.jukeT>0?2.6:pl.spinT>0?1.8:PHY.user);
+  const f=arcade()&&userCtl(c)?ARC.f:PHY.user;if(f===ARC.f&&!pl.tipR){pl.tipR=1;ctlTip('run')}
+  phyMove(c,vx,vy,dt,pl.jukeT>0?Math.max(2.6,f):pl.spinT>0?Math.max(1.8,f*.8):f);
   carrierAnim(c,dt);
 }
 function aiRunner(c,dt){
@@ -513,8 +517,8 @@ function logPass(res){if(S.conv)return null;const r={depth:ball.tx-S.los,y:ball.
 /* ---------- main simulation step ---------- */
 function simulate(dt){
   for(const p of P){p.fallP=lerp(p.fallP,p.fallen?1:0,Math.min(1,dt*9));const sp=hyp(p.vx,p.vy);p.phase+=sp*dt*1.85;p.throwT=Math.max(0,p.throwT-dt);if(p.animT>0)p.animT-=dt}
-  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,5.5);   /* ease up within a stride or two of the whistle */p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
-  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.jukeCD-=dt;if(pl.buf){pl.buf.t-=dt;if(pl.buf.t<=0)pl.buf=null;else if(pl.jukeCD<=0){const b=pl.buf;pl.buf=null;b.k==='juke'?doJuke(b.d):b.k==='spin'?doSpin():doTruck()}}for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
+  if(S.phase==='dead'){for(const p of P){if(p===S.celebrate)continue;steer(p,p.x,p.y,0,dt,8.5);   /* ease up within a stride of the whistle (no sliding) */p.x+=p.vx*dt;p.y+=p.vy*dt;if(p.pile>0){p.pile-=dt;p.x+=p.pileV*dt}if(p.z>0)p.z=Math.max(0,p.z-dt*3)}if(S.celebrate&&typeof animCelebrate==='function')animCelebrate(dt);return}
+  const pl=play;pl.t+=dt;pl.jukeT=Math.max(0,pl.jukeT-dt);pl.spinT=Math.max(0,pl.spinT-dt);pl.truckT=Math.max(0,pl.truckT-dt);pl.stiffT=Math.max(0,pl.stiffT-dt);pl.burstT=Math.max(0,(pl.burstT||0)-dt);pl.burstCD=(pl.burstCD||0)-dt;pl.jukeCD-=dt;if(pl.buf){pl.buf.t-=dt;if(pl.buf.t<=0)pl.buf=null;else if(pl.jukeCD<=0){const b=pl.buf;pl.buf=null;b.k==='juke'?doJuke(b.d):b.k==='spin'?doSpin():doTruck()}}for(const p of P)fatTick(p,dt);pl.slowT-=dt;pl.swat=Math.max(0,pl.swat-dt);
   rulesTick(pl);
   if(pl.st)return stSim(dt);
   if(!S.ot&&!S.conv)S.clock=Math.max(0,S.clock-dt*CLK.play);
@@ -925,6 +929,7 @@ function showActs(){
   else if(userQB)html=`<button data-a="bullet" aria-pressed="${!!S.bullet}">BULLET</button><button data-a="lob" aria-pressed="${!!S.lob}">LOB</button><button data-a="scramble" class="big">RUN</button>`;
   else if(play.type==='run'&&!play.handed&&!play.caught)html='';
   if(uOff()&&(userRunner||play.type==='run'&&(!ex||KP[play.ckey]===ex))){html=`<button data-a="juke-1">JUKE ▲</button><button data-a="juke1">JUKE ▼</button><button data-a="spin">SPIN</button><button data-a="truck">TRUCK</button><button data-a="hurdle">HURDLE</button><button data-a="dive">DIVE</button>${play.pitchMan&&!play.pitched&&!(play.run&&play.run.triple&&!play.qbCarry)?'<button data-a="pitch" class="big">PITCH</button>':''}`}
+  if(arcade()&&!play.st){const pb=html.includes('data-a="pitch"')?'<button data-a="pitch" class="big">PITCH</button>':'';html=userQB?'<button data-a="scramble" class="big">RUN</button>':uOff()?pb:''}
   a.innerHTML=html;a.hidden=!html;
   a.querySelectorAll('[data-a]').forEach(b=>b.onpointerdown=e=>{e.preventDefault();e.stopPropagation();ac();const k=b.dataset.a;
     if(k==='bullet'||k==='lob'){if(k==='bullet'){S.bullet=!S.bullet;S.lob=false}else{S.lob=!S.lob;S.bullet=false}haptic('light');updateAim();showActs();return}

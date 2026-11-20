@@ -30,7 +30,7 @@ function aimError(d,bullet,lob){
   const plat=1+Math.min(1,v/5.5)*.6*(1.15-.05*qb.pl.agi)+(1-set)*.15;
   const acc=play&&play.dblDone?Math.max(qb.pl.acc,2.8):qb.pl.acc;   // the trick-play passer is the back or receiver who can throw
   const e=(.3+d*.0074*(6.3-acc))*(1+pressure()*.9)*plat*(1+strain*.6)*(bullet?1.15:lob?.92:1)*wx;
-  return e*(qb.user?(focus('passing')?.8:1)/SL('acc'):1.6-S.aiSkill*.3)/coachMod(qb.team,'acc');   // CPU passers: a touch less pinpoint than the user's drag-to-aim
+  return e*(qb.user?(focus('passing')?.8:1)/SL('acc')*(arcade()&&(!S.auto||autoSprite()===qb)?ARC.acc:1):1.6-S.aiSkill*.3)/coachMod(qb.team,'acc');   // CPU passers: a touch less pinpoint than the user's drag-to-aim
 }
 function flightT(d,bullet,lob,thr){let T=(.2+d*.028+d*d*.00028)*(1.1-.035*thr);if(bullet)T*=.72;else if(lob)T=T*1.28+.08;const mr=maxRange();if(d>mr*.8)T*=1+(d/mr-.8)*.8;return Math.max(.28,T)}
 function throwBall(tx,ty,bullet,intended,lob){
@@ -38,7 +38,7 @@ function throwBall(tx,ty,bullet,intended,lob){
   if(d>mr){tx=qb.x+(tx-qb.x)*mr/d;ty=qb.y+(ty-qb.y)*mr/d;d=mr}
   const er=pl.throwAway?0:aimError(d,bullet,lob),ux=(tx-qb.x)/(d||1),uy=(ty-qb.y)/(d||1),a=Math.random()*Math.PI*2,r=er*Math.sqrt(Math.random());
   const along=Math.cos(a)*r*.75,perp=Math.sin(a)*r;tx+=ux*along-uy*perp;ty+=uy*along+ux*perp;
-  const T=flightT(Math.max(1,d+along),bullet,lob,qb.pl.thr);
+  const T=flightT(Math.max(1,d+along),bullet,lob,qb.pl.thr)*(pl.tMul||1);   // Arcade sling: a longer pull throws faster (06c)
   if(S.wind&&S.wind.mph>3){const k=S.wind.mph/20*.55*T*(lob?1.5:bullet?.4:1);tx+=windX()*k;ty+=windY()*k}
   const dd=hyp(tx-qb.x,ty-qb.y);
   ball={state:'air',fx:qb.x,fy:qb.y,x:qb.x,y:qb.y,z:0,tx,ty,t:0,T,h:bullet?dd*.03+.45:lob?dd*.18+1.3:dd*.11+.5,bullet,lob,spin:0,err:along};haptic('light');
@@ -53,7 +53,8 @@ function throwAway(){play.throwAway=true;throwBall(Q.x+10,Q.y<CEN?-4:FW+4,false,
 function aiThrow(r){
   const pl=play,[df,dd]=nearest(DEF,r.x,r.y,o=>o.stun<=0);let d=hyp(r.x-Q.x,r.y-Q.y),bullet=false,lob=false;
   const deep=r.x-S.los>15&&d>20,trail=df&&df.x<r.x-.3;
-  if(deep&&(trail||Math.random()<.3)&&!(pl.dblDone&&dd>3))lob=true;   // a trick passer with a man open lets it go on a lineelse if(d<18&&dd<2.6&&Math.random()<.6)bullet=true;else if(d<11&&Math.random()<.25)bullet=true;
+  if(deep&&(trail||Math.random()<.3)&&!(pl.dblDone&&dd>3))lob=true;   // a trick passer with a man open lets it go on a line
+  else if(d<18&&dd<2.6&&Math.random()<.6)bullet=true;else if(d<11&&Math.random()<.25)bullet=true;
   let T=flightT(d,bullet,lob,Q.pl.thr),tx=r.x,ty=r.y;
   for(let i=0;i<2;i++){tx=r.x+r.vx*T*.92;ty=r.y+r.vy*T*.92;d=hyp(tx-Q.x,ty-Q.y);T=flightT(d,bullet,lob,Q.pl.thr)}
   throwBall(Math.min(tx,119),clamp(ty,.8,FW-.8),bullet,r,lob);

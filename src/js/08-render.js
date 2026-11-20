@@ -57,6 +57,7 @@ function updateCam(dt){
   /* between plays ('wait': a kick result, a change of possession, a flag; the try sheet; behind the kick view) the shot
      holds instead of sliding back to a stale line of scrimmage; whatever comes next (a snap, a kickoff) cuts */
   if((S.phase==='wait'||S.phase==='pat'||S.phase==='kick')&&!cam.cut){S.shake=Math.max(0,S.shake-dt*1.6);return}
+  if(!retro&&camSteady()&&camArc(dt))return;   // the steady side view (06c)
   let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
   if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1;
     /* frame the formation: the QB, every eligible receiver and your defender stay in view on any phone (hot routes, reads) */
@@ -149,7 +150,7 @@ function drawModern(now){
     if((p===S.ctrl&&ctrlRing(p)||rtgMine(p)&&p.side==='o')&&S.phase!=='dead'){selRing(c,X(p.x),Y(p.y),s,now)}
     drawAthlete(c,p,now);
   }
-  drawSideline(c,s,now,true);drawStick(c);
+  drawSideline(c,s,now,true);drawStick(c);arcDraw(c,s,now);
   // ball in flight / at rest
   if(inGame&&ball){
     if(ball.state==='air'){const bx=X(ball.x),by=Y(ball.y);{const sh=1-Math.min(.6,ball.z/12);c.fillStyle=`rgba(0,0,0,${.35*sh})`;c.beginPath();c.ellipse(bx,by,s*.3*sh,s*.12*sh,0,0,7);c.fill()}if(!ball.bullet&&ball.T>.9&&!ball.pitch)drawBallTrail(c,s);const yy=by-ball.z*s*.9-s*1.6;const ang=Math.atan2((ball.ty-ball.fy)*VY,ball.tx-ball.fx);

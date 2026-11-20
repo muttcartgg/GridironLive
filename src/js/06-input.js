@@ -44,6 +44,7 @@ cv.addEventListener('pointerdown',e=>{
   if(S.phase==='presnap'&&uOff()&&S.pc&&!S.auto&&LG.settings.tapSnap!==false&&!$('#snapBar').hidden&&$('#adjMenu').hidden&&$('#hotBar').hidden&&!S.motion){$('#snapGo').click();return}
   if(S.phase!=='live'||!play)return;
   if(S.auto&&!autoSprite())return;   // autopilot (05h): the AI has every player
+  if(arcade()&&arcDown(e))return;   // Arcade controls (06c)
   if(touch&&touch.mode==='aim'&&e.pointerId!==touch.id){S.bullet=!S.bullet;$('#bulletBtn').setAttribute('aria-pressed',String(S.bullet));updateAim();return}
   if(touch)return;
   try{cv.setPointerCapture(e.pointerId)}catch(_){}
@@ -58,6 +59,7 @@ cv.addEventListener('pointerdown',e=>{
 cv.addEventListener('pointermove',e=>{
   if(S.phase==='replay'&&typeof teleMove==='function'){teleMove(e);return}
   if(!touch||e.pointerId!==touch.id)return;
+  if(touch.arc){arcMove(e);return}
   touch.x=e.clientX;touch.y=e.clientY;touch.moved=Math.max(touch.moved,hyp(touch.x-touch.sx,touch.y-touch.sy));
   if(touch.mode==='aim?'&&touch.moved>10)touch.mode='aim';
   if(touch.mode==='aim')updateAim();
@@ -66,6 +68,7 @@ cv.addEventListener('pointermove',e=>{
 function up(e){
   if(S.phase==='replay'&&typeof teleUp==='function'){teleUp(e);return}
   if(!touch||e.pointerId!==touch.id)return;const t=touch;touch=null;stick=null;
+  if(t.arc){arcUp(t);return}
   if(S.phase!=='live'||!play){aim=null;return}
   if(t.mode==='aim'&&aim&&!play.thrown){if(hyp(aim.x-Q.x,aim.y-Q.y)>2.5)throwBall(aim.x,aim.y,S.bullet);aim=null;return}
   if(t.mode==='aim?'&&!play.thrown){play.scramble=true;play.scrT=play.t;if(!S.conv){tstat().rushAtt++;ps(Q).ra++}hint('Scramble! Drag to steer · JUKE / SPIN / TRUCK');$('#bulletBtn').hidden=true;aim=null;hideActs();showActs();return}
