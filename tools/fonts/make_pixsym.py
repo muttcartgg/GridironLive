@@ -1,6 +1,7 @@
 """Builds tools/fonts/glpixsym.ttf: an original symbol-only pixel font for the Pixel UI style.
-Silkscreen and Tiny5 have no stars, arrows, triangles or emoji, so these glyphs sit after them in the
-font stacks and keep every symbol on the same 8-pixels-per-em grid (128 units per pixel, like Tiny5).
+Silkscreen and Tiny5 have no stars, arrows, triangles or emoji (and Silkscreen's "&" reads as a euro sign), so this
+face comes first in the Pixel font stacks, limited by unicode-range to exactly its glyphs (printed by this script),
+and keeps every symbol on the same 8-pixels-per-em grid (128 units per pixel, like Tiny5).
 Run: python3 tools/fonts/make_pixsym.py   (needs fontTools)"""
 import pathlib
 from fontTools.fontBuilder import FontBuilder
@@ -9,6 +10,7 @@ from fontTools.pens.ttGlyphPen import TTGlyphPen
 U = 128  # font units per pixel; em = 8 px
 # each glyph: rows top->bottom; '#' = ink; 'top' = y (in px) of the first row's top edge above the baseline
 G = {
+    0x0026: (5, [".#...", "#.#..", ".#..#", "#.##.", ".##.#"]),  # & (cap height, 1px strokes)
     0x2605: (6, ["...#...", "..###..", "#######", ".#####.", "..###..", ".##.##.", ".#...#."]),  # ★
     0x2606: (6, ["...#...", "..#.#..", "##...##", ".#...#.", "..#.#..", ".#.#.#.", ".#...#."]),  # ☆
     0x25B6: (6, ["#...", "##..", "###.", "####", "###.", "##..", "#..."]),  # ▶
@@ -75,10 +77,10 @@ def glyph(rows, top):
 
 
 def build(out):
-    order = ['.notdef', 'space']
-    glyphs = {'.notdef': TTGlyphPen(None).glyph(), 'space': TTGlyphPen(None).glyph()}
-    metrics = {'.notdef': (512, 0), 'space': (256, 0)}
-    cmap = {0x20: 'space'}
+    order = ['.notdef']   # no space: letters and spaces always come from Silkscreen / Tiny5
+    glyphs = {'.notdef': TTGlyphPen(None).glyph()}
+    metrics = {'.notdef': (512, 0)}
+    cmap = {}
     for cp, (top, rows) in G.items():
         n = 'u%04X' % cp
         g, adv = glyph(rows, top)
@@ -101,3 +103,4 @@ def build(out):
 if __name__ == '__main__':
     build(str(pathlib.Path(__file__).resolve().parent / 'glpixsym.ttf'))
     print('wrote glpixsym.ttf')
+    print('unicode-range:' + ','.join('U+%X' % c for c in sorted(G)))

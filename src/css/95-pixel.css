@@ -7,14 +7,16 @@
    anything not sized here is snapped onto that grid by 11-pixui.js. Modern is untouched.
    ========================================================= */
 @font-face{font-family:'Tiny5';src:url(data:font/woff2;base64,__FONT:tiny5-latin-400-normal.woff2__) format('woff2');font-weight:400;font-display:swap}
-@font-face{font-family:'GL Pixel Symbols';src:url(data:font/ttf;base64,__FONT:glpixsym.ttf__) format('truetype');font-weight:400;font-display:swap}
+/* symbols + "&" only (Silkscreen's "&" reads as "€"); first in both stacks, so this range always comes from it */
+@font-face{font-family:'GL Pixel Symbols';src:url(data:font/ttf;base64,__FONT:glpixsym.ttf__) format('truetype');font-weight:400 700;font-display:swap;
+  unicode-range:U+26,U+2039,U+203A,U+2190,U+2191,U+2192,U+2193,U+2194,U+21BB,U+2212,U+221A,U+2248,U+23F8,U+25A0,U+25A1,U+25B2,U+25B4,U+25B6,U+25B8,U+25BC,U+25BE,U+25C0,U+25C2,U+25C6,U+25CB,U+25CF,U+2600,U+2602,U+2605,U+2606,U+2665,U+266A,U+2691,U+26A1,U+2713,U+2714,U+2715,U+2716,U+2744,U+279C,U+1F389,U+1F3C6,U+1F3C8,U+1F525,U+1F6A9}
 
 :root[data-style="retro"],
 :root[data-style="retro"] :is(.screen,#modal,#pausem,#studio,#card){
   --ink:#10182B;--panel:#1C2A45;--panel2:#243659;--panel3:#2E4470;--line:#0A0F1A;--ol:#0A0F1A;
   --fg:#F4F1E8;--mute:#9AA6BF;--gold:#FFD23F;--los:#4DA3FF;--hot:#E8413A;--ok:#3BD16F;--warn:#FF9F1C;
   --m-p1:#1C2A45;--m-p2:#243659;--m-line:#0A0F1A;--m-line2:#0A0F1A;--m-mute:#9AA6BF;--glass:#10182B;--glass2:#1C2A45;--hair:#0A0F1A;
-  --disp:'Silkscreen','GL Pixel Symbols',monospace;--body:'Tiny5','GL Pixel Symbols','Silkscreen',monospace;--tv:var(--disp);
+  --disp:'GL Pixel Symbols','Silkscreen',monospace;--body:'GL Pixel Symbols','Tiny5','Silkscreen',monospace;--tv:var(--disp);
   --dw:700;--dstyle:normal;--dtrack:0;
   --pxo:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3' shape-rendering='crispEdges'%3E%3Cpath d='M1 0h1v1H1zM0 1h1v1H0zM2 1h1v1H2zM1 2h1v1H1z' fill='%230A0F1A'/%3E%3C/svg%3E") 1 / 2px / 0 stretch;
   --pxy:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='3' height='3' shape-rendering='crispEdges'%3E%3Cpath d='M1 0h1v1H1zM0 1h1v1H0zM2 1h1v1H2zM1 2h1v1H1z' fill='%23FFD23F'/%3E%3C/svg%3E") 1 / 2px / 0 stretch;
@@ -34,6 +36,8 @@
 :root[data-style="retro"] button:focus-visible{outline:2px solid #FFD23F;outline-offset:2px}
 :root[data-style="retro"] .d,:root[data-style="retro"] :is(.h1,.h2){font-family:var(--disp);font-weight:700}
 :root[data-style="retro"] #stageCv{image-rendering:pixelated}
+/* Larger text: no ×1.14 zoom (it lands between font pixels); 11-pixui.js steps each size in these surfaces up one crisp size */
+:root[data-style="retro"].bigtext :is(.screen,.modal .panel,.sheet,#rcard,#hint){zoom:1}
 
 /* ---------- surfaces ---------- */
 :root[data-style="retro"] .screen{background:#10182B var(--dots) 0 0/8px 8px}
