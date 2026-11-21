@@ -7,7 +7,7 @@ let W=0,H=0,DPR=1,sc=12,topY=80,cam={x:45,y:CEN,z:1};
 const scE=()=>isPix()?sc:sc*cam.z*zoomMul();   // the pixel style never zooms
 const midY=()=>topY+(H-topY-SAFE.b*.6)/2;
 const X=x=>(x-cam.x)*scE()+W/2, Y=y=>(y-cam.y)*scE()*VY+midY();
-const toWorld=(sx,sy)=>[(sx-W/2)/scE()+cam.x,(sy-midY())/(scE()*VY)+cam.y];
+const toWorld=(sx,sy)=>is3D()?screenToField(sx,sy,.9):[(sx-W/2)/scE()+cam.x,(sy-midY())/(scE()*VY)+cam.y];   // 3D (08t): the ray meets a plane at chest height, where a tap on a player lands
 function resize(){
   DPR=Math.min(3,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+'px';cv.style.height=H+'px';
@@ -21,12 +21,13 @@ addEventListener('resize',resize);
 const aimScale=()=>maxRange()/(Math.min(W,H)*.55);
 function updateAim(){
   if(!touch||touch.mode!=='aim'||!play||play.thrown||S.phase!=='live'){aim=null;return}
-  const k=aimScale(),mr=maxRange();let ax=(touch.sx-touch.x)*k,ay=(touch.sy-touch.y)*k/VY;const d=hyp(ax,ay);if(d>mr){ax*=mr/d;ay*=mr/d}
+  const k=aimScale(),mr=maxRange();let [ax,ay]=is3D()?g3Aim(touch.sx-touch.x,touch.sy-touch.y,k,Q):[(touch.sx-touch.x)*k,(touch.sy-touch.y)*k/VY];const d=hyp(ax,ay);if(d>mr){ax*=mr/d;ay*=mr/d}
   const dd=Math.min(d,mr);aim={x:Q.x+ax,y:Q.y+ay,err:aimError(dd,S.bullet)*(S.lob&&!S.bullet?.9:1),bullet:S.bullet,lob:S.lob&&!S.bullet};
 }
 function updateStick(t){
   let dxs=t.x-t.ox,dys=t.y-t.oy,m=hyp(dxs,dys);const R0=70;
   if(m>R0){t.ox=t.x-dxs/m*R0;t.oy=t.y-dys/m*R0;dxs=t.x-t.ox;dys=t.y-t.oy;m=R0}
+  if(is3D()){const u=g3ScreenVec(dxs,dys,t.ox,t.oy);stick={dx:u[0],dy:u[1],m,ox:t.ox,oy:t.oy,x:t.x,y:t.y};return}   // 3D: the field direction under the drag
   const wy=dys/VY,n=hyp(dxs,wy)||1;stick={dx:dxs/n,dy:wy/n,m,ox:t.ox,oy:t.oy,x:t.x,y:t.y};
 }
 function defenderAt(sx,sy){const [wx,wy]=toWorld(sx,sy);let b=null,bd=2.6;for(const d of DEF){const dd=hyp(d.x-wx,(d.y-wy)*.8);if(dd<bd){bd=dd;b=d}}return b}

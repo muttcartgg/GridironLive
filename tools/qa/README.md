@@ -10,6 +10,7 @@ NODE_PATH=$(npm root -g) node tools/qa/slots.js web/index.html /tmp/gl-slots   #
 NODE_PATH=$(npm root -g) node tools/qa/realseason.js [pack.json] [web/index.html] [TEAM]   # "Real 2026 · week N" dynasty: real records check, sims to the national title
 NODE_PATH=$(npm root -g) node tools/qa/camfit.js web/index.html /tmp/gl-camfit # device-fit camera: presnap / drop-back / run shots on SE, 14, 16, Pro Max sizes, both orientations
 NODE_PATH=$(npm root -g) node tools/qa/uniforms.js web/index.html /tmp/gl-uni  # uniform editor + preview, share codes, badge/stadium, create-a-school mid-dynasty, pregame picker, in-game custom set (UNI_FIRST=home|away and UNI_CLASH=1 force the road-clash branch)
+NODE_PATH=$(npm root -g) node tools/qa/threed.js web/index.html /tmp/gl-3d     # 3D broadcast style (08t): kickoff, slingshot pass through pointer events, run, FG kick view, night / snow / rain, landscape + portrait frames, non-blank WebGL check, screen↔field mapping, frame-cost stats
 NODE_PATH=$(npm root -g) node tools/qa/native.js                               # emulated iOS shell: lazy save loading, Back up to Files / Restore from file, controller
 NODE_PATH=$(npm root -g) node tools/qa/rtg.js                                  # Road to Glory: 4-star WR recruit, visits, commit, one game as only him, season sim (depth-chart move), offseason into year two
 NODE_PATH=$(npm root -g) node tools/qa/rtg2.js                                 # Road to Glory: a game each as QB / RB / CB with scripted input, careers to the draft (declare after junior year; return → senior year)

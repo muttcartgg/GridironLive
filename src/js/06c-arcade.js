@@ -26,13 +26,13 @@ function arcQB(){if(!play||!uOff()||play.st||play.type!=='pass'||play.thrown||pl
 function arcLead(o,bullet,tm){let tx=o.x,ty=o.y,T=0;for(let i=0;i<3;i++){T=flightT(hyp(tx-Q.x,ty-Q.y),bullet,false,Q.pl.thr)*(tm||1);tx=o.x+(o.vx||0)*T*.92;ty=o.y+(o.vy||0)*T*.92}return [Math.min(tx,119.5),clamp(ty,.8,FW-.8),T]}
 const arcRcvs=()=>OFF.filter(o=>eligible(o)&&!o.blocker&&o!==Q);
 /* screen position of a receiver's badge (over his helmet) */
-function arcBadge(o){if(isPix()){const b=pxBadgeAt(o);return [b[0]*PXS,b[1]*PXS]}const s=scE();return [X(o.x),Y(o.y)-s*(2.75*arcPS()+.55)-9]}
-function arcRcvAt(sx,sy){let b=null,bd=34;for(const o of arcRcvs()){const [bx,by]=arcBadge(o),s=scE();const d=Math.min(hyp(bx-sx,by-sy),hyp(X(o.x)-sx,Y(o.y)-s*1.3*arcPS()-sy)*1.1);if(d<bd){bd=d;b=o}}return b}
+function arcBadge(o){if(is3D()){const p=fieldToScreen(o.x,o.y,2.15);return [p[0],p[1]-17]}if(isPix()){const b=pxBadgeAt(o);return [b[0]*PXS,b[1]*PXS]}const s=scE();return [X(o.x),Y(o.y)-s*(2.75*arcPS()+.55)-9]}
+function arcRcvAt(sx,sy){let b=null,bd=34;for(const o of arcRcvs()){const [bx,by]=arcBadge(o),s=scE(),bp=is3D()?fieldToScreen(o.x,o.y,1):[X(o.x),Y(o.y)-s*1.3*arcPS()];const d=Math.min(hyp(bx-sx,by-sy),hyp(bp[0]-sx,bp[1]-sy)*1.1);if(d<bd){bd=d;b=o}}return b}
 /* slingshot aim from the pull (start - finger) */
 function arcAim(t){
   const px=t.sx-t.x,py=t.sy-t.y,pull=hyp(px,py),span=Math.min(W,H)*.5;
   if(pull<ARC.pull){aim=null;return}
-  const mr=maxRange(),k=mr/span;let ax=px*k,ay=py*k/VY,d=hyp(ax,ay);if(d>mr){ax*=mr/d;ay*=mr/d;d=mr}
+  const mr=maxRange(),k=mr/span;let [ax,ay]=is3D()?g3Aim(px,py,k,Q):[px*k,py*k/VY],d=hyp(ax,ay);if(d>mr){ax*=mr/d;ay*=mr/d;d=mr}
   const pr=clamp(pull/span,0,1),tm=lerp(1.08,.9,pr);let tx=Q.x+ax,ty=Q.y+ay,r=null,bd=ARC.mag+d*.1;
   for(const o of arcRcvs()){const L=arcLead(o,false,tm),e=hyp(L[0]-tx,L[1]-ty);if(e<bd){bd=e;r=o;t.lx=L[0];t.ly=L[1]}}
   if(r){tx=t.lx;ty=t.ly;d=hyp(tx-Q.x,ty-Q.y)}
@@ -107,7 +107,7 @@ function arcUp(t){
     if(tap)arcTap();return}
   if(t.arc==='def'){
     if(tap){const d=defenderAt(t.x,t.y);if(d&&d!==S.ctrl)switchDefender(d);else arcSwitch();return}
-    if(flick){const wx=ddx,wy=ddy/VY,n=hyp(wx,wy)||1;arcDive(wx/n,wy/n)}}
+    if(flick){if(is3D()){const u=g3ScreenVec(ddx,ddy,t.sx,t.sy);arcDive(u[0],u[1]);return}const wx=ddx,wy=ddy/VY,n=hyp(wx,wy)||1;arcDive(wx/n,wy/n)}}
 }
 /* ---------- snap / carry hooks: the right one-line tip, once ---------- */
 const TIPS={pass:'Pull back anywhere to aim · let go to throw · tap a receiver for a bullet',
