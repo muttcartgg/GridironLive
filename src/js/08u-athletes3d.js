@@ -227,7 +227,7 @@ function a3Team(team){
   const T=a3TeamTex(team,U),hf=U.hf||'g';
   e={U,mb:new THREE.MeshStandardMaterial({map:T.body,roughness:.74,metalness:0}),
     mn:new THREE.MeshStandardMaterial({map:T.dig,alphaTest:.5,roughness:.6,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2}),
-    mh:new THREE.MeshPhysicalMaterial({map:T.helm,roughness:hf==='m'?.52:hf==='c'?.18:.26,metalness:hf==='c'?.75:.04,clearcoat:hf==='m'?0:1,clearcoatRoughness:.06,side:THREE.DoubleSide})};
+    mh:new THREE.MeshPhysicalMaterial({map:T.helm,roughness:hf==='m'?.52:hf==='c'?.18:.26,metalness:hf==='c'?.75:.04,clearcoat:hf==='m'?0:1,clearcoatRoughness:.06,side:THREE.DoubleSide,envMap:typeof g3EnvTex==='function'?g3EnvTex():null,envMapIntensity:hf==='m'?.5:1})};
   for(const k of ['mb','mn','mh'])A3.res.add(e[k]);A3.teams.set(team,e);return e}
 function a3RefMat(){if(A3.ref)return A3.ref;const [cv,g]=a3Cv(512,512),RG=A3_RG;
   const stripe=(r,w)=>{a3Fill(g,'#f4f4f2',r);g.fillStyle='#121214';for(let x=0;x<r[2];x+=w*2)g.fillRect(r[0]+x,r[1],w,r[3])};

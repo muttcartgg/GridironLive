@@ -4,3 +4,4 @@ ios/GridironLive/Info.plist
 dist/
 .DS_Store
 .claude/
+tools/qa/out-3d/

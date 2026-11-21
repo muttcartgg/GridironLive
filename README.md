@@ -9,6 +9,18 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 11: 3D broadcast style
+
+- Settings › Graphics › Art style › 3D broadcast: a WebGL (three.js r170) presentation with a two-tier stadium bowl and an animated crowd, a live scoreboard, painted lines and end zones, day/dusk/night lighting with sun shadows, rain and snow.
+- Cameras: TV sideline, kickoff/punt, behind-the-kicker for field goals and extra points, and a low replay/TD camera. TV-style blue and yellow lines are painted on the turf; the Arcade aim arc and receiver badges work through 3D screen↔field mapping.
+- 3D athletes sized by height, weight and position, with team uniforms (glossy helmets, numbers, stripes), blended animation, signalling officials, a thrown flag and a spiralling college football. The menus and HUD use the broadcast theme.
+- Without WebGL 2 it falls back to Pixel.
+
+## Version 10: Pixel art
+
+- Pixel is the default style: hand-made pixel sprites with three builds and a full animation set, a pixel field, stadium and crowd, pixel overlays and kick view, and a fixed, pixel-snapped camera.
+- Every screen, from the HUD and play calling to the menus, banners and broadcast cards, uses the same pixel theme with crisp pixel fonts (Silkscreen, Tiny5 and a small original symbol font).
+
 ## Version 9: Arcade feel and new players
 
 - New players: a skeletal figure with football proportions (broad pads, smaller helmet, thick legs; linemen bulkier, DBs leaner), shaded uniforms from the scene light, and keyframed animation that blends between states — run cycles tied to ground speed (no foot sliding), dropback and throw, catch, jukes, spins, stiff arms, hurdles, dives, blocks, tackles, falls and get-ups, celebrations. Officials use the same figure.

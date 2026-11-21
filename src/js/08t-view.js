@@ -247,3 +247,21 @@ function g3Overlay2D(c,now){
 }
 /* frame-cost readout for QA / Settings: CPU ms per frame (smoothed), draw calls and triangles of the last frame */
 function g3Stats(){const i=G3.R?G3.R.info.render:{calls:0,triangles:0};return {cpu:+(G3.cpu||0).toFixed(2),js:+(G3.js||0).toFixed(2),calls:i.calls,tris:i.triangles,crowd:G3.env&&G3.env.crowd?G3.env.crowd.userData.count:0,px:G3.R?G3.R.getPixelRatio():0}}
+
+/* soft stadium reflection for glossy helmets: a sky/turf gradient with four light banks, prefiltered once (PMREM).
+   Only the helmet materials use it, so the scene's tuned lighting is unchanged. Shared, never disposed. */
+function g3EnvTex(){
+  if(G3.envTex!==undefined)return G3.envTex;
+  G3.envTex=null;if(!G3.R)return null;
+  try{
+    const sc=new THREE.Scene(),g=new THREE.SphereGeometry(50,24,12),n=g.attributes.position.count,col=new Float32Array(n*3),
+      top=new THREE.Color('#9fc3ee'),hor=new THREE.Color('#e9eef5'),gr=new THREE.Color('#2e5a2a'),c=new THREE.Color();
+    for(let i=0;i<n;i++){const y=g.attributes.position.getY(i)/50;if(y>0)c.copy(hor).lerp(top,Math.min(1,y*1.6));else c.copy(hor).lerp(gr,Math.min(1,-y*4));col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b}
+    g.setAttribute('color',new THREE.BufferAttribute(col,3));
+    sc.add(new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide})));
+    const lm=new THREE.MeshBasicMaterial({color:new THREE.Color(6,6,6)}),bg=new THREE.BoxGeometry(14,5,1);
+    for(let k=0;k<4;k++){const b=new THREE.Mesh(bg,lm),a=k/4*Math.PI*2+.4;b.position.set(Math.cos(a)*40,26,Math.sin(a)*40);b.lookAt(0,0,0);sc.add(b)}
+    const pm=new THREE.PMREMGenerator(G3.R);G3.envTex=pm.fromScene(sc,.03).texture;pm.dispose();g.dispose();bg.dispose();
+  }catch(e){console.warn('g3EnvTex',e);G3.envTex=null}
+  return G3.envTex;
+}
