@@ -229,7 +229,7 @@ function t3Build(){
   /* light towers at the four corners, banks aimed at the field */
   const lpT=keep(t3Tex(t3LightPanel())),lpm=keep(new THREE.MeshStandardMaterial({map:lpT,emissiveMap:lpT,emissive:'#ffffff',emissiveIntensity:o.night||st==='sunset'?2.2:.05,roughness:.5}));
   const glowT=keep(t3Tex(t3Glow())),glowM=keep(new THREE.SpriteMaterial({map:glowT,color:'#ffffff',transparent:true,depthWrite:false,blending:THREE.AdditiveBlending,opacity:o.night?.95:st==='sunset'?.45:0,toneMapped:false}));
-  for(const [tx,tz] of [[-36,-58],[156,-58],[-36,FW+58],[156,FW+58]]){
+  for(const [tx,tz] of [[-53,-53],[173,-53],[-53,FW+53],[173,FW+53]]){
     const pole=new THREE.Mesh(new THREE.CylinderGeometry(.9,1.6,72,8),conc);pole.position.set(tx,36,tz);E.add(pole);
     const bank=new THREE.Mesh(new THREE.BoxGeometry(16,9,1.2),[dark,dark,dark,dark,lpm,dark]);bank.position.set(tx,76,tz);bank.lookAt(60,0,CEN);E.add(bank);
     if(glowM.opacity>0){const sp=new THREE.Sprite(glowM);sp.scale.set(70,70,1);sp.position.copy(bank.position);E.add(sp)}}

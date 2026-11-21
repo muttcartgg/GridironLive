@@ -42,8 +42,8 @@ function g3Show(on){if(G3.cv)G3.cv.style.display=on?'block':'none';if(!on&&G3.R)
 function g3Size(){const w=W||innerWidth,h=H||innerHeight;if(w!==G3.w||h!==G3.h){G3.w=w;G3.h=h;G3.R.setSize(w,h,true)}}
 /* ---------- screen ↔ field ---------- */
 const G3V=[0,0,0].map(()=>null);
-function fieldToScreen(x,y,z){const v=G3V[0]||(G3V[0]=new THREE.Vector3());v.set(x,z||0,y).project(G3.cam);return [(v.x+1)/2*G3.w,(1-v.y)/2*G3.h,v.z>-1&&v.z<1]}
-function screenToField(sx,sy,h){const c=G3.cam,o=c.position,v=G3V[1]||(G3V[1]=new THREE.Vector3());v.set(sx/G3.w*2-1,1-sy/G3.h*2,.5).unproject(c).sub(o);
+function fieldToScreen(x,y,z){if(!G3.cam||!G3.w)return [0,0,false];const v=G3V[0]||(G3V[0]=new THREE.Vector3());v.set(x,z||0,y).project(G3.cam);return [(v.x+1)/2*G3.w,(1-v.y)/2*G3.h,v.z>-1&&v.z<1]}
+function screenToField(sx,sy,h){if(!G3.cam||!G3.w)return [S.los||60,S.ballY||CEN];const c=G3.cam,o=c.position,v=G3V[1]||(G3V[1]=new THREE.Vector3());v.set(sx/G3.w*2-1,1-sy/G3.h*2,.5).unproject(c).sub(o);
   const t=((h||0)-o.y)/(Math.abs(v.y)<1e-6?-1e-6:v.y);if(!(t>0)){const n=Math.hypot(v.x,v.z)||1;return [o.x+v.x/n*400,o.z+v.z/n*400]}return [o.x+v.x*t,o.z+v.z*t]}
 /* a screen drag (dx,dy) at the screen anchor (ax,ay) → the unit field direction under it */
 function g3ScreenVec(dx,dy,ax,ay){const m=Math.hypot(dx,dy);if(!m)return [0,0];const e=14/m,a=screenToField(ax,ay),b=screenToField(ax+dx*e,ay+dy*e),fx=b[0]-a[0],fy=b[1]-a[1],n=Math.hypot(fx,fy)||1;return [fx/n,fy/n]}
@@ -128,6 +128,8 @@ const G3K={half:3.083};
 function g3KickSpot(){return [S.los-7,S.ballY]}
 function g3KickBall(){
   const k=kick;
+  if(k)G3.lastKick=k;
+  if(S.phase==='kick'&&!k&&G3.kb)return;   // the result beat: the ball stays where it came down
   if(S.phase==='kick'&&k){if(!G3.kb)G3.kb={x:ball.x,y:ball.y,z:ball.z,state:ball.state};
     const [x0,y0]=g3KickSpot();let x=x0,y=y0,z=.18,st='dead';
     if(k.stage==='flight'){const t=Math.min(1,k.flight/1),x1=k.blocked?x0+6:128,tp=Math.min(.95,(120-x0)/(x1-x0)),off=(k.aimF||0)*(G3K.half/Math.max(.05,k.width)),yp=CEN+off;
@@ -154,7 +156,7 @@ function g3Damp(o,k,tgt,st,dt){const v=k+'v',w=2/st,x=w*dt,e=1/(1+x+.48*x*x+.235
 function g3Rig(tx,tz,wid,pitch,dist,lift){const a=G3.w/Math.max(1,G3.h),p=pitch*Math.PI/180,c=G3.cam;c.position.set(tx,dist*Math.sin(p),tz+dist*Math.cos(p));c.lookAt(tx,lift||0,tz);
   const hf=2*Math.atan(wid/2/dist);c.fov=clamp(2*Math.atan(Math.tan(hf/2)/a)*180/Math.PI,5,75);c.aspect=a;c.updateProjectionMatrix()}
 function g3CamMode(){
-  if(S.phase==='kick'&&kick)return 'kick';
+  if(S.phase==='kick'&&(kick||G3.mode==='kick'))return 'kick';
   if(S.phase==='replay')return 'cine';
   if(S.phase==='dead'&&S.celebrate)return 'cine';
   if((S.phase==='live'||S.phase==='dead')&&play&&play.st)return 'st';
@@ -163,18 +165,18 @@ function g3Camera(dt){
   const port=G3.h>G3.w*1.2,mode=g3CamMode(),cs=G3.cs;let cut=false;
   if(mode!==G3.mode){if(G3.mode&&(mode==='cine'||G3.mode==='cine'||mode==='kick'||G3.mode==='kick'))S.cutA=Math.max(S.cutA||0,.8);cut=true;G3.mode=mode}
   if((S.cutN||0)!==G3.cutN){G3.cutN=S.cutN||0;cut=true}
-  if(mode==='kick'){const [x0,y0]=g3KickSpot(),c=G3.cam,fl=kick.stage==='flight'?Math.min(1,kick.flight):0;c.position.set(x0-13.5,5.6+fl*1.5,y0+(CEN-y0)*.25);
+  if(mode==='kick'){const [x0,y0]=g3KickSpot(),c=G3.cam,k=kick||G3.lastKick,fl=!k||k.stage==='flight'?Math.min(1,k?k.flight:1):0;c.position.set(x0-13.5,5.6+fl*1.5,y0+(CEN-y0)*.25);
     const lx=lerp(120,Math.max(ball.x,x0+20),fl*.25),ly=lerp(2.4,Math.min(9,ball.z||4),fl*.35);c.lookAt(lx,ly,CEN+(y0-CEN)*.15);c.fov=port?50:28;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=x0+20;cs.z=CEN;return}
   if(mode==='cine'){const h=S.celebrate||(play&&play.carrier)||null,bx=h?h.x:ball.x,by=h?h.y:ball.y;
     if(cut||cs.cx==null){cs.cx=bx;cs.cz=by;cs.ca=-.55}g3Damp(cs,'cx',bx,.35,dt);g3Damp(cs,'cz',by,.35,dt);cs.ca+=dt*.12;
-    const r=port?15:13,c=G3.cam;c.position.set(cs.cx+Math.sin(cs.ca)*r,2.6,cs.cz+Math.cos(cs.ca)*r);c.lookAt(cs.cx,1.25,cs.cz);c.fov=port?42:24;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=cs.cx;cs.z=cs.cz;return}
+    const r=port?16:15,c=G3.cam;c.position.set(cs.cx+Math.sin(cs.ca)*r,3.3,cs.cz+Math.cos(cs.ca)*r);c.lookAt(cs.cx,1.2,cs.cz);c.fov=port?44:28;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=cs.cx;cs.z=cs.cz;return}
   /* TV + special teams: what the shot follows (fx, fz), how wide it is (w), smoothing (st) */
   let w=port?26:40,fx=S.los+w*.12,fz=lerp(CEN,S.ballY,.45),st=.55,wst=.9,pitch=port?25:17.5,dist=port?80:88;
   const live=(S.phase==='live'||S.phase==='dead'||S.phase==='replay')&&play;
   if(mode==='st'){w=port?40:62;pitch+=5;dist+=8;const t=ball.state==='air'?null:play.carrier;if(t){fx=t.x+clamp((t.vx||0)*.6,-6,6);fz=lerp(CEN,t.y,.5)}else{fx=lerp(ball.x,ball.tx||ball.x,.35);fz=lerp(CEN,ball.y,.4)}st=.45}
   else if(live){const h=play.carrier||Q;
     if(ball.state==='air'&&!ball.pitch){const far=hyp((ball.tx||0)-(ball.fx||0),(ball.ty||0)-(ball.fy||0));fx=lerp(ball.x,ball.tx,.5);fz=lerp(CEN,lerp(ball.y,ball.ty,.5),.85);w=clamp(far+(port?6:18),port?28:44,port?44:66);st=.4;wst=.7}
-    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);fx=lerp(Q.x,aim.x,.5);fz=lerp(CEN,lerp(Q.y,aim.y,.5),.9);w=clamp(d*(port?.7:1.05)+(port?14:18),port?28:44,port?44:66);st=.45;wst=.6}
+    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);fx=lerp(Q.x,aim.x,.5);fz=lerp(CEN,lerp(Q.y,aim.y,.5),.9);w=clamp(d*(port?.75:1.05)+(port?16:18),port?28:44,port?48:66);st=.3;wst=.4}
     else if(h){if(play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){w=port?30:48;fx=Q.x+w*.24;fz=lerp(CEN,Q.y,.4)}
       else{fx=h.x+clamp((h.vx||0)*.5,-4,7);fz=lerp(CEN,h.y,.6);w=port?26:(Math.abs(h.vx||0)>6&&Math.abs(h.x-S.los)>14?46:40);st=.34}}
     if(S.phase==='dead'){fx=cs.x;fz=cs.z;w=cs.w}}
@@ -211,12 +213,14 @@ function g3Weather(dt){let k=S.wx==='Rain'?'rain':S.wx==='Snow'?'snow':'';if(typ
   if(!rain)X.obj.material.size=.2/Math.tan(G3.cam.fov*Math.PI/360);X.obj.geometry.attributes.position.needsUpdate=true}
 /* ---------- the frame ---------- */
 function g3EnsureEnv(){const k=t3EnvKey();if(k===G3.key&&G3.env)return;
-  const tk=[S.home.id,S.away.id].join('|');if(G3.tkey&&tk!==G3.tkey&&typeof ath3dReset==='function'){try{ath3dReset()}catch(e){console.warn(e)}}G3.tkey=tk;
+  const tk=[S.home.id,S.away.id].join('|');if(G3.tkey&&tk!==G3.tkey)g3ResetAth();G3.tkey=tk;
   t3Dispose(G3.env);G3.env=t3Build();G3.scene.add(G3.env.group);G3.key=k;G3.ov.rsig='';}
+function g3ResetAth(){if(typeof ath3dReset==='function'){try{ath3dReset()}catch(e){console.warn('ath3dReset',e)}}}
 function draw3D(now){
   const t0=performance.now(),c=ctx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);c.setTransform(DPR,0,0,DPR,0,0);
   if(!g3Init()){if(LG&&LG.settings){LG.settings.style='retro';applyStyle();toast('3D needs WebGL 2 · switched to Pixel')}return}
   if(!S.home||!S.away)return;
+  if(S.game!==G3.gref){if(G3.gref!==undefined)g3ResetAth();G3.gref=S.game}   // a game ended / a new one began
   if(G3.cv.style.display!=='block')g3Show(true);
   if(++G3.fr%12===1)G3.cover=!!document.querySelector('#app>.screen:not([hidden])');if(G3.cover)return;   // a menu covers the field: no render
   const dt=Math.min(.1,Math.max(0,(now-(G3.last||now))/1000));G3.last=now;G3.t+=dt;
@@ -236,6 +240,9 @@ function g3Overlay2D(c,now){
   if(typeof arcDraw==='function'&&S.phase==='live')arcDraw(c,s,now);
   if(S.phase==='live'||S.phase==='presnap')drawStick(c);
   g3KickUI(c,now);
+  if(G3.env&&(G3.env.stage==='night'||G3.env.stage==='sunset')&&S.phase!=='kick'){const g=G3.vig&&G3.vig.w===W&&G3.vig.h===H&&G3.vig.st===G3.env.stage?G3.vig.g:null;let gr=g;
+    if(!gr){gr=c.createRadialGradient(W/2,H*.55,Math.min(W,H)*.35,W/2,H*.55,Math.hypot(W,H)*.62);gr.addColorStop(0,'rgba(0,0,8,0)');gr.addColorStop(1,G3.env.stage==='night'?'rgba(0,2,10,.5)':'rgba(20,6,0,.28)');G3.vig={w:W,h:H,st:G3.env.stage,g:gr}}
+    c.fillStyle=gr;c.fillRect(0,0,W,H)}
   if(S.ts<.9){const a=(1-S.ts)*.9,bh=H*.07;c.fillStyle=`rgba(0,0,0,${a})`;c.fillRect(0,0,W,bh);c.fillRect(0,H-bh,W,bh)}
 }
 /* frame-cost readout for QA / Settings: CPU ms per frame (smoothed), draw calls and triangles of the last frame */
