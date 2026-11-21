@@ -9,6 +9,10 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 11.1: smooth pixel scrolling
+
+- Pixel style: the field no longer jumps a whole art pixel at uneven intervals when the camera follows a play sideways. The art buffer is shifted by the camera's sub-pixel remainder, and players, the ball and overlays are drawn at whole device pixels, so everything glides.
+
 ## Version 11: 3D broadcast style
 
 - Settings › Graphics › Art style › 3D broadcast: a WebGL (three.js r170) presentation with a two-tier stadium bowl and an animated crowd, a live scoreboard, painted lines and end zones, day/dusk/night lighting with sun shadows, rain and snow.

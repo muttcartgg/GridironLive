@@ -15760,7 +15760,12 @@ function pxTurf(){const night=pxLight()==='night',tc=typeof turfColors==='functi
   let a=pxMix(tc[0],'#5BC24F',.55),b=pxMix(tc[1],'#4AAE45',.55);const snow=typeof wxKind==='function'&&wxKind()==='snow';if(snow){a=pxMix(a,'#DCE6EC',.22);b=pxMix(b,'#DCE6EC',.22)}if(night){a=pxMix(a,'#16264A',.42);b=pxMix(b,'#16264A',.42)}
   return {a,b,apron:pxMix(b,'#14233A',.3),line:night?'#DCE3F0':PXU.line,lineD:night?'#AEB6C6':'#CFD3C8',night}}
 /* ---------- world → art pixels (camera snapped to whole pixels) ---------- */
-function pxCam(){PCX=Math.round(cam.x*A)-(LW>>1);PCY=Math.round(cam.y*A*VY)-Math.round(midY()/PXS)}
+function pxCam(){const cx=cam.x*A,cy=cam.y*A*VY,fx=Math.floor(cx),fy=Math.floor(cy);PCX=fx-(LW>>1);PCY=fy-Math.round(midY()/PXS);
+  /* what's left below one art pixel, in whole device pixels: the art buffer is shifted by it when it is blown up,
+     so the field scrolls smoothly instead of jumping a whole (6 device px) art pixel at uneven intervals */
+  PXR.sx=Math.min(PDS-1,Math.floor((cx-fx)*PDS));PXR.sy=Math.min(PDS-1,Math.floor((cy-fy)*PDS))}
+/* a position in art pixels, kept to whole device pixels: figures glide over the grid instead of stepping */
+const pxSub=v=>Math.round(v*PDS)/PDS;
 const pxX=x=>Math.round(x*A),pxY=y=>Math.round(y*A*VY);
 /* ---------- field cache (turf, paint, end zones, numbers) ---------- */
 function pxField(){
@@ -15960,7 +15965,7 @@ function pxBadges(c){
 }
 /* ---------- the frame ---------- */
 function drawPix(now){
-  const c=lx;c.imageSmoothingEnabled=false;const dt=clamp((now-(PXR.t||now))/1000,0,.05);PXR.t=now;
+  let c=lx;c.imageSmoothingEnabled=false;const dt=clamp((now-(PXR.t||now))/1000,0,.05);PXR.t=now;
   c.fillStyle=PXU.navy;c.fillRect(0,0,LW,LH);
   if(!S.home){pxPresent();return}
   pxCam();
@@ -15990,8 +15995,11 @@ function drawPix(now){
     c.fillStyle=PXO;c.fillRect(x-2,ya-hb-hu-1,5,yc-ya+hu+2);c.fillStyle=Y;c.fillRect(x-1,ya-hb-hu,2,yc-ya+hu);c.fillStyle=Yd;c.fillRect(x+1,ya-hb-hu,1,yc-ya+hu);
     c.fillStyle='#E8413A';c.fillRect(x-1,ya-hb-hu-4,2,3)};
   post(0);post(120);
+  /* the background goes up now, shifted by the camera's sub-pixel remainder; figures, the ball and every overlay are
+     drawn straight onto the screen in art-pixel units at whole device pixels, on the same shifted grid */
+  pxPresent(true);c=ctx;ctx.setTransform(PDS,0,0,PDS,-PXR.sx,-PXR.sy);ctx.imageSmoothingEnabled=false;
   for(const p of list){
-    const x=pxX(p.x)-PCX,y=pxY(p.y)-PCY;if(x<-24||x>LW+24||y<-10||y>LH+40)continue;
+    const x=pxSub(p.x*A-PCX),y=pxSub(p.y*A*VY-PCY);if(x<-24||x>LW+24||y<-10||y>LH+40)continue;
     const z=Math.round((p.z||0)*A*.9),fr=pxFrame(p,now),ref=!!p.ref;
     let e;if(ref){e=pxSprite(pxPal(null,null,p.ref==='R'?'R':'O'),'ref'+(p.ref==='R'?'R':'O'),'L',fr,null,p.ref==='R'?'R':'O',(p.id||0)%4)}
     else{athBody(p);const team=p.team||(p.side==='o'?offT():defT()),P0=pxTeamPal(team);e=pxSprite(P0.pal,P0.pk,pxBuildOf(p),fr,p.num,null,p.pl?p.pl.tone:1)}
@@ -16016,7 +16024,7 @@ function drawPix(now){
   {const f=typeof OFFI!=='undefined'&&OFFI.flag;if(f&&f.t>=0){const q=clamp(f.t/f.T,0,1),x=pxX(lerp(f.x0,f.x1,q))-PCX,y=pxY(lerp(f.y0,f.y1,q))-PCY-Math.round((q<1?(1-q)*2.1+q*(1-q)*6.4:0)*A*.9);c.fillStyle=PXO;c.fillRect(x-2,y-2,5,4);c.fillStyle='#FFD21F';c.fillRect(x-1,y-1,3,2)}}
   /* the ball */
   if(inGame&&ball){
-    if(ball.state==='air'){const bx=pxX(ball.x)-PCX,by=pxY(ball.y)-PCY,yy=by-Math.round(ball.z*A*.9)-12;c.fillStyle='rgba(8,20,12,.38)';c.fillRect(bx-2,by,5,1);c.fillRect(bx-1,by+1,3,1);pxBall(c,bx,yy,Math.floor(now/70))}
+    if(ball.state==='air'){const bx=pxSub(ball.x*A-PCX),by=pxSub(ball.y*A*VY-PCY),yy=by-pxSub(ball.z*A*.9)-12;c.fillStyle='rgba(8,20,12,.38)';c.fillRect(bx-2,by,5,1);c.fillRect(bx-1,by+1,3,1);pxBall(c,bx,yy,Math.floor(now/70))}
     else if(S.phase==='presnap'||(play&&play.result&&play.result.kind==='inc')||ball.state==='loose'||ball.state==='dead'&&!ATH.car){const bx=pxX(ball.x)-PCX,by=pxY(ball.y)-PCY;pxBall(c,bx,by-2,0)}}
   /* particles (turf kicks) + effects */
   for(const q of particles){if(q.kind==='conf')continue;const px=pxX(q.x)-PCX,py=pxY(q.y)-PCY-Math.round(q.z*A*.9);c.fillStyle=q.c;c.fillRect(px,py,1,1)}
@@ -16027,11 +16035,13 @@ function drawPix(now){
   /* the floating stick (Simulation controls) as a pixel ring + knob */
   if(stick&&!stick.key&&stick.ox!=null&&LG.settings.stickUI!==false){const ox=Math.round(stick.ox/PXS),oy=Math.round(stick.oy/PXS),kx=Math.round(stick.x/PXS),ky=Math.round(stick.y/PXS),r=Math.round(70/PXS);
     c.globalAlpha=.55;pxEll(c,ox,oy+1,r,r,PXO);pxEll(c,ox,oy,r,r,PXU.text);c.globalAlpha=.7;for(let y=-5;y<=5;y++){const w=Math.round(Math.sqrt(30-y*y));c.fillStyle=PXU.text;c.fillRect(kx-w,ky+y,w*2+1,1)}c.globalAlpha=1}
-  pxPresent();
   ctx.setTransform(DPR,0,0,DPR,0,0);if(typeof padDraw==='function')padDraw(ctx);
 }
 /* blow the art buffer up by a whole number of device pixels */
-function pxPresent(){ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;ctx.drawImage(low,0,0,LW,LH,0,0,LW*PDS,LH*PDS)}
+function pxPresent(shift){ctx.setTransform(1,0,0,1,0,0);ctx.imageSmoothingEnabled=false;const sx=shift?PXR.sx||0:0,sy=shift?PXR.sy||0:0;
+  ctx.drawImage(low,0,0,LW,LH,-sx,-sy,LW*PDS,LH*PDS);
+  if(sx)ctx.drawImage(low,LW-1,0,1,LH,LW*PDS-sx,-sy,PDS,LH*PDS);   // the strip the shift uncovers at the right edge
+  if(sy)ctx.drawImage(low,0,LH-1,LW,1,-sx,LH*PDS-sy,LW*PDS+PDS,PDS)}
 
 /* ---------- pixel lines ---------- */
 function pxLine(c,x0,y0,x1,y1,col,t){x0=Math.round(x0);y0=Math.round(y0);x1=Math.round(x1);y1=Math.round(y1);t=t||1;c.fillStyle=col;const dx=Math.abs(x1-x0),dy=-Math.abs(y1-y0),sx=x0<x1?1:-1,sy=y0<y1?1:-1;let e=dx+dy,n=0;
