@@ -192,7 +192,7 @@
 :root[data-style="retro"] #hub .ht-stats b{font:700 var(--t5)/1 var(--disp)}
 :root[data-style="retro"] #hub .ht-stats .g b{color:#FFD23F}
 :root[data-style="retro"] #hub .tabs{background:#1C2A45;border-top:2px solid #0A0F1A;box-shadow:inset 0 2px 0 #2E4470!important;padding-top:4px;gap:2px}
-:root[data-style="retro"] #hub .tabs button{color:#9AA6BF;font:400 var(--t1)/1 var(--disp);text-transform:uppercase;min-height:52px;gap:4px;background:none}
+:root[data-style="retro"] #hub .tabs button{color:#9AA6BF;font:400 var(--t1)/1 var(--body);text-transform:uppercase;min-height:52px;gap:4px;background:none}
 :root[data-style="retro"] #hub .tabs button svg{display:none}
 :root[data-style="retro"] #hub .tabs button::before{content:"";position:static!important;display:block;width:24px;height:24px;margin:0 auto;background:currentColor!important;opacity:1!important;transform:none!important;-webkit-mask:var(--ic) center/24px 24px no-repeat;mask:var(--ic) center/24px 24px no-repeat}
 :root[data-style="retro"] #hub .tabs button::after{display:none!important}
