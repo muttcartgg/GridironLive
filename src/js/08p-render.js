@@ -5,7 +5,7 @@
    Field + paint are cached in world space; the stands, crowd, benches, players, ball, overlays and weather are drawn
    per frame. Settings › Art style: Pixel (stored as 'retro') | Modern.
    ========================================================= */
-function isPix(){return !LG||!LG.settings||LG.settings.style!=='modern'}
+function isPix(){return !LG||!LG.settings||LG.settings.style!=='modern'&&LG.settings.style!=='3d'}
 const PXR={fk:'',fcv:null,fx0:-14,fy0:-14,ck:'',crowd:null,wall:null,fx:[],lastPix:null,bench:null,benchK:''};
 const PXU={navy:'#10182B',panel:'#1C2A45',text:'#F4F1E8',red:'#E8413A',green:'#3BD16F',los:'#4DA3FF',fd:'#FFD23F',line:'#F4F1E8'};
 const pxH=h=>athHex(h);
