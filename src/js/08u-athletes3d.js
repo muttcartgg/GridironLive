@@ -22,7 +22,7 @@
    ========================================================= */
 const A3_H0=2.056,A3_TAU=Math.PI*2,A3_AT=512;
 const A3_PEL=0,A3_WST=1,A3_CHE=2,A3_NCK=3,A3_HED=4,A3_UAL=5,A3_FAL=6,A3_UAR=7,A3_FAR=8,A3_THL=9,A3_SHL=10,A3_FTL=11,A3_THR=12,A3_SHR=13,A3_FTR=14,A3_NB=15;
-const A3={g:null,figs:new Map(),teams:new Map(),geo:new Map(),res:new Set(),ref:null,ball:null,flag:null,fr:0,now:-1,bp:null,bv:null,spin:0,carH:null};
+const A3={dp:null,da:0,g:null,figs:new Map(),teams:new Map(),geo:new Map(),res:new Set(),ref:null,ball:null,flag:null,fr:0,now:-1,bp:null,bv:null,spin:0,carH:null};
 const A3_RG={JER:[0,0,256,192],SLV:[256,0,128,64],CAP:[384,0,128,64],SHO:[256,64,256,128],PAN:[0,192,256,128],SOK:[256,192,128,128],CLT:[384,192,128,64],GLV:[384,256,128,64],
   HTW:[384,256,64,64],HTB:[448,256,64,64],SHL:[0,0,256,192],FM:[0,192,64,64],VIS:[64,192,64,64],CS:[128,192,64,64],BL:[0,0,256,128]};
 const a3SKA=i=>[i*128+4,324,56,56],a3SKF=i=>[i*128+64,320,64,64];
@@ -259,7 +259,7 @@ const A3T=new Float32Array(17),A3O=new Float32Array(17);
 function a3Eval(p,a,now,dt){
   const T=A3T;let dd=Math.hypot(p.x-a.px,p.y-a.py);a.px=p.x;a.py=p.y;if(dd>1.6)dd=0;
   const sp=Math.hypot(p.vx||0,p.vy||0),cad=2.3+.27*sp,D=sp>.25?2*sp/cad:1.2;a.ph=(a.ph+dd/D)%1;
-  if(p.ref)athPoseRef(p,a,now,T);else athPose(p,a,now,T);
+  ATH.gu=0;if(p.ref)athPoseRef(p,a,now,T);else athPose(p,a,now,T);
   const first=a.kL<0,o=a.o,s=a.s,dL=.15,dU=.13;
   if(a.kL2!==a.kL){if(!first)for(const i of ATH_LO)s[i]=o[i];a.kL=a.kL2;a.bL=first?1:0}
   if(a.kU2!==a.kU){if(!first)for(const i of ATH_UP)s[i]=o[i];a.kU=a.kU2;a.bU=first?1:0}
@@ -380,8 +380,9 @@ function a3BallMesh(){if(A3.ball)return A3.ball;const [cv,g]=a3Cv(256,128);g.fil
   g.fillStyle='#f2efe8';g.fillRect(64,16,128,9);g.fillRect(64,103,128,9);
   g.fillStyle='#f6f3ec';g.fillRect(124,40,8,48);for(let i=0;i<8;i++)g.fillRect(117,43+i*6,22,3);
   const m=new THREE.Mesh(a3BallGeo(),new THREE.MeshStandardMaterial({map:a3Tex(cv),roughness:.55,metalness:0}));A3.res.add(m.material);m.castShadow=true;m.matrixAutoUpdate=false;A3.g.add(m);A3.ball=m;return m}
-const A3BX=new THREE.Vector3(),A3BY=new THREE.Vector3(),A3BZ=new THREE.Vector3(),A3UP=new THREE.Vector3(0,1,0);
+let A3BX=null,A3BY=null,A3BZ=null,A3UP=null;
 function a3BallFrame(dt){
+  if(!A3BX){A3BX=new THREE.Vector3();A3BY=new THREE.Vector3();A3BZ=new THREE.Vector3();A3UP=new THREE.Vector3(0,1,0)}
   const m=a3BallMesh(),b=ball;if(!b||!P.length){m.visible=false;return}m.visible=true;const H=A3.carH;let px,py,pz,ax=1,ay=0,az=0,spin=false;
   if(b.state==='held'&&H&&H.m){px=H.p[0];py=H.p[1];pz=H.p[2];ax=H.t[0];ay=H.t[1];az=H.t[2]}
   else{px=b.x;py=Math.max(.11,b.z||0);pz=b.y;
@@ -404,9 +405,10 @@ function a3FlagFrame(){
 function ath3dFrame(group,now,dt){
   if(typeof THREE==='undefined'||!group)return;if(A3.g!==group){if(A3.g)ath3dReset();A3.g=group}
   if(now==null)now=performance.now();if(dt==null)dt=A3.now<0?0:(now-A3.now)/1000;A3.now=now;dt=clamp(dt||0,0,.05);if(S.photo||S.paused)dt=0;
-  if(S.phase==='dead'&&play&&ATH.deadPlay!==play){ATH.deadPlay=play;ATH.deadAt=now}
+  if(S.phase==='dead'&&play&&A3.dp!==play){A3.dp=play;A3.da=now}
   let car=null;if(play&&ball&&ball.state==='held'){if(S.phase!=='replay')car=play.carrier;else{let bd=1.3;for(const p of P){const dd=Math.abs(p.x-ball.x)+Math.abs(p.y-ball.y);if(dd<bd){bd=dd;car=p}}}}
-  const c0=ATH.car,d0=ATH.dt;ATH.car=car;ATH.dt=dt;A3.fr++;if(A3.carH)A3.carH.m=0;
+  /* 08d/08e read ATH.car / ATH.dt / ATH.deadAt: use this renderer's clock while evaluating, then restore */
+  const c0=ATH.car,d0=ATH.dt,a0=ATH.deadAt,p0=ATH.deadPlay;ATH.car=car;ATH.dt=dt;if(A3.dp){ATH.deadAt=A3.da;ATH.deadPlay=A3.dp}A3.fr++;if(A3.carH)A3.carH.m=0;
   const run=(p,team)=>{athBody(p);const k=p.pl||p;let f=A3.figs.get(k);
     if(f&&!f.ref&&(f.team!==team||f.tm!==a3Team(team)||f.p.num!==p.num)){a3Drop(f);A3.figs.delete(k);f=null}
     if(!f){f=a3Fig(p,team);A3.figs.set(k,f)}
@@ -416,7 +418,7 @@ function ath3dFrame(group,now,dt){
   try{
     if(S.home)for(const p of P)run(p,p.team||(p.side==='o'?offT():defT()));
     if(S.home&&P.length&&typeof offiFrame==='function'&&LG.settings.officials!==false){const L=offiFrame(now);if(L)for(const o of L)run(o,null)}
-  }finally{ATH.car=c0;ATH.dt=d0}
+  }finally{ATH.car=c0;ATH.dt=d0;ATH.deadAt=a0;ATH.deadPlay=p0}
   for(const [k,f] of A3.figs){if(f.seen===A3.fr)continue;f.body.visible=false;if(f.num)f.num.visible=false;if(f.helm)f.helm.visible=false;if(A3.fr-f.seen>900){a3Drop(f);A3.figs.delete(k)}}
   a3BallFrame(dt);a3FlagFrame();
 }
@@ -424,4 +426,4 @@ function ath3dReset(){
   for(const f of A3.figs.values())a3Drop(f);A3.figs.clear();
   for(const m of [A3.ball,A3.flag])if(m&&m.parent)m.parent.remove(m);
   for(const r of A3.res)try{r.dispose()}catch(e){}
-  A3.res.clear();A3.teams.clear();A3.geo.clear();A3.ref=null;A3.ball=null;A3.flag=null;A3.bp=null;A3.bv=null;A3.carH=null;A3.now=-1;A3.g=null}
+  A3.res.clear();A3.teams.clear();A3.geo.clear();A3.ref=null;A3.ball=null;A3.flag=null;A3.bp=null;A3.bv=null;A3.carH=null;A3.now=-1;A3.g=null;A3.dp=null}
