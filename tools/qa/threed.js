@@ -80,8 +80,11 @@ async function run(b,w,h,tag,errs,full){
   await p.evaluate(()=>{for(let i=0;i<40;i++)updateKick(1/60);__T3.render(2)});
   await p.evaluate(()=>__T3.until(()=>S.phase!=='kick'&&S.phase!=='wait',30,true));
   /* NIGHT + SNOW */
-  if(full){await p.evaluate(()=>{S.slot='Primetime';S.wx='Snow'});if(await off()){await p.evaluate(()=>{const pl=PLAYBOOK.find(x=>x.cat==='pass'&&!x.special);pickPlay(pl);__T3.render(8)});await shot(p,tag+'-night-snow');
+  if(full){await p.evaluate(()=>{S.slot='Primetime';S.wx='Clear'});if(await off()){await p.evaluate(()=>{const pl=PLAYBOOK.find(x=>x.cat==='pass'&&!x.special);pickPlay(pl);__T3.render(8)});await shot(p,tag+'-night');note('night',await p.evaluate(()=>G3.env.stage));
+    await p.evaluate(()=>{S.slot='Noon';S.wx='Snow';__T3.render(8)});await shot(p,tag+'-snow');
     await p.evaluate(()=>{S.slot='Afternoon';S.wx='Rain';__T3.render(6)});await shot(p,tag+'-rain')}}
+  await p.evaluate(()=>{if(S.phase==='kick')return;__T3.render(2)});const mp=await p.evaluate(()=>{if(G3.mode!=='tv')return {skip:G3.mode};const up=g3ScreenVec(0,-40,W/2,H/2),rt=g3ScreenVec(40,0,W/2,H/2),f=screenToField(W/2,H/2,0),s=fieldToScreen(f[0],f[1],0);return {up:up.map(v=>+v.toFixed(2)),rt:rt.map(v=>+v.toFixed(2)),round:+Math.hypot(s[0]-W/2,s[1]-H/2).toFixed(3)}});
+  note('map',mp);if(!mp.skip&&!(mp.up[1]<-.9&&mp.rt[0]>.9&&mp.round<.5))errs.push(tag+' screen/field mapping off '+JSON.stringify(mp));
   const stats=await p.evaluate(()=>g3Stats());note('perf',stats);
   console.log(tag,log.join(' | '));return p;
 }

@@ -34,7 +34,8 @@ function t3Turf(o){
   g.fillStyle='#ECEDE6';g.fillRect(X(-2),Y(-2),124*p,2*p);g.fillRect(X(-2),Y(FW),124*p,2*p);g.fillRect(X(-2),Y(-2),2*p,(FW+4)*p);g.fillRect(X(120),Y(-2),2*p,(FW+4)*p);
   /* per-pixel grain */
   const id=g.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const n=(r()-.5)*(o.snow?14:18);d[i]=d[i]+n*.8;d[i+1]=d[i+1]+n;d[i+2]=d[i+2]+n*.6}g.putImageData(id,0,0);
-  if(o.snow){g.globalAlpha=.55;for(let i=0;i<4200;i++){g.fillStyle=r()<.7?'#f4f7fb':'#dfe6ef';const x=r()*w,y=r()*h,s=(2+r()*9)*p/12;g.beginPath();g.ellipse(x,y,s*1.8,s,0,0,7);g.fill()}g.globalAlpha=1}
+  if(o.snow){g.fillStyle='rgba(234,240,248,.5)';g.fillRect(0,0,w,h);for(let i=0;i<70000;i++){g.fillStyle=r()<.62?'rgba(252,253,255,.55)':'rgba(190,202,216,.4)';g.fillRect(r()*w|0,r()*h|0,1+(r()*2|0),1)}
+    g.fillStyle='rgba(70,100,60,.12)';for(let i=0;i<260;i++){const x=12+r()*96,y=CEN+(r()-.5)*16;g.beginPath();g.ellipse(X(x),Y(y),(1+r()*3)*p,(.3+r()*.6)*p,0,0,7);g.fill()}}
   return cv;
 }
 function t3Grain(){const n=256,cv=document.createElement('canvas');cv.width=cv.height=n;const g=cv.getContext('2d'),r=t3Rng(11);g.fillStyle='#808080';g.fillRect(0,0,n,n);
