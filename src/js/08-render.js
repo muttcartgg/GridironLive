@@ -170,6 +170,7 @@ function drawModern(now){
 /* ---------- kick view (direction + power) ---------- */
 function drawKick(){
   if(kick&&isPix()){pxKick($('#kcv'),performance.now());return}   // pixel style: 08p
+  if(is3D())return;   // 3D: the behind-the-kicker camera with the meter on the overlay (08t)
   const k=kick;if(!k)return;const cv2=$('#kcv'),g=cv2.getContext('2d'),w=cv2.width,h=cv2.height,cx=w/2,st=lightStage(),night=st==='night',host=hostT(),now=performance.now();
   if(S.home){const kk=stadKey();if(!STAD.T||kk!==STAD.key){STAD.key=kk;buildStadium()}}const T=STAD.T,hz=h*.47;g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';
   /* sky by time slot, end-zone stands (same tiles as the far stands), light towers */
@@ -221,7 +222,8 @@ const AX=x=>Math.round(x*A)-PCX,AY=y=>Math.round(y*A*VY)-PCY;
 const GLY={A:[2,5,7,5,5],B:[6,5,6,5,6],C:[3,4,4,4,3],D:[6,5,5,5,6],E:[7,4,6,4,7],F:[7,4,6,4,4],G:[3,4,5,5,3],H:[5,5,7,5,5],I:[7,2,2,2,7],J:[1,1,1,5,2],K:[5,5,6,5,5],L:[4,4,4,4,7],M:[5,7,7,5,5],N:[6,5,5,5,5],O:[2,5,5,5,2],P:[6,5,6,4,4],Q:[2,5,5,6,3],R:[6,5,6,5,5],S:[3,4,2,1,6],T:[7,2,2,2,2],U:[5,5,5,5,7],V:[5,5,5,5,2],W:[5,5,7,7,5],X:[5,5,2,5,5],Y:[5,5,2,2,2],Z:[7,1,2,4,7],'0':[7,5,5,5,7],'1':[2,6,2,2,7],'2':[6,1,2,4,7],'3':[6,1,2,1,6],'4':[5,5,7,1,1],'5':[7,4,6,1,6],'6':[3,4,6,5,2],'7':[7,1,2,2,2],'8':[2,5,2,5,2],'9':[2,5,3,1,6],'-':[0,0,7,0,0],' ':[0,0,0,0,0],'.':[0,0,0,0,2],"'":[2,2,0,0,0]};
 function pxText(c,str,x,y,s,col,vertical){str=String(str).toUpperCase();c.fillStyle=col;for(let i=0;i<str.length;i++){const g=GLY[str[i]]||GLY[' '];const ox=vertical?x:x+i*4*s,oy=vertical?y+i*6*s:y;for(let r=0;r<5;r++)for(let b=0;b<3;b++)if(g[r]&(4>>b))c.fillRect(ox+b*s,oy+r*s,s,s)}}
 const pxW=(str,s)=>String(str).length*4*s-s;
-function draw(now){const px=isPix();if(px!==PXR.lastPix){PXR.lastPix=px;resize()}if(px)drawPix(now);else drawModern(now);if(S.phase==='replay'&&!px)drawOverlay(now)}   // pixel replay overlay: 08p pxReplay
+function draw(now){if(is3D()){draw3D(now);if(S.phase==='replay')drawOverlay(now);return}   // 3D broadcast (08t)
+  const px=isPix();if(px!==PXR.lastPix){PXR.lastPix=px;resize()}if(px)drawPix(now);else drawModern(now);if(S.phase==='replay'&&!px)drawOverlay(now)}   // pixel replay overlay: 08p pxReplay
 /* the man you control: a bold ring with a dark under-stroke and a bobbing marker over his head (larger and clearer on a phone) */
 function selRing(c,x,y,s,now){const r=s*1.32,b=Math.sin(now/180)*s*.12;c.save();c.beginPath();c.ellipse(x,y,r,r*VY,0,0,7);c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=Math.max(6,s*.42);c.stroke();
   c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=14;c.lineWidth=Math.max(3.5,s*.26);c.stroke();c.shadowBlur=0;

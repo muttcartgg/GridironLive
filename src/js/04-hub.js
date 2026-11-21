@@ -7,8 +7,13 @@ const badge=(t,cls='')=>{if(t.bdg&&typeof bdgURL==='function')return `<span clas
 const recStr=t=>`${t.rec.w}–${t.rec.l}`;
 const tcell=(t,label)=>`<div class="tname" data-team="${t.id}" style="cursor:pointer">${badge(t,'sm')}<span>${esc(label||rankTag(t.id)+t.city)}</span></div>`;
 function applyTeamTheme(t){const r=document.documentElement.style;r.setProperty('--team',t.c1);r.setProperty('--team2',t.c2);r.setProperty('--btn-ink',inkOn(t.c1))}
-/* art style: 'retro' = Pixel (the default), 'modern' = Modern HD. Existing dynasties switch to Pixel once (settings.pix1). */
-function applyStyle(){if(LG&&LG.settings&&!LG.settings.pix1){LG.settings.pix1=1;LG.settings.style='retro'}document.documentElement.dataset.style=(LG&&LG.settings.style)||'retro';if(typeof resize==='function'&&W)resize()}
+/* art style: 'retro' = Pixel (the default), '3d' = 3D broadcast (08t: the Modern broadcast UI theme over a WebGL scene),
+   'modern' = the old 2D HD view (no longer offered). Existing dynasties switch to Pixel once (settings.pix1).
+   No WebGL 2: back to Pixel with a toast. */
+function applyStyle(){if(LG&&LG.settings&&!LG.settings.pix1){LG.settings.pix1=1;LG.settings.style='retro'}
+  let st=(LG&&LG.settings.style)||'retro';if(st==='3d'&&!(typeof g3Init==='function'&&g3Init())){LG.settings.style=st='retro';if(typeof toast==='function')toast('3D needs WebGL 2 · switched to Pixel')}
+  const d=document.documentElement.dataset;d.style=st==='3d'?'modern':st;d.render=st==='3d'?'3d':'2d';if(typeof g3Show==='function')g3Show(st==='3d');
+  if(typeof resize==='function'&&W)resize()}
 let saveTimer=null;
 function saveNow(now){if(!LG||!SLOT)return;clearTimeout(saveTimer);saveTimer=null;if(now){Saves.save(SLOT,LG);return}saveTimer=setTimeout(()=>{saveTimer=null;Saves.save(SLOT,LG)},700)}
 function flushSave(){if(saveTimer){clearTimeout(saveTimer);saveTimer=null;Saves.save(SLOT,LG)}}
@@ -84,7 +89,7 @@ function showLoading(label){hideAll();const s=$('#setup');s.classList.remove('ti
 
 /* ---------- title screen + save slots ---------- */
 function showSlots(){
-  hideAll();S.phase='menu';LG=null;SLOT=null;document.documentElement.dataset.style='retro';
+  hideAll();S.phase='menu';LG=null;SLOT=null;document.documentElement.dataset.style='retro';document.documentElement.dataset.render='2d';if(typeof g3Show==='function')g3Show(false);if(typeof ath3dReset==='function')try{ath3dReset()}catch(e){}
   const m=Saves.meta();$('#setup').classList.add('title');
   const card=n=>{const s=m.slots[n];
     if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="sl-et"><span class="h2">New dynasty</span><span class="note">Slot ${n} · empty</span></span></button>`;
@@ -552,7 +557,7 @@ function hubSettings(){
     +row('Celebration button',tg('setCel',s.celebrate!==false))
     +row('Camera shake',tg('setShk',s.shake!==false))+regs('ctl','more'))
   +sec('gfx','Graphics & sound',
-     row('Art style',seg('setS',[['retro','Pixel (default)'],['modern','Modern']],s.style==='modern'?'modern':'retro'))
+     row('Art style',seg('setS',[['retro','Pixel (default)'],['3d','3D broadcast']],s.style==='3d'?'3d':'retro'))
     +row('Sound',tg('setM',!s.muted,s.muted?0:1))
     +regs('gfx','main')
     +row('Crowd',seg('setCr',[['low','Sparse'],['normal','Normal'],['high','Rowdy']],s.crowd||'normal'))
