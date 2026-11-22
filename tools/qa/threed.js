@@ -1,4 +1,4 @@
-/* 3D broadcast style (08t): switches a new dynasty to Settings › Art style › 3D broadcast, plays a kickoff, a pass
+/* 3D broadcast style (08t, the only art style; real WebGL here, not the QA 2D flag): a new dynasty, a kickoff, a pass
    thrown with the Arcade slingshot through real pointer events (screenToField / g3Aim), a run and a field goal in the
    behind-the-kicker view, then night + snow; checks the WebGL canvas is not blank and captures landscape 844×390 and
    portrait 390×844 frames. The main loop is paused and the engine stepped here (software WebGL is slow), with a few
@@ -34,11 +34,11 @@ const DRIVER=()=>{window.__T3={t:0,
 }};
 async function shot(p,name){await p.screenshot({path:path.join(OUT,name+'.png')});}
 async function run(b,w,h,tag,errs,full){
-  const p=await Q.newPage(b,w,h,errs,1);await p.goto(Q.pageURL(process.argv[2]));await p.waitForTimeout(400);
+  const p=await Q.newPage(b,w,h,errs,1,{gl3d:true});await p.goto(Q.pageURL(process.argv[2]));await p.waitForTimeout(400);
   await Q.startDynasty(p,'UGA');
   await p.evaluate(()=>{LG.settings.defMode='play';LG.settings.pregame=false;LG.settings.halftime=false;LG.settings.style='3d';applyStyle()});
-  const ok=await p.evaluate(()=>({ok:G3.ok,isPix:isPix(),ds:document.documentElement.dataset.style,dr:document.documentElement.dataset.render}));
-  console.log(tag,'style',JSON.stringify(ok));if(!ok.ok||ok.isPix||ok.ds!=='modern'||ok.dr!=='3d')errs.push(tag+' 3D style did not switch on');
+  const ok=await p.evaluate(()=>({ok:G3.ok,is3D:is3D(),ds:document.documentElement.dataset.style,dr:document.documentElement.dataset.render}));
+  console.log(tag,'style',JSON.stringify(ok));if(!ok.ok||!ok.is3D||ok.ds!=='modern'||ok.dr!=='3d')errs.push(tag+' 3D style did not switch on');
   await Q.toUserGame(p);const kb=await p.$('#kickoff');if(kb)await kb.click();await p.waitForTimeout(300);
   await p.evaluate(DRIVER);await p.evaluate(()=>{S.paused=true});
   const log=[];const note=(k,v)=>log.push(k+'='+JSON.stringify(v));

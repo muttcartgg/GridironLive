@@ -43,7 +43,7 @@ function uniClean(f,v){
   if(f==='no'&&v==='')return '';
   return uniHex(v);
 }
-/* uniColors cached per team for the current matchup / pick / edits (retro sprites ask every frame) */
+/* uniColors cached per team for the current matchup / pick / edits (the renderers ask every frame) */
 const UNI_CC=new Map();
 function uniColorsC(team){const o=team===S.home?S.away:S.home,k=uniStyle(team)+UNI_VER+'|'+(o?o.id:'')+'|'+hostT().id+(S.game?S.game.uni:'')+team.c1+team.c2;let e=UNI_CC.get(team);if(e&&e.k===k)return e.u;const u=uniColors(team);UNI_CC.set(team,{k,u});return u}
 const uniArr=U=>UNI_KEYS.map(f=>U[f]);

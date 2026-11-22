@@ -26,7 +26,7 @@ function arcQB(){if(!play||!uOff()||play.st||play.type!=='pass'||play.thrown||pl
 function arcLead(o,bullet,tm){let tx=o.x,ty=o.y,T=0;for(let i=0;i<3;i++){T=flightT(hyp(tx-Q.x,ty-Q.y),bullet,false,Q.pl.thr)*(tm||1);tx=o.x+(o.vx||0)*T*.92;ty=o.y+(o.vy||0)*T*.92}return [Math.min(tx,119.5),clamp(ty,.8,FW-.8),T]}
 const arcRcvs=()=>OFF.filter(o=>eligible(o)&&!o.blocker&&o!==Q);
 /* screen position of a receiver's badge (over his helmet) */
-function arcBadge(o){if(is3D()){const p=fieldToScreen(o.x,o.y,2.15);return [p[0],p[1]-17]}if(isPix()){const b=pxBadgeAt(o);return [b[0]*PXS,b[1]*PXS]}const s=scE();return [X(o.x),Y(o.y)-s*(2.75*arcPS()+.55)-9]}
+function arcBadge(o){if(is3D()){const p=fieldToScreen(o.x,o.y,2.15);return [p[0],p[1]-17]}const s=scE();return [X(o.x),Y(o.y)-s*(2.75*arcPS()+.55)-9]}
 function arcRcvAt(sx,sy){let b=null,bd=34;for(const o of arcRcvs()){const [bx,by]=arcBadge(o),s=scE(),bp=is3D()?fieldToScreen(o.x,o.y,1):[X(o.x),Y(o.y)-s*1.3*arcPS()];const d=Math.min(hyp(bx-sx,by-sy),hyp(bp[0]-sx,bp[1]-sy)*1.1);if(d<bd){bd=d;b=o}}return b}
 /* slingshot aim from the pull (start - finger) */
 function arcAim(t){
@@ -129,7 +129,6 @@ function arcHint(pl){
 }
 /* ---------- overlay: receiver badges (openness), the sling pull, off-screen receivers ---------- */
 function arcDraw(c,s,now){
-  if(isPix())return;   // the pixel style draws its own tags (08p pxBadges)
   if(!arcade()||S.phase!=='live'||!play||play.st)return;
   if(arcQB()){
     c.save();c.font=`800 ${Math.round(clamp(s*.55,11,15))}px -apple-system,system-ui,sans-serif`;c.textAlign='center';c.textBaseline='middle';
@@ -142,17 +141,17 @@ function arcDraw(c,s,now){
   const t=touch;if(t&&t.arc==='sling'&&aim){c.save();c.globalAlpha=.4;c.strokeStyle='#fff';c.lineWidth=2;c.setLineDash([5,6]);c.beginPath();c.moveTo(t.sx,t.sy);c.lineTo(t.x,t.y);c.stroke();c.setLineDash([]);c.globalAlpha=.7;c.fillStyle='#fff';c.beginPath();c.arc(t.sx,t.sy,6,0,7);c.fill();c.restore()}
 }
 
-/* ---------- steady side-view camera (Retro Bowl style) ----------
+/* ---------- steady side-view camera (arcade style) ----------
    Fixed zoom per orientation and situation (runs, passes one fixed step wider, defense in between), set once and eased;
    the pan follows the ball horizontally with a gentle lead and a dead zone, vertically only a little (more when the
-   field is taller than the view); the ball is kept on screen. Special teams, replays and the retro style use 08's camera. */
+   field is taller than the view); the ball is kept on screen. Special teams and replays use 08's camera. */
 const CAMA={L:{run:1.06,pass:.9,def:.95},P:{run:1,pass:.9,def:.94},dz:.07};
 function camArc(dt){
   const ph=S.phase;if(!(ph==='presnap'||ph==='live'||ph==='dead')||play&&play.st&&ph!=='presnap'||!S.home)return false;
   const port=H>W*1.2,Z=port?CAMA.P:CAMA.L,o=uOff();
   const pass=ph==='presnap'?!!(S.pc&&S.pc.cat==='pass'&&!S.pc.special):!!(play&&play.type==='pass');
   let z=!o?Z.def:pass?Z.pass:Z.run;if(ph==='dead')z=cam.az||z;cam.az=z;
-  const cut=cam.cut;if(isPix()){cam.z=1;cam.zv=0}else if(cut){cam.z=z;cam.zv=0}else camDamp('z',z,.55,dt);   // pixel style: one fixed scale, no zoom
+  const cut=cam.cut;if(cut){cam.z=z;cam.zv=0}else camDamp('z',z,.55,dt);
   const s=scE(),vw=W/s,vh=(H-topY)/(s*VY);
   /* focus: what the shot follows, and where across the view it sits (0 = left edge) */
   let fx=S.los,fy=S.ballY,an=.36,st=.42;

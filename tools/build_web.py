@@ -5,7 +5,6 @@ Run after editing anything in src/:  python3 tools/build_web.py
 Placeholders in src/index.html:
   /*__APP_CSS__*/        all src/css/*.css files, concatenated in sorted order
   /*__APP_JS__*/         all src/js/*.js files, concatenated in sorted order
-  __FONT400__/__FONT700__  Silkscreen (retro pixel font), base64 woff2
   __FONT:<file>__        any font in tools/fonts/, base64 (e.g. __FONT:barlow-condensed-800.woff2__)
 """
 import base64, pathlib, re, sys
@@ -20,9 +19,6 @@ if "/*__APP_CSS__*/" in html:
 elif css:
     html = html.replace("</head>", "<style>\n" + css + "\n</style>\n</head>", 1)
 # fonts are swapped in before the JS goes in, so the JS can never be mangled by a font placeholder
-for w in ("400", "700"):
-    b = base64.b64encode((fonts / f"silkscreen-latin-{w}-normal.woff2").read_bytes()).decode()
-    html = html.replace(f"__FONT{w}__", b)
 def font_sub(m):
     f = fonts / m.group(1)
     if not f.exists():

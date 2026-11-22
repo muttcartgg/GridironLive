@@ -157,7 +157,7 @@ function genTeam(i,place,mascot,c1,prestige,conf,opt){
 }
 function baseLeague(name,teams,confs){
   return {version:VERSION,name:name||'My Dynasty',season:2026,week:0,phase:'regular',user:null,teams,confs,weeks:[],R:13,rank:[],rankF:[],credits:8,nil:400,history:[],
-    settings:{qlen:180,diff:1,muted:false,style:'retro',pix1:1},
+    settings:{qlen:180,diff:1,muted:false,style:'3d',v3d:1},
     coach:{name:'Coach',w:0,l:0,seasons:0,natties:0,confs:0,bowls:0,playoffs:0,schools:[],security:70,coy:0},
     staff:{oc:genStaff('oc',2),dc:genStaff('dc',2)},pool:{oc:[],dc:[]},fac:{stadium:1,training:1,rehab:1},fan:60,morale:70,regime:'normal',focus:'balanced',captains:[],
     event:null,news:[],records:{},awards:[],heisman:null,potw:null,off:null,live:null,lastWeek:null,ts:newTeamStats(),cfp:null,fcsp:null,hcWeek:3,champ:null,champF:null,kind:'original'};
@@ -205,7 +205,7 @@ function migrate(L){
     assignNumbers(t);Object.assign(t,{div:'FBS',stadium:t.city+' Stadium',cap:(30+t.prestige*14)*1000,bowlWins:0,playoffApps:0,dco:null,cc:false});
   }
   const fresh=genLeague(L.name);
-  Object.assign(fresh,{teams:L.teams,user:L.user,credits:L.credits||8,season:L.season,history:(L.history||[]).map(h=>({...h})),settings:{...fresh.settings,...(L.settings||{}),style:'retro',pix1:1}});
+  Object.assign(fresh,{teams:L.teams,user:L.user,credits:L.credits||8,season:L.season,history:(L.history||[]).map(h=>({...h})),settings:{...fresh.settings,...(L.settings||{}),style:'3d',v3d:1}});
   for(const t of fresh.teams){t.rival=null;t.roster.forEach(upgradeAttrs)}
   for(let c=0;c<4;c+=2){const A=fresh.teams.filter(t=>t.conf===c),B=fresh.teams.filter(t=>t.conf===c+1);A.forEach((x,j)=>setRival(x,B[j],'The '+pick(TROPHY_A)+' '+pick(TROPHY_B)))}
   fresh.coach.name='Coach';fresh.coach.schools=[fresh.user];

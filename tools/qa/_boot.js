@@ -4,7 +4,10 @@ let chromium;try{({chromium}=require('playwright'))}catch(e){console.error('Run 
 const ROOT=path.resolve(__dirname,'..','..');
 const pageURL=(arg)=>'file://'+path.resolve(ROOT,arg||'web/index.html');
 async function launch(){return chromium.launch()}
-async function newPage(b,w,h,errs,dpr){const p=await b.newPage({viewport:{width:w||844,height:h||390},deviceScaleFactor:dpr||1});
+/* a page on the built game. QA flag: the game draws with the 2D fallback renderer (window.__QA2D__, see 04 applyStyle),
+   because headless Chromium renders WebGL in software (slow); opt.gl3d keeps the real 3D broadcast view (threed.js, shots.js) */
+async function newPage(b,w,h,errs,dpr,opt){const p=await b.newPage({viewport:{width:w||844,height:h||390},deviceScaleFactor:dpr||1});
+  if(!(opt&&opt.gl3d))await p.addInitScript(()=>{window.__QA2D__=1});
   p.on('pageerror',e=>errs.push('PAGE '+e.message+' | '+(e.stack||'').split('\n').slice(1,3).join(' | ')));
   p.on('console',m=>{if(m.type()==='error')errs.push('CONSOLE '+m.text())});return p}
 /* start a new dynasty in slot 1 coaching `abbr` and land on the hub */

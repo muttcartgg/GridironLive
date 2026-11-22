@@ -3,7 +3,7 @@
 const Q=require('./_boot');const fs=require('fs');
 (async()=>{const OUT=process.argv[3]||'/tmp/gl-shots';fs.mkdirSync(OUT,{recursive:true});const b=await Q.launch();const errs=[];
 for(const [w,h,tag] of [[844,390,'L'],[390,844,'P']]){
-  const p=await Q.newPage(b,w,h,errs,2);await p.goto(Q.pageURL(process.argv[2]));await p.waitForTimeout(2600);
+  const p=await Q.newPage(b,w,h,errs,2,{gl3d:true});await p.goto(Q.pageURL(process.argv[2]));await p.waitForTimeout(2600);
   const shot=async n=>{await p.screenshot({path:`${OUT}/${tag}-${n}.png`})};
   await shot('01-title');await p.click('#slotNew-1');await p.waitForTimeout(300);await shot('02-setup');
   await p.evaluate(()=>{const t=SETUP.L.teams.find(t=>t.abbr==='UGA');openTeamDetail(t.id)});await p.waitForTimeout(200);await shot('03-team');
