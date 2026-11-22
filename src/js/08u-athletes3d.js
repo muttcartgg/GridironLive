@@ -112,7 +112,7 @@ function a3Body(kind,g,tone,capW){
     a3Loft(B,{r:sl.map(q=>[q[0],q[1]*ta,q[2]*ta]),n:12,c:[0,0,s*SW],mir,uv:RG.SLV,w:(x,y)=>a3w(A3_CHE,UA,a3S(.87,.775,y))});
     /* shoulder pad cap */
     if(!ref){const cp=[[.772,.074,.052],[.80,.09,.064],[.822,.085,.06],[.838,.066,.046],[.847,.036,.026],[.851,.006,.005]],kk=Math.pow(g,.9);
-      a3Loft(B,{r:cp.map(q=>[q[0],q[1]*kk,q[2]*kk,0,.004]),n:14,c:[0,0,s*SW],mir,uv:RG.CAP,vf:1,w:()=>a3w(A3_CHE,A3_CHE,0)})}
+      a3Loft(B,{r:cp.map(q=>[q[0],q[1]*kk,q[2]*kk,0,.004]),n:14,c:[0,0,s*SW],mir,uv:RG.CAP,vf:1,w:(x,y,z)=>a3w(A3_CHE,UA,clamp((Math.abs(z)-SW+.004)/.06,0,1)*.42)})}
     /* forearm (skin) and glove / hand */
     const fa=[[.645,.038,.036,0],[.61,.043,.04,.003],[.575,.04,.036,.002],[.54,.033,.031,0],[.51,.027,.026,0],[.49,.025,.025,0]],tf=Math.pow(ta,.9);
     a3Loft(B,{r:fa.map(q=>[q[0],q[1]*tf,q[2]*tf,q[3]]),n:12,c:[0,0,s*SW],mir,uv:ska,vf:1,w:(x,y)=>a3w(UA,FA,a3S(.655,.615,y))});
@@ -143,6 +143,17 @@ function a3Num(d,num){
         const pa=a*3,pb=b*3,pc=c*3,e1x=B.p[pb]-B.p[pa],e1y=B.p[pb+1]-B.p[pa+1],e1z=B.p[pb+2]-B.p[pa+2],e2x=B.p[pc]-B.p[pa],e2y=B.p[pc+1]-B.p[pa+1],e2z=B.p[pc+2]-B.p[pa+2];
         if((e1y*e2z-e1z*e2y)*B.n[pa]+(e1x*e2y-e1y*e2x)*B.n[pa+2]>0)B.ix.push(a,b,c,b,e,c);else B.ix.push(a,c,b,b,c,e)}}};
   put(.712,.1,t.length>1?.118:.062,false);put(.72,.125,t.length>1?.142:.076,true);
+  /* sleeve (TV) numbers on the outer face of each sleeve, upright, reading front to back from that side; they ride the arm */
+  const SL=[[.835,.074,.072],[.79,.072,.069],[.755,.067,.064],[.735,.066,.063]],ta=Math.pow(d.g,1.25);
+  const rad=y=>{let i=0;while(i<SL.length-2&&y<SL[i+1][0])i++;const a=SL[i],b=SL[i+1],w=clamp((y-a[0])/(b[0]-a[0]),0,1);return [(a[1]+(b[1]-a[1])*w)*ta,(a[2]+(b[2]-a[2])*w)*ta]};
+  for(let s=-1;s<=1;s+=2){const UA=s<0?A3_UAL:A3_UAR,n=t.length,hh=.043,yc=.777,wd=n>1?.07:.036,gap=wd*.08,dw=(wd-gap*(n-1))/n,C=4,Rr=3;
+    for(let k=0;k<n;k++){const dg=+t[k],b0=B.p.length/3,x0=-wd/2+k*(dw+gap);
+      for(let ri=0;ri<=Rr;ri++)for(let ci=0;ci<=C;ci++){const y=yc+hh/2-hh*ri/Rr,[ra,rb]=rad(y),x=s*(x0+dw*ci/C),q=Math.sqrt(Math.max(0,1-(x/ra)*(x/ra))),z=s*(d.SW+rb*q+.004);
+        let nx=x/(ra*ra),nz=s*q/rb;const l=Math.hypot(nx,nz)||1;B.p.push(x,y,z);B.n.push(nx/l,0,nz/l);
+        B.u.push((dg*51+4+43*ci/C)/512,1-(6+116*ri/Rr)/128);const w=a3w(A3_CHE,UA,a3S(.87,.775,y));B.si.push(w[0],w[1],0,0);B.sw.push(1-w[2],w[2],0,0)}
+      for(let ri=0;ri<Rr;ri++)for(let ci=0;ci<C;ci++){const a=b0+ri*(C+1)+ci,b=a+1,c=a+C+1,e=c+1;
+        const pa=a*3,pb=b*3,pc=c*3,e1x=B.p[pb]-B.p[pa],e1y=B.p[pb+1]-B.p[pa+1],e1z=B.p[pb+2]-B.p[pa+2],e2x=B.p[pc]-B.p[pa],e2y=B.p[pc+1]-B.p[pa+1],e2z=B.p[pc+2]-B.p[pa+2];
+        if((e1y*e2z-e1z*e2y)*B.n[pa]+(e1x*e2y-e1y*e2x)*B.n[pa+2]>0)B.ix.push(a,b,c,b,e,c);else B.ix.push(a,c,b,b,c,e)}}}
   return a3Geo(B,true)}
 /* helmet: shell lofted along x (stripe stays an even width over the crown), face opening, jaw guards, facemask bars, visor, chin strap */
 function a3Helm(big,vis){
@@ -176,13 +187,17 @@ function a3Tex(cv){const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBCo
 const a3Fill=(g,c,r)=>{g.fillStyle=c;g.fillRect(r[0],r[1],r[2],r[3])};
 function a3Skin(g){for(let i=0;i<4;i++){const t=athHex((typeof TONES!=='undefined'&&TONES[i])||'#A8693A'),a=[i*128,320,64,64],f=a3SKF(i),dk=shade(t,-.3);
   const gr=g.createLinearGradient(0,320,0,384);gr.addColorStop(0,shade(t,.06));gr.addColorStop(1,shade(t,-.08));g.fillStyle=gr;g.fillRect(a[0],a[1],a[2],a[3]);a3Grain(g,a,.05,260);
-  a3Fill(g,t,f);const X=u=>f[0]+u*64,Y=v=>f[1]+v*64;
-  g.fillStyle=shade(t,-.12);g.fillRect(X(0),Y(0),64,Y(.3)-Y(0));/* forehead shade (helmet) */
-  g.fillStyle=dk;g.fillRect(X(.43),Y(.47),X(.57)-X(.43),Y(.62)-Y(.47));/* nose */
-  g.fillStyle='#16110d';for(const u of [.44,.56]){g.beginPath();g.ellipse(X(u),Y(.44),2.6,1.5,0,0,A3_TAU);g.fill()}
+  const X=u=>f[0]+u*64,Y=v=>f[1]+v*64,fg=g.createLinearGradient(0,Y(0),0,Y(1));
+  /* the face under the shell: occluded brow, lit cheeks, a darker jaw line; then brows, eyes (white, iris), nose, lips, eye black */
+  fg.addColorStop(0,shade(t,-.3));fg.addColorStop(.3,shade(t,-.18));fg.addColorStop(.52,shade(t,.02));fg.addColorStop(.8,shade(t,-.04));fg.addColorStop(1,shade(t,-.22));g.fillStyle=fg;g.fillRect(f[0],f[1],64,64);
+  g.fillStyle='rgba(190,60,40,.08)';for(const u of [.38,.62]){g.beginPath();g.ellipse(X(u),Y(.6),5,4,0,0,A3_TAU);g.fill()}
+  g.fillStyle=shade(t,-.4);for(const u of [.44,.56]){g.beginPath();g.ellipse(X(u),Y(.44),4.2,2.6,0,0,A3_TAU);g.fill()}
+  g.fillStyle='#e9e4da';for(const u of [.44,.56]){g.beginPath();g.ellipse(X(u),Y(.445),2.5,1.25,0,0,A3_TAU);g.fill()}
+  g.fillStyle='#1d140e';for(const u of [.443,.557]){g.beginPath();g.arc(X(u),Y(.445),1.05,0,A3_TAU);g.fill()}
+  g.fillStyle=shade(t,-.55);for(const u of [.44,.56])g.fillRect(X(u)-3.6,Y(.39),7.2,1.6);
+  g.fillStyle=shade(t,.12);g.fillRect(X(.49),Y(.47),X(.51)-X(.49),Y(.58)-Y(.47));g.fillStyle=shade(t,-.32);g.beginPath();g.ellipse(X(.5),Y(.605),3.2,1.3,0,0,A3_TAU);g.fill();
   g.fillStyle='rgba(10,8,6,.85)';for(const u of [.425,.575]){g.fillRect(X(u)-4,Y(.5),8,2.2)}/* eye black */
-  g.fillStyle=shade(t,-.45);for(const u of [.44,.56])g.fillRect(X(u)-3,Y(.385),6,1.4);
-  g.fillStyle=shade(t,-.38);g.fillRect(X(.46),Y(.72),X(.54)-X(.46),1.6)}}
+  g.fillStyle=shade(t,-.42);g.fillRect(X(.455),Y(.715),X(.545)-X(.455),1.4);g.fillStyle=shade(t,-.16);g.fillRect(X(.465),Y(.735),X(.535)-X(.465),1.4)}}
 function a3TeamTex(team,U){
   const [cv,g]=a3Cv(512,512),RG=A3_RG,J=athHex(U.j),N=athHex(U.n),Pn=athHex(U.p),PC=athHex(U.pc),K=athHex(U.k),SC=athHex(U.sc||U.n),jl=lum(J);
   const trim=contrasty(SC,J)?SC:contrasty(N,J)?N:inkOn(J),gl=athHex(jl>.8?team.c1:contrasty(N,J)?N:inkOn(J)),tape=lum(K)<.45?'#f1f1ee':'#1c1d21';
@@ -222,12 +237,18 @@ function a3TeamTex(team,U){
   a3Fill(hg,athHex(U.m||'#888888'),RG.FM);const vg=hg.createLinearGradient(0,192,0,256);vg.addColorStop(0,'#3a4452');vg.addColorStop(1,'#101318');hg.fillStyle=vg;hg.fillRect(64,192,64,64);
   a3Fill(hg,lum(Hh)>.7?'#2a2b2f':'#ececec',RG.CS);
   return {body:a3Tex(cv),dig:a3Tex(dc),helm:a3Tex(hc)}}
+/* roughness for the shared body atlas layout (G channel): matte jersey mesh, a sheen on the pants, sweat-glossy skin */
+function a3Rough(){if(A3.rough)return A3.rough;const [cv,g]=a3Cv(128,128),RG=A3_RG,q=r=>[r[0]/4,r[1]/4,r[2]/4,r[3]/4];g.fillStyle='rgb(200,200,200)';g.fillRect(0,0,128,128);
+  for(const r of [RG.SHO,RG.PAN])a3Fill(g,'rgb(140,140,140)',q(r));a3Fill(g,'rgb(170,170,170)',q(RG.CLT));a3Fill(g,'rgb(160,160,160)',q(RG.GLV));
+  for(let i=0;i<4;i++){a3Fill(g,'rgb(118,118,118)',q(a3SKA(i)));a3Fill(g,'rgb(112,112,112)',q(a3SKF(i)))}
+  const t=new THREE.CanvasTexture(cv);A3.rough=t;A3.res.add(t);return t}
 function a3Team(team){
   const U=uniColorsC(team);let e=A3.teams.get(team);if(e&&e.U===U)return e;if(e)for(const k of ['mb','mn','mh'])e[k].dispose();
   const T=a3TeamTex(team,U),hf=U.hf||'g';
   e={U,mb:new THREE.MeshStandardMaterial({map:T.body,roughness:.74,metalness:0}),
     mn:new THREE.MeshStandardMaterial({map:T.dig,alphaTest:.5,roughness:.6,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2}),
-    mh:new THREE.MeshPhysicalMaterial({map:T.helm,roughness:hf==='m'?.52:hf==='c'?.18:.26,metalness:hf==='c'?.75:.04,clearcoat:hf==='m'?0:1,clearcoatRoughness:.06,side:THREE.DoubleSide,envMap:typeof g3EnvTex==='function'?g3EnvTex():null,envMapIntensity:hf==='m'?.5:1})};
+    mh:new THREE.MeshPhysicalMaterial({map:T.helm,roughness:hf==='m'?.52:hf==='c'?.18:.26,metalness:hf==='c'?.75:.04,clearcoat:hf==='m'?0:1,clearcoatRoughness:.05,side:THREE.DoubleSide,envMap:typeof g3EnvTex==='function'?g3EnvTex():null,envMapIntensity:hf==='m'?.5:1.1})};
+  e.mb.roughnessMap=a3Rough();e.mb.roughness=1;
   for(const k of ['mb','mn','mh'])A3.res.add(e[k]);A3.teams.set(team,e);return e}
 function a3RefMat(){if(A3.ref)return A3.ref;const [cv,g]=a3Cv(512,512),RG=A3_RG;
   const stripe=(r,w)=>{a3Fill(g,'#f4f4f2',r);g.fillStyle='#121214';for(let x=0;x<r[2];x+=w*2)g.fillRect(r[0]+x,r[1],w,r[3])};
@@ -268,7 +289,7 @@ function a3Eval(p,a,now,dt){
   for(const i of ATH_UP){if(wU>=1){o[i]=T[i];continue}let d=T[i]-s[i];if(i>=10){while(d>Math.PI)d-=A3_TAU;while(d<-Math.PI)d+=A3_TAU}o[i]=s[i]+d*wU}}
 
 /* ---------- 3D solve: sagittal pose → bone matrices (group space) ---------- */
-const A3F=new Float64Array(A3_NB*12),A3M=new Float64Array(9),A3R=new Float64Array(9),A3K=new Float64Array(9),A3Q=new Float64Array(12);
+const A3IKB=new Float64Array(12),A3M1=new Float64Array(9),A3F=new Float64Array(A3_NB*12),A3M=new Float64Array(9),A3R=new Float64Array(9),A3K=new Float64Array(9),A3Q=new Float64Array(12);
 function a3RYZ(m,yaw,pit){const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pit),sp=Math.sin(pit);m[0]=cp*cy;m[1]=-sp;m[2]=-cp*sy;m[3]=sp*cy;m[4]=cp;m[5]=-sp*sy;m[6]=sy;m[7]=0;m[8]=cy}
 function a3Bas(m,yx,yy,yz,zx,zy,zz){let l=Math.hypot(yx,yy,yz)||1;yx/=l;yy/=l;yz/=l;const d=zx*yx+zy*yy+zz*yz;zx-=d*yx;zy-=d*yy;zz-=d*yz;l=Math.hypot(zx,zy,zz);if(l<1e-9){zx=0;zy=0;zz=1;l=1}zx/=l;zy/=l;zz/=l;
   m[0]=yy*zz-yz*zy;m[1]=yz*zx-yx*zz;m[2]=yx*zy-yy*zx;m[3]=yx;m[4]=yy;m[5]=yz;m[6]=zx;m[7]=zy;m[8]=zz}
@@ -324,7 +345,7 @@ function a3Solve(f,now,dt){
   let phi=0;if(sp>.8&&!lie)phi=a3W((a.kL2===2?Math.atan2(-vy,-vx):Math.atan2(vy,vx))-a.yaw);const cph=Math.cos(phi),sph=Math.sin(phi);
   const kl=a.kL2;let zs=.1-.055*wl;if(kl===10||kl===11)zs=.13+.02*(g-1);else if(kl>=12&&kl<=17)zs=kl===15?.075:.112;else if(kl===7)zs=.13;else if(lie)zs=.1;else if(ref)zs=.09-.045*wl;
   if(dt>0)a.zs+=(zs-a.zs)*Math.min(1,dt*8);else a.zs=zs;
-  const K=A3K,IK=new Float64Array(12);
+  const K=A3K,IK=A3IKB;
   for(let s=-1;s<=1;s+=2){const L=s<0,TH=L?A3_THL:A3_THR,SH=L?A3_SHL:A3_SHR,FT=L?A3_FTL:A3_FTR,fx=o[L?4:6],fy=o[L?5:7],pt=o[L?8:9];
     const dx=(fx-hx)*fS,ax=hx+dx*cph,az=s*a.zs+dx*sph;a3Pt(A3_PEL,0,0,s*HW,Q,0);
     const cb=Math.cos(twH),sb=Math.sin(twH),bx=cb+s*.12*sb,bz=-sb+s*.12*cb;
@@ -339,18 +360,27 @@ function a3Solve(f,now,dt){
   if(!ref&&ball&&ball.state==='air'&&!ball.pitch&&(ku===14||ku===30)){const R2=Math.hypot(ball.x-p.x,ball.y-p.y,(ball.z||0)-1.3*H/A3_H0);if(R2<2.4){reach=Math.pow(1-R2/2.4,1.5);bl=[ball.x,ball.z||0,ball.y]}}
   /* root: yaw · roll · (offset) · fall/dive pitch, scaled by height */
   const th=-yaw,cy=Math.cos(th),sy=Math.sin(th),ca=Math.cos(a.roll),sa=Math.sin(a.roll),cr=Math.cos(rot),sr=Math.sin(rot),Rr=A3R;
-  {const m1=[cr,-sr*ca,-sr*sa,sr,cr*ca,cr*sa,0,-sa,ca];for(let c=0;c<3;c++){const x=m1[c*3],y=m1[c*3+1],z=m1[c*3+2];Rr[c*3]=x*cy+z*sy;Rr[c*3+1]=y;Rr[c*3+2]=-x*sy+z*cy}}
+  {const m1=A3M1;m1[0]=cr;m1[1]=-sr*ca;m1[2]=-sr*sa;m1[3]=sr;m1[4]=cr*ca;m1[5]=cr*sa;m1[6]=0;m1[7]=-sa;m1[8]=ca;for(let c=0;c<3;c++){const x=m1[c*3],y=m1[c*3+1],z=m1[c*3+2];Rr[c*3]=x*cy+z*sy;Rr[c*3+1]=y;Rr[c*3+2]=-x*sy+z*cy}}
   const lift=o[15]+.085*Math.abs(Math.sin(rot)),rxo=o[16],ox=rxo,oy=lift*ca,oz=lift*sa,Tx=p.x+H*(ox*cy+oz*sy),Ty=(p.z||0)+H*oy,Tz=p.y+H*(-ox*sy+oz*cy);
   let blx=0,bly=0,blz=0;if(bl){const wx=(bl[0]-Tx)/H,wy=(bl[1]-Ty)/H,wz=(bl[2]-Tz)/H;blx=Rr[0]*wx+Rr[1]*wy+Rr[2]*wz;bly=Rr[3]*wx+Rr[4]*wy+Rr[5]*wz;blz=Rr[6]*wx+Rr[7]*wy+Rr[8]*wz}
-  const wave=ref&&p.sig==='wave'&&now<p.sigEnd,ctw=Math.cos(twC),stw=Math.sin(twC);
+  const wave=ref&&p.sig==='wave'&&now<p.sigEnd,ctw=Math.cos(twC),stw=Math.sin(twC),cel=!ref&&S.celebrate===p&&!lie?S.celebPose:null;
   for(let s=-1;s<=1;s+=2){const L=s<0,UA=L?A3_UAL:A3_UAR,FA=L?A3_FAL:A3_FAR,u=o[L?10:12],e=o[L?11:13];a3Pt(A3_CHE,0,.095,s*SW,Q,0);
     const ex=Math.sin(u)*.172,ey=-Math.cos(u)*.172,fa=u+e,wx0=ex+Math.sin(fa)*.148,wy0=ey-Math.cos(fa)*.148;
     let lat=s*(.032+.03*g),cv=two?.86:push?.4:0;if(carry===(L?2:1))cv=.25;
     let lz=lat+(s*.045-Q[2]-lat)*cv,wx=wx0*ctw+lz*stw,wy=wy0,wz=-wx0*stw+lz*ctw;
-    if(wave){const q=(now/260)%2,w=athE(q<1?q:2-q),c2=L?w:1-w;wx=.2;wy=-.03;wz=s*(.3*c2-.05)-Q[2]*.0}
+    /* incomplete pass: both arms straight out at shoulder height, scissoring across in front of the chest, palms down */
+    let pbx=null,pby=0,pbz=0;
+    if(wave){const q=((now-(p.sigT0||0))/300)%2,w=athE(q<1?q:2-q);wx=.04+.24*w;wy=-.035+(s>0?.035:0)*w;wz=s*(.33-.45*w);pbx=-.2;pby=-.6;pbz=s*.4}
+    else if(cel==='up'||cel==='flex'||cel==='point'||cel==='salute'){const R2=s>0;
+      if(cel==='up'){wx=.03;wy=.31;wz=s*.1;pbx=.1;pby=0;pbz=s}
+      else if(cel==='flex'){const b=Math.sin(now/170)*.012;wx=.03;wy=.12+b;wz=s*.2;pbx=0;pby=-.3;pbz=s}
+      else if(cel==='point'&&R2){wx=.2;wy=.22;wz=s*.07;pbx=0;pby=-.4;pbz=s}
+      else if(cel==='salute'&&R2){a3Pt(A3_HED,.075,.07,.025,Q,3);wx=Q[3]-Q[0];wy=Q[4]-Q[1];wz=Q[5]-Q[2];pbx=.15;pby=-.1;pbz=1}}
     let tx=Q[0]+wx,ty=Q[1]+wy,tz=Q[2]+wz;
     if(reach>0){tx+=(blx-tx-.05)*reach;ty+=(bly-ty)*reach;tz+=(blz+s*.045-tz)*reach}
-    const pxo=ex-.05,pzo=s*.1;a3IK(Q[0],Q[1],Q[2],tx,ty,tz,.172,.148,pxo*ctw+pzo*stw,ey,-pxo*stw+pzo*ctw,IK);
+    /* shrug: a hand above the shoulder lifts the joint up and out so the arm clears the pad */
+    const rise=clamp((ty-Q[1]+.05)/.2,0,1);if(rise>0){const c=A3_CHE*12,k2=rise*(ref?.6:1);Q[0]+=A3F[c+3]*.022*k2+A3F[c+6]*s*.022*k2;Q[1]+=A3F[c+4]*.022*k2+A3F[c+7]*s*.022*k2;Q[2]+=A3F[c+5]*.022*k2+A3F[c+8]*s*.022*k2}
+    const pxo=ex-.05,pzo=s*.1;if(pbx==null)a3IK(Q[0],Q[1],Q[2],tx,ty,tz,.172,.148,pxo*ctw+pzo*stw,ey,-pxo*stw+pzo*ctw,IK);else a3IK(Q[0],Q[1],Q[2],tx,ty,tz,.172,.148,pbx,pby,pbz,IK);
     const hzx=IK[7]*IK[11]-IK[8]*IK[10],hzy=IK[8]*IK[9]-IK[6]*IK[11],hzz=IK[6]*IK[10]-IK[7]*IK[9];
     a3Bas(M,Q[0]-IK[0],Q[1]-IK[1],Q[2]-IK[2],hzx,hzy,hzz);a3Set(UA,M,Q[0],Q[1],Q[2]);
     a3Bas(M,IK[0]-IK[3],IK[1]-IK[4],IK[2]-IK[5],hzx,hzy,hzz);a3Set(FA,M,IK[0],IK[1],IK[2])}
@@ -402,10 +432,13 @@ function a3FlagFrame(){
   if(q<1)m.rotation.set(q*9+f.rot,f.rot+q*4,q*5);else m.rotation.set(0,f.rot,0)}
 
 /* ---------- public API ---------- */
+/* warm-up (08t compiles the scene right after): the ball and the flag exist, so their programs are built before first use */
+function ath3dWarm(){if(!A3.g)return;a3BallMesh();if(!A3.flag){const mt=new THREE.MeshStandardMaterial({color:0xffd21f,roughness:.8,emissive:0x3a2c00,side:THREE.DoubleSide});A3.res.add(mt);A3.flag=new THREE.Mesh(a3FlagGeo(),mt);A3.flag.castShadow=true;A3.flag.visible=false;A3.g.add(A3.flag)}}
 function ath3dFrame(group,now,dt){
   if(typeof THREE==='undefined'||!group)return;if(A3.g!==group){if(A3.g)ath3dReset();A3.g=group}
   if(now==null)now=performance.now();if(dt==null)dt=A3.now<0?0:(now-A3.now)/1000;A3.now=now;dt=clamp(dt||0,0,.05);if(S.photo||S.paused)dt=0;
   if(S.phase==='dead'&&play&&A3.dp!==play){A3.dp=play;A3.da=now}
+  const st=G3.env?G3.env.stage:'day';if(A3.envSt!==st&&typeof g3EnvTex==='function'){A3.envSt=st;const ev=g3EnvTex(st);for(const e of A3.teams.values())e.mh.envMap=ev}
   let car=null;if(play&&ball&&ball.state==='held'){if(S.phase!=='replay')car=play.carrier;else{let bd=1.3;for(const p of P){const dd=Math.abs(p.x-ball.x)+Math.abs(p.y-ball.y);if(dd<bd){bd=dd;car=p}}}}
   /* 08d/08e read ATH.car / ATH.dt / ATH.deadAt: use this renderer's clock while evaluating, then restore */
   const c0=ATH.car,d0=ATH.dt,a0=ATH.deadAt,p0=ATH.deadPlay;ATH.car=car;ATH.dt=dt;if(A3.dp){ATH.deadAt=A3.da;ATH.deadPlay=A3.dp}A3.fr++;if(A3.carH)A3.carH.m=0;
@@ -426,4 +459,4 @@ function ath3dReset(){
   for(const f of A3.figs.values())a3Drop(f);A3.figs.clear();
   for(const m of [A3.ball,A3.flag])if(m&&m.parent)m.parent.remove(m);
   for(const r of A3.res)try{r.dispose()}catch(e){}
-  A3.res.clear();A3.teams.clear();A3.geo.clear();A3.ref=null;A3.ball=null;A3.flag=null;A3.bp=null;A3.bv=null;A3.carH=null;A3.now=-1;A3.g=null;A3.dp=null}
+  A3.res.clear();A3.teams.clear();A3.geo.clear();A3.ref=null;A3.rough=null;A3.envSt=null;A3.ball=null;A3.flag=null;A3.bp=null;A3.bv=null;A3.carH=null;A3.now=-1;A3.g=null;A3.dp=null}

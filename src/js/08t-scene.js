@@ -36,7 +36,7 @@ function t3Turf(o){
   const id=g.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const n=(r()-.5)*(o.snow?14:18);d[i]=d[i]+n*.8;d[i+1]=d[i+1]+n;d[i+2]=d[i+2]+n*.6}g.putImageData(id,0,0);
   /* under the lights: the field glows, the surroundings fall off into the dark, four soft pools from the corner banks */
   if(o.night||o.dusk){const k=o.night?1:.45;g.save();g.globalCompositeOperation='multiply';
-    const e=g.createRadialGradient(X(60),Y(CEN),FW*.55*p,X(60),Y(CEN),78*p);e.addColorStop(0,'#ffffff');e.addColorStop(.55,o.night?'#d9dbe2':'#efe9e2');e.addColorStop(1,o.night?'#5a5e6c':'#b9b0a6');
+    const e=g.createRadialGradient(X(60),Y(CEN),(o.night?16:26)*p,X(60),Y(CEN),76*p);e.addColorStop(0,'#ffffff');e.addColorStop(.5,o.night?'#c4c8d2':'#efe9e2');e.addColorStop(1,o.night?'#3c404e':'#b9b0a6');
     g.globalAlpha=k;g.fillStyle=e;g.setTransform(1,0,0,FW/120*1.6,0,Y(CEN)*(1-FW/120*1.6));g.fillRect(0,-h,w,h*3);g.restore();
     if(o.night){g.fillStyle='rgba(0,4,10,.42)';g.fillRect(0,0,w,Y(-2.6));g.fillRect(0,Y(FW+2.6),w,h-Y(FW+2.6));g.fillRect(0,0,X(-2.6),h);g.fillRect(X(122.6),0,w-X(122.6),h);
       g.save();g.globalCompositeOperation='lighter';for(const [px,py] of [[28,10],[92,10],[28,FW-10],[92,FW-10]]){const r2=g.createRadialGradient(X(px),Y(py),0,X(px),Y(py),30*p);
@@ -155,12 +155,13 @@ function t3Crowd(o){
       const q=r();const col=stud?(q<.82?c1:wh):away?(q<.7?a1:q<.85?a2:misc[r()*6|0]):(q<.5?c1:q<.64?c2:q<.74?wh:misc[r()*6|0]);
       inst.push(a[0],h,a[1],Math.atan2(a[5],a[4]),col.r,col.g,col.b,skins[r()*4|0].r,skins[r()*4|0].g,skins[r()*4|0].b,r(),stud?1:away?2:0)}}}};
   tier(SEG_ALL,T3P.low[0],T3P.low[1],1.05,'low');tier(SEG_UP,T3P.up[0],T3P.up[1],1.12,'up');
-  const n=inst.length/12,G=new THREE.InstancedBufferGeometry(),q=new Float32Array([-.5,0,0,.5,0,0,.5,1,0,-.5,0,0,.5,1,0,-.5,1,0]);
+  return t3CrowdMesh(inst,t3Fan(),.62,1)}
+function t3CrowdMesh(inst,tex,sx,sy){const n=inst.length/12,G=new THREE.InstancedBufferGeometry(),q=new Float32Array([-.5,0,0,.5,0,0,.5,1,0,-.5,0,0,.5,1,0,-.5,1,0]);
   G.setAttribute('position',new THREE.BufferAttribute(q,3));G.instanceCount=n;
   const f=(off,sz)=>{const a=new Float32Array(n*sz);for(let i=0;i<n;i++)for(let k=0;k<sz;k++)a[i*sz+k]=inst[i*12+off+k];return new THREE.InstancedBufferAttribute(a,sz)};
   G.setAttribute('iPos',f(0,3));G.setAttribute('iAng',f(3,1));G.setAttribute('iCol',f(4,3));G.setAttribute('iSkin',f(7,3));G.setAttribute('iPh',f(10,1));G.setAttribute('iKind',f(11,1));
   G.boundingSphere=new THREE.Sphere(new THREE.Vector3(60,20,CEN),220);
-  const M=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uJ:{value:0},uL:{value:1},uN:{value:0},uTex:{value:t3Tex(t3Fan(),false)},uSz:{value:new THREE.Vector2(.62,1)}},side:THREE.DoubleSide,
+  const M=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uJ:{value:0},uL:{value:1},uN:{value:0},uTex:{value:t3Tex(tex,false)},uSz:{value:new THREE.Vector2(sx,sy)}},side:THREE.DoubleSide,
     vertexShader:`attribute vec3 iPos;attribute float iAng,iPh,iKind;attribute vec3 iCol,iSkin;uniform float uT,uJ;uniform vec2 uSz;varying vec2 vUv;varying vec3 vC,vS;varying float vH,vF;
       void main(){float j=iKind>.5&&iKind<1.5?max(uJ,.22):uJ*(iKind>1.5?.25:1.);float hop=j*max(0.,sin(uT*(7.+iPh*2.)+iPh*6.283))*.42+sin(uT*1.1+iPh*40.)*.025;
         vec2 t=vec2(cos(iAng),sin(iAng));vec3 p=iPos+vec3(t.x*position.x*uSz.x,position.y*uSz.y*(.92+iPh*.16)+hop,t.y*position.x*uSz.x);
@@ -174,6 +175,19 @@ function t3Crowd(o){
       }`});
   const mesh=new THREE.Mesh(G,M);mesh.frustumCulled=false;mesh.userData.count=n;return mesh;
 }
+/* ---------- the teams on the sidelines (home far, visitors near): standing players in jerseys and helmets, a few
+   coaches in front; the crowd shader's billboards at standing size, hopping with the crowd on big plays ---------- */
+function t3Player(){const cv=document.createElement('canvas');cv.width=32;cv.height=64;const g=cv.getContext('2d');g.clearRect(0,0,32,64);
+  g.fillStyle='rgb(90,0,0)';g.fillRect(9,38,6,26);g.fillRect(17,38,6,26);   // pants (dark)
+  g.fillStyle='rgb(210,0,0)';g.beginPath();g.moveTo(4,40);g.lineTo(3,22);g.quadraticCurveTo(16,14,29,22);g.lineTo(28,40);g.closePath();g.fill();   // pads + jersey
+  g.fillStyle='rgb(160,0,0)';g.fillRect(2,23,4,13);g.fillRect(26,23,4,13);
+  g.fillStyle='rgb(240,255,0)';g.beginPath();g.ellipse(16,10,6.5,7.5,0,0,7);g.fill();return cv}
+function t3Sideline(o){const r=t3Rng(19),inst=[];
+  for(const [z0,dir,tm] of [[-5.6,-1,o.host],[FW+5.6,1,o.away]]){let U=null;try{U=typeof uniColorsC==='function'?uniColorsC(tm):null}catch(e){U=null}
+    const jc=t3Col(U&&U.j?athHex(U.j):tm.c1),hc=t3Col(U&&U.h?athHex(U.h):tm.c1),polo=t3Col(shade(tm.c1,-.2)),sk=TONES.map(t3Col),ang=dir<0?0:Math.PI;
+    for(let i=0;i<58;i++){const coach=i<7,x=coach?38+r()*44:35+r()*50,z=z0+dir*(coach?r()*.8:1+r()*3.4),c=coach?polo:jc,h=coach?sk[r()*4|0]:hc;
+      inst.push(x,0,z,ang+(r()-.5)*.5,c.r,c.g,c.b,h.r,h.g,h.b,r(),0)}}
+  const m=t3CrowdMesh(inst,t3Player(),.9,2.05);m.renderOrder=0;return m}
 /* ---------- video board (live score), press box, light towers ---------- */
 function t3Board(){const cv=document.createElement('canvas');cv.width=512;cv.height=256;return cv}
 function t3BoardDraw(cv){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.home;if(!A||!Hm)return;
@@ -204,7 +218,7 @@ function t3Build(){
   const turf=keep(t3Tex(t3Turf(o)));turf.generateMipmaps=true;turf.minFilter=THREE.LinearMipmapLinearFilter;
   const grain=keep(t3Tex(t3Grain(),false,true));grain.repeat.set((T3F.x1-T3F.x0)/2.4,(T3F.y1-T3F.y0)/2.4);
   const tg=new THREE.PlaneGeometry(T3F.x1-T3F.x0,T3F.y1-T3F.y0);tg.rotateX(-Math.PI/2);tg.translate((T3F.x0+T3F.x1)/2,0,(T3F.y0+T3F.y1)/2);
-  const field=new THREE.Mesh(tg,keep(new THREE.MeshStandardMaterial({map:turf,bumpMap:grain,bumpScale:o.snow?.6:1.1,roughness:o.wet?.58:.92,metalness:0})));field.receiveShadow=true;E.add(field);
+  const field=new THREE.Mesh(tg,keep(new THREE.MeshStandardMaterial({map:turf,color:o.night?'#c2c8d4':'#ffffff',bumpMap:grain,bumpScale:o.snow?.6:1.1,roughness:o.wet?.58:.92,metalness:0})));field.receiveShadow=true;E.add(field);
   /* outer ground (beyond the turf, under the stands) */
   const og=new THREE.PlaneGeometry(700,600);og.rotateX(-Math.PI/2);og.translate(60,-.05,CEN);E.add(new THREE.Mesh(og,keep(new THREE.MeshStandardMaterial({color:o.night?'#15171b':'#2a2e33',roughness:1}))));
   /* paint */
@@ -244,9 +258,10 @@ function t3Build(){
     if(glowM.opacity>0){const sp=new THREE.Sprite(glowM);sp.scale.set(70,70,1);sp.position.copy(bank.position);E.add(sp)}}
   /* the crowd */
   const crowd=t3Crowd(o);E.add(crowd);
+  const side=t3Sideline(o);E.add(side);own.push(side.material,side.geometry,side.material.uniforms.uTex.value);
   /* sky */
   const sky=t3Sky(st);E.add(sky);own.push(sky.material,sky.geometry,crowd.material,crowd.geometry,crowd.material.uniforms.uTex.value);
   E.traverse(x=>{if(x.isMesh&&x.geometry)own.push(x.geometry)});
-  return {group:E,own,crowd,board:{cv:bcv,tex:bt,key:''},night:o.night,stage:st,wk,field};
+  return {group:E,own,crowd,side,board:{cv:bcv,tex:bt,key:''},night:o.night,stage:st,wk,field};
 }
 function t3Dispose(env){if(!env)return;env.group.parent&&env.group.parent.remove(env.group);const seen=new Set();for(const x of env.own){if(!x||seen.has(x))continue;seen.add(x);if(x.dispose)x.dispose()}}
