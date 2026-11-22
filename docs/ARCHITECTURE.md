@@ -1,6 +1,6 @@
 # Gridiron Live: Architecture
 
-An original 2D pixel-art college football game for iPhone. The game is written in HTML5 Canvas and JavaScript. A small native Swift app runs it full-screen in a `WKWebView`. The same file also runs in any browser, so you can test it on a computer without building the app.
+An original college football game for iPhone, presented like a 3D TV broadcast. The game is written in HTML5 Canvas and JavaScript. A small native Swift app runs it full-screen in a `WKWebView`. The same file also runs in any browser, so you can test it on a computer without building the app.
 
 ## Repository layout
 
@@ -9,7 +9,7 @@ src/index.html                 Page shell: HUD markup + CSS
 src/js/01-util.js … 09-main.js Game code: storage/saves, league data, season, hub UI, engine, input, audio/HUD, renderers, loop
 web/index.html                 Built game (all JS + font inlined). This is what ships in the app.
 tools/build_web.py             Builds src/ into web/
-tools/fonts/                   Silkscreen pixel font (SIL Open Font License)
+tools/fonts/                   Barlow Condensed (SIL Open Font License)
 ios/project.yml                XcodeGen spec for the iOS app
 ios/GridironLive/*.swift       Native shell: window, WKWebView, save bridge
 ios/GridironLive/Assets.xcassets  App icon
@@ -32,7 +32,7 @@ ios/GridironLive/Assets.xcassets  App icon
 │ 5 Input: drag-to-aim slingshot, steer, juke                             │
 │ 6 Audio: synthesized whistle/crowd (no audio files)                     │
 │ 7 HUD: scoreboard, toasts, banners                                      │
-│ 8 Pixel renderer: low-res canvas → nearest-neighbour upscale            │
+│ 8 Renderer: 3D broadcast (WebGL, 08t/08u); 2D HD view as the fallback   │
 │ 9 Main loop + boot                                                      │
 └──────────────────────────────────────────────────────────────────────────┘
 ```
@@ -102,9 +102,9 @@ A 1-star endurance player ends the game 27% slower. A 5-star player ends only 7%
 - a completion heatmap, 3 lanes × 4 depths, plus total and per-catch yards after the catch
 - the college passer-efficiency rating: `(8.4·yds + 330·TD + 100·comp − 200·INT) / att`
 
-## Pixel renderer
+## Renderer
 
-Everything on the field is drawn into a low-resolution canvas, at about 3.5 art pixels per yard, then scaled up with nearest-neighbour filtering, which gives crisp pixels at any screen size. The view is squashed vertically (`VY = 0.62`) for a sideline-camera feel, while sprites stay upright. Player sprites are 7×10 pixels with 3 animation frames plus a tackled pose, recolored per team: home teams wear their color, away teams wear white. They get a 1-pixel outline and are cached per palette. Yard numbers and endzone lettering use a built-in 3×5 bitmap font.
+The only art style is the 3D broadcast view (`08t-*.js`, `08u-athletes3d.js`, three.js): a WebGL canvas sits under the transparent 2D `#field` canvas, which keeps every pointer listener and draws the overlays. The menus and HUD use the Modern broadcast theme (`data-style="modern"`, `data-render="3d"`). If WebGL 2 is missing or 3D can't start, `applyStyle()` (04) switches the session to the 2D HD renderer (`drawModern`, 08), with one toast. QA pages set `window.__QA2D__` (tools/qa/_boot.js) to use that 2D renderer, because headless Chromium renders WebGL in software; `threed.js` and `shots.js` keep real 3D. The field is squashed vertically (`VY = 0.62`) in the 2D view for a sideline-camera feel.
 
 ## Build pipeline
 
