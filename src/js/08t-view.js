@@ -229,7 +229,7 @@ function g3Camera(dt){
 function g3Lead(cs,h,dt){if(cs.lp!==h){cs.lp=h;cs.lvx=h.vx||0;return}cs.lvx+=((h.vx||0)-cs.lvx)*Math.min(1,dt*4.5)}
 /* ---------- light, shadows, sky, crowd, video board, weather ---------- */
 const G3L={day:{h:['#c4dbff','#3f5d2c',1.12],s:['#fff4e2',2.75],f:0,el:56,dx:-.55,dz:-.83,ex:1},late:{h:['#d8d2c4','#3d5130',1.0],s:['#ffd9a8',2.45],f:0,el:34,dx:-.88,dz:-.47,ex:1},
-  sunset:{h:['#c09284','#2c3620',.98],s:['#ff9a52',2.9],f:.3,el:11,dx:-.98,dz:-.2,ex:1.02},night:{h:['#2a3552','#0a0f09',.2],s:['#eef3ff',3.35],f:.95,el:62,dx:-.5,dz:-.62,ex:1}};
+  sunset:{h:['#c09284','#2c3620',.98],s:['#ff9a52',2.9],f:.3,el:11,dx:-.98,dz:-.2,ex:1.02},night:{h:['#141c30','#040604',.08],s:['#f7f8ff',4.3],f:.5,fd:[.05,.3,-.95],el:55,dx:-.55,dz:.62,ex:.82}};
 /* the key light (sun, or the far light banks at night) follows the shot; its shadow box is snapped to whole shadow-map
    texels in light space, so shadows do not crawl or shimmer while the camera pans */
 const G3SH={half:42,map:2048};
@@ -238,13 +238,14 @@ function g3Light(){const st=G3.env?G3.env.stage:'day',L=G3L[st]||G3L.day,wk=G3.e
   const e=L.el*Math.PI/180,ce=Math.cos(e),dx=L.dx*ce,dy=Math.sin(e),dz=L.dz*ce,rl=Math.hypot(dz,dx)||1,rx=dz/rl,rz=-dx/rl,ux=dy*rz,uy=dz*rx-dx*rz,uz=-dy*rx,tx=G3.cs.x,tz=G3.cs.z;
   const q=2*G3SH.half/G3SH.map,a=tx*rx+tz*rz,b=tx*ux+tz*uz,da=Math.round(a/q)*q-a,db=Math.round(b/q)*q-b,X=tx+da*rx+db*ux,Y=db*uy,Z=tz+da*rz+db*uz;
   G3.sun.target.position.set(X,Y,Z);G3.sun.position.set(X+dx*160,Y+dy*160,Z+dz*160);G3.sun.target.updateMatrixWorld();
-  G3.fill.target.position.set(tx,0,tz);G3.fill.position.set(tx-dx*100,60,tz-dz*100+40);G3.fill.target.updateMatrixWorld();
-  if(!G3.fogK||G3.fogK!==st+wk){G3.fogK=st+wk;const c=(SKY3[st]||SKY3.day)[1];G3.scene.fog=st==='night'?new THREE.Fog('#03050a',120,560):new THREE.Fog(wk==='dry'?c:'#8a929c',wk==='dry'?260:150,wk==='dry'?1500:700)}}
+  /* fill: opposite the key by day; at night a low back light from the far banks (turf sheen toward the camera, rim light) */
+  const fd=L.fd;G3.fill.target.position.set(tx,0,tz);if(fd)G3.fill.position.set(tx+fd[0]*120,fd[1]*120,tz+fd[2]*120);else G3.fill.position.set(tx-dx*100,60,tz-dz*100+40);G3.fill.target.updateMatrixWorld();
+  if(!G3.fogK||G3.fogK!==st+wk){G3.fogK=st+wk;const c=(SKY3[st]||SKY3.day)[1];G3.scene.fog=st==='night'?new THREE.Fog('#020308',90,520):new THREE.Fog(wk==='dry'?c:'#8a929c',wk==='dry'?260:150,wk==='dry'?1500:700)}}
 onFx('td',()=>{G3.ex=1});onFx('roar',()=>{G3.ex=Math.max(G3.ex,.75)});onFx('turnover',()=>{G3.ex=Math.max(G3.ex,.85)});onFx('safety',()=>{G3.ex=Math.max(G3.ex,.8)});
 onFx('fg',e=>{if(e&&e.good)G3.ex=Math.max(G3.ex,.7)});onFx('tackle',e=>{if(e&&e.big)G3.ex=Math.max(G3.ex,.4)});
 function g3Crowd(dt,now){const m=G3.env&&G3.env.crowd;if(!m)return;if(S.celebrate)G3.ex=Math.max(G3.ex,.6);G3.ex=Math.max(0,G3.ex-dt*.22);const u=m.material.uniforms,st=G3.env.stage;
   const sd=G3.env.side;if(sd){const v=sd.material.uniforms;v.uT.value=now/1000;v.uJ.value=G3.ex*.8;v.uL.value=st==='night'?1:st==='sunset'?.9:1;v.uN.value=0}
-  u.uT.value=now/1000;u.uJ.value=G3.ex;u.uL.value=st==='night'?.56:st==='sunset'?.8:G3.env.wk!=='dry'?.8:1;u.uN.value=st==='night'?1:st==='sunset'?.4:0}
+  u.uT.value=now/1000;u.uJ.value=G3.ex;u.uL.value=st==='night'?.34:st==='sunset'?.8:G3.env.wk!=='dry'?.8:1;u.uN.value=st==='night'?1:st==='sunset'?.4:0}
 function g3Board(now){const b=G3.env&&G3.env.board;if(!b||now-(b.t||0)<500)return;b.t=now;const dd=$('#dd'),k=[S.score[0],S.score[1],S.q,Math.ceil(S.clock),dd?dd.textContent:''].join('|');if(k===b.key)return;b.key=k;t3BoardDraw(b.cv);b.tex.needsUpdate=true}
 function g3Weather(dt){let k=S.wx==='Rain'?'rain':S.wx==='Snow'?'snow':'';if(typeof stdIndoor==='function'&&stdIndoor())k='';
   if(k!==G3.wxk){if(G3.wx){G3.scene.remove(G3.wx.obj);G3.wx.obj.geometry.dispose();G3.wx.obj.material.dispose();if(G3.wx.tex)G3.wx.tex.dispose()}G3.wx=null;G3.wxk=k;
@@ -281,6 +282,7 @@ function draw3D(now){
   const t0=performance.now(),c=ctx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);c.setTransform(DPR,0,0,DPR,0,0);
   if(!g3Init()){if(LG&&LG.settings){LG.settings.style='retro';applyStyle();toast('3D needs WebGL 2 · switched to Pixel')}return}
   if(!S.home||!S.away)return;
+  g3ToastSweep();
   if(S.game!==G3.gref){if(G3.gref!==undefined)g3ResetAth();G3.gref=S.game}   // a game ended / a new one began
   if(G3.cv.style.display!=='block')g3Show(true);
   if(++G3.fr%12===1)G3.cover=!!document.querySelector('#app>.screen:not([hidden])');if(G3.cover)return;   // a menu covers the field: no render
@@ -298,6 +300,10 @@ function draw3D(now){
   g3Overlay2D(c,now);g3Adapt(t0);
   const ms=performance.now()-t0;if(!rebuilt)G3.cpu=G3.cpu?G3.cpu*.9+ms*.1:ms;
 }
+/* no stale toast at the snap: toast() is wrapped (here, so 07 is untouched) to remember the phase it fired in; when a
+   presnap begins, a toast still showing from the previous play (BIG HIT!, BROKEN TACKLE!) is taken down */
+if(typeof toast==='function'&&!toast.g3){const t0=toast;toast=function(m){G3.tph=S.phase;return t0.apply(this,arguments)};toast.g3=1}
+function g3ToastSweep(){const ph=S.phase;if(ph==='presnap'&&G3.lph!=='presnap'&&G3.tph!=='presnap'){const t=$('#toast');if(t&&t.classList.contains('show'))t.classList.remove('show')}G3.lph=ph}
 /* the 2D layer over the 3D picture: receiver badges and the sling pull (06c arcDraw), your man's marker, the aim
    distance, the stick, the kick meter, the slow-motion letterbox */
 function g3Overlay2D(c,now){
@@ -308,7 +314,7 @@ function g3Overlay2D(c,now){
   if(S.phase==='live'||S.phase==='presnap')drawStick(c);
   g3KickUI(c,now);
   if(G3.env&&(G3.env.stage==='night'||G3.env.stage==='sunset')&&S.phase!=='kick'){const g=G3.vig&&G3.vig.w===W&&G3.vig.h===H&&G3.vig.st===G3.env.stage?G3.vig.g:null;let gr=g;
-    if(!gr){gr=c.createRadialGradient(W/2,H*.55,Math.min(W,H)*.35,W/2,H*.55,Math.hypot(W,H)*.62);gr.addColorStop(0,'rgba(0,0,8,0)');gr.addColorStop(.55,G3.env.stage==='night'?'rgba(0,2,12,.12)':'rgba(30,10,0,.05)');gr.addColorStop(1,G3.env.stage==='night'?'rgba(0,2,12,.72)':'rgba(30,10,0,.3)');G3.vig={w:W,h:H,st:G3.env.stage,g:gr}}
+    if(!gr){gr=c.createRadialGradient(W/2,H*.55,Math.min(W,H)*.35,W/2,H*.55,Math.hypot(W,H)*.62);gr.addColorStop(0,'rgba(0,0,8,0)');gr.addColorStop(.55,G3.env.stage==='night'?'rgba(0,2,12,.12)':'rgba(30,10,0,.05)');gr.addColorStop(1,G3.env.stage==='night'?'rgba(0,2,12,.8)':'rgba(30,10,0,.3)');G3.vig={w:W,h:H,st:G3.env.stage,g:gr}}
     c.fillStyle=gr;c.fillRect(0,0,W,H)}
   if(S.ts<.9){const a=(1-S.ts)*.9,bh=H*.07;c.fillStyle=`rgba(0,0,0,${a})`;c.fillRect(0,0,W,bh);c.fillRect(0,H-bh,W,bh)}
 }

@@ -35,12 +35,18 @@ function t3Turf(o){
   /* per-pixel grain */
   const id=g.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const n=(r()-.5)*(o.snow?14:18);d[i]=d[i]+n*.8;d[i+1]=d[i+1]+n;d[i+2]=d[i+2]+n*.6}g.putImageData(id,0,0);
   /* under the lights: the field glows, the surroundings fall off into the dark, four soft pools from the corner banks */
-  if(o.night||o.dusk){const k=o.night?1:.45;g.save();g.globalCompositeOperation='multiply';
-    const e=g.createRadialGradient(X(60),Y(CEN),(o.night?16:26)*p,X(60),Y(CEN),76*p);e.addColorStop(0,'#ffffff');e.addColorStop(.5,o.night?'#c4c8d2':'#efe9e2');e.addColorStop(1,o.night?'#3c404e':'#b9b0a6');
-    g.globalAlpha=k;g.fillStyle=e;g.setTransform(1,0,0,FW/120*1.6,0,Y(CEN)*(1-FW/120*1.6));g.fillRect(0,-h,w,h*3);g.restore();
-    if(o.night){g.fillStyle='rgba(0,4,10,.42)';g.fillRect(0,0,w,Y(-2.6));g.fillRect(0,Y(FW+2.6),w,h-Y(FW+2.6));g.fillRect(0,0,X(-2.6),h);g.fillRect(X(122.6),0,w-X(122.6),h);
-      g.save();g.globalCompositeOperation='lighter';for(const [px,py] of [[28,10],[92,10],[28,FW-10],[92,FW-10]]){const r2=g.createRadialGradient(X(px),Y(py),0,X(px),Y(py),30*p);
-      r2.addColorStop(0,'rgba(255,255,250,.1)');r2.addColorStop(1,'rgba(255,255,250,0)');g.fillStyle=r2;g.fillRect(X(px-30),Y(py-30),60*p,60*p)}g.restore()}}
+  /* under the lights: a light map multiplied over the turf. Night: the banks' wash fills the middle, pools along both
+     sidelines with darker gaps between them, the end zones and everything past the border falling off into the dark.
+     Dusk: a gentle version of the falloff only. */
+  if(o.night||o.dusk){const lm=document.createElement('canvas');lm.width=w;lm.height=h;const L=lm.getContext('2d'),N=o.night;
+    L.fillStyle=N?'rgb(70,72,74)':'rgb(205,198,190)';L.fillRect(0,0,w,h);L.globalCompositeOperation='lighter';
+    L.save();L.setTransform(1,0,0,.5,0,Y(CEN)*.5);const c=L.createRadialGradient(X(60),Y(CEN),0,X(60),Y(CEN),64*p);
+    c.addColorStop(0,N?'rgba(255,255,250,.7)':'rgba(255,250,240,.2)');c.addColorStop(.6,N?'rgba(255,255,250,.5)':'rgba(255,250,240,.16)');c.addColorStop(1,'rgba(255,252,246,0)');
+    L.fillStyle=c;L.fillRect(0,-h,w,h*3);L.restore();
+    if(N)for(const [pz,xs] of [[2,[18,42,66,90]],[FW-2,[30,54,78,102]]])for(const px of xs){const r2=L.createRadialGradient(X(px),Y(pz),0,X(px),Y(pz),17*p);
+      r2.addColorStop(0,'rgba(255,255,248,.5)');r2.addColorStop(.5,'rgba(255,255,248,.24)');r2.addColorStop(1,'rgba(255,252,240,0)');L.fillStyle=r2;L.fillRect(X(px-17),Y(pz-17),34*p,34*p)}
+    g.save();g.globalCompositeOperation='multiply';g.drawImage(lm,0,0);g.restore();
+    if(N){g.fillStyle='rgba(0,3,8,.5)';g.fillRect(0,0,w,Y(-2.6));g.fillRect(0,Y(FW+2.6),w,h-Y(FW+2.6));g.fillRect(0,0,X(-2.6),h);g.fillRect(X(122.6),0,w-X(122.6),h)}}
   if(o.snow){g.fillStyle='rgba(234,240,248,.5)';g.fillRect(0,0,w,h);for(let i=0;i<70000;i++){g.fillStyle=r()<.62?'rgba(252,253,255,.55)':'rgba(190,202,216,.4)';g.fillRect(r()*w|0,r()*h|0,1+(r()*2|0),1)}
     g.fillStyle='rgba(70,100,60,.12)';for(let i=0;i<260;i++){const x=12+r()*96,y=CEN+(r()-.5)*16;g.beginPath();g.ellipse(X(x),Y(y),(1+r()*3)*p,(.3+r()*.6)*p,0,0,7);g.fill()}}
   return cv;
@@ -169,7 +175,7 @@ function t3CrowdMesh(inst,tex,sx,sy){const n=inst.length/12,G=new THREE.Instance
     fragmentShader:`uniform sampler2D uTex;uniform float uL,uN;varying vec2 vUv;varying vec3 vC,vS;varying float vH,vF;
       void main(){vec4 t=texture2D(uTex,vUv);if(t.a<.5)discard;vec3 c=mix(vC*(.55+.45*t.r),vS,step(.5,t.g))*uL;
         /* under the lights the lower bowl catches the spill and the upper deck falls into shadow; phones flash at night */
-        c*=1.-uN*smoothstep(8.,34.,vH)*.72;c=mix(c,vec3(2.4),uN*step(.9965,vF)*step(.55,vUv.y));gl_FragColor=vec4(c,1.);
+        c*=1.-uN*smoothstep(6.,30.,vH)*.82;c=mix(c,vec3(2.4),uN*step(.9965,vF)*step(.55,vUv.y));gl_FragColor=vec4(c,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`});
@@ -201,7 +207,7 @@ function t3BoardDraw(cv){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.hom
 function t3Glow(){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,250,1)');gr.addColorStop(.18,'rgba(255,250,235,.55)');gr.addColorStop(.5,'rgba(200,215,255,.12)');gr.addColorStop(1,'rgba(200,215,255,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return cv}
 function t3LightPanel(){const cv=document.createElement('canvas');cv.width=128;cv.height=64;const g=cv.getContext('2d');g.fillStyle='#20252c';g.fillRect(0,0,128,64);for(let y=0;y<4;y++)for(let x=0;x<8;x++){g.fillStyle='#e9eef7';g.beginPath();g.arc(8+x*16,8+y*16,6,0,7);g.fill()}return cv}
 /* ---------- sky dome by time slot ---------- */
-const SKY3={day:['#2f63b4','#a9c8ea','#d8e6f3'],late:['#4a6fa9','#d9c39e','#efd9b5'],sunset:['#1a2550','#e6814a','#f4b06d'],night:['#010208','#0b1430','#24304e']};
+const SKY3={day:['#2f63b4','#a9c8ea','#d8e6f3'],late:['#4a6fa9','#d9c39e','#efd9b5'],sunset:['#1a2550','#e6814a','#f4b06d'],night:['#000003','#01040c','#081022']};
 function t3Sky(st){const c=SKY3[st]||SKY3.day,M=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{cT:{value:t3Col(c[0])},cH:{value:t3Col(c[1])},cG:{value:t3Col(c[2])}},
     vertexShader:'varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader:`uniform vec3 cT,cH,cG;varying vec3 vD;void main(){float y=vD.y;vec3 c=y>0.?mix(cG,mix(cH,cT,smoothstep(.02,.55,y)),smoothstep(0.,.05,y)):cG*.6;gl_FragColor=vec4(c,1.);
@@ -218,7 +224,7 @@ function t3Build(){
   const turf=keep(t3Tex(t3Turf(o)));turf.generateMipmaps=true;turf.minFilter=THREE.LinearMipmapLinearFilter;
   const grain=keep(t3Tex(t3Grain(),false,true));grain.repeat.set((T3F.x1-T3F.x0)/2.4,(T3F.y1-T3F.y0)/2.4);
   const tg=new THREE.PlaneGeometry(T3F.x1-T3F.x0,T3F.y1-T3F.y0);tg.rotateX(-Math.PI/2);tg.translate((T3F.x0+T3F.x1)/2,0,(T3F.y0+T3F.y1)/2);
-  const field=new THREE.Mesh(tg,keep(new THREE.MeshStandardMaterial({map:turf,color:o.night?'#c2c8d4':'#ffffff',bumpMap:grain,bumpScale:o.snow?.6:1.1,roughness:o.wet?.58:.92,metalness:0})));field.receiveShadow=true;E.add(field);
+  const field=new THREE.Mesh(tg,keep(new THREE.MeshStandardMaterial({map:turf,color:'#ffffff',bumpMap:grain,bumpScale:o.snow?.6:1.1,roughness:o.wet?.58:o.night?.7:.92,metalness:0})));field.receiveShadow=true;E.add(field);
   /* outer ground (beyond the turf, under the stands) */
   const og=new THREE.PlaneGeometry(700,600);og.rotateX(-Math.PI/2);og.translate(60,-.05,CEN);E.add(new THREE.Mesh(og,keep(new THREE.MeshStandardMaterial({color:o.night?'#15171b':'#2a2e33',roughness:1}))));
   /* paint */
@@ -229,9 +235,12 @@ function t3Build(){
   /* props */
   const props=new THREE.Mesh(t3Props(o),keep(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.55,metalness:.15})));props.castShadow=true;E.add(props);
   /* the bowl */
-  const nk=o.night?.42:1,conc=keep(new THREE.MeshStandardMaterial({color:t3Col('#5b616a').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide})),dark=keep(new THREE.MeshStandardMaterial({color:t3Col('#2b3038').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide}));
-  const seatT=keep(t3Tex(t3Seats(o),true,true)),seat=keep(new THREE.MeshStandardMaterial({map:seatT,color:t3Col('#ffffff').multiplyScalar(o.night?.5:1),roughness:.9,side:THREE.DoubleSide}));
-  const ribT=keep(t3Tex(t3Ribbon(o),true,true)),rib=keep(new THREE.MeshStandardMaterial({map:ribT,emissiveMap:ribT,emissive:'#ffffff',emissiveIntensity:o.night?.9:.45,roughness:.6,side:THREE.DoubleSide}));
+  const nk=o.night?.2:1,conc=keep(new THREE.MeshStandardMaterial({color:t3Col('#5b616a').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide})),dark=keep(new THREE.MeshStandardMaterial({color:t3Col('#2b3038').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide}));
+  const seatT=keep(t3Tex(t3Seats(o),true,true)),seat=keep(new THREE.MeshStandardMaterial({map:seatT,color:t3Col('#ffffff').multiplyScalar(o.night?.2:1),roughness:.9,side:THREE.DoubleSide}));
+  const ribT=keep(t3Tex(t3Ribbon(o),true,true)),rib=keep(new THREE.MeshStandardMaterial({map:ribT,emissiveMap:ribT,emissive:'#ffffff',emissiveIntensity:o.night?1.25:.45,roughness:.6,side:THREE.DoubleSide}));
+  /* the boards are seen from the field (their back faces): from outside the bowl, e.g. the TV camera behind the near
+     stands, the front faces show a plain dark board, never mirrored text */
+  rib.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n\tif(gl_FrontFacing)diffuseColor.rgb=vec3(.05,.055,.065);').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n\tif(gl_FrontFacing)totalEmissiveRadiance=vec3(0.);')};rib.customProgramCacheKey=()=>'t3ribBack';
   const suT=keep(t3Tex(t3Suites(),true,true)),sui=keep(new THREE.MeshStandardMaterial({map:suT,emissiveMap:suT,emissive:'#ffffff',emissiveIntensity:o.night?.75:.15,roughness:.4,side:THREE.DoubleSide}));
   const add=(g,m)=>{const x=new THREE.Mesh(g,m);E.add(x);return x};
   add(t3Band(SEG_ALL,...T3P.wall,22,1),rib);add(t3Band(SEG_ALL,...T3P.walk,30,1),conc);
