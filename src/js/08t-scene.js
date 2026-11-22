@@ -34,6 +34,19 @@ function t3Turf(o){
   g.fillStyle='#ECEDE6';g.fillRect(X(-2),Y(-2),124*p,2*p);g.fillRect(X(-2),Y(FW),124*p,2*p);g.fillRect(X(-2),Y(-2),2*p,(FW+4)*p);g.fillRect(X(120),Y(-2),2*p,(FW+4)*p);
   /* per-pixel grain */
   const id=g.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const n=(r()-.5)*(o.snow?14:18);d[i]=d[i]+n*.8;d[i+1]=d[i+1]+n;d[i+2]=d[i+2]+n*.6}g.putImageData(id,0,0);
+  /* under the lights: the field glows, the surroundings fall off into the dark, four soft pools from the corner banks */
+  /* under the lights: a light map multiplied over the turf. Night: the banks' wash fills the middle, pools along both
+     sidelines with darker gaps between them, the end zones and everything past the border falling off into the dark.
+     Dusk: a gentle version of the falloff only. */
+  if(o.night||o.dusk){const lm=document.createElement('canvas');lm.width=w;lm.height=h;const L=lm.getContext('2d'),N=o.night;
+    L.fillStyle=N?'rgb(70,72,74)':'rgb(205,198,190)';L.fillRect(0,0,w,h);L.globalCompositeOperation='lighter';
+    L.save();L.setTransform(1,0,0,.5,0,Y(CEN)*.5);const c=L.createRadialGradient(X(60),Y(CEN),0,X(60),Y(CEN),64*p);
+    c.addColorStop(0,N?'rgba(255,255,250,.7)':'rgba(255,250,240,.2)');c.addColorStop(.6,N?'rgba(255,255,250,.5)':'rgba(255,250,240,.16)');c.addColorStop(1,'rgba(255,252,246,0)');
+    L.fillStyle=c;L.fillRect(0,-h,w,h*3);L.restore();
+    if(N)for(const [pz,xs] of [[2,[18,42,66,90]],[FW-2,[30,54,78,102]]])for(const px of xs){const r2=L.createRadialGradient(X(px),Y(pz),0,X(px),Y(pz),17*p);
+      r2.addColorStop(0,'rgba(255,255,248,.5)');r2.addColorStop(.5,'rgba(255,255,248,.24)');r2.addColorStop(1,'rgba(255,252,240,0)');L.fillStyle=r2;L.fillRect(X(px-17),Y(pz-17),34*p,34*p)}
+    g.save();g.globalCompositeOperation='multiply';g.drawImage(lm,0,0);g.restore();
+    if(N){g.fillStyle='rgba(0,3,8,.5)';g.fillRect(0,0,w,Y(-2.6));g.fillRect(0,Y(FW+2.6),w,h-Y(FW+2.6));g.fillRect(0,0,X(-2.6),h);g.fillRect(X(122.6),0,w-X(122.6),h)}}
   if(o.snow){g.fillStyle='rgba(234,240,248,.5)';g.fillRect(0,0,w,h);for(let i=0;i<70000;i++){g.fillStyle=r()<.62?'rgba(252,253,255,.55)':'rgba(190,202,216,.4)';g.fillRect(r()*w|0,r()*h|0,1+(r()*2|0),1)}
     g.fillStyle='rgba(70,100,60,.12)';for(let i=0;i<260;i++){const x=12+r()*96,y=CEN+(r()-.5)*16;g.beginPath();g.ellipse(X(x),Y(y),(1+r()*3)*p,(.3+r()*.6)*p,0,0,7);g.fill()}}
   return cv;
@@ -148,23 +161,39 @@ function t3Crowd(o){
       const q=r();const col=stud?(q<.82?c1:wh):away?(q<.7?a1:q<.85?a2:misc[r()*6|0]):(q<.5?c1:q<.64?c2:q<.74?wh:misc[r()*6|0]);
       inst.push(a[0],h,a[1],Math.atan2(a[5],a[4]),col.r,col.g,col.b,skins[r()*4|0].r,skins[r()*4|0].g,skins[r()*4|0].b,r(),stud?1:away?2:0)}}}};
   tier(SEG_ALL,T3P.low[0],T3P.low[1],1.05,'low');tier(SEG_UP,T3P.up[0],T3P.up[1],1.12,'up');
-  const n=inst.length/12,G=new THREE.InstancedBufferGeometry(),q=new Float32Array([-.5,0,0,.5,0,0,.5,1,0,-.5,0,0,.5,1,0,-.5,1,0]);
+  return t3CrowdMesh(inst,t3Fan(),.62,1)}
+function t3CrowdMesh(inst,tex,sx,sy){const n=inst.length/12,G=new THREE.InstancedBufferGeometry(),q=new Float32Array([-.5,0,0,.5,0,0,.5,1,0,-.5,0,0,.5,1,0,-.5,1,0]);
   G.setAttribute('position',new THREE.BufferAttribute(q,3));G.instanceCount=n;
   const f=(off,sz)=>{const a=new Float32Array(n*sz);for(let i=0;i<n;i++)for(let k=0;k<sz;k++)a[i*sz+k]=inst[i*12+off+k];return new THREE.InstancedBufferAttribute(a,sz)};
   G.setAttribute('iPos',f(0,3));G.setAttribute('iAng',f(3,1));G.setAttribute('iCol',f(4,3));G.setAttribute('iSkin',f(7,3));G.setAttribute('iPh',f(10,1));G.setAttribute('iKind',f(11,1));
   G.boundingSphere=new THREE.Sphere(new THREE.Vector3(60,20,CEN),220);
-  const M=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uJ:{value:0},uL:{value:1},uTex:{value:t3Tex(t3Fan(),false)},uSz:{value:new THREE.Vector2(.62,1)}},side:THREE.DoubleSide,
-    vertexShader:`attribute vec3 iPos;attribute float iAng,iPh,iKind;attribute vec3 iCol,iSkin;uniform float uT,uJ;uniform vec2 uSz;varying vec2 vUv;varying vec3 vC,vS;
+  const M=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uJ:{value:0},uL:{value:1},uN:{value:0},uTex:{value:t3Tex(tex,false)},uSz:{value:new THREE.Vector2(sx,sy)}},side:THREE.DoubleSide,
+    vertexShader:`attribute vec3 iPos;attribute float iAng,iPh,iKind;attribute vec3 iCol,iSkin;uniform float uT,uJ;uniform vec2 uSz;varying vec2 vUv;varying vec3 vC,vS;varying float vH,vF;
       void main(){float j=iKind>.5&&iKind<1.5?max(uJ,.22):uJ*(iKind>1.5?.25:1.);float hop=j*max(0.,sin(uT*(7.+iPh*2.)+iPh*6.283))*.42+sin(uT*1.1+iPh*40.)*.025;
         vec2 t=vec2(cos(iAng),sin(iAng));vec3 p=iPos+vec3(t.x*position.x*uSz.x,position.y*uSz.y*(.92+iPh*.16)+hop,t.y*position.x*uSz.x);
-        vUv=vec2(position.x+.5,position.y);vC=iCol;vS=iSkin;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
-    fragmentShader:`uniform sampler2D uTex;uniform float uL;varying vec2 vUv;varying vec3 vC,vS;
-      void main(){vec4 t=texture2D(uTex,vUv);if(t.a<.5)discard;vec3 c=mix(vC*(.55+.45*t.r),vS,step(.5,t.g))*uL;gl_FragColor=vec4(c,1.);
+        vUv=vec2(position.x+.5,position.y);vC=iCol;vS=iSkin;vH=iPos.y;vF=fract(sin(iPh*913.7+floor(uT*2.3+iPh*7.))*4375.5);gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
+    fragmentShader:`uniform sampler2D uTex;uniform float uL,uN;varying vec2 vUv;varying vec3 vC,vS;varying float vH,vF;
+      void main(){vec4 t=texture2D(uTex,vUv);if(t.a<.5)discard;vec3 c=mix(vC*(.55+.45*t.r),vS,step(.5,t.g))*uL;
+        /* under the lights the lower bowl catches the spill and the upper deck falls into shadow; phones flash at night */
+        c*=1.-uN*smoothstep(6.,30.,vH)*.82;c=mix(c,vec3(2.4),uN*step(.9965,vF)*step(.55,vUv.y));gl_FragColor=vec4(c,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`});
   const mesh=new THREE.Mesh(G,M);mesh.frustumCulled=false;mesh.userData.count=n;return mesh;
 }
+/* ---------- the teams on the sidelines (home far, visitors near): standing players in jerseys and helmets, a few
+   coaches in front; the crowd shader's billboards at standing size, hopping with the crowd on big plays ---------- */
+function t3Player(){const cv=document.createElement('canvas');cv.width=32;cv.height=64;const g=cv.getContext('2d');g.clearRect(0,0,32,64);
+  g.fillStyle='rgb(90,0,0)';g.fillRect(9,38,6,26);g.fillRect(17,38,6,26);   // pants (dark)
+  g.fillStyle='rgb(210,0,0)';g.beginPath();g.moveTo(4,40);g.lineTo(3,22);g.quadraticCurveTo(16,14,29,22);g.lineTo(28,40);g.closePath();g.fill();   // pads + jersey
+  g.fillStyle='rgb(160,0,0)';g.fillRect(2,23,4,13);g.fillRect(26,23,4,13);
+  g.fillStyle='rgb(240,255,0)';g.beginPath();g.ellipse(16,10,6.5,7.5,0,0,7);g.fill();return cv}
+function t3Sideline(o){const r=t3Rng(19),inst=[];
+  for(const [z0,dir,tm] of [[-5.6,-1,o.host],[FW+5.6,1,o.away]]){let U=null;try{U=typeof uniColorsC==='function'?uniColorsC(tm):null}catch(e){U=null}
+    const jc=t3Col(U&&U.j?athHex(U.j):tm.c1),hc=t3Col(U&&U.h?athHex(U.h):tm.c1),polo=t3Col(shade(tm.c1,-.2)),sk=TONES.map(t3Col),ang=dir<0?0:Math.PI;
+    for(let i=0;i<58;i++){const coach=i<7,x=coach?38+r()*44:35+r()*50,z=z0+dir*(coach?r()*.8:1+r()*3.4),c=coach?polo:jc,h=coach?sk[r()*4|0]:hc;
+      inst.push(x,0,z,ang+(r()-.5)*.5,c.r,c.g,c.b,h.r,h.g,h.b,r(),0)}}
+  const m=t3CrowdMesh(inst,t3Player(),.9,2.05);m.renderOrder=0;return m}
 /* ---------- video board (live score), press box, light towers ---------- */
 function t3Board(){const cv=document.createElement('canvas');cv.width=512;cv.height=256;return cv}
 function t3BoardDraw(cv){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.home;if(!A||!Hm)return;
@@ -178,7 +207,7 @@ function t3BoardDraw(cv){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.hom
 function t3Glow(){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,250,1)');gr.addColorStop(.18,'rgba(255,250,235,.55)');gr.addColorStop(.5,'rgba(200,215,255,.12)');gr.addColorStop(1,'rgba(200,215,255,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return cv}
 function t3LightPanel(){const cv=document.createElement('canvas');cv.width=128;cv.height=64;const g=cv.getContext('2d');g.fillStyle='#20252c';g.fillRect(0,0,128,64);for(let y=0;y<4;y++)for(let x=0;x<8;x++){g.fillStyle='#e9eef7';g.beginPath();g.arc(8+x*16,8+y*16,6,0,7);g.fill()}return cv}
 /* ---------- sky dome by time slot ---------- */
-const SKY3={day:['#2f63b4','#a9c8ea','#d8e6f3'],late:['#4a6fa9','#d9c39e','#efd9b5'],sunset:['#1a2550','#e6814a','#f4b06d'],night:['#010208','#0b1430','#24304e']};
+const SKY3={day:['#2f63b4','#a9c8ea','#d8e6f3'],late:['#4a6fa9','#d9c39e','#efd9b5'],sunset:['#1a2550','#e6814a','#f4b06d'],night:['#000003','#01040c','#081022']};
 function t3Sky(st){const c=SKY3[st]||SKY3.day,M=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{cT:{value:t3Col(c[0])},cH:{value:t3Col(c[1])},cG:{value:t3Col(c[2])}},
     vertexShader:'varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader:`uniform vec3 cT,cH,cG;varying vec3 vD;void main(){float y=vD.y;vec3 c=y>0.?mix(cG,mix(cH,cT,smoothstep(.02,.55,y)),smoothstep(0.,.05,y)):cG*.6;gl_FragColor=vec4(c,1.);
@@ -189,15 +218,15 @@ function t3Sky(st){const c=SKY3[st]||SKY3.day,M=new THREE.ShaderMaterial({side:T
 /* ---------- build the whole environment ---------- */
 function t3EnvKey(){const h=hostT();return [h.id,h.c1,h.c2,h.city,h.name,S.home.id,S.away.id,S.home.c1,S.away.c1,lightStage(),wxKind(),G3.fontOk?1:0].join('|')}
 function t3Build(){
-  const h=hostT(),st=lightStage(),wk=wxKind(),o={host:h,away:h===S.home?S.away:S.home,snow:wk==='snow',wet:wk==='wet',night:st==='night'},E=new THREE.Group(),own=[];
+  const h=hostT(),st=lightStage(),wk=wxKind(),o={host:h,away:h===S.home?S.away:S.home,snow:wk==='snow',wet:wk==='wet',night:st==='night',dusk:st==='sunset'},E=new THREE.Group(),own=[];
   const keep=x=>{own.push(x);return x};
   /* turf */
   const turf=keep(t3Tex(t3Turf(o)));turf.generateMipmaps=true;turf.minFilter=THREE.LinearMipmapLinearFilter;
   const grain=keep(t3Tex(t3Grain(),false,true));grain.repeat.set((T3F.x1-T3F.x0)/2.4,(T3F.y1-T3F.y0)/2.4);
   const tg=new THREE.PlaneGeometry(T3F.x1-T3F.x0,T3F.y1-T3F.y0);tg.rotateX(-Math.PI/2);tg.translate((T3F.x0+T3F.x1)/2,0,(T3F.y0+T3F.y1)/2);
-  const field=new THREE.Mesh(tg,keep(new THREE.MeshStandardMaterial({map:turf,bumpMap:grain,bumpScale:o.snow?.6:1.1,roughness:o.wet?.58:.92,metalness:0})));field.receiveShadow=true;E.add(field);
+  const field=new THREE.Mesh(tg,keep(new THREE.MeshStandardMaterial({map:turf,color:'#ffffff',bumpMap:grain,bumpScale:o.snow?.6:1.1,roughness:o.wet?.58:o.night?.7:.92,metalness:0})));field.receiveShadow=true;E.add(field);
   /* outer ground (beyond the turf, under the stands) */
-  const og=new THREE.PlaneGeometry(700,600);og.rotateX(-Math.PI/2);og.translate(60,-.05,CEN);E.add(new THREE.Mesh(og,keep(new THREE.MeshStandardMaterial({color:'#2a2e33',roughness:1}))));
+  const og=new THREE.PlaneGeometry(700,600);og.rotateX(-Math.PI/2);og.translate(60,-.05,CEN);E.add(new THREE.Mesh(og,keep(new THREE.MeshStandardMaterial({color:o.night?'#15171b':'#2a2e33',roughness:1}))));
   /* paint */
   const lm=keep(new THREE.MeshStandardMaterial({color:o.snow?'#ffffff':'#F4F4EE',roughness:.85,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
   const lines=new THREE.Mesh(t3Lines(),lm);lines.receiveShadow=true;E.add(lines);
@@ -206,9 +235,12 @@ function t3Build(){
   /* props */
   const props=new THREE.Mesh(t3Props(o),keep(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.55,metalness:.15})));props.castShadow=true;E.add(props);
   /* the bowl */
-  const conc=keep(new THREE.MeshStandardMaterial({color:'#5b616a',roughness:.95,side:THREE.DoubleSide})),dark=keep(new THREE.MeshStandardMaterial({color:'#2b3038',roughness:.95,side:THREE.DoubleSide}));
-  const seatT=keep(t3Tex(t3Seats(o),true,true)),seat=keep(new THREE.MeshStandardMaterial({map:seatT,roughness:.9,side:THREE.DoubleSide}));
-  const ribT=keep(t3Tex(t3Ribbon(o),true,true)),rib=keep(new THREE.MeshStandardMaterial({map:ribT,emissiveMap:ribT,emissive:'#ffffff',emissiveIntensity:o.night?.9:.45,roughness:.6,side:THREE.DoubleSide}));
+  const nk=o.night?.2:1,conc=keep(new THREE.MeshStandardMaterial({color:t3Col('#5b616a').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide})),dark=keep(new THREE.MeshStandardMaterial({color:t3Col('#2b3038').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide}));
+  const seatT=keep(t3Tex(t3Seats(o),true,true)),seat=keep(new THREE.MeshStandardMaterial({map:seatT,color:t3Col('#ffffff').multiplyScalar(o.night?.2:1),roughness:.9,side:THREE.DoubleSide}));
+  const ribT=keep(t3Tex(t3Ribbon(o),true,true)),rib=keep(new THREE.MeshStandardMaterial({map:ribT,emissiveMap:ribT,emissive:'#ffffff',emissiveIntensity:o.night?1.25:.45,roughness:.6,side:THREE.DoubleSide}));
+  /* the boards are seen from the field (their back faces): from outside the bowl, e.g. the TV camera behind the near
+     stands, the front faces show a plain dark board, never mirrored text */
+  rib.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n\tif(gl_FrontFacing)diffuseColor.rgb=vec3(.05,.055,.065);').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n\tif(gl_FrontFacing)totalEmissiveRadiance=vec3(0.);')};rib.customProgramCacheKey=()=>'t3ribBack';
   const suT=keep(t3Tex(t3Suites(),true,true)),sui=keep(new THREE.MeshStandardMaterial({map:suT,emissiveMap:suT,emissive:'#ffffff',emissiveIntensity:o.night?.75:.15,roughness:.4,side:THREE.DoubleSide}));
   const add=(g,m)=>{const x=new THREE.Mesh(g,m);E.add(x);return x};
   add(t3Band(SEG_ALL,...T3P.wall,22,1),rib);add(t3Band(SEG_ALL,...T3P.walk,30,1),conc);
@@ -235,9 +267,10 @@ function t3Build(){
     if(glowM.opacity>0){const sp=new THREE.Sprite(glowM);sp.scale.set(70,70,1);sp.position.copy(bank.position);E.add(sp)}}
   /* the crowd */
   const crowd=t3Crowd(o);E.add(crowd);
+  const side=t3Sideline(o);E.add(side);own.push(side.material,side.geometry,side.material.uniforms.uTex.value);
   /* sky */
   const sky=t3Sky(st);E.add(sky);own.push(sky.material,sky.geometry,crowd.material,crowd.geometry,crowd.material.uniforms.uTex.value);
   E.traverse(x=>{if(x.isMesh&&x.geometry)own.push(x.geometry)});
-  return {group:E,own,crowd,board:{cv:bcv,tex:bt,key:''},night:o.night,stage:st,wk,field};
+  return {group:E,own,crowd,side,board:{cv:bcv,tex:bt,key:''},night:o.night,stage:st,wk,field};
 }
 function t3Dispose(env){if(!env)return;env.group.parent&&env.group.parent.remove(env.group);const seen=new Set();for(const x of env.own){if(!x||seen.has(x))continue;seen.add(x);if(x.dispose)x.dispose()}}
