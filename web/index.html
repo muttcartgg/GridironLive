@@ -1312,6 +1312,11 @@ body.ff #ctlTip{visibility:hidden}
 #gl3d{position:absolute;inset:0;width:100%;height:100%;z-index:-1;display:none;pointer-events:none}
 :root[data-render="3d"] #kcv{display:none}
 :root[data-render="3d"] #kick{background:linear-gradient(180deg,transparent,rgba(5,8,13,.55) 55%)}
+/* the kick sheet in 3D is only the caption and the button (the view is the 3D camera): the hint line sits above the
+   caption, so caption, hint and button never overlap in either orientation */
+:root[data-render="3d"] #app:has(#kick:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0px) + 98px)}
+@media (max-height:480px){:root[data-render="3d"] #app:has(#kick:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0px) + 86px)}}
+:root[data-render="3d"] #kickHead{text-shadow:0 1px 3px rgba(0,0,0,.8)}
 
 /* =========================================================
    90 · System: the one set of rules every menu surface agrees on. Loaded last, so it settles
@@ -16474,6 +16479,19 @@ function t3Turf(o){
   g.fillStyle='#ECEDE6';g.fillRect(X(-2),Y(-2),124*p,2*p);g.fillRect(X(-2),Y(FW),124*p,2*p);g.fillRect(X(-2),Y(-2),2*p,(FW+4)*p);g.fillRect(X(120),Y(-2),2*p,(FW+4)*p);
   /* per-pixel grain */
   const id=g.getImageData(0,0,w,h),d=id.data;for(let i=0;i<d.length;i+=4){const n=(r()-.5)*(o.snow?14:18);d[i]=d[i]+n*.8;d[i+1]=d[i+1]+n;d[i+2]=d[i+2]+n*.6}g.putImageData(id,0,0);
+  /* under the lights: the field glows, the surroundings fall off into the dark, four soft pools from the corner banks */
+  /* under the lights: a light map multiplied over the turf. Night: the banks' wash fills the middle, pools along both
+     sidelines with darker gaps between them, the end zones and everything past the border falling off into the dark.
+     Dusk: a gentle version of the falloff only. */
+  if(o.night||o.dusk){const lm=document.createElement('canvas');lm.width=w;lm.height=h;const L=lm.getContext('2d'),N=o.night;
+    L.fillStyle=N?'rgb(70,72,74)':'rgb(205,198,190)';L.fillRect(0,0,w,h);L.globalCompositeOperation='lighter';
+    L.save();L.setTransform(1,0,0,.5,0,Y(CEN)*.5);const c=L.createRadialGradient(X(60),Y(CEN),0,X(60),Y(CEN),64*p);
+    c.addColorStop(0,N?'rgba(255,255,250,.7)':'rgba(255,250,240,.2)');c.addColorStop(.6,N?'rgba(255,255,250,.5)':'rgba(255,250,240,.16)');c.addColorStop(1,'rgba(255,252,246,0)');
+    L.fillStyle=c;L.fillRect(0,-h,w,h*3);L.restore();
+    if(N)for(const [pz,xs] of [[2,[18,42,66,90]],[FW-2,[30,54,78,102]]])for(const px of xs){const r2=L.createRadialGradient(X(px),Y(pz),0,X(px),Y(pz),17*p);
+      r2.addColorStop(0,'rgba(255,255,248,.5)');r2.addColorStop(.5,'rgba(255,255,248,.24)');r2.addColorStop(1,'rgba(255,252,240,0)');L.fillStyle=r2;L.fillRect(X(px-17),Y(pz-17),34*p,34*p)}
+    g.save();g.globalCompositeOperation='multiply';g.drawImage(lm,0,0);g.restore();
+    if(N){g.fillStyle='rgba(0,3,8,.5)';g.fillRect(0,0,w,Y(-2.6));g.fillRect(0,Y(FW+2.6),w,h-Y(FW+2.6));g.fillRect(0,0,X(-2.6),h);g.fillRect(X(122.6),0,w-X(122.6),h)}}
   if(o.snow){g.fillStyle='rgba(234,240,248,.5)';g.fillRect(0,0,w,h);for(let i=0;i<70000;i++){g.fillStyle=r()<.62?'rgba(252,253,255,.55)':'rgba(190,202,216,.4)';g.fillRect(r()*w|0,r()*h|0,1+(r()*2|0),1)}
     g.fillStyle='rgba(70,100,60,.12)';for(let i=0;i<260;i++){const x=12+r()*96,y=CEN+(r()-.5)*16;g.beginPath();g.ellipse(X(x),Y(y),(1+r()*3)*p,(.3+r()*.6)*p,0,0,7);g.fill()}}
   return cv;
@@ -16588,23 +16606,39 @@ function t3Crowd(o){
       const q=r();const col=stud?(q<.82?c1:wh):away?(q<.7?a1:q<.85?a2:misc[r()*6|0]):(q<.5?c1:q<.64?c2:q<.74?wh:misc[r()*6|0]);
       inst.push(a[0],h,a[1],Math.atan2(a[5],a[4]),col.r,col.g,col.b,skins[r()*4|0].r,skins[r()*4|0].g,skins[r()*4|0].b,r(),stud?1:away?2:0)}}}};
   tier(SEG_ALL,T3P.low[0],T3P.low[1],1.05,'low');tier(SEG_UP,T3P.up[0],T3P.up[1],1.12,'up');
-  const n=inst.length/12,G=new THREE.InstancedBufferGeometry(),q=new Float32Array([-.5,0,0,.5,0,0,.5,1,0,-.5,0,0,.5,1,0,-.5,1,0]);
+  return t3CrowdMesh(inst,t3Fan(),.62,1)}
+function t3CrowdMesh(inst,tex,sx,sy){const n=inst.length/12,G=new THREE.InstancedBufferGeometry(),q=new Float32Array([-.5,0,0,.5,0,0,.5,1,0,-.5,0,0,.5,1,0,-.5,1,0]);
   G.setAttribute('position',new THREE.BufferAttribute(q,3));G.instanceCount=n;
   const f=(off,sz)=>{const a=new Float32Array(n*sz);for(let i=0;i<n;i++)for(let k=0;k<sz;k++)a[i*sz+k]=inst[i*12+off+k];return new THREE.InstancedBufferAttribute(a,sz)};
   G.setAttribute('iPos',f(0,3));G.setAttribute('iAng',f(3,1));G.setAttribute('iCol',f(4,3));G.setAttribute('iSkin',f(7,3));G.setAttribute('iPh',f(10,1));G.setAttribute('iKind',f(11,1));
   G.boundingSphere=new THREE.Sphere(new THREE.Vector3(60,20,CEN),220);
-  const M=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uJ:{value:0},uL:{value:1},uTex:{value:t3Tex(t3Fan(),false)},uSz:{value:new THREE.Vector2(.62,1)}},side:THREE.DoubleSide,
-    vertexShader:`attribute vec3 iPos;attribute float iAng,iPh,iKind;attribute vec3 iCol,iSkin;uniform float uT,uJ;uniform vec2 uSz;varying vec2 vUv;varying vec3 vC,vS;
+  const M=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uJ:{value:0},uL:{value:1},uN:{value:0},uTex:{value:t3Tex(tex,false)},uSz:{value:new THREE.Vector2(sx,sy)}},side:THREE.DoubleSide,
+    vertexShader:`attribute vec3 iPos;attribute float iAng,iPh,iKind;attribute vec3 iCol,iSkin;uniform float uT,uJ;uniform vec2 uSz;varying vec2 vUv;varying vec3 vC,vS;varying float vH,vF;
       void main(){float j=iKind>.5&&iKind<1.5?max(uJ,.22):uJ*(iKind>1.5?.25:1.);float hop=j*max(0.,sin(uT*(7.+iPh*2.)+iPh*6.283))*.42+sin(uT*1.1+iPh*40.)*.025;
         vec2 t=vec2(cos(iAng),sin(iAng));vec3 p=iPos+vec3(t.x*position.x*uSz.x,position.y*uSz.y*(.92+iPh*.16)+hop,t.y*position.x*uSz.x);
-        vUv=vec2(position.x+.5,position.y);vC=iCol;vS=iSkin;gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
-    fragmentShader:`uniform sampler2D uTex;uniform float uL;varying vec2 vUv;varying vec3 vC,vS;
-      void main(){vec4 t=texture2D(uTex,vUv);if(t.a<.5)discard;vec3 c=mix(vC*(.55+.45*t.r),vS,step(.5,t.g))*uL;gl_FragColor=vec4(c,1.);
+        vUv=vec2(position.x+.5,position.y);vC=iCol;vS=iSkin;vH=iPos.y;vF=fract(sin(iPh*913.7+floor(uT*2.3+iPh*7.))*4375.5);gl_Position=projectionMatrix*viewMatrix*vec4(p,1.);}`,
+    fragmentShader:`uniform sampler2D uTex;uniform float uL,uN;varying vec2 vUv;varying vec3 vC,vS;varying float vH,vF;
+      void main(){vec4 t=texture2D(uTex,vUv);if(t.a<.5)discard;vec3 c=mix(vC*(.55+.45*t.r),vS,step(.5,t.g))*uL;
+        /* under the lights the lower bowl catches the spill and the upper deck falls into shadow; phones flash at night */
+        c*=1.-uN*smoothstep(6.,30.,vH)*.82;c=mix(c,vec3(2.4),uN*step(.9965,vF)*step(.55,vUv.y));gl_FragColor=vec4(c,1.);
         #include <tonemapping_fragment>
         #include <colorspace_fragment>
       }`});
   const mesh=new THREE.Mesh(G,M);mesh.frustumCulled=false;mesh.userData.count=n;return mesh;
 }
+/* ---------- the teams on the sidelines (home far, visitors near): standing players in jerseys and helmets, a few
+   coaches in front; the crowd shader's billboards at standing size, hopping with the crowd on big plays ---------- */
+function t3Player(){const cv=document.createElement('canvas');cv.width=32;cv.height=64;const g=cv.getContext('2d');g.clearRect(0,0,32,64);
+  g.fillStyle='rgb(90,0,0)';g.fillRect(9,38,6,26);g.fillRect(17,38,6,26);   // pants (dark)
+  g.fillStyle='rgb(210,0,0)';g.beginPath();g.moveTo(4,40);g.lineTo(3,22);g.quadraticCurveTo(16,14,29,22);g.lineTo(28,40);g.closePath();g.fill();   // pads + jersey
+  g.fillStyle='rgb(160,0,0)';g.fillRect(2,23,4,13);g.fillRect(26,23,4,13);
+  g.fillStyle='rgb(240,255,0)';g.beginPath();g.ellipse(16,10,6.5,7.5,0,0,7);g.fill();return cv}
+function t3Sideline(o){const r=t3Rng(19),inst=[];
+  for(const [z0,dir,tm] of [[-5.6,-1,o.host],[FW+5.6,1,o.away]]){let U=null;try{U=typeof uniColorsC==='function'?uniColorsC(tm):null}catch(e){U=null}
+    const jc=t3Col(U&&U.j?athHex(U.j):tm.c1),hc=t3Col(U&&U.h?athHex(U.h):tm.c1),polo=t3Col(shade(tm.c1,-.2)),sk=TONES.map(t3Col),ang=dir<0?0:Math.PI;
+    for(let i=0;i<58;i++){const coach=i<7,x=coach?38+r()*44:35+r()*50,z=z0+dir*(coach?r()*.8:1+r()*3.4),c=coach?polo:jc,h=coach?sk[r()*4|0]:hc;
+      inst.push(x,0,z,ang+(r()-.5)*.5,c.r,c.g,c.b,h.r,h.g,h.b,r(),0)}}
+  const m=t3CrowdMesh(inst,t3Player(),.9,2.05);m.renderOrder=0;return m}
 /* ---------- video board (live score), press box, light towers ---------- */
 function t3Board(){const cv=document.createElement('canvas');cv.width=512;cv.height=256;return cv}
 function t3BoardDraw(cv){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.home;if(!A||!Hm)return;
@@ -16618,7 +16652,7 @@ function t3BoardDraw(cv){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.hom
 function t3Glow(){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,250,1)');gr.addColorStop(.18,'rgba(255,250,235,.55)');gr.addColorStop(.5,'rgba(200,215,255,.12)');gr.addColorStop(1,'rgba(200,215,255,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return cv}
 function t3LightPanel(){const cv=document.createElement('canvas');cv.width=128;cv.height=64;const g=cv.getContext('2d');g.fillStyle='#20252c';g.fillRect(0,0,128,64);for(let y=0;y<4;y++)for(let x=0;x<8;x++){g.fillStyle='#e9eef7';g.beginPath();g.arc(8+x*16,8+y*16,6,0,7);g.fill()}return cv}
 /* ---------- sky dome by time slot ---------- */
-const SKY3={day:['#2f63b4','#a9c8ea','#d8e6f3'],late:['#4a6fa9','#d9c39e','#efd9b5'],sunset:['#1a2550','#e6814a','#f4b06d'],night:['#010208','#0b1430','#24304e']};
+const SKY3={day:['#2f63b4','#a9c8ea','#d8e6f3'],late:['#4a6fa9','#d9c39e','#efd9b5'],sunset:['#1a2550','#e6814a','#f4b06d'],night:['#000003','#01040c','#081022']};
 function t3Sky(st){const c=SKY3[st]||SKY3.day,M=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{cT:{value:t3Col(c[0])},cH:{value:t3Col(c[1])},cG:{value:t3Col(c[2])}},
     vertexShader:'varying vec3 vD;void main(){vD=normalize(position);gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader:`uniform vec3 cT,cH,cG;varying vec3 vD;void main(){float y=vD.y;vec3 c=y>0.?mix(cG,mix(cH,cT,smoothstep(.02,.55,y)),smoothstep(0.,.05,y)):cG*.6;gl_FragColor=vec4(c,1.);
@@ -16629,15 +16663,15 @@ function t3Sky(st){const c=SKY3[st]||SKY3.day,M=new THREE.ShaderMaterial({side:T
 /* ---------- build the whole environment ---------- */
 function t3EnvKey(){const h=hostT();return [h.id,h.c1,h.c2,h.city,h.name,S.home.id,S.away.id,S.home.c1,S.away.c1,lightStage(),wxKind(),G3.fontOk?1:0].join('|')}
 function t3Build(){
-  const h=hostT(),st=lightStage(),wk=wxKind(),o={host:h,away:h===S.home?S.away:S.home,snow:wk==='snow',wet:wk==='wet',night:st==='night'},E=new THREE.Group(),own=[];
+  const h=hostT(),st=lightStage(),wk=wxKind(),o={host:h,away:h===S.home?S.away:S.home,snow:wk==='snow',wet:wk==='wet',night:st==='night',dusk:st==='sunset'},E=new THREE.Group(),own=[];
   const keep=x=>{own.push(x);return x};
   /* turf */
   const turf=keep(t3Tex(t3Turf(o)));turf.generateMipmaps=true;turf.minFilter=THREE.LinearMipmapLinearFilter;
   const grain=keep(t3Tex(t3Grain(),false,true));grain.repeat.set((T3F.x1-T3F.x0)/2.4,(T3F.y1-T3F.y0)/2.4);
   const tg=new THREE.PlaneGeometry(T3F.x1-T3F.x0,T3F.y1-T3F.y0);tg.rotateX(-Math.PI/2);tg.translate((T3F.x0+T3F.x1)/2,0,(T3F.y0+T3F.y1)/2);
-  const field=new THREE.Mesh(tg,keep(new THREE.MeshStandardMaterial({map:turf,bumpMap:grain,bumpScale:o.snow?.6:1.1,roughness:o.wet?.58:.92,metalness:0})));field.receiveShadow=true;E.add(field);
+  const field=new THREE.Mesh(tg,keep(new THREE.MeshStandardMaterial({map:turf,color:'#ffffff',bumpMap:grain,bumpScale:o.snow?.6:1.1,roughness:o.wet?.58:o.night?.7:.92,metalness:0})));field.receiveShadow=true;E.add(field);
   /* outer ground (beyond the turf, under the stands) */
-  const og=new THREE.PlaneGeometry(700,600);og.rotateX(-Math.PI/2);og.translate(60,-.05,CEN);E.add(new THREE.Mesh(og,keep(new THREE.MeshStandardMaterial({color:'#2a2e33',roughness:1}))));
+  const og=new THREE.PlaneGeometry(700,600);og.rotateX(-Math.PI/2);og.translate(60,-.05,CEN);E.add(new THREE.Mesh(og,keep(new THREE.MeshStandardMaterial({color:o.night?'#15171b':'#2a2e33',roughness:1}))));
   /* paint */
   const lm=keep(new THREE.MeshStandardMaterial({color:o.snow?'#ffffff':'#F4F4EE',roughness:.85,polygonOffset:true,polygonOffsetFactor:-2,polygonOffsetUnits:-2}));
   const lines=new THREE.Mesh(t3Lines(),lm);lines.receiveShadow=true;E.add(lines);
@@ -16646,9 +16680,12 @@ function t3Build(){
   /* props */
   const props=new THREE.Mesh(t3Props(o),keep(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.55,metalness:.15})));props.castShadow=true;E.add(props);
   /* the bowl */
-  const conc=keep(new THREE.MeshStandardMaterial({color:'#5b616a',roughness:.95,side:THREE.DoubleSide})),dark=keep(new THREE.MeshStandardMaterial({color:'#2b3038',roughness:.95,side:THREE.DoubleSide}));
-  const seatT=keep(t3Tex(t3Seats(o),true,true)),seat=keep(new THREE.MeshStandardMaterial({map:seatT,roughness:.9,side:THREE.DoubleSide}));
-  const ribT=keep(t3Tex(t3Ribbon(o),true,true)),rib=keep(new THREE.MeshStandardMaterial({map:ribT,emissiveMap:ribT,emissive:'#ffffff',emissiveIntensity:o.night?.9:.45,roughness:.6,side:THREE.DoubleSide}));
+  const nk=o.night?.2:1,conc=keep(new THREE.MeshStandardMaterial({color:t3Col('#5b616a').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide})),dark=keep(new THREE.MeshStandardMaterial({color:t3Col('#2b3038').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide}));
+  const seatT=keep(t3Tex(t3Seats(o),true,true)),seat=keep(new THREE.MeshStandardMaterial({map:seatT,color:t3Col('#ffffff').multiplyScalar(o.night?.2:1),roughness:.9,side:THREE.DoubleSide}));
+  const ribT=keep(t3Tex(t3Ribbon(o),true,true)),rib=keep(new THREE.MeshStandardMaterial({map:ribT,emissiveMap:ribT,emissive:'#ffffff',emissiveIntensity:o.night?1.25:.45,roughness:.6,side:THREE.DoubleSide}));
+  /* the boards are seen from the field (their back faces): from outside the bowl, e.g. the TV camera behind the near
+     stands, the front faces show a plain dark board, never mirrored text */
+  rib.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n\tif(gl_FrontFacing)diffuseColor.rgb=vec3(.05,.055,.065);').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n\tif(gl_FrontFacing)totalEmissiveRadiance=vec3(0.);')};rib.customProgramCacheKey=()=>'t3ribBack';
   const suT=keep(t3Tex(t3Suites(),true,true)),sui=keep(new THREE.MeshStandardMaterial({map:suT,emissiveMap:suT,emissive:'#ffffff',emissiveIntensity:o.night?.75:.15,roughness:.4,side:THREE.DoubleSide}));
   const add=(g,m)=>{const x=new THREE.Mesh(g,m);E.add(x);return x};
   add(t3Band(SEG_ALL,...T3P.wall,22,1),rib);add(t3Band(SEG_ALL,...T3P.walk,30,1),conc);
@@ -16675,10 +16712,11 @@ function t3Build(){
     if(glowM.opacity>0){const sp=new THREE.Sprite(glowM);sp.scale.set(70,70,1);sp.position.copy(bank.position);E.add(sp)}}
   /* the crowd */
   const crowd=t3Crowd(o);E.add(crowd);
+  const side=t3Sideline(o);E.add(side);own.push(side.material,side.geometry,side.material.uniforms.uTex.value);
   /* sky */
   const sky=t3Sky(st);E.add(sky);own.push(sky.material,sky.geometry,crowd.material,crowd.geometry,crowd.material.uniforms.uTex.value);
   E.traverse(x=>{if(x.isMesh&&x.geometry)own.push(x.geometry)});
-  return {group:E,own,crowd,board:{cv:bcv,tex:bt,key:''},night:o.night,stage:st,wk,field};
+  return {group:E,own,crowd,side,board:{cv:bcv,tex:bt,key:''},night:o.night,stage:st,wk,field};
 }
 function t3Dispose(env){if(!env)return;env.group.parent&&env.group.parent.remove(env.group);const seen=new Set();for(const x of env.own){if(!x||seen.has(x))continue;seen.add(x);if(x.dispose)x.dispose()}}
 
@@ -16716,6 +16754,8 @@ function g3Init(){
     const sun=new THREE.DirectionalLight('#fff4e0',2.6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
     const sh=sun.shadow.camera;sh.left=-42;sh.right=42;sh.top=42;sh.bottom=-42;sh.near=10;sh.far=420;sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;
     sc.add(sun);sc.add(sun.target);G3.sun=sun;
+    /* the opposite light banks at night (no shadow; zero by day, so every shader compiles once for all light stages) */
+    const fill=new THREE.DirectionalLight('#dfe7ff',0);sc.add(fill);sc.add(fill.target);G3.fill=fill;
     G3.actors=new THREE.Group();G3.actors.name='actors';sc.add(G3.actors);
     G3.ov=g3MakeOverlays();sc.add(G3.ov.group);
     if(document.fonts&&document.fonts.load)Promise.all([document.fonts.load('700 80px "Barlow Condensed"'),document.fonts.load('italic 800 80px "Barlow Condensed"')]).then(()=>{G3.fontOk=true}).catch(()=>{G3.fontOk=true});else G3.fontOk=true;
@@ -16845,43 +16885,89 @@ function g3CamMode(){
   if(S.phase==='dead'&&S.celebrate)return 'cine';
   if((S.phase==='live'||S.phase==='dead')&&play&&play.st)return 'st';
   return 'tv'}
+/* screen fit for the TV rig: the ground rows `far` (its players' helmets) and `near` must sit between the score bug and the
+   bottom UI. Returns the target depth (centred, or `bias` of the way toward the far limit, never showing more than the
+   ground beyond row `fill` past either sideline, i.e. stands; when the span does not fit the far row wins); widens up to wMax. Ground row z projects to NDC y = (tz−z)·sinP / (D + (tz−z)·cosP) / t. */
+const G3FIT=[0,0,0,0];
+function g3Fit(w,wMax,far,near,P,D,bias,fill){
+  const H=G3.h||1,a=G3.w/Math.max(1,H),sp=Math.sin(P),cp=Math.cos(P),bug=Math.min(H*.42,G3.bugY||48);
+  const yT=1-2*bug/H,yB=2*G3.bot/H-1;let tz=(far+near)/2;
+  for(let it=0;it<4;it++){const t=w/(2*D)/a,dT=sp-yT*t*cp,E=dT>1e-4?yT*t*D/dT:1e4,En=yB*t*D/(sp+yB*t*cp),hi=far+E,lo=near-En;
+    G3FIT[2]=lo;G3FIT[3]=hi;if(lo<=hi){let b=bias==null?(far+near)/2:lo+(hi-lo)*bias;const sL=fill+E,sH=FW-fill-En;b=sL<=sH?clamp(b,sL,sH):Math.min(b,sH);tz=clamp(b,lo,hi);break}tz=hi;if(w>=wMax-1e-3)break;w=Math.min(wMax,w*Math.min(1.6,(near-far)/Math.max(1,E+En))*1.03)}
+  G3FIT[0]=w;G3FIT[1]=tz;return G3FIT}
+/* photo mode: the 2D pan (cam.x / cam.y, in 2D yards) and zoom (cam.z) drive the 3D shot, finger-for-finger */
+function g3Photo(cs,P){const p=G3.pho||(G3.pho={cx:cam.x,cy:cam.y,z:cam.z||1,w:cs.w,x:cs.x,tz:cs.z});
+  const k=scE()*(cs.w/Math.max(1,G3.w));p.x+=(cam.x-p.cx)*k;p.tz+=(cam.y-p.cy)*k*VY/Math.max(.2,Math.sin(P));p.cx=cam.x;p.cy=cam.y;
+  p.x=clamp(p.x,-20,140);p.tz=clamp(p.tz,-12,FW+10);cs.x=p.x;cs.z=p.tz;cs.w=clamp(p.w/Math.max(.3,(cam.z||1)/p.z),6,120);cs.xv=cs.zv=cs.wv=0}
 function g3Camera(dt){
   const port=G3.h>G3.w*1.2,mode=g3CamMode(),cs=G3.cs;let cut=false;
-  if(mode!==G3.mode){if(G3.mode&&(mode==='cine'||G3.mode==='cine'||mode==='kick'||G3.mode==='kick'))S.cutA=Math.max(S.cutA||0,.8);cut=true;G3.mode=mode}
-  if((S.cutN||0)!==G3.cutN){G3.cutN=S.cutN||0;cut=true}
-  if(mode==='kick'){const [x0,y0]=g3KickSpot(),c=G3.cam,k=kick||G3.lastKick,fl=!k||k.stage==='flight'?Math.min(1,k?k.flight:1):0;c.position.set(x0-13.5,5.6+fl*1.5,y0+(CEN-y0)*.25);
+  if(mode!==G3.mode){if(G3.mode&&(mode==='cine'||G3.mode==='cine'||mode==='kick'||G3.mode==='kick'))S.cutA=Math.max(S.cutA||0,.8);cut=true;G3.mode=mode;cs.t0=G3.t}
+  if((S.cutN||0)!==G3.cutN){G3.cutN=S.cutN||0;cut=true;cs.t0=G3.t}
+  if(!S.photo)G3.pho=null;
+  if(mode==='kick'&&!S.photo){const [x0,y0]=g3KickSpot(),c=G3.cam,k=kick||G3.lastKick,fl=!k||k.stage==='flight'?Math.min(1,k?k.flight:1):0;c.position.set(x0-13.5,5.6+fl*1.5,y0+(CEN-y0)*.25);
     const lx=lerp(120,Math.max(ball.x,x0+20),fl*.25),ly=lerp(2.4,Math.min(9,ball.z||4),fl*.35);c.lookAt(lx,ly,CEN+(y0-CEN)*.15);c.fov=port?50:28;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=x0+20;cs.z=CEN;return}
-  if(mode==='cine'){const h=S.celebrate||(play&&play.carrier)||null,bx=h?h.x:ball.x,by=h?h.y:ball.y;
-    if(cut||cs.cx==null){cs.cx=bx;cs.cz=by;cs.ca=-.55}g3Damp(cs,'cx',bx,.35,dt);g3Damp(cs,'cz',by,.35,dt);cs.ca+=dt*.12;
-    const r=port?16:15,c=G3.cam;c.position.set(cs.cx+Math.sin(cs.ca)*r,3.3,cs.cz+Math.cos(cs.ca)*r);c.lookAt(cs.cx,1.2,cs.cz);c.fov=port?44:28;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=cs.cx;cs.z=cs.cz;return}
-  /* TV + special teams: what the shot follows (fx, fz), how wide it is (w), smoothing (st) */
-  let w=port?26:40,fx=S.los+w*.12,fz=lerp(CEN,S.ballY,.45),st=.55,wst=.9,pitch=port?25:17.5,dist=port?80:88;
+  /* replays ride the ball low and close; a touchdown pushes in on the scorer and drifts round him */
+  if(mode==='cine'&&!S.photo){const cel=S.phase!=='replay'&&S.celebrate,h=cel||null,hb=!h&&ball.state==='held'&&play&&play.carrier;
+    const bx=h?h.x:hb?play.carrier.x:ball.x,by=h?h.y:hb?play.carrier.y:ball.y;
+    if(cut||cs.cx==null){cs.cx=bx;cs.cz=by;cs.cxv=cs.czv=0;cs.ca=cel?-.75:-.42}g3Damp(cs,'cx',bx,cel?.3:.18,dt);g3Damp(cs,'cz',by,cel?.35:.24,dt);cs.ca+=dt*(cel?.2:.07);
+    const age=G3.t-(cs.t0||0),q=1-Math.pow(1-clamp(age/1.1,0,1),3),r=(port?17:15.5)*(cel?1.45-.5*q:1.08-.08*q),c=G3.cam;
+    c.position.set(cs.cx+Math.sin(cs.ca)*r,cel?2.4+.5*q:3.1,cs.cz+Math.cos(cs.ca)*r);c.lookAt(cs.cx,cel?1.25:1.05,cs.cz);c.fov=port?42:26;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=cs.cx;cs.z=cs.cz;return}
+  /* TV + special teams: what the shot follows (fx), the ground rows it must keep in view (far, near), how wide it is (w),
+     smoothing (st). Landscape is the classic press-box angle; portrait climbs higher so the field, not the stands, fills
+     the tall frame. Runs tighten (bigger players) with a lead from the carrier's smoothed velocity. */
+  let pitch=port?36:18.5,dist=port?64:88;
+  let w=port?24:36,wMax=port?30:42,fx=S.los+w*(port?.06:.12),far=null,near=null,st=.5,wst=.8,bias=null;
   const live=(S.phase==='live'||S.phase==='dead'||S.phase==='replay')&&play;
-  if(mode==='st'){w=port?40:62;pitch+=5;dist+=8;const t=ball.state==='air'?null:play.carrier;if(t){fx=t.x+clamp((t.vx||0)*.6,-6,6);fz=lerp(CEN,t.y,.5)}else{fx=lerp(ball.x,ball.tx||ball.x,.35);fz=lerp(CEN,ball.y,.4)}st=.45}
+  if(mode==='st'){pitch+=port?2:4;dist+=8;const t=ball.state==='air'?null:play.carrier;
+    if(t){g3Lead(cs,t,dt);w=port?26:44;wMax=port?34:54;fx=t.x+clamp(cs.lvx*(port?.35:.55),-7,7);far=t.y-6;near=t.y+4;st=.26}
+    else{w=port?34:60;wMax=port?46:70;fx=lerp(ball.x,ball.tx==null?ball.x:ball.tx,.35);far=Math.min(ball.y,ball.ty==null?ball.y:ball.ty)-4;near=Math.max(ball.y,ball.ty==null?ball.y:ball.ty)+4;st=.42}}
   else if(live){const h=play.carrier||Q;
-    if(ball.state==='air'&&!ball.pitch){const far=hyp((ball.tx||0)-(ball.fx||0),(ball.ty||0)-(ball.fy||0));fx=lerp(ball.x,ball.tx,.5);fz=lerp(CEN,lerp(ball.y,ball.ty,.5),.85);w=clamp(far+(port?6:18),port?28:44,port?44:66);st=.4;wst=.7}
-    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);fx=lerp(Q.x,aim.x,.5);fz=lerp(CEN,lerp(Q.y,aim.y,.5),.9);w=clamp(d*(port?.75:1.05)+(port?16:18),port?28:44,port?48:66);st=.3;wst=.4}
-    else if(h){if(play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){w=port?30:48;fx=Q.x+w*.24;fz=lerp(CEN,Q.y,.4)}
-      else{fx=h.x+clamp((h.vx||0)*.5,-4,7);fz=lerp(CEN,h.y,.6);w=port?26:(Math.abs(h.vx||0)>6&&Math.abs(h.x-S.los)>14?46:40);st=.34}}
-    if(S.phase==='dead'){fx=cs.x;fz=cs.z;w=cs.w}}
-  else if(S.phase==='presnap'||S.phase==='pat'||S.phase==='wait'){fx=S.los+w*(port?.05:.12);fz=lerp(CEN,S.ballY,.45)}
-  fx=clamp(fx,-6+w*.4,126-w*.4);fz=clamp(fz,port?18:14,port?36:40);
-  if(cut){cs.x=fx;cs.z=fz;cs.w=w;cs.xv=cs.zv=cs.wv=0}else{g3Damp(cs,'x',fx,st,dt);g3Damp(cs,'z',fz,st*1.3,dt);g3Damp(cs,'w',w,wst,dt)}
-  /* keep the ball inside the frame when the spring lags */
-  if(live&&S.phase!=='dead'){const b=ball.state==='air'?ball:(play.carrier||Q);if(b){const hw=cs.w*.42;let o=b.x<cs.x-hw?b.x+hw-cs.x:b.x>cs.x+hw?b.x-hw-cs.x:0;if(o){cs.x+=o*Math.min(1,dt*9);cs.xv=0}}}
-  g3Rig(cs.x,cs.z-(port?1:3),cs.w,pitch,dist,0);
+    if(ball.state==='air'&&!ball.pitch){const tx=ball.tx==null?ball.x:ball.tx,ty=ball.ty==null?ball.y:ball.ty,fx0=ball.fx==null?ball.x:ball.fx,fy0=ball.fy==null?ball.y:ball.fy,d=hyp(tx-fx0,ty-fy0);
+      fx=lerp(ball.x,tx,.5);w=clamp(d*(port?.6:.9)+(port?10:16),port?24:40,port?40:64);wMax=port?48:70;far=Math.min(ty,ball.y)-1;near=Math.max(ty,ball.y,fy0)+2;st=.36;wst=.6;bias=.7}
+    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);fx=lerp(Q.x,aim.x,.5);w=clamp(d*(port?.7:1.02)+(port?12:16),port?26:42,port?44:66);wMax=port?52:72;
+      far=Math.min(aim.y-1,-1.5);near=Math.max(Q.y,aim.y)+2;st=.3;wst=.4;bias=.85}
+    else if(h&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){
+      /* dropback: from the QB to the deepest receiver, every route's depth on screen */
+      let x1=Q.x+12,y0=Q.y,y1=Q.y;for(const p of OFF){if(p===Q||p.blocker||!eligible(p))continue;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
+      const x0=Q.x-5;w=clamp((x1-x0)*1.08+4,port?26:44,port?40:62);wMax=port?44:66;fx=Math.max((x0+x1)/2,x0+w*.42);far=y0-1;near=y1+1.5;st=.38;wst=.7;bias=.75}
+    else if(h){g3Lead(cs,h,dt);const open=Math.abs(h.x-S.los)>12&&Math.hypot(h.vx||0,h.vy||0)>6;
+      w=port?(open?23:21):(open?35:31);wMax=port?28:44;fx=h.x+clamp(cs.lvx*(port?.32:.5),port?-3.5:-5,port?4:7.5);far=h.y-5;near=h.y+4;st=.2;wst=.7}
+    if(S.phase==='dead'){fx=cs.x;far=null;w=cs.w}}
+  else if(S.phase==='presnap'||S.phase==='pat'||S.phase==='wait'){
+    let y0=S.ballY-4,y1=S.ballY+4;for(const p of P){if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}far=y0-1;near=y1+1;bias=.85}
+  /* fit: helmets of the far row below the score bug, the near row above the bottom UI */
+  const Pr=pitch*Math.PI/180;let tz=cs.z;
+  if(far!=null){G3.bot=G3.h-Math.max(SAFE.b||0,22,G3.bugB||0)-(S.phase==='presnap'?G3.h*(port?.12:.2):G3.h*(port?.08:.04));
+    const f=g3Fit(w,Math.max(w,wMax),far-2.15/Math.tan(Pr),near,Pr,dist,bias,port?-3:-5);w=f[0];tz=f[1];G3.dbg=[+far.toFixed(1),+near.toFixed(1),+w.toFixed(1),+tz.toFixed(1),+f[2].toFixed(1),+f[3].toFixed(1)]}
+  else if(!live)tz=lerp(CEN,S.ballY,.45);
+  fx=clamp(fx,-6+w*.4,126-w*.4);tz=clamp(tz,port?6:4,port?47:44);
+  if(S.photo){g3Photo(cs,Pr);g3Rig(cs.x,cs.z,cs.w,pitch,dist,0);return}
+  if(cut){cs.x=fx;cs.z=tz;cs.w=w;cs.xv=cs.zv=cs.wv=0}else{g3Damp(cs,'x',fx,st,dt);g3Damp(cs,'z',tz,st*1.6,dt);g3Damp(cs,'w',w,wst,dt)}
+  /* keep the ball inside the frame when the spring lags (the spring keeps its velocity: no hitch) */
+  if(live&&S.phase!=='dead'){const b=ball.state==='air'?ball:(play.carrier||Q);if(b){const hw=cs.w*.43;let o=b.x<cs.x-hw?b.x+hw-cs.x:b.x>cs.x+hw?b.x-hw-cs.x:0;if(o)cs.x+=o*Math.min(1,dt*10)}}
+  g3Rig(cs.x,cs.z,cs.w,pitch,dist,0);
 }
+/* the carrier's velocity, smoothed (the lead must not twitch on every cut) */
+function g3Lead(cs,h,dt){if(cs.lp!==h){cs.lp=h;cs.lvx=h.vx||0;return}cs.lvx+=((h.vx||0)-cs.lvx)*Math.min(1,dt*4.5)}
 /* ---------- light, shadows, sky, crowd, video board, weather ---------- */
-const G3L={day:{h:['#c6dcff','#3d5a2c',1.15],s:['#fff3df',2.7],el:56,dx:-.55,dz:-.83,ex:1},late:{h:['#d8d2c4','#3d5130',1.0],s:['#ffd9a8',2.4],el:34,dx:-.88,dz:-.47,ex:1},
-  sunset:{h:['#c08a7a','#2f3a22',.85],s:['#ff9a55',2.1],el:13,dx:-.97,dz:-.24,ex:1.02},night:{h:['#4a5878','#141c12',.38],s:['#f1f5ff',2.7],el:64,dx:-.25,dz:.55,ex:1.06}};
+const G3L={day:{h:['#c4dbff','#3f5d2c',1.12],s:['#fff4e2',2.75],f:0,el:56,dx:-.55,dz:-.83,ex:1},late:{h:['#d8d2c4','#3d5130',1.0],s:['#ffd9a8',2.45],f:0,el:34,dx:-.88,dz:-.47,ex:1},
+  sunset:{h:['#c09284','#2c3620',.98],s:['#ff9a52',2.9],f:.3,el:11,dx:-.98,dz:-.2,ex:1.02},night:{h:['#141c30','#040604',.08],s:['#f7f8ff',4.3],f:.5,fd:[.05,.3,-.95],el:55,dx:-.55,dz:.62,ex:.82}};
+/* the key light (sun, or the far light banks at night) follows the shot; its shadow box is snapped to whole shadow-map
+   texels in light space, so shadows do not crawl or shimmer while the camera pans */
+const G3SH={half:42,map:2048};
 function g3Light(){const st=G3.env?G3.env.stage:'day',L=G3L[st]||G3L.day,wk=G3.env?G3.env.wk:'dry',dim=wk!=='dry'&&st!=='night'?.62:1,hm=wk!=='dry'?1.2:1;
-  G3.hemi.color.set(L.h[0]);G3.hemi.groundColor.set(L.h[1]);G3.hemi.intensity=L.h[2]*hm;G3.sun.color.set(L.s[0]);G3.sun.intensity=L.s[1]*dim;G3.R.toneMappingExposure=L.ex;
-  const e=L.el*Math.PI/180,tx=Math.round(G3.cs.x/.04)*.04,tz=Math.round(G3.cs.z/.04)*.04;G3.sun.target.position.set(tx,0,tz);G3.sun.position.set(tx+L.dx*Math.cos(e)*160,Math.sin(e)*160,tz+L.dz*Math.cos(e)*160);G3.sun.target.updateMatrixWorld();
-  if(!G3.fogK||G3.fogK!==st+wk){G3.fogK=st+wk;const c=(SKY3[st]||SKY3.day)[1];G3.scene.fog=st==='night'?new THREE.Fog('#05070d',110,520):new THREE.Fog(wk==='dry'?c:'#8a929c',wk==='dry'?260:150,wk==='dry'?1500:700)}}
+  G3.hemi.color.set(L.h[0]);G3.hemi.groundColor.set(L.h[1]);G3.hemi.intensity=L.h[2]*hm;G3.sun.color.set(L.s[0]);G3.sun.intensity=L.s[1]*dim;G3.R.toneMappingExposure=L.ex;G3.fill.intensity=L.f*dim;
+  const e=L.el*Math.PI/180,ce=Math.cos(e),dx=L.dx*ce,dy=Math.sin(e),dz=L.dz*ce,rl=Math.hypot(dz,dx)||1,rx=dz/rl,rz=-dx/rl,ux=dy*rz,uy=dz*rx-dx*rz,uz=-dy*rx,tx=G3.cs.x,tz=G3.cs.z;
+  const q=2*G3SH.half/G3SH.map,a=tx*rx+tz*rz,b=tx*ux+tz*uz,da=Math.round(a/q)*q-a,db=Math.round(b/q)*q-b,X=tx+da*rx+db*ux,Y=db*uy,Z=tz+da*rz+db*uz;
+  G3.sun.target.position.set(X,Y,Z);G3.sun.position.set(X+dx*160,Y+dy*160,Z+dz*160);G3.sun.target.updateMatrixWorld();
+  /* fill: opposite the key by day; at night a low back light from the far banks (turf sheen toward the camera, rim light) */
+  const fd=L.fd;G3.fill.target.position.set(tx,0,tz);if(fd)G3.fill.position.set(tx+fd[0]*120,fd[1]*120,tz+fd[2]*120);else G3.fill.position.set(tx-dx*100,60,tz-dz*100+40);G3.fill.target.updateMatrixWorld();
+  if(!G3.fogK||G3.fogK!==st+wk){G3.fogK=st+wk;const c=(SKY3[st]||SKY3.day)[1];G3.scene.fog=st==='night'?new THREE.Fog('#020308',90,520):new THREE.Fog(wk==='dry'?c:'#8a929c',wk==='dry'?260:150,wk==='dry'?1500:700)}}
 onFx('td',()=>{G3.ex=1});onFx('roar',()=>{G3.ex=Math.max(G3.ex,.75)});onFx('turnover',()=>{G3.ex=Math.max(G3.ex,.85)});onFx('safety',()=>{G3.ex=Math.max(G3.ex,.8)});
 onFx('fg',e=>{if(e&&e.good)G3.ex=Math.max(G3.ex,.7)});onFx('tackle',e=>{if(e&&e.big)G3.ex=Math.max(G3.ex,.4)});
 function g3Crowd(dt,now){const m=G3.env&&G3.env.crowd;if(!m)return;if(S.celebrate)G3.ex=Math.max(G3.ex,.6);G3.ex=Math.max(0,G3.ex-dt*.22);const u=m.material.uniforms,st=G3.env.stage;
-  u.uT.value=now/1000;u.uJ.value=G3.ex;u.uL.value=st==='night'?.5:st==='sunset'?.78:G3.env.wk!=='dry'?.8:1}
+  const sd=G3.env.side;if(sd){const v=sd.material.uniforms;v.uT.value=now/1000;v.uJ.value=G3.ex*.8;v.uL.value=st==='night'?1:st==='sunset'?.9:1;v.uN.value=0}
+  u.uT.value=now/1000;u.uJ.value=G3.ex;u.uL.value=st==='night'?.34:st==='sunset'?.8:G3.env.wk!=='dry'?.8:1;u.uN.value=st==='night'?1:st==='sunset'?.4:0}
 function g3Board(now){const b=G3.env&&G3.env.board;if(!b||now-(b.t||0)<500)return;b.t=now;const dd=$('#dd'),k=[S.score[0],S.score[1],S.q,Math.ceil(S.clock),dd?dd.textContent:''].join('|');if(k===b.key)return;b.key=k;t3BoardDraw(b.cv);b.tex.needsUpdate=true}
 function g3Weather(dt){let k=S.wx==='Rain'?'rain':S.wx==='Snow'?'snow':'';if(typeof stdIndoor==='function'&&stdIndoor())k='';
   if(k!==G3.wxk){if(G3.wx){G3.scene.remove(G3.wx.obj);G3.wx.obj.geometry.dispose();G3.wx.obj.material.dispose();if(G3.wx.tex)G3.wx.tex.dispose()}G3.wx=null;G3.wxk=k;
@@ -16895,6 +16981,20 @@ function g3Weather(dt){let k=S.wx==='Rain'?'rain':S.wx==='Snow'?'snow':'';if(typ
     const x=cx+(q[0]-.5)*sw+(rain?wd*(36-q[1])*.25:Math.sin(t*.7+q[4])*1.2+wd*(36-q[1])*.5),z=cz-25+q[2]*80,y=q[1];
     if(rain){const j=i*6;a[j]=x;a[j+1]=y;a[j+2]=z;a[j+3]=x+wd*.25;a[j+4]=y-1.25;a[j+5]=z}else{const j=i*3;a[j]=x;a[j+1]=y;a[j+2]=z}}
   if(!rain)X.obj.material.size=.2/Math.tan(G3.cam.fov*Math.PI/360);X.obj.geometry.attributes.position.needsUpdate=true}
+/* the chain crew on the far sideline: the down box at the line of scrimmage, the rods at the start of the series and at the
+   line to gain (orange markers, the chain between them), three crew in vests; built once, moved every frame */
+function g3Chains(){let C=G3.ch;const show=G3.env&&['presnap','live','dead','pat','wait','replay'].includes(S.phase)&&!S.conv&&S.firstDownX<110&&S.phase!=='pat';
+  if(!C){const g=new THREE.Group(),m=new THREE.MeshStandardMaterial({color:'#ff6a13',roughness:.5}),pm=new THREE.MeshStandardMaterial({color:'#1b1d22',roughness:.6}),
+      vest=new THREE.MeshStandardMaterial({color:'#ff8a1e',roughness:.8}),dark=new THREE.MeshStandardMaterial({color:'#24262b',roughness:.85});
+    const rod=()=>{const r=new THREE.Group(),p=new THREE.Mesh(new THREE.CylinderGeometry(.035,.035,2.6,6),pm);p.position.y=1.3;const t=new THREE.Mesh(new THREE.BoxGeometry(.06,.42,.3),m);t.position.y=2.45;r.add(p,t);return r};
+    const man=()=>{const r=new THREE.Group(),b=new THREE.Mesh(new THREE.CylinderGeometry(.17,.15,.75,8),vest),l=new THREE.Mesh(new THREE.CylinderGeometry(.14,.11,.95,8),dark),h=new THREE.Mesh(new THREE.SphereGeometry(.11,8,6),dark);
+      l.position.y=.48;b.position.y=1.32;h.position.y=1.85;r.add(b,l,h);return r};
+    const box=rod();box.children[1].scale.set(1.4,1.3,1.4);const a=rod(),b=rod(),ch=new THREE.Mesh(new THREE.BoxGeometry(1,.03,.03),pm);ch.position.y=.04;
+    const crew=[man(),man(),man()];g.add(box,a,b,ch,...crew);for(const o of g.children)o.traverse(x=>{if(x.isMesh)x.receiveShadow=true});
+    C=G3.ch={g,box,a,b,ch,crew};G3.scene.add(g)}
+  C.g.visible=!!show;if(!show)return;const z=-2.9,x1=S.firstDownX,x0=x1-10,lx=S.los;
+  C.box.position.set(lx,0,z);C.a.position.set(x0,0,z);C.b.position.set(x1,0,z);C.ch.position.set((x0+x1)/2,0,z+.05);C.ch.scale.x=10;
+  C.crew[0].position.set(lx,0,z-.55);C.crew[1].position.set(x0,0,z-.55);C.crew[2].position.set(x1,0,z-.55)}
 /* ---------- the frame ---------- */
 function g3EnsureEnv(){const k=t3EnvKey();if(k===G3.key&&G3.env)return;
   const tk=[S.home.id,S.away.id].join('|');if(G3.tkey&&tk!==G3.tkey)g3ResetAth();G3.tkey=tk;
@@ -16904,17 +17004,28 @@ function draw3D(now){
   const t0=performance.now(),c=ctx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);c.setTransform(DPR,0,0,DPR,0,0);
   if(!g3Init()){if(LG&&LG.settings){LG.settings.style='retro';applyStyle();toast('3D needs WebGL 2 · switched to Pixel')}return}
   if(!S.home||!S.away)return;
+  g3ToastSweep();
   if(S.game!==G3.gref){if(G3.gref!==undefined)g3ResetAth();G3.gref=S.game}   // a game ended / a new one began
   if(G3.cv.style.display!=='block')g3Show(true);
   if(++G3.fr%12===1)G3.cover=!!document.querySelector('#app>.screen:not([hidden])');if(G3.cover)return;   // a menu covers the field: no render
+  /* the score bug's footprint (top, or bottom when Settings put it there): the TV fit keeps the far row clear of it */
+  if(G3.fr%30===1){const sb=$('#sb'),bb=document.documentElement.dataset.bug==='bottom';let t=Math.max(14,SAFE.t||0)+6,bt=0;
+    if(sb&&!sb.hidden){const r=sb.getBoundingClientRect();if(r.height>0){if(bb)bt=(H||innerHeight)-r.top+4;else t=Math.max(t,r.bottom+4)}}G3.bugY=t;G3.bugB=bt}
   const dt=Math.min(.1,Math.max(0,(now-(G3.last||now))/1000));G3.last=now;G3.t+=dt;
   g3Size();const rb=G3.key;g3EnsureEnv();const rebuilt=rb!==G3.key;g3Camera(dt);g3Light();g3Crowd(dt,now);g3Board(now);g3Weather(dt);g3KickBall();g3Overlays(now);
   if(typeof ath3dFrame==='function'){if(G3.ph)g3DropPlaceholders();try{ath3dFrame(G3.actors,now,dt)}catch(e){if(!G3.athErr){G3.athErr=1;console.warn('ath3dFrame',e)}}}else g3Placeholders();
   const tj=performance.now();if(!rebuilt)G3.js=G3.js?G3.js*.9+(tj-t0)*.1:tj-t0;
+  g3Chains();
+  /* first frame of a new stadium / new teams: compile every program now (no hitch at the first flag, kick or weather) */
+  const nt=typeof A3!=='undefined'?A3.teams.size:0;if(rebuilt||G3.warm!==nt){G3.warm=nt;if(typeof ath3dWarm==='function')ath3dWarm();try{G3.R.compile(G3.scene,G3.cam)}catch(e){}}
   G3.R.render(G3.scene,G3.cam);
-  g3Overlay2D(c,now);
+  g3Overlay2D(c,now);g3Adapt(t0);
   const ms=performance.now()-t0;if(!rebuilt)G3.cpu=G3.cpu?G3.cpu*.9+ms*.1:ms;
 }
+/* no stale toast at the snap: toast() is wrapped (here, so 07 is untouched) to remember the phase it fired in; when a
+   presnap begins, a toast still showing from the previous play (BIG HIT!, BROKEN TACKLE!) is taken down */
+if(typeof toast==='function'&&!toast.g3){const t0=toast;toast=function(m){G3.tph=S.phase;return t0.apply(this,arguments)};toast.g3=1}
+function g3ToastSweep(){const ph=S.phase;if(ph==='presnap'&&G3.lph!=='presnap'&&G3.tph!=='presnap'){const t=$('#toast');if(t&&t.classList.contains('show'))t.classList.remove('show')}G3.lph=ph}
 /* the 2D layer over the 3D picture: receiver badges and the sling pull (06c arcDraw), your man's marker, the aim
    distance, the stick, the kick meter, the slow-motion letterbox */
 function g3Overlay2D(c,now){
@@ -16925,29 +17036,37 @@ function g3Overlay2D(c,now){
   if(S.phase==='live'||S.phase==='presnap')drawStick(c);
   g3KickUI(c,now);
   if(G3.env&&(G3.env.stage==='night'||G3.env.stage==='sunset')&&S.phase!=='kick'){const g=G3.vig&&G3.vig.w===W&&G3.vig.h===H&&G3.vig.st===G3.env.stage?G3.vig.g:null;let gr=g;
-    if(!gr){gr=c.createRadialGradient(W/2,H*.55,Math.min(W,H)*.35,W/2,H*.55,Math.hypot(W,H)*.62);gr.addColorStop(0,'rgba(0,0,8,0)');gr.addColorStop(1,G3.env.stage==='night'?'rgba(0,2,10,.5)':'rgba(20,6,0,.28)');G3.vig={w:W,h:H,st:G3.env.stage,g:gr}}
+    if(!gr){gr=c.createRadialGradient(W/2,H*.55,Math.min(W,H)*.35,W/2,H*.55,Math.hypot(W,H)*.62);gr.addColorStop(0,'rgba(0,0,8,0)');gr.addColorStop(.55,G3.env.stage==='night'?'rgba(0,2,12,.12)':'rgba(30,10,0,.05)');gr.addColorStop(1,G3.env.stage==='night'?'rgba(0,2,12,.8)':'rgba(30,10,0,.3)');G3.vig={w:W,h:H,st:G3.env.stage,g:gr}}
     c.fillStyle=gr;c.fillRect(0,0,W,H)}
   if(S.ts<.9){const a=(1-S.ts)*.9,bh=H*.07;c.fillStyle=`rgba(0,0,0,${a})`;c.fillRect(0,0,W,bh);c.fillRect(0,H-bh,W,bh)}
 }
+/* adaptive resolution: the real frame interval (smoothed) steps the pixel ratio down when frames run long and back up
+   with steady headroom; never above the device ratio (cap 2), never below 1. Pauses and tab switches are ignored. */
+function g3Adapt(t0){const A=G3.ad||(G3.ad={pt:0,ema:16,t:0,hi:Math.min(window.devicePixelRatio||1,2),px:0});if(!A.px)A.px=G3.R.getPixelRatio();
+  const d=A.pt?t0-A.pt:0;A.pt=t0;if(!(d>0&&d<250))return;A.ema+=(d-A.ema)*.06;A.t+=d;
+  const lo=Math.min(1,A.hi);let nx=A.px;if(A.t>1500&&A.ema>22&&A.px>lo)nx=Math.max(lo,A.px-.25);else if(A.t>4000&&A.ema<13.5&&A.px<A.hi)nx=Math.min(A.hi,A.px+.25);
+  if(nx!==A.px){A.px=nx;A.t=0;G3.R.setPixelRatio(nx);G3.R.setSize(G3.w,G3.h,true)}else if(A.t>4000)A.t=0}
 /* frame-cost readout for QA / Settings: CPU ms per frame (smoothed), draw calls and triangles of the last frame */
 function g3Stats(){const i=G3.R?G3.R.info.render:{calls:0,triangles:0};return {cpu:+(G3.cpu||0).toFixed(2),js:+(G3.js||0).toFixed(2),calls:i.calls,tris:i.triangles,crowd:G3.env&&G3.env.crowd?G3.env.crowd.userData.count:0,px:G3.R?G3.R.getPixelRatio():0}}
 
-/* soft stadium reflection for glossy helmets: a sky/turf gradient with four light banks, prefiltered once (PMREM).
-   Only the helmet materials use it, so the scene's tuned lighting is unchanged. Shared, never disposed. */
-function g3EnvTex(){
-  if(G3.envTex!==undefined)return G3.envTex;
-  G3.envTex=null;if(!G3.R)return null;
+/* stadium reflection for glossy helmets, one per light stage: sky, the ring of stands, the turf and the light banks
+   (blazing at night), prefiltered once each (PMREM). Only the helmet materials use it, so the tuned lighting is unchanged. */
+function g3EnvTex(st){
+  st=st||(G3.env?G3.env.stage:'day');const T=G3.envTx||(G3.envTx={});if(st in T)return T[st];
+  T[st]=null;if(!G3.R)return null;
   try{
-    const sc=new THREE.Scene(),g=new THREE.SphereGeometry(50,24,12),n=g.attributes.position.count,col=new Float32Array(n*3),
-      top=new THREE.Color('#9fc3ee'),hor=new THREE.Color('#e9eef5'),gr=new THREE.Color('#2e5a2a'),c=new THREE.Color();
-    for(let i=0;i<n;i++){const y=g.attributes.position.getY(i)/50;if(y>0)c.copy(hor).lerp(top,Math.min(1,y*1.6));else c.copy(hor).lerp(gr,Math.min(1,-y*4));col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b}
+    const N=st==='night',D=st==='sunset',sc=new THREE.Scene(),g=new THREE.SphereGeometry(50,48,24),n=g.attributes.position.count,col=new Float32Array(n*3),
+      top=new THREE.Color(N?'#020308':D?'#3a4a7a':'#78aee8'),hor=new THREE.Color(N?'#0b1120':D?'#f2a262':'#e6eef7'),std=new THREE.Color(N?'#1b1e27':D?'#4a3c38':'#59606b'),gr=new THREE.Color(N?'#2c5426':'#2f5c2b'),c=new THREE.Color();
+    for(let i=0;i<n;i++){const y=g.attributes.position.getY(i)/50,x=g.attributes.position.getX(i)/50;
+      if(y>.3)c.copy(hor).lerp(top,Math.min(1,(y-.3)*1.9));else if(y>.03){c.copy(std);if(((Math.atan2(x,g.attributes.position.getZ(i)/50)*9+y*40)|0)%3===0)c.multiplyScalar(1.25);if(y>.26)c.lerp(hor,(y-.26)/.04)}else c.copy(gr).multiplyScalar(N?.8:1);
+      col[i*3]=c.r;col[i*3+1]=c.g;col[i*3+2]=c.b}
     g.setAttribute('color',new THREE.BufferAttribute(col,3));
     sc.add(new THREE.Mesh(g,new THREE.MeshBasicMaterial({vertexColors:true,side:THREE.BackSide})));
-    const lm=new THREE.MeshBasicMaterial({color:new THREE.Color(6,6,6)}),bg=new THREE.BoxGeometry(14,5,1);
-    for(let k=0;k<4;k++){const b=new THREE.Mesh(bg,lm),a=k/4*Math.PI*2+.4;b.position.set(Math.cos(a)*40,26,Math.sin(a)*40);b.lookAt(0,0,0);sc.add(b)}
-    const pm=new THREE.PMREMGenerator(G3.R);G3.envTex=pm.fromScene(sc,.03).texture;pm.dispose();g.dispose();bg.dispose();
-  }catch(e){console.warn('g3EnvTex',e);G3.envTex=null}
-  return G3.envTex;
+    const k=N?20:D?8:5,lm=new THREE.MeshBasicMaterial({color:new THREE.Color(k,k,k*.96)}),bg=new THREE.BoxGeometry(12,4.5,1),nb=N?6:4;
+    for(let j=0;j<nb;j++){const b=new THREE.Mesh(bg,lm),a=j/nb*Math.PI*2+.4;b.position.set(Math.cos(a)*40,N?24:28,Math.sin(a)*40);b.lookAt(0,0,0);sc.add(b)}
+    const pm=new THREE.PMREMGenerator(G3.R);T[st]=pm.fromScene(sc,.025).texture;pm.dispose();g.dispose();bg.dispose();lm.dispose();
+  }catch(e){console.warn('g3EnvTex',e);T[st]=null}
+  return T[st];
 }
 
 /* =========================================================
@@ -17064,7 +17183,7 @@ function a3Body(kind,g,tone,capW){
     a3Loft(B,{r:sl.map(q=>[q[0],q[1]*ta,q[2]*ta]),n:12,c:[0,0,s*SW],mir,uv:RG.SLV,w:(x,y)=>a3w(A3_CHE,UA,a3S(.87,.775,y))});
     /* shoulder pad cap */
     if(!ref){const cp=[[.772,.074,.052],[.80,.09,.064],[.822,.085,.06],[.838,.066,.046],[.847,.036,.026],[.851,.006,.005]],kk=Math.pow(g,.9);
-      a3Loft(B,{r:cp.map(q=>[q[0],q[1]*kk,q[2]*kk,0,.004]),n:14,c:[0,0,s*SW],mir,uv:RG.CAP,vf:1,w:()=>a3w(A3_CHE,A3_CHE,0)})}
+      a3Loft(B,{r:cp.map(q=>[q[0],q[1]*kk,q[2]*kk,0,.004]),n:14,c:[0,0,s*SW],mir,uv:RG.CAP,vf:1,w:(x,y,z)=>a3w(A3_CHE,UA,clamp((Math.abs(z)-SW+.004)/.06,0,1)*.42)})}
     /* forearm (skin) and glove / hand */
     const fa=[[.645,.038,.036,0],[.61,.043,.04,.003],[.575,.04,.036,.002],[.54,.033,.031,0],[.51,.027,.026,0],[.49,.025,.025,0]],tf=Math.pow(ta,.9);
     a3Loft(B,{r:fa.map(q=>[q[0],q[1]*tf,q[2]*tf,q[3]]),n:12,c:[0,0,s*SW],mir,uv:ska,vf:1,w:(x,y)=>a3w(UA,FA,a3S(.655,.615,y))});
@@ -17095,6 +17214,17 @@ function a3Num(d,num){
         const pa=a*3,pb=b*3,pc=c*3,e1x=B.p[pb]-B.p[pa],e1y=B.p[pb+1]-B.p[pa+1],e1z=B.p[pb+2]-B.p[pa+2],e2x=B.p[pc]-B.p[pa],e2y=B.p[pc+1]-B.p[pa+1],e2z=B.p[pc+2]-B.p[pa+2];
         if((e1y*e2z-e1z*e2y)*B.n[pa]+(e1x*e2y-e1y*e2x)*B.n[pa+2]>0)B.ix.push(a,b,c,b,e,c);else B.ix.push(a,c,b,b,c,e)}}};
   put(.712,.1,t.length>1?.118:.062,false);put(.72,.125,t.length>1?.142:.076,true);
+  /* sleeve (TV) numbers on the outer face of each sleeve, upright, reading front to back from that side; they ride the arm */
+  const SL=[[.835,.074,.072],[.79,.072,.069],[.755,.067,.064],[.735,.066,.063]],ta=Math.pow(d.g,1.25);
+  const rad=y=>{let i=0;while(i<SL.length-2&&y<SL[i+1][0])i++;const a=SL[i],b=SL[i+1],w=clamp((y-a[0])/(b[0]-a[0]),0,1);return [(a[1]+(b[1]-a[1])*w)*ta,(a[2]+(b[2]-a[2])*w)*ta]};
+  for(let s=-1;s<=1;s+=2){const UA=s<0?A3_UAL:A3_UAR,n=t.length,hh=.043,yc=.777,wd=n>1?.07:.036,gap=wd*.08,dw=(wd-gap*(n-1))/n,C=4,Rr=3;
+    for(let k=0;k<n;k++){const dg=+t[k],b0=B.p.length/3,x0=-wd/2+k*(dw+gap);
+      for(let ri=0;ri<=Rr;ri++)for(let ci=0;ci<=C;ci++){const y=yc+hh/2-hh*ri/Rr,[ra,rb]=rad(y),x=s*(x0+dw*ci/C),q=Math.sqrt(Math.max(0,1-(x/ra)*(x/ra))),z=s*(d.SW+rb*q+.004);
+        let nx=x/(ra*ra),nz=s*q/rb;const l=Math.hypot(nx,nz)||1;B.p.push(x,y,z);B.n.push(nx/l,0,nz/l);
+        B.u.push((dg*51+4+43*ci/C)/512,1-(6+116*ri/Rr)/128);const w=a3w(A3_CHE,UA,a3S(.87,.775,y));B.si.push(w[0],w[1],0,0);B.sw.push(1-w[2],w[2],0,0)}
+      for(let ri=0;ri<Rr;ri++)for(let ci=0;ci<C;ci++){const a=b0+ri*(C+1)+ci,b=a+1,c=a+C+1,e=c+1;
+        const pa=a*3,pb=b*3,pc=c*3,e1x=B.p[pb]-B.p[pa],e1y=B.p[pb+1]-B.p[pa+1],e1z=B.p[pb+2]-B.p[pa+2],e2x=B.p[pc]-B.p[pa],e2y=B.p[pc+1]-B.p[pa+1],e2z=B.p[pc+2]-B.p[pa+2];
+        if((e1y*e2z-e1z*e2y)*B.n[pa]+(e1x*e2y-e1y*e2x)*B.n[pa+2]>0)B.ix.push(a,b,c,b,e,c);else B.ix.push(a,c,b,b,c,e)}}}
   return a3Geo(B,true)}
 /* helmet: shell lofted along x (stripe stays an even width over the crown), face opening, jaw guards, facemask bars, visor, chin strap */
 function a3Helm(big,vis){
@@ -17128,13 +17258,17 @@ function a3Tex(cv){const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBCo
 const a3Fill=(g,c,r)=>{g.fillStyle=c;g.fillRect(r[0],r[1],r[2],r[3])};
 function a3Skin(g){for(let i=0;i<4;i++){const t=athHex((typeof TONES!=='undefined'&&TONES[i])||'#A8693A'),a=[i*128,320,64,64],f=a3SKF(i),dk=shade(t,-.3);
   const gr=g.createLinearGradient(0,320,0,384);gr.addColorStop(0,shade(t,.06));gr.addColorStop(1,shade(t,-.08));g.fillStyle=gr;g.fillRect(a[0],a[1],a[2],a[3]);a3Grain(g,a,.05,260);
-  a3Fill(g,t,f);const X=u=>f[0]+u*64,Y=v=>f[1]+v*64;
-  g.fillStyle=shade(t,-.12);g.fillRect(X(0),Y(0),64,Y(.3)-Y(0));/* forehead shade (helmet) */
-  g.fillStyle=dk;g.fillRect(X(.43),Y(.47),X(.57)-X(.43),Y(.62)-Y(.47));/* nose */
-  g.fillStyle='#16110d';for(const u of [.44,.56]){g.beginPath();g.ellipse(X(u),Y(.44),2.6,1.5,0,0,A3_TAU);g.fill()}
+  const X=u=>f[0]+u*64,Y=v=>f[1]+v*64,fg=g.createLinearGradient(0,Y(0),0,Y(1));
+  /* the face under the shell: occluded brow, lit cheeks, a darker jaw line; then brows, eyes (white, iris), nose, lips, eye black */
+  fg.addColorStop(0,shade(t,-.3));fg.addColorStop(.3,shade(t,-.18));fg.addColorStop(.52,shade(t,.02));fg.addColorStop(.8,shade(t,-.04));fg.addColorStop(1,shade(t,-.22));g.fillStyle=fg;g.fillRect(f[0],f[1],64,64);
+  g.fillStyle='rgba(190,60,40,.08)';for(const u of [.38,.62]){g.beginPath();g.ellipse(X(u),Y(.6),5,4,0,0,A3_TAU);g.fill()}
+  g.fillStyle=shade(t,-.4);for(const u of [.44,.56]){g.beginPath();g.ellipse(X(u),Y(.44),4.2,2.6,0,0,A3_TAU);g.fill()}
+  g.fillStyle='#e9e4da';for(const u of [.44,.56]){g.beginPath();g.ellipse(X(u),Y(.445),2.5,1.25,0,0,A3_TAU);g.fill()}
+  g.fillStyle='#1d140e';for(const u of [.443,.557]){g.beginPath();g.arc(X(u),Y(.445),1.05,0,A3_TAU);g.fill()}
+  g.fillStyle=shade(t,-.55);for(const u of [.44,.56])g.fillRect(X(u)-3.6,Y(.39),7.2,1.6);
+  g.fillStyle=shade(t,.12);g.fillRect(X(.49),Y(.47),X(.51)-X(.49),Y(.58)-Y(.47));g.fillStyle=shade(t,-.32);g.beginPath();g.ellipse(X(.5),Y(.605),3.2,1.3,0,0,A3_TAU);g.fill();
   g.fillStyle='rgba(10,8,6,.85)';for(const u of [.425,.575]){g.fillRect(X(u)-4,Y(.5),8,2.2)}/* eye black */
-  g.fillStyle=shade(t,-.45);for(const u of [.44,.56])g.fillRect(X(u)-3,Y(.385),6,1.4);
-  g.fillStyle=shade(t,-.38);g.fillRect(X(.46),Y(.72),X(.54)-X(.46),1.6)}}
+  g.fillStyle=shade(t,-.42);g.fillRect(X(.455),Y(.715),X(.545)-X(.455),1.4);g.fillStyle=shade(t,-.16);g.fillRect(X(.465),Y(.735),X(.535)-X(.465),1.4)}}
 function a3TeamTex(team,U){
   const [cv,g]=a3Cv(512,512),RG=A3_RG,J=athHex(U.j),N=athHex(U.n),Pn=athHex(U.p),PC=athHex(U.pc),K=athHex(U.k),SC=athHex(U.sc||U.n),jl=lum(J);
   const trim=contrasty(SC,J)?SC:contrasty(N,J)?N:inkOn(J),gl=athHex(jl>.8?team.c1:contrasty(N,J)?N:inkOn(J)),tape=lum(K)<.45?'#f1f1ee':'#1c1d21';
@@ -17174,12 +17308,18 @@ function a3TeamTex(team,U){
   a3Fill(hg,athHex(U.m||'#888888'),RG.FM);const vg=hg.createLinearGradient(0,192,0,256);vg.addColorStop(0,'#3a4452');vg.addColorStop(1,'#101318');hg.fillStyle=vg;hg.fillRect(64,192,64,64);
   a3Fill(hg,lum(Hh)>.7?'#2a2b2f':'#ececec',RG.CS);
   return {body:a3Tex(cv),dig:a3Tex(dc),helm:a3Tex(hc)}}
+/* roughness for the shared body atlas layout (G channel): matte jersey mesh, a sheen on the pants, sweat-glossy skin */
+function a3Rough(){if(A3.rough)return A3.rough;const [cv,g]=a3Cv(128,128),RG=A3_RG,q=r=>[r[0]/4,r[1]/4,r[2]/4,r[3]/4];g.fillStyle='rgb(200,200,200)';g.fillRect(0,0,128,128);
+  for(const r of [RG.SHO,RG.PAN])a3Fill(g,'rgb(140,140,140)',q(r));a3Fill(g,'rgb(170,170,170)',q(RG.CLT));a3Fill(g,'rgb(160,160,160)',q(RG.GLV));
+  for(let i=0;i<4;i++){a3Fill(g,'rgb(118,118,118)',q(a3SKA(i)));a3Fill(g,'rgb(112,112,112)',q(a3SKF(i)))}
+  const t=new THREE.CanvasTexture(cv);A3.rough=t;A3.res.add(t);return t}
 function a3Team(team){
   const U=uniColorsC(team);let e=A3.teams.get(team);if(e&&e.U===U)return e;if(e)for(const k of ['mb','mn','mh'])e[k].dispose();
   const T=a3TeamTex(team,U),hf=U.hf||'g';
   e={U,mb:new THREE.MeshStandardMaterial({map:T.body,roughness:.74,metalness:0}),
     mn:new THREE.MeshStandardMaterial({map:T.dig,alphaTest:.5,roughness:.6,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2}),
-    mh:new THREE.MeshPhysicalMaterial({map:T.helm,roughness:hf==='m'?.52:hf==='c'?.18:.26,metalness:hf==='c'?.75:.04,clearcoat:hf==='m'?0:1,clearcoatRoughness:.06,side:THREE.DoubleSide,envMap:typeof g3EnvTex==='function'?g3EnvTex():null,envMapIntensity:hf==='m'?.5:1})};
+    mh:new THREE.MeshPhysicalMaterial({map:T.helm,roughness:hf==='m'?.52:hf==='c'?.18:.26,metalness:hf==='c'?.75:.04,clearcoat:hf==='m'?0:1,clearcoatRoughness:.05,side:THREE.DoubleSide,envMap:typeof g3EnvTex==='function'?g3EnvTex():null,envMapIntensity:hf==='m'?.5:1.1})};
+  e.mb.roughnessMap=a3Rough();e.mb.roughness=1;
   for(const k of ['mb','mn','mh'])A3.res.add(e[k]);A3.teams.set(team,e);return e}
 function a3RefMat(){if(A3.ref)return A3.ref;const [cv,g]=a3Cv(512,512),RG=A3_RG;
   const stripe=(r,w)=>{a3Fill(g,'#f4f4f2',r);g.fillStyle='#121214';for(let x=0;x<r[2];x+=w*2)g.fillRect(r[0]+x,r[1],w,r[3])};
@@ -17220,7 +17360,7 @@ function a3Eval(p,a,now,dt){
   for(const i of ATH_UP){if(wU>=1){o[i]=T[i];continue}let d=T[i]-s[i];if(i>=10){while(d>Math.PI)d-=A3_TAU;while(d<-Math.PI)d+=A3_TAU}o[i]=s[i]+d*wU}}
 
 /* ---------- 3D solve: sagittal pose → bone matrices (group space) ---------- */
-const A3F=new Float64Array(A3_NB*12),A3M=new Float64Array(9),A3R=new Float64Array(9),A3K=new Float64Array(9),A3Q=new Float64Array(12);
+const A3IKB=new Float64Array(12),A3M1=new Float64Array(9),A3F=new Float64Array(A3_NB*12),A3M=new Float64Array(9),A3R=new Float64Array(9),A3K=new Float64Array(9),A3Q=new Float64Array(12);
 function a3RYZ(m,yaw,pit){const cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pit),sp=Math.sin(pit);m[0]=cp*cy;m[1]=-sp;m[2]=-cp*sy;m[3]=sp*cy;m[4]=cp;m[5]=-sp*sy;m[6]=sy;m[7]=0;m[8]=cy}
 function a3Bas(m,yx,yy,yz,zx,zy,zz){let l=Math.hypot(yx,yy,yz)||1;yx/=l;yy/=l;yz/=l;const d=zx*yx+zy*yy+zz*yz;zx-=d*yx;zy-=d*yy;zz-=d*yz;l=Math.hypot(zx,zy,zz);if(l<1e-9){zx=0;zy=0;zz=1;l=1}zx/=l;zy/=l;zz/=l;
   m[0]=yy*zz-yz*zy;m[1]=yz*zx-yx*zz;m[2]=yx*zy-yy*zx;m[3]=yx;m[4]=yy;m[5]=yz;m[6]=zx;m[7]=zy;m[8]=zz}
@@ -17276,7 +17416,7 @@ function a3Solve(f,now,dt){
   let phi=0;if(sp>.8&&!lie)phi=a3W((a.kL2===2?Math.atan2(-vy,-vx):Math.atan2(vy,vx))-a.yaw);const cph=Math.cos(phi),sph=Math.sin(phi);
   const kl=a.kL2;let zs=.1-.055*wl;if(kl===10||kl===11)zs=.13+.02*(g-1);else if(kl>=12&&kl<=17)zs=kl===15?.075:.112;else if(kl===7)zs=.13;else if(lie)zs=.1;else if(ref)zs=.09-.045*wl;
   if(dt>0)a.zs+=(zs-a.zs)*Math.min(1,dt*8);else a.zs=zs;
-  const K=A3K,IK=new Float64Array(12);
+  const K=A3K,IK=A3IKB;
   for(let s=-1;s<=1;s+=2){const L=s<0,TH=L?A3_THL:A3_THR,SH=L?A3_SHL:A3_SHR,FT=L?A3_FTL:A3_FTR,fx=o[L?4:6],fy=o[L?5:7],pt=o[L?8:9];
     const dx=(fx-hx)*fS,ax=hx+dx*cph,az=s*a.zs+dx*sph;a3Pt(A3_PEL,0,0,s*HW,Q,0);
     const cb=Math.cos(twH),sb=Math.sin(twH),bx=cb+s*.12*sb,bz=-sb+s*.12*cb;
@@ -17291,18 +17431,27 @@ function a3Solve(f,now,dt){
   if(!ref&&ball&&ball.state==='air'&&!ball.pitch&&(ku===14||ku===30)){const R2=Math.hypot(ball.x-p.x,ball.y-p.y,(ball.z||0)-1.3*H/A3_H0);if(R2<2.4){reach=Math.pow(1-R2/2.4,1.5);bl=[ball.x,ball.z||0,ball.y]}}
   /* root: yaw · roll · (offset) · fall/dive pitch, scaled by height */
   const th=-yaw,cy=Math.cos(th),sy=Math.sin(th),ca=Math.cos(a.roll),sa=Math.sin(a.roll),cr=Math.cos(rot),sr=Math.sin(rot),Rr=A3R;
-  {const m1=[cr,-sr*ca,-sr*sa,sr,cr*ca,cr*sa,0,-sa,ca];for(let c=0;c<3;c++){const x=m1[c*3],y=m1[c*3+1],z=m1[c*3+2];Rr[c*3]=x*cy+z*sy;Rr[c*3+1]=y;Rr[c*3+2]=-x*sy+z*cy}}
+  {const m1=A3M1;m1[0]=cr;m1[1]=-sr*ca;m1[2]=-sr*sa;m1[3]=sr;m1[4]=cr*ca;m1[5]=cr*sa;m1[6]=0;m1[7]=-sa;m1[8]=ca;for(let c=0;c<3;c++){const x=m1[c*3],y=m1[c*3+1],z=m1[c*3+2];Rr[c*3]=x*cy+z*sy;Rr[c*3+1]=y;Rr[c*3+2]=-x*sy+z*cy}}
   const lift=o[15]+.085*Math.abs(Math.sin(rot)),rxo=o[16],ox=rxo,oy=lift*ca,oz=lift*sa,Tx=p.x+H*(ox*cy+oz*sy),Ty=(p.z||0)+H*oy,Tz=p.y+H*(-ox*sy+oz*cy);
   let blx=0,bly=0,blz=0;if(bl){const wx=(bl[0]-Tx)/H,wy=(bl[1]-Ty)/H,wz=(bl[2]-Tz)/H;blx=Rr[0]*wx+Rr[1]*wy+Rr[2]*wz;bly=Rr[3]*wx+Rr[4]*wy+Rr[5]*wz;blz=Rr[6]*wx+Rr[7]*wy+Rr[8]*wz}
-  const wave=ref&&p.sig==='wave'&&now<p.sigEnd,ctw=Math.cos(twC),stw=Math.sin(twC);
+  const wave=ref&&p.sig==='wave'&&now<p.sigEnd,ctw=Math.cos(twC),stw=Math.sin(twC),cel=!ref&&S.celebrate===p&&!lie?S.celebPose:null;
   for(let s=-1;s<=1;s+=2){const L=s<0,UA=L?A3_UAL:A3_UAR,FA=L?A3_FAL:A3_FAR,u=o[L?10:12],e=o[L?11:13];a3Pt(A3_CHE,0,.095,s*SW,Q,0);
     const ex=Math.sin(u)*.172,ey=-Math.cos(u)*.172,fa=u+e,wx0=ex+Math.sin(fa)*.148,wy0=ey-Math.cos(fa)*.148;
     let lat=s*(.032+.03*g),cv=two?.86:push?.4:0;if(carry===(L?2:1))cv=.25;
     let lz=lat+(s*.045-Q[2]-lat)*cv,wx=wx0*ctw+lz*stw,wy=wy0,wz=-wx0*stw+lz*ctw;
-    if(wave){const q=(now/260)%2,w=athE(q<1?q:2-q),c2=L?w:1-w;wx=.2;wy=-.03;wz=s*(.3*c2-.05)-Q[2]*.0}
+    /* incomplete pass: both arms straight out at shoulder height, scissoring across in front of the chest, palms down */
+    let pbx=null,pby=0,pbz=0;
+    if(wave){const q=((now-(p.sigT0||0))/300)%2,w=athE(q<1?q:2-q);wx=.04+.24*w;wy=-.035+(s>0?.035:0)*w;wz=s*(.33-.45*w);pbx=-.2;pby=-.6;pbz=s*.4}
+    else if(cel==='up'||cel==='flex'||cel==='point'||cel==='salute'){const R2=s>0;
+      if(cel==='up'){wx=.03;wy=.31;wz=s*.1;pbx=.1;pby=0;pbz=s}
+      else if(cel==='flex'){const b=Math.sin(now/170)*.012;wx=.03;wy=.12+b;wz=s*.2;pbx=0;pby=-.3;pbz=s}
+      else if(cel==='point'&&R2){wx=.2;wy=.22;wz=s*.07;pbx=0;pby=-.4;pbz=s}
+      else if(cel==='salute'&&R2){a3Pt(A3_HED,.075,.07,.025,Q,3);wx=Q[3]-Q[0];wy=Q[4]-Q[1];wz=Q[5]-Q[2];pbx=.15;pby=-.1;pbz=1}}
     let tx=Q[0]+wx,ty=Q[1]+wy,tz=Q[2]+wz;
     if(reach>0){tx+=(blx-tx-.05)*reach;ty+=(bly-ty)*reach;tz+=(blz+s*.045-tz)*reach}
-    const pxo=ex-.05,pzo=s*.1;a3IK(Q[0],Q[1],Q[2],tx,ty,tz,.172,.148,pxo*ctw+pzo*stw,ey,-pxo*stw+pzo*ctw,IK);
+    /* shrug: a hand above the shoulder lifts the joint up and out so the arm clears the pad */
+    const rise=clamp((ty-Q[1]+.05)/.2,0,1);if(rise>0){const c=A3_CHE*12,k2=rise*(ref?.6:1);Q[0]+=A3F[c+3]*.022*k2+A3F[c+6]*s*.022*k2;Q[1]+=A3F[c+4]*.022*k2+A3F[c+7]*s*.022*k2;Q[2]+=A3F[c+5]*.022*k2+A3F[c+8]*s*.022*k2}
+    const pxo=ex-.05,pzo=s*.1;if(pbx==null)a3IK(Q[0],Q[1],Q[2],tx,ty,tz,.172,.148,pxo*ctw+pzo*stw,ey,-pxo*stw+pzo*ctw,IK);else a3IK(Q[0],Q[1],Q[2],tx,ty,tz,.172,.148,pbx,pby,pbz,IK);
     const hzx=IK[7]*IK[11]-IK[8]*IK[10],hzy=IK[8]*IK[9]-IK[6]*IK[11],hzz=IK[6]*IK[10]-IK[7]*IK[9];
     a3Bas(M,Q[0]-IK[0],Q[1]-IK[1],Q[2]-IK[2],hzx,hzy,hzz);a3Set(UA,M,Q[0],Q[1],Q[2]);
     a3Bas(M,IK[0]-IK[3],IK[1]-IK[4],IK[2]-IK[5],hzx,hzy,hzz);a3Set(FA,M,IK[0],IK[1],IK[2])}
@@ -17354,10 +17503,13 @@ function a3FlagFrame(){
   if(q<1)m.rotation.set(q*9+f.rot,f.rot+q*4,q*5);else m.rotation.set(0,f.rot,0)}
 
 /* ---------- public API ---------- */
+/* warm-up (08t compiles the scene right after): the ball and the flag exist, so their programs are built before first use */
+function ath3dWarm(){if(!A3.g)return;a3BallMesh();if(!A3.flag){const mt=new THREE.MeshStandardMaterial({color:0xffd21f,roughness:.8,emissive:0x3a2c00,side:THREE.DoubleSide});A3.res.add(mt);A3.flag=new THREE.Mesh(a3FlagGeo(),mt);A3.flag.castShadow=true;A3.flag.visible=false;A3.g.add(A3.flag)}}
 function ath3dFrame(group,now,dt){
   if(typeof THREE==='undefined'||!group)return;if(A3.g!==group){if(A3.g)ath3dReset();A3.g=group}
   if(now==null)now=performance.now();if(dt==null)dt=A3.now<0?0:(now-A3.now)/1000;A3.now=now;dt=clamp(dt||0,0,.05);if(S.photo||S.paused)dt=0;
   if(S.phase==='dead'&&play&&A3.dp!==play){A3.dp=play;A3.da=now}
+  const st=G3.env?G3.env.stage:'day';if(A3.envSt!==st&&typeof g3EnvTex==='function'){A3.envSt=st;const ev=g3EnvTex(st);for(const e of A3.teams.values())e.mh.envMap=ev}
   let car=null;if(play&&ball&&ball.state==='held'){if(S.phase!=='replay')car=play.carrier;else{let bd=1.3;for(const p of P){const dd=Math.abs(p.x-ball.x)+Math.abs(p.y-ball.y);if(dd<bd){bd=dd;car=p}}}}
   /* 08d/08e read ATH.car / ATH.dt / ATH.deadAt: use this renderer's clock while evaluating, then restore */
   const c0=ATH.car,d0=ATH.dt,a0=ATH.deadAt,p0=ATH.deadPlay;ATH.car=car;ATH.dt=dt;if(A3.dp){ATH.deadAt=A3.da;ATH.deadPlay=A3.dp}A3.fr++;if(A3.carH)A3.carH.m=0;
@@ -17378,7 +17530,7 @@ function ath3dReset(){
   for(const f of A3.figs.values())a3Drop(f);A3.figs.clear();
   for(const m of [A3.ball,A3.flag])if(m&&m.parent)m.parent.remove(m);
   for(const r of A3.res)try{r.dispose()}catch(e){}
-  A3.res.clear();A3.teams.clear();A3.geo.clear();A3.ref=null;A3.ball=null;A3.flag=null;A3.bp=null;A3.bv=null;A3.carH=null;A3.now=-1;A3.g=null;A3.dp=null}
+  A3.res.clear();A3.teams.clear();A3.geo.clear();A3.ref=null;A3.rough=null;A3.envSt=null;A3.ball=null;A3.flag=null;A3.bp=null;A3.bv=null;A3.carH=null;A3.now=-1;A3.g=null;A3.dp=null}
 
 /* =========================================================
    09 · Main loop + boot
