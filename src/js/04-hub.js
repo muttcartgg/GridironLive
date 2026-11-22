@@ -277,7 +277,7 @@ function gameHero(g,wi,extra,link){
   return `<div class="card ng" style="--a:${deepC(u)};--b:${deepC(opp)};--a1:${u.c1};--b1:${opp.c1}">
     <div class="ng-bar"><span class="gln">GLN</span><span class="ng-wk">${esc(w?w.label:'')} · ${g.neutral?'Neutral':home?'Home':'Away'}</span><span class="ng-ko">${esc(KICK[g.slot]||g.slot||'')} <small>ET</small></span></div>
     <div class="ng-mu">${side(u,'a')}<div class="ng-mid"><span class="at">${home||g.neutral?'VS':'AT'}</span><span class="ln">${esc(lineStr(u,opp,sp))}</span></div>${side(opp,'b')}</div>
-    <div class="ng-wp" style="--w:${(wp*100).toFixed(1)}%"><b>${pct(wp)}</b><span class="bar"><i></i><i></i></span><b>${pct(1-wp)}</b><em>Win odds</em></div>
+    <div class="ng-wp" style="--w:${(wp*100).toFixed(1)}%"><b>${wpP(wp)}%</b><span class="bar"><i></i><i></i></span><b>${100-wpP(wp)}%</b><em>Win odds</em></div>
     <div class="ng-meta"><span>${WX_ICON[g.wx]||''} ${esc(g.wx||'Clear')} · ${fcTemp(g,wi)}°</span><span>${esc(venue||'')}</span>${gameFlags(LG,g,wi).map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join('')}</div>
     ${extra||''}</div>`;
 }
@@ -332,7 +332,7 @@ function leagueNewsHTML(){
   const potw=LG.potw?`<div class="card"><div class="eyebrow">${confName(u.conf)} player of the week</div><div class="tname">${badge(T(LG.potw.team))}<span><b>${esc(LG.potw.name)}</b> · ${LG.potw.pos} · ${esc(T(LG.potw.team).city)}</span></div></div>`:'';
   const lw=LG.lastWeek?`<div class="card"><div class="eyebrow">Around the league · ${esc(LG.lastWeek.label)}</div><div class="list">${LG.lastWeek.games.filter(x=>x.h===LG.user||x.a===LG.user||(x.tag&&!/First Round|Second Round/.test(x.tag))||x.upset||((x.rh||x.ra)&&T(x.h).div===u.div)||T(x.h).conf===u.conf).sort((a,b)=>((b.h===LG.user||b.a===LG.user)-(a.h===LG.user||a.a===LG.user))||(!!(b.rh||b.ra)-!!(a.rh||a.ra))).slice(0,14).map(x=>{const hw=x.hs>x.as;return `<div class="lrow"><span class="l">${tcell(T(x.h),(x.rh?'#'+x.rh+' ':'')+T(x.h).city)}<b class="${hw?'res-w':''}">${x.hs}</b><span class="note">–</span><b class="${!hw?'res-w':''}">${x.as}</b>${tcell(T(x.a),(x.ra?'#'+x.ra+' ':'')+T(x.a).city)}</span>${x.upset?'<span class="tag hot">Upset</span>':x.tag?`<span class="note">${esc(x.tag)}</span>`:''}</div>`}).join('')}</div></div>`:'';
   const news=LG.news.length?`<div class="card news"><div class="eyebrow">Program news</div><div class="list">${LG.news.slice(0,8).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
-  const conf=`<div class="card"><div class="eyebrow">${confName(u.conf)} standings</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th></tr></thead><tbody>${cs.map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t)}</td><td class="n">${t.rec.cw}–${t.rec.cl}</td><td class="n">${recStr(t)}</td></tr>`).join('')}</tbody></table></div></div>`;
+  const conf=`<div class="card"><div class="eyebrow">${confName(u.conf)} standings</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th></tr></thead><tbody>${cs.map(t=>`<tr class="${t.id===LG.user?'me':''}"><td class="tn">${tcell(t)}</td><td class="n">${t.rec.cw}–${t.rec.cl}</td><td class="n">${recStr(t)}</td></tr>`).join('')}</tbody></table></div></div>`;
   return `<div class="grid2">${news}${lw||conf}</div>`+gameOfWeek()+`<div class="grid2">${heis}${potw}${lw?conf:''}</div>`;
 }
 function hubSchedule(){
@@ -340,7 +340,7 @@ function hubSchedule(){
     let res='';if(g.hs!=null){const us=home?g.hs:g.as,them=home?g.as:g.hs;res=`<span class="${us>them?'res-w':'res-l'}">${us>them?'W':'L'} ${us}–${them}</span>`}else res=i===LG.week?'<span class="tag blue">Next</span>':`<span class="note">${WX_ICON[g.wx]}</span>`;
     const fl=gameFlags(LG,g,i).filter(f=>f[1]!=='Conference game').map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join(' ');
     return `<tr class="${i===LG.week?'me':''}"><td>${esc(w.kind==='reg'?'Wk '+(i+1):'Post')}</td><td><div class="tname">${g.neutral?'vs':home?'vs':'at'} ${badge(opp,'sm')}<span>${esc(rankTag(opp.id)+teamName(opp))}</span></div>${fl?`<div class="tags" style="margin-top:4px">${fl}</div>`:''}</td><td class="n">${res}</td></tr>`}).join('');
-  return `<div class="card"><div class="h2">${LG.season} schedule</div><div class="tw"><table><thead><tr><th>Week</th><th>Opponent</th><th class="n">Result</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  return `<div class="card"><div class="h2">${LG.season} schedule</div><div class="tw"><table class="sched"><thead><tr><th>Week</th><th>Opponent</th><th class="n">Result</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 let RANK_DIV=null;
 let RANK_MODE='top',RES_WEEK=null,RES_FILTER='all';
@@ -499,7 +499,7 @@ function hubLeague(){
   const groups=['FBS','FCS'].map(d=>{const cs=LG.confs.map((x,i)=>[x,i]).filter(([x])=>x.div===d);return cs.length?`<optgroup label="${d}">${cs.map(([x,i])=>`<option value="${i}" ${i===c?'selected':''}>${esc(x.name)} (${LG.teams.filter(t=>t.conf===i).length})</option>`).join('')}</optgroup>`:''}).join('');
   return `<div class="card"><div class="h2">League</div><p class="note">${LG.teams.length} programs in ${LG.confs.length} conferences.</p>
     <div class="field-row"><label for="leagueConf">Conference</label><select id="leagueConf">${groups}</select></div></div>
-  <div class="card"><div class="eyebrow">${esc(confName(c))}${LG.confs[c].ind?'':' standings'}</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th><th class="n">OVR</th><th></th></tr></thead><tbody>${confStandings(LG,c).map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t,rankTag(t.id)+teamName(t))}</td><td class="n">${LG.confs[c].ind?'—':t.rec.cw+'–'+t.rec.cl}</td><td class="n">${recStr(t)}</td><td class="n">${tOvr99(teamOvr(t))}</td><td class="n"><button class="linkbtn" id="edit-${t.id}">Edit</button></td></tr>`).join('')}</tbody></table></div></div>
+  <div class="card"><div class="eyebrow">${esc(confName(c))}${LG.confs[c].ind?'':' standings'}</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th><th class="n">OVR</th><th></th></tr></thead><tbody>${confStandings(LG,c).map(t=>`<tr class="${t.id===LG.user?'me':''}"><td class="tn">${tcell(t,rankTag(t.id)+teamName(t))}</td><td class="n">${LG.confs[c].ind?'—':t.rec.cw+'–'+t.rec.cl}</td><td class="n">${recStr(t)}</td><td class="n">${tOvr99(teamOvr(t))}</td><td class="n"><button class="linkbtn" id="edit-${t.id}">Edit</button></td></tr>`).join('')}</tbody></table></div></div>
   <div class="card"><div class="h2">Team pack</div><p class="note">Rename and recolor the whole league at once. Export the list, edit it, import it back.</p>
     <div class="btns"><button class="btn ghost" id="packExport">Export team pack</button><button class="btn ghost" id="packImport">Import team pack</button></div></div>
   <div class="card"><div class="h2">Create a school</div><p class="note">Design a program and swap it in for any CPU team. The schedule stays valid.</p>

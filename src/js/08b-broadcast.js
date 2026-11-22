@@ -96,7 +96,7 @@ const BC={
   },
   wpShow(sec){if(this.wpMode()==='off'||!S.home)return;this.wpKey='';this.wpT=Math.max(this.wpT,sec||4.5);this.wpRender();$('#wpG').classList.add('on')},
   wpInner(big){
-    let w=winProbLive();if(!isFinite(w))w=.5;const u=S.home,o=S.away,pc=Math.round(w*100),H=(S.wpH||[]).concat([[progress(),w]]).filter(([x,v])=>isFinite(x)&&isFinite(v));
+    let w=winProbLive();if(!isFinite(w))w=.5;const u=S.home,o=S.away,pc=wpP(w),H=(S.wpH||[]).concat([[progress(),w]]).filter(([x,v])=>isFinite(x)&&isFinite(v));
     const pts=H.map(([x,v])=>`${(x*100).toFixed(1)},${(2+(1-v)*20).toFixed(1)}`).join(' ');
     const d=this.wpSwing,g=d>0?u:o,sw=Math.abs(d)>=.1?`<em class="sw" style="--g:${g.c1}">${esc(g.abbr)} +${Math.round(Math.abs(d)*100)}% WP</em>`:'';
     return `<div class="wh"><span>${big?'Win probability · '+(S.ot?'OT':qName(S.q)+' '+fmtClock(S.clock)):'Win prob'}</span>${sw}</div><div class="wr"><b>${tvLogo(u,'xs')}${esc(u.abbr)}<em>${pc}%</em></b><b class="r"><em>${100-pc}%</em>${esc(o.abbr)}${tvLogo(o,'xs')}</b></div><div class="bar" style="--u:${tvCol(u)};--o:${tvCol(o)}"><i style="transform:scaleX(${w.toFixed(3)})"></i></div><svg class="spk" viewBox="0 0 100 24" preserveAspectRatio="none" aria-hidden="true"><line x1="0" y1="12" x2="100" y2="12"/><polyline points="${pts}" style="stroke:${tvCol(u)}"/><polyline class="hi" points="${pts}"/></svg>`;
@@ -125,10 +125,10 @@ const BC={
   card(kind,main,sub,color,big){
     if(LG.settings.gfx===false)return false;
     const el=$('#rcard');el.style.setProperty('--rc',color);el.classList.toggle('big',!!big);el.classList.remove('flag');
-    el.innerHTML=`<span class="k">${esc(kind)}</span><b>${main}</b>${sub?`<small>${esc(sub)}</small>`:''}`;
+    el.innerHTML=`<span class="k">${esc(kind)}</span><b>${main}</b>${sub?`<small>${esc(sub)}</small>`:''}`;ctlTipHide();
     $('#lower').classList.remove('on');el.classList.remove('on');void el.offsetWidth;el.classList.add('on');clearTimeout(this.cardT);this.cardT=setTimeout(()=>el.classList.remove('on'),big?2800:2200);return true;
   },
-  chip(text,color,sub,cls){if(LG.settings.gfx===false)return;const el=$('#sit');el.className=cls||'';el.style.setProperty('--sc',color||'var(--gold)');el.style.setProperty('--sk',String(color||'').startsWith('#')?inkOn(color):'#fff');el.innerHTML=`<b>${esc(text)}</b>${sub?`<small>${esc(sub)}</small>`:''}`;void el.offsetWidth;el.classList.add('on');clearTimeout(this.chipT);this.chipT=setTimeout(()=>el.classList.remove('on'),2400)},
+  chip(text,color,sub,cls){if(LG.settings.gfx===false)return;const el=$('#sit');el.className=cls||'';el.style.setProperty('--sc',color||'var(--gold)');el.style.setProperty('--sk',String(color||'').startsWith('#')?inkOn(color):'#fff');el.innerHTML=`<b>${esc(text)}</b>${sub?`<small>${esc(sub)}</small>`:''}`;ctlTipHide();void el.offsetWidth;el.classList.add('on');clearTimeout(this.chipT);this.chipT=setTimeout(()=>el.classList.remove('on'),2400)},
   firstDown(e){if(!e||!e.team||S.conv)return;this.chip('First down',e.team.c1,e.x!=null?spotLabelFor(Math.min(109,e.x),S.poss):'','fd')},
   bannerSub(t){const b=$('#banner');if(!b.classList.contains('on'))return;const s=b.querySelector('.su');s.textContent=t;s.hidden=!t},
   snap(){
@@ -260,7 +260,7 @@ const BC={
     $('#studioBody').innerHTML=`<div class="stv-head" style="--a:${A.c1};--b:${Hm.c1}">
         <div class="stv-bar"><span class="net">GLN</span><b>${half?'Halftime report':'Pregame show'}</b><span class="ven">${esc(hostT().stadium||hostT().city)}</span></div>
         <div class="stv-mu">${side(A,'a')}<div class="mid">${half?`<b class="hs">${S.score[ai]}<i>–</i>${S.score[hi]}</b><small>Halftime</small>`:`<b class="at">${S.neutral?'VS':'AT'}</b><small>${esc(S.slot||'')}</small>`}</div>${side(Hm,'b')}</div>
-        <div class="stv-wp"><span>${esc(A.abbr)} ${Math.round(wA*100)}%</span><div class="bar"><i style="--w:${(wA*100).toFixed(1)}%;background:${tvCol(A)}"></i><i style="background:${tvCol(Hm)}"></i></div><span>${Math.round((1-wA)*100)}% ${esc(Hm.abbr)}</span><em>Win probability</em></div></div>
+        <div class="stv-wp"><span>${esc(A.abbr)} ${wpP(wA)}%</span><div class="bar"><i style="--w:${(wA*100).toFixed(1)}%;background:${tvCol(A)}"></i><i style="background:${tvCol(Hm)}"></i></div><span>${100-wpP(wA)}% ${esc(Hm.abbr)}</span><em>Win probability</em></div></div>
       ${half?`<div class="stv-grid"><div class="card stv-card"><div class="eyebrow">Linescore</div>${this.linescore()}</div>
         <div class="card stv-card"><div class="eyebrow">First-half stats</div><div class="tape">${row('Total yards',st.passYds+st.rushYds,os.passYds+os.rushYds)}${row('Passing',st.passYds,os.passYds)}${row('Rushing',st.rushYds,os.rushYds)}${row('First downs',st.firstDowns,os.firstDowns)}${row('Turnovers',st.int+(st.fumLost||0),os.int+(os.fumLost||0))}</div></div></div>
         <div class="card stv-card"><div class="eyebrow">Top performers</div><div class="perfs">${perf(A)}${perf(Hm)}</div></div>`

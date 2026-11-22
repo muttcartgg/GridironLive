@@ -122,6 +122,8 @@ function ctlTip(k){
   el.innerHTML=`<b>Tip</b>${esc(TIPS[k])}`;el.hidden=false;el.classList.remove('on');void el.offsetWidth;el.classList.add('on');hint('');   // the tip says it all: no second line at the bottom the first time
   clearTimeout(ctlTip.t);ctlTip.t=setTimeout(()=>{el.classList.remove('on');setTimeout(()=>{el.hidden=true},300)},4200);
 }
+/* a result card or chip (08b) takes the top of the screen: an open tip is stale by then, so it fades out */
+function ctlTipHide(){const el=$('#ctlTip');if(!el||!el.classList.contains('on'))return;clearTimeout(ctlTip.t);el.classList.remove('on');ctlTip.t=setTimeout(()=>{el.hidden=true},300)}
 function arcSnap(pl){if(!arcade())return;if(uOff()){if(pl.type==='pass'&&arcQB())ctlTip('pass')}else if(S.ctrl)ctlTip('def')}
 function arcHint(pl){
   if(uOff())return pl.type==='pass'?'Pull back to aim · release to throw · tap a receiver for a bullet':'Drag up / down to steer · flick to juke · tap to burst';

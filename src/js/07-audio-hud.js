@@ -55,6 +55,7 @@ function bannerKind(m){const s=String(m).toLowerCase();
   if(/no good/.test(s))return 'miss';if(/it's good/.test(s))return typeof kick!=='undefined'&&kick&&kick.kind==='xp'?'xp':'fg';if(/field goal/.test(s))return 'fg';return 'gen'}
 function bannerTeam(c){if(!S.home)return null;if(c===S.home.c1)return S.home;if(c===S.away.c1)return S.away;return null}
 function banner(m,c,sub){
+  if(typeof ctlTipHide==='function')ctlTipHide();   // a stale control tip (06c) gives way to the big graphic
   const b=$('#banner'),k=S&&S.home?bannerKind(m):'gen';let t=k==='gen'?null:bannerTeam(c);
   if(k==='downs')t=typeof defT==='function'?defT():null;
   if(k==='xp'&&typeof BC!=='undefined'&&LG.settings.gfx!==false){BC.chip('EXTRA POINT GOOD',c,`${S.home.abbr} ${S.score[0]+1} · ${S.away.abbr} ${S.score[1]}`);return}

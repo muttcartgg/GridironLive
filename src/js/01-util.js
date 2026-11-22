@@ -17,6 +17,7 @@ const starStr=n=>{n=clamp(Math.round(n),0,5);return `<span class="stars" aria-la
 const ordn=n=>n+(['th','st','nd','rd'][((n%100)-20)%10]||['th','st','nd','rd'][n%100]||'th');
 const money=k=>k>=1000?`$${(k/1000).toFixed(k%1000?2:0)}M`:`$${Math.round(k)}K`;
 const pct=x=>Math.round(x*100)+'%';
+const wpP=x=>clamp(Math.round(x*100),1,99);   // a win probability in whole percent: never a flat 0 or 100 (the two sides add up to 100)
 const meterHTML=(v,col)=>`<div class="meter"><i style="width:${clamp(v,0,100)}%;background:${col||(v>66?'var(--ok)':v>33?'var(--warn)':'var(--hot)')}"></i></div>`;
 
 /* Key-value storage: the iOS app bridges to UserDefaults; browsers use localStorage.
