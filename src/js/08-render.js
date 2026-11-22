@@ -1,13 +1,14 @@
 /* =========================================================
    08 · Rendering: Modern HD (procedural animated athletes,
-        stadium, lighting, weather, particles) and Retro pixel
+        stadium, lighting, weather, particles): the 2D view, used
+        when 3D broadcast (08t) can't run (no WebGL 2) and in QA
    ========================================================= */
 const TONES=['#7A4A22','#A8693A','#D9A066','#F1C27D'];
 let CROWD_STATE='',turfPat=null,crowdM=null,wxParts=null,spriteCache=new Map(),crowd=null;
 function resetRenderCaches(){spriteCache.clear();crowd=null;crowdM=null;wxParts=null;if(typeof FLD!=='undefined'){FLD.key='';FLD.chk=-1;FLD.surfKey='';FLD.gradeKey='';FLD.lightKey=''}}
 
 /* ---------- particles ---------- */
-function spawnTurf(x,y,n){if(isPix())n=Math.ceil(n/2);for(let i=0;i<n;i++)particles.push({x,y,z:.1,vx:R(-3,3),vy:R(-3,3),vz:R(2,5),life:R(.4,.8),t:0,c:pick(['#3f8f45','#2f6f35','#6b4a2a','#4f9a55']),s:R(.07,.15),kind:'turf'})}
+function spawnTurf(x,y,n){for(let i=0;i<n;i++)particles.push({x,y,z:.1,vx:R(-3,3),vy:R(-3,3),vz:R(2,5),life:R(.4,.8),t:0,c:pick(['#3f8f45','#2f6f35','#6b4a2a','#4f9a55']),s:R(.07,.15),kind:'turf'})}
 function spawnConfetti(x,y){const cols=[S.home.c1,S.home.c2,'#ffffff',S.home.c1,'#FFD23F'];for(let i=0;i<80;i++)particles.push({x:x+R(-2,2),y:y+R(-2,2),z:R(1,3),vx:R(-6,6),vy:R(-6,6),vz:R(4,11),life:R(1.6,2.6),t:0,c:pick(cols),s:R(.12,.22),rot:R(0,6),vr:R(-10,10),kind:'conf'})}
 function updateParticles(dt){for(const p of particles){p.t+=dt;p.x+=p.vx*dt;p.y+=p.vy*dt;p.z+=p.vz*dt;p.vz-=(p.kind==='conf'?7:18)*dt;if(p.kind==='conf'){p.vx*=.985;p.vy*=.985;p.rot+=p.vr*dt;if(p.vz<-2.2)p.vz=-2.2}if(p.z<0){p.z=0;p.vz=0;p.vx*=.5;p.vy*=.5}}particles=particles.filter(p=>p.t<p.life)}
 function updateWeather(dt){
@@ -23,7 +24,7 @@ function drawWeather(c){
   if(S.wx==='Rain'){
     c.lineWidth=1;c.strokeStyle='rgba(190,205,225,.22)';c.beginPath();for(const p of wxParts)if(!p.d){c.moveTo(p.x,p.y);c.lineTo(p.x-p.vx*.03,p.y-p.vy*.03)}c.stroke();
     c.lineWidth=1.6;c.strokeStyle='rgba(215,228,245,.36)';c.beginPath();for(const p of wxParts)if(p.d){c.moveTo(p.x,p.y);c.lineTo(p.x-p.vx*.034,p.y-p.vy*.034)}c.stroke();
-    if(wxParts.spl&&!isPix()){c.lineWidth=1;c.strokeStyle='rgba(220,232,250,.42)';c.beginPath();for(const q of wxParts.spl){if(q.t<0)continue;const r=1.5+q.t*16;c.moveTo(q.x+r,q.y);c.ellipse(q.x,q.y,r,r*.32,0,0,6.283)}c.stroke()}}
+    if(wxParts.spl){c.lineWidth=1;c.strokeStyle='rgba(220,232,250,.42)';c.beginPath();for(const q of wxParts.spl){if(q.t<0)continue;const r=1.5+q.t*16;c.moveTo(q.x+r,q.y);c.ellipse(q.x,q.y,r,r*.32,0,0,6.283)}c.stroke()}}
   else{c.fillStyle='rgba(255,255,255,.5)';c.beginPath();for(const p of wxParts)if(!p.d){const r=.5+p.s*.6;c.moveTo(p.x+r,p.y);c.arc(p.x,p.y,r,0,6.283)}c.fill();
     c.fillStyle='rgba(255,255,255,.85)';c.beginPath();for(const p of wxParts)if(p.d){const r=1+p.s*1.1;c.moveTo(p.x+r,p.y);c.arc(p.x,p.y,r,0,6.283)}c.fill()}
   c.restore();
@@ -53,15 +54,15 @@ function shakeXY(now){const s=S.shake;if(!(s>0)||LG&&LG.settings&&LG.settings.sh
 /* a cut: the next frame jumps straight to the new framing (zoom and pan) and the main loop dips it in from dark (09) */
 function camCut(){cam.cut=1}
 function updateCam(dt){
-  dt=Math.min(dt,.05);const retro=isPix();
+  dt=Math.min(dt,.05);
   /* between plays ('wait': a kick result, a change of possession, a flag; the try sheet; behind the kick view) the shot
      holds instead of sliding back to a stale line of scrimmage; whatever comes next (a snap, a kickoff) cuts */
   if((S.phase==='wait'||S.phase==='pat'||S.phase==='kick')&&!cam.cut){S.shake=Math.max(0,S.shake-dt*1.6);return}
-  if((retro||camSteady())&&camArc(dt))return;   // the steady side view (06c); the pixel style always uses it
+  if(camSteady()&&camArc(dt))return;   // the steady side view (06c)
   let fx=S.los+2,fy=S.ballY,z=1.04,st=.5,zst=.8,bx=S.los,by=S.ballY,box=null,zbox=null;
   if(S.phase==='presnap'){if(!uOff()&&S.ctrl)fx=lerp(S.los+4,S.ctrl.x,.3);if(S.los>97&&!S.conv)z=1.1;
     /* frame the formation: the QB, every eligible receiver and your defender stay in view on any phone (hot routes, reads) */
-    if(!retro&&OFF.length){box=[S.los,S.los,S.ballY,S.ballY];if(Q)camBox(box,Q.x,Q.y);for(const o of OFF)if(eligible(o))camBox(box,o._gx!=null?o._gx:o.x,o._gy!=null?o._gy:o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y);zst=.9}}
+    if(OFF.length){box=[S.los,S.los,S.ballY,S.ballY];if(Q)camBox(box,Q.x,Q.y);for(const o of OFF)if(eligible(o))camBox(box,o._gx!=null?o._gx:o.x,o._gy!=null?o._gy:o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y);zst=.9}}
   if((S.phase==='live'||S.phase==='dead'||S.phase==='replay')&&ball){z=1;st=.42;const h=(play&&play.carrier)||Q;
     if(ball.state==='air'){const far=hyp(ball.tx-ball.fx,ball.ty-ball.fy),r=play&&play.intended;bx=ball.x;by=ball.y;z=clamp(1.04-.008*far,.8,.95);st=.36;zst=.5;
       box=camBox([bx,bx,by,by],ball.tx,ball.ty);if(r&&r.side==='o')camBox(box,r.x,r.y);if(!uOff()&&S.ctrl&&!(play&&play.st))camBox(box,S.ctrl.x,S.ctrl.y);
@@ -74,18 +75,18 @@ function updateCam(dt){
         far=t?clamp(far,Q.x,Q.x+maxRange()):Q.x+12;z=clamp(1.07-.009*(far-Q.x),.86,.95);st=.5;zst=.6;box=camBox([bx,bx,by,by],far,t?t.y:by);
         for(const o of OFF)if(eligible(o)&&!o.blocker)camBox(box,Math.min(o.x,Q.x+maxRange()),o.y);if(!uOff()&&S.ctrl)camBox(box,S.ctrl.x,S.ctrl.y)}
       else{const vx=h.vx||0,vy=h.vy||0;fx=h.x+clamp(vx*.55,-3.5,6);fy=h.y+clamp(vy*.3,-2.5,2.5);z=isRunner()?.88:.92;if(Math.abs(vx)>6&&Math.abs(h.x-S.los)>14)z=.82;st=.32;zst=play&&play.t<1.2?1.5:1.05;
-        if(!retro&&!uOff()&&S.ctrl&&S.ctrl!==h&&!play.st&&S.phase==='live')box=camBox([fx,fx,fy,fy],S.ctrl.x,S.ctrl.y)}}   // your defender stays in the shot
+        if(!uOff()&&S.ctrl&&S.ctrl!==h&&!play.st&&S.phase==='live')box=camBox([fx,fx,fy,fy],S.ctrl.x,S.ctrl.y)}}   // your defender stays in the shot
     const gx=ball.state==='air'?ball.tx:bx;if(gx>100&&gx<=112)z*=1.05;
     /* after the whistle the zoom holds (no zooming in on the pile only to cut back out for the next snap) */
     if(S.phase==='dead'){z=cam.z;box=null;zbox=null}}
-  {const ex=S.auto&&AUTO.exempt!=null&&(S.phase==='presnap'||S.phase==='live')?autoSprite():null;if(ex&&ex.side==='o'&&!retro){if(!box)box=[fx,fx,fy,fy];camBox(box,ex.x,ex.y)}}   // Road to Glory: your player stays in the shot
-  if(retro)z=1;else if(box)z=Math.min(z,camFit(zbox||box,S.phase==='presnap'?60:play&&play.type==='pass'&&!play.scramble?78:56));
-  const cut=cam.cut;if(retro){cam.z=1;cam.zv=0}else if(cut){cam.z=z;cam.zv=0}else camDamp('z',z,zst,dt);
-  const s=scE(),vw=W/s,vh=(H-topY)/(s*VY),ext=retro?0:7;
+  {const ex=S.auto&&AUTO.exempt!=null&&(S.phase==='presnap'||S.phase==='live')?autoSprite():null;if(ex&&ex.side==='o'){if(!box)box=[fx,fx,fy,fy];camBox(box,ex.x,ex.y)}}   // Road to Glory: your player stays in the shot
+  if(box)z=Math.min(z,camFit(zbox||box,S.phase==='presnap'?60:play&&play.type==='pass'&&!play.scramble?78:56));
+  const cut=cam.cut;if(cut){cam.z=z;cam.zv=0}else camDamp('z',z,zst,dt);
+  const s=scE(),vw=W/s,vh=(H-topY)/(s*VY),ext=7;
   const pd=box?camPad().map(v=>v/(s*VY)):[0,0];   // overlay pads in world yards (framing only)
   let tx=fx+vw*.1;if(box){tx=camPan(box[0],box[1],bx,vw,CAM_M.l,CAM_M.r,.62);fy=camPan(box[2],box[3],by,vh,CAM_M.t+pd[0],CAM_M.b+pd[1],.5)}
   const mn=-6-ext+vw/2,mx=126+ext-vw/2;tx=mn>mx?60:clamp(tx,mn,mx);
-  const ylo=(retro?-8:-11)+vh/2,yhi=FW+3+pd[1]-vh/2,ymid=retro?CEN-3:CEN-3.6,ty=clamp(fy,Math.min(ylo,ymid),Math.max(yhi,ymid));   // whole width in view: hold mid
+  const ylo=-11+vh/2,yhi=FW+3+pd[1]-vh/2,ymid=CEN-3.6,ty=clamp(fy,Math.min(ylo,ymid),Math.max(yhi,ymid));   // whole width in view: hold mid
   if(cut){cam.x=tx;cam.y=ty;cam.xv=cam.yv=0;cam.cut=0;S.cutA=1;S.cutN=(S.cutN||0)+1}
   else{camDamp('x',tx,st,dt);camDamp('y',ty,st*1.2,dt);
   /* keep the ball (or its carrier) on screen when the spring lags: pulled back in quickly (no snap), hard-held only at the very edge */
@@ -169,7 +170,6 @@ function drawModern(now){
 
 /* ---------- kick view (direction + power) ---------- */
 function drawKick(){
-  if(kick&&isPix()){pxKick($('#kcv'),performance.now());return}   // pixel style: 08p
   if(is3D())return;   // 3D: the behind-the-kicker camera with the meter on the overlay (08t)
   const k=kick;if(!k)return;const cv2=$('#kcv'),g=cv2.getContext('2d'),w=cv2.width,h=cv2.height,cx=w/2,st=lightStage(),night=st==='night',host=hostT(),now=performance.now();
   if(S.home){const kk=stadKey();if(!STAD.T||kk!==STAD.key){STAD.key=kk;buildStadium()}}const T=STAD.T,hz=h*.47;g.setTransform(1,0,0,1,0,0);g.globalAlpha=1;g.globalCompositeOperation='source-over';
@@ -212,18 +212,7 @@ function drawKick(){
   if(S.wx==='Wind'){g.fillStyle='#fff';g.font='700 24px -apple-system,system-ui,sans-serif';g.textAlign='left';g.fillText(`WIND ${k.drift<0?'◀':'▶'}`,20,40)}
 }
 
-/* ---------- pixel style: the art buffer (drawn by 08p) ----------
-   PDS device px per art px (a whole number: 6 on a 3× iPhone), PXS the same in CSS px (≈2); A art px per yard, a whole
-   number fitted per orientation (about 47 yards across in landscape, 24 in portrait); PCX/PCY the camera in whole art px */
-const low=document.createElement('canvas'),lx=low.getContext('2d');
-let PXS=2,PDS=2,A=9,LW=0,LH=0,PCX=0,PCY=0;
-function resizeRetro(){PDS=Math.max(1,Math.round(2*DPR));PXS=PDS/DPR;LW=Math.ceil(W*DPR/PDS);LH=Math.ceil(H*DPR/PDS);const port=H>W*1.2;A=clamp(Math.round(LW/(port?24:47)),7,10);low.width=LW;low.height=LH;if(isPix())sc=A*PXS}
-const AX=x=>Math.round(x*A)-PCX,AY=y=>Math.round(y*A*VY)-PCY;
-const GLY={A:[2,5,7,5,5],B:[6,5,6,5,6],C:[3,4,4,4,3],D:[6,5,5,5,6],E:[7,4,6,4,7],F:[7,4,6,4,4],G:[3,4,5,5,3],H:[5,5,7,5,5],I:[7,2,2,2,7],J:[1,1,1,5,2],K:[5,5,6,5,5],L:[4,4,4,4,7],M:[5,7,7,5,5],N:[6,5,5,5,5],O:[2,5,5,5,2],P:[6,5,6,4,4],Q:[2,5,5,6,3],R:[6,5,6,5,5],S:[3,4,2,1,6],T:[7,2,2,2,2],U:[5,5,5,5,7],V:[5,5,5,5,2],W:[5,5,7,7,5],X:[5,5,2,5,5],Y:[5,5,2,2,2],Z:[7,1,2,4,7],'0':[7,5,5,5,7],'1':[2,6,2,2,7],'2':[6,1,2,4,7],'3':[6,1,2,1,6],'4':[5,5,7,1,1],'5':[7,4,6,1,6],'6':[3,4,6,5,2],'7':[7,1,2,2,2],'8':[2,5,2,5,2],'9':[2,5,3,1,6],'-':[0,0,7,0,0],' ':[0,0,0,0,0],'.':[0,0,0,0,2],"'":[2,2,0,0,0]};
-function pxText(c,str,x,y,s,col,vertical){str=String(str).toUpperCase();c.fillStyle=col;for(let i=0;i<str.length;i++){const g=GLY[str[i]]||GLY[' '];const ox=vertical?x:x+i*4*s,oy=vertical?y+i*6*s:y;for(let r=0;r<5;r++)for(let b=0;b<3;b++)if(g[r]&(4>>b))c.fillRect(ox+b*s,oy+r*s,s,s)}}
-const pxW=(str,s)=>String(str).length*4*s-s;
-function draw(now){if(is3D()){draw3D(now);if(S.phase==='replay')drawOverlay(now);return}   // 3D broadcast (08t)
-  const px=isPix();if(px!==PXR.lastPix){PXR.lastPix=px;resize()}if(px)drawPix(now);else drawModern(now);if(S.phase==='replay'&&!px)drawOverlay(now)}   // pixel replay overlay: 08p pxReplay
+function draw(now){if(is3D())draw3D(now);else drawModern(now);if(S.phase==='replay')drawOverlay(now)}   // 3D broadcast (08t), or the 2D view
 /* the man you control: a bold ring with a dark under-stroke and a bobbing marker over his head (larger and clearer on a phone) */
 function selRing(c,x,y,s,now){const r=s*1.32,b=Math.sin(now/180)*s*.12;c.save();c.beginPath();c.ellipse(x,y,r,r*VY,0,0,7);c.strokeStyle='rgba(0,0,0,.5)';c.lineWidth=Math.max(6,s*.42);c.stroke();
   c.strokeStyle='#FFD23F';c.shadowColor='#FFD23F';c.shadowBlur=14;c.lineWidth=Math.max(3.5,s*.26);c.stroke();c.shadowBlur=0;

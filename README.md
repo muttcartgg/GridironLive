@@ -1,6 +1,6 @@
 # Gridiron Live
 
-A college football dynasty game for iPhone, with a modern HD look (or retro pixel, your choice).
+A college football dynasty game for iPhone, presented like a TV broadcast in 3D.
 
 - **On the field (v5):** a 50-play playbook (32 pass concepts, 18 runs including options, jet sweeps, reverses and a flea flicker), playable defense with six coverages, a floating joystick for ball carriers and defenders, juke/spin/truck/hurdle/dive buttons, drag-to-aim passing where the camera leads downfield, receivers who keep working after their routes end, zone and man coverage that reads the play, fumbles, big hits, fairer penalties, a real-time college clock with AI timeouts, and celebrations after touchdowns.
 - **Broadcast (graphics only, no commentators):** a pregame show (tale of the tape, keys to the game, matchup spotlight) and a halftime report (linescore, team stats, leaders), a kickoff intro card, play result cards, 3rd/4th-down and red-zone graphics, a drive tracker, end-of-quarter linescores, an out-of-town score ticker, player cards, a Heisman tracker, win probability and 4th-down odds, a decibel meter, instant replay with slow-mo, dot tracking and a telestrator, a social feed, and a customizable score bug.
@@ -8,6 +8,12 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - **Your program:** all 265 Division I programs (138 FBS, 127 FCS) in their 25 conferences for 2026, with FBS and FCS Top 25 polls, conference title games, the 12-team CFP, a full bowl season, the 24-team FCS playoff and the Celebration Bowl. Also rivalry trophies, the Heisman race and awards, the transfer portal, NIL money, Signing Day, redshirts, early draft declarations, coordinators, facilities, XP, injuries, morale, front-office decisions, the coaching carousel, and school records.
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
+
+## Version 12: 3D broadcast only
+
+- The Pixel style is gone: 3D broadcast is the one art style, and every dynasty switches to it once. The title screen and menus use the broadcast theme. Without WebGL 2 (or if 3D can't start) the game shows the 2D HD view, with one notice.
+- Polish: control tips sit under the score bug and clear away for result graphics; win odds never read a flat 0 or 100%; standings and the schedule fit a phone without scrolling sideways; the final score's dash sits between the scores; roomier box score, bracket and coach's picks.
+- Smaller app: the Pixel renderer, sprites, theme and fonts (about 155 KB) are removed.
 
 ## Version 11.1: smooth pixel scrolling
 
@@ -18,7 +24,7 @@ A college football dynasty game for iPhone, with a modern HD look (or retro pixe
 - Settings › Graphics › Art style › 3D broadcast: a WebGL (three.js r170) presentation with a two-tier stadium bowl and an animated crowd, a live scoreboard, painted lines and end zones, day/dusk/night lighting with sun shadows, rain and snow.
 - Cameras: TV sideline, kickoff/punt, behind-the-kicker for field goals and extra points, and a low replay/TD camera. TV-style blue and yellow lines are painted on the turf; the Arcade aim arc and receiver badges work through 3D screen↔field mapping.
 - 3D athletes sized by height, weight and position, with team uniforms (glossy helmets, numbers, stripes), blended animation, signalling officials, a thrown flag and a spiralling college football. The menus and HUD use the broadcast theme.
-- Without WebGL 2 it falls back to Pixel.
+- Without WebGL 2 it falls back to Pixel (v12: to the 2D HD view).
 
 ## Version 10: Pixel art
 
@@ -331,4 +337,4 @@ In the League tab, **Export team pack** gives you the current league as text. Ed
 
 ## Credits
 
-Save compression uses lz-string by pieroxy (MIT License, see `tools/LZ-STRING-LICENSE.txt`). The Silkscreen font is by Jason Kottke and is licensed under the SIL Open Font License (see `tools/fonts/OFL-LICENSE.txt`).
+Save compression uses lz-string by pieroxy (MIT License, see `tools/LZ-STRING-LICENSE.txt`).

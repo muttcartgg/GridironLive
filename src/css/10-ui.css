@@ -7,7 +7,6 @@
 @font-face{font-family:'Barlow Condensed';src:url(data:font/woff2;base64,__FONT:barlow-condensed-latin-700-normal.woff2__) format('woff2');font-weight:700;font-style:normal;font-display:swap}
 @font-face{font-family:'Barlow Condensed';src:url(data:font/woff2;base64,__FONT:barlow-condensed-latin-800-italic.woff2__) format('woff2');font-weight:800;font-style:italic;font-display:swap}
 :root{--tv:'Barlow Condensed',var(--disp);--glass:rgba(9,12,18,.88);--glass2:rgba(14,19,27,.95);--hair:rgba(255,255,255,.1);--pk1:#0c1626;--pk2:#122440;--pkA:#4DA3FF;--sbB:72px}
-:root[data-style="retro"]{--tv:var(--disp)}
 :root[data-pkg="national"]{--pk1:#0b0b10;--pk2:#1c1a10;--pkA:#E8C35A}
 :root[data-pkg="regional"]{--pk1:#081a33;--pk2:#0f2e57;--pkA:#4DA3FF}
 :root[data-pkg="stream"]{--pk1:#170a24;--pk2:#2b0f45;--pkA:#C26BFF}

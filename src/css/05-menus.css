@@ -344,6 +344,23 @@
 .pg-keys li:last-child{border-bottom:0}
 .pg-keys li::before{content:counter(k);display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:color-mix(in srgb,var(--team) 34%,transparent);font:italic 800 16px/1 var(--tv);color:#fff}
 
+/* ---------- polish: tables, final score, bracket ---------- */
+/* a record (0–0) or stat line never breaks in two; the team-name column (td.tn) takes the rest of the width and its
+   names ellipsize, so standings fit a phone without scrolling sideways */
+:where(.screen,#modal,#pausem) td.n{white-space:nowrap}
+:where(.screen,#modal,#pausem) td.tn{max-width:0;width:100%}
+/* schedule: fixed week and result columns, so the result stays on screen on a phone; long names take two lines */
+table.sched{table-layout:fixed}
+table.sched th:first-child,table.sched td:first-child{width:56px;white-space:nowrap}
+table.sched th:last-child,table.sched td:last-child{width:72px}
+table.sched .tname span{white-space:normal}
+/* final score: the dash sits between the two scores, not between the team names */
+.final>.eyebrow{align-self:end;font:italic 800 34px/56px var(--tv);letter-spacing:0;color:rgba(255,255,255,.3)}
+/* playoff bracket: tighter rows so names like Notre Dame fit beside the badge */
+.bt{gap:5px;padding:6px 8px}
+/* box score on a phone: wider value columns so a line like 25/35 · 273 fits */
+@media (max-width:540px){table.box th.n{width:32%}table.box td,table.box th{padding-left:5px;padding-right:5px}}
+
 @media (prefers-reduced-motion:reduce){
   :where(.screen,#modal,#pausem),:where(.screen,#modal,#pausem) *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }

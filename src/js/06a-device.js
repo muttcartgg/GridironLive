@@ -45,11 +45,10 @@ let SAFE={t:0,r:0,b:0,l:0};
 const zoomMul=()=>{const z=LG&&LG.settings&&LG.settings.zoom;return typeof z==='number'&&z>0?z:1};
 /* The fit: a target size in points per yard (a player stands about two yards tall), bounded by how much field must show.
    Landscape: 32–40 yards across the safe width (more on bigger phones, same player size). Portrait: sideline to sideline
-   top to bottom plus 20–26 yards of depth. Retro pixel art keeps its fixed grid. */
+   top to bottom plus 20–26 yards of depth. */
 const FIT={L:{pt:22,min:32,max:40},P:{pt:17,min:20,max:26,fw:8}};
-function fitScale(av,retro){
+function fitScale(av){
   const port=H>W*1.2;
-  if(retro)return Math.min(W/30,Math.max(av/(60*VY),W/72));
   const ins=SAFE,uw=Math.max(240,W-ins.l-ins.r);
   if(port){const full=Math.max(60,av-ins.b)/((FW+FIT.P.fw)*VY);return Math.max(6,Math.min(full,clamp(FIT.P.pt,uw/FIT.P.max,uw/FIT.P.min)))}
   const mx=devInfo().pad||uw>1000?48:FIT.L.max;

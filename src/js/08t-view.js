@@ -280,7 +280,7 @@ function g3EnsureEnv(){const k=t3EnvKey();if(k===G3.key&&G3.env)return;
 function g3ResetAth(){if(typeof ath3dReset==='function'){try{ath3dReset()}catch(e){console.warn('ath3dReset',e)}}}
 function draw3D(now){
   const t0=performance.now(),c=ctx;c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,cv.width,cv.height);c.setTransform(DPR,0,0,DPR,0,0);
-  if(!g3Init()){if(LG&&LG.settings){LG.settings.style='retro';applyStyle();toast('3D needs WebGL 2 · switched to Pixel')}return}
+  if(!g3Init()){if(LG&&LG.settings)applyStyle();return}   // 04 applyStyle: the 2D view, one toast
   if(!S.home||!S.away)return;
   g3ToastSweep();
   if(S.game!==G3.gref){if(G3.gref!==undefined)g3ResetAth();G3.gref=S.game}   // a game ended / a new one began

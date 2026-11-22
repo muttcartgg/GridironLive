@@ -7,12 +7,18 @@ const badge=(t,cls='')=>{if(t.bdg&&typeof bdgURL==='function')return `<span clas
 const recStr=t=>`${t.rec.w}–${t.rec.l}`;
 const tcell=(t,label)=>`<div class="tname" data-team="${t.id}" style="cursor:pointer">${badge(t,'sm')}<span>${esc(label||rankTag(t.id)+t.city)}</span></div>`;
 function applyTeamTheme(t){const r=document.documentElement.style;r.setProperty('--team',t.c1);r.setProperty('--team2',t.c2);r.setProperty('--btn-ink',inkOn(t.c1))}
-/* art style: 'retro' = Pixel (the default), '3d' = 3D broadcast (08t: the Modern broadcast UI theme over a WebGL scene),
-   'modern' = the old 2D HD view (no longer offered). Existing dynasties switch to Pixel once (settings.pix1).
-   No WebGL 2: back to Pixel with a toast. */
-function applyStyle(){if(LG&&LG.settings&&!LG.settings.pix1){LG.settings.pix1=1;LG.settings.style='retro'}
-  let st=(LG&&LG.settings.style)||'retro';if(st==='3d'&&!(typeof g3Init==='function'&&g3Init())){LG.settings.style=st='retro';if(typeof toast==='function')toast('3D needs WebGL 2 · switched to Pixel')}
-  const d=document.documentElement.dataset;d.style=st==='3d'?'modern':st;d.render=st==='3d'?'3d':'2d';if(typeof g3Show==='function')g3Show(st==='3d');
+/* art style: 3D broadcast (08t: the Modern broadcast UI theme over a WebGL scene) is the only one. Every dynasty moves to
+   it once (settings.v3d; older saves may say 'retro', the removed Pixel style). If WebGL 2 is missing or 3D can't start,
+   the Modern 2D view (drawModern, 08) stands in for the rest of the session (settings.style 'modern'), with one toast;
+   the next launch tries 3D again. QA pages (tools/qa/_boot.js sets window.__QA2D__) use the 2D view on purpose, since
+   headless WebGL is software-rendered and slow. The title screen and menus use the same theme (render '3d'). */
+let G2D=null;   // why the 2D view is on: 'qa' | 'nogl' (null: 3D)
+function use3D(){if(G2D)return false;if(window.__QA2D__){G2D='qa';return false}
+  if(typeof g3Init==='function'&&g3Init())return true;
+  G2D='nogl';if(typeof toast==='function')toast('3D needs WebGL 2 · using the 2D view');return false}
+function applyStyle(){const s=LG&&LG.settings;if(s&&!s.v3d){s.v3d=1;delete s.pix1}
+  const on=s?use3D():!G2D&&!window.__QA2D__;if(s)s.style=on?'3d':'modern';
+  const d=document.documentElement.dataset;d.style='modern';d.render=on?'3d':'2d';if(typeof g3Show==='function')g3Show(on&&!!s);
   if(typeof resize==='function'&&W)resize()}
 let saveTimer=null;
 function saveNow(now){if(!LG||!SLOT)return;clearTimeout(saveTimer);saveTimer=null;if(now){Saves.save(SLOT,LG);return}saveTimer=setTimeout(()=>{saveTimer=null;Saves.save(SLOT,LG)},700)}
@@ -46,7 +52,7 @@ const Stage={raf:0,
     const loop=t=>{this.raf=0;if(sc.hidden||!sc.classList.contains('title'))return;if(t-last>=32){last=t;this.draw(cv,t/1000)}if(!rm)this.raf=requestAnimationFrame(loop)};
     this.raf=requestAnimationFrame(loop)},
   draw(cv,t){
-    const px=document.documentElement.dataset.style==='retro',W=px?110:220,H=clamp(Math.round(W*innerHeight/Math.max(1,innerWidth)),45,520);   /* Pixel: half-res, banded light (see the end) */if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
+    const W=220,H=clamp(Math.round(W*innerHeight/Math.max(1,innerWidth)),45,520);if(cv.width!==W||cv.height!==H){cv.width=W;cv.height=H}
     const x=cv.getContext('2d');x.clearRect(0,0,W,H);x.globalCompositeOperation='lighter';
     const port=H>W,ty=H*(port?.075:.13),len=Math.hypot(W,H)*1.15;
     for(const [tx,s] of [[W*.1,1],[W*.9,-1]]){
@@ -63,7 +69,6 @@ const Stage={raf:0,
     for(const [cx,cy,r,c] of [[.32+.12*Math.sin(t*.07),.5,.75,'rgba(90,130,210,.07)'],[.7+.1*Math.cos(t*.05),.68,.6,'rgba(120,150,220,.06)'],[.5,.98,.7,'rgba(70,170,110,.08)']]){
       const h=x.createRadialGradient(cx*W,cy*H,0,cx*W,cy*H,r*Math.max(W,H*.6));h.addColorStop(0,c);h.addColorStop(1,'rgba(0,0,0,0)');x.fillStyle=h;x.fillRect(0,0,W,H)}
     x.globalCompositeOperation='source-over';
-    if(px){const d=x.getImageData(0,0,W,H),q=d.data;for(let i=3;i<q.length;i+=4){const v=q[i];q[i]=v<14?0:v<40?40:v<90?80:v<160?140:220}x.putImageData(d,0,0)}
   }};
 addEventListener('resize',()=>{const sc=$('#setup');if(sc&&!sc.hidden&&sc.classList.contains('title'))Stage.run()});
 
@@ -89,7 +94,7 @@ function showLoading(label){hideAll();const s=$('#setup');s.classList.remove('ti
 
 /* ---------- title screen + save slots ---------- */
 function showSlots(){
-  hideAll();S.phase='menu';LG=null;SLOT=null;document.documentElement.dataset.style='retro';document.documentElement.dataset.render='2d';if(typeof g3Show==='function')g3Show(false);if(typeof ath3dReset==='function')try{ath3dReset()}catch(e){}
+  hideAll();S.phase='menu';LG=null;SLOT=null;applyStyle();if(typeof g3Show==='function')g3Show(false);if(typeof ath3dReset==='function')try{ath3dReset()}catch(e){}
   const m=Saves.meta();$('#setup').classList.add('title');
   const card=n=>{const s=m.slots[n];
     if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="sl-et"><span class="h2">New dynasty</span><span class="note">Slot ${n} · empty</span></span></button>`;
@@ -249,7 +254,7 @@ function showHub(tab){
     <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div>
     <div class="pills">${LG.rtg?`<span class="pill" title="Skill points">${LG.rtg.sp} SP</span><span class="pill" title="Your NIL earnings">${money(LG.rtg.nil.cash)} NIL</span>`:`<span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL and revenue-sharing budget left">${money(LG.nil)} NIL</span>`}</div>`;
   const nav=LG.rtg?NAV.filter(([k])=>k!=='recruit'&&k!=='program'):NAV,cur=navOf(TAB);NAV_LAST[cur[0]]=TAB;   /* Road to Glory: the coach-only screens are the CPU coach's */
-  $('#tabs').innerHTML=nav.map(([k,l,vs])=>`<button role="tab" id="tab-${k}" aria-selected="${cur[0]===k}"><svg viewBox="0 0 24 24" aria-hidden="true">${NAV_ICO[k]}</svg><span>${k==='home'&&LG.rtg?'Career':k==='recruit'&&LG.settings.style==='retro'?'Recruit':l}</span>${k==='home'&&LG.event?'<span class="dot" aria-label="Decision waiting"></span>':''}</button>`).join('');
+  $('#tabs').innerHTML=nav.map(([k,l,vs])=>`<button role="tab" id="tab-${k}" aria-selected="${cur[0]===k}"><svg viewBox="0 0 24 24" aria-hidden="true">${NAV_ICO[k]}</svg><span>${k==='home'&&LG.rtg?'Career':l}</span>${k==='home'&&LG.event?'<span class="dot" aria-label="Decision waiting"></span>':''}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{const n=NAV.find(x=>x[0]===b.id.slice(4));const same=n===navOf(TAB);showHub(same?n[2][0]:NAV_LAST[n[0]]||n[2][0]);$('#hubScroll').scrollTop=0});
   const sub=$('#subtabs');sub.hidden=cur[2].length<2;
   sub.innerHTML=cur[2].length<2?'':cur[2].map(v=>`<button role="tab" id="sub-${v}" aria-selected="${TAB===v}">${VIEWS[v]}</button>`).join('');
@@ -272,7 +277,7 @@ function gameHero(g,wi,extra,link){
   return `<div class="card ng" style="--a:${deepC(u)};--b:${deepC(opp)};--a1:${u.c1};--b1:${opp.c1}">
     <div class="ng-bar"><span class="gln">GLN</span><span class="ng-wk">${esc(w?w.label:'')} · ${g.neutral?'Neutral':home?'Home':'Away'}</span><span class="ng-ko">${esc(KICK[g.slot]||g.slot||'')} <small>ET</small></span></div>
     <div class="ng-mu">${side(u,'a')}<div class="ng-mid"><span class="at">${home||g.neutral?'VS':'AT'}</span><span class="ln">${esc(lineStr(u,opp,sp))}</span></div>${side(opp,'b')}</div>
-    <div class="ng-wp" style="--w:${(wp*100).toFixed(1)}%"><b>${pct(wp)}</b><span class="bar"><i></i><i></i></span><b>${pct(1-wp)}</b><em>Win odds</em></div>
+    <div class="ng-wp" style="--w:${(wp*100).toFixed(1)}%"><b>${wpP(wp)}%</b><span class="bar"><i></i><i></i></span><b>${100-wpP(wp)}%</b><em>Win odds</em></div>
     <div class="ng-meta"><span>${WX_ICON[g.wx]||''} ${esc(g.wx||'Clear')} · ${fcTemp(g,wi)}°</span><span>${esc(venue||'')}</span>${gameFlags(LG,g,wi).map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join('')}</div>
     ${extra||''}</div>`;
 }
@@ -327,7 +332,7 @@ function leagueNewsHTML(){
   const potw=LG.potw?`<div class="card"><div class="eyebrow">${confName(u.conf)} player of the week</div><div class="tname">${badge(T(LG.potw.team))}<span><b>${esc(LG.potw.name)}</b> · ${LG.potw.pos} · ${esc(T(LG.potw.team).city)}</span></div></div>`:'';
   const lw=LG.lastWeek?`<div class="card"><div class="eyebrow">Around the league · ${esc(LG.lastWeek.label)}</div><div class="list">${LG.lastWeek.games.filter(x=>x.h===LG.user||x.a===LG.user||(x.tag&&!/First Round|Second Round/.test(x.tag))||x.upset||((x.rh||x.ra)&&T(x.h).div===u.div)||T(x.h).conf===u.conf).sort((a,b)=>((b.h===LG.user||b.a===LG.user)-(a.h===LG.user||a.a===LG.user))||(!!(b.rh||b.ra)-!!(a.rh||a.ra))).slice(0,14).map(x=>{const hw=x.hs>x.as;return `<div class="lrow"><span class="l">${tcell(T(x.h),(x.rh?'#'+x.rh+' ':'')+T(x.h).city)}<b class="${hw?'res-w':''}">${x.hs}</b><span class="note">–</span><b class="${!hw?'res-w':''}">${x.as}</b>${tcell(T(x.a),(x.ra?'#'+x.ra+' ':'')+T(x.a).city)}</span>${x.upset?'<span class="tag hot">Upset</span>':x.tag?`<span class="note">${esc(x.tag)}</span>`:''}</div>`}).join('')}</div></div>`:'';
   const news=LG.news.length?`<div class="card news"><div class="eyebrow">Program news</div><div class="list">${LG.news.slice(0,8).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
-  const conf=`<div class="card"><div class="eyebrow">${confName(u.conf)} standings</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th></tr></thead><tbody>${cs.map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t)}</td><td class="n">${t.rec.cw}–${t.rec.cl}</td><td class="n">${recStr(t)}</td></tr>`).join('')}</tbody></table></div></div>`;
+  const conf=`<div class="card"><div class="eyebrow">${confName(u.conf)} standings</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th></tr></thead><tbody>${cs.map(t=>`<tr class="${t.id===LG.user?'me':''}"><td class="tn">${tcell(t)}</td><td class="n">${t.rec.cw}–${t.rec.cl}</td><td class="n">${recStr(t)}</td></tr>`).join('')}</tbody></table></div></div>`;
   return `<div class="grid2">${news}${lw||conf}</div>`+gameOfWeek()+`<div class="grid2">${heis}${potw}${lw?conf:''}</div>`;
 }
 function hubSchedule(){
@@ -335,7 +340,7 @@ function hubSchedule(){
     let res='';if(g.hs!=null){const us=home?g.hs:g.as,them=home?g.as:g.hs;res=`<span class="${us>them?'res-w':'res-l'}">${us>them?'W':'L'} ${us}–${them}</span>`}else res=i===LG.week?'<span class="tag blue">Next</span>':`<span class="note">${WX_ICON[g.wx]}</span>`;
     const fl=gameFlags(LG,g,i).filter(f=>f[1]!=='Conference game').map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join(' ');
     return `<tr class="${i===LG.week?'me':''}"><td>${esc(w.kind==='reg'?'Wk '+(i+1):'Post')}</td><td><div class="tname">${g.neutral?'vs':home?'vs':'at'} ${badge(opp,'sm')}<span>${esc(rankTag(opp.id)+teamName(opp))}</span></div>${fl?`<div class="tags" style="margin-top:4px">${fl}</div>`:''}</td><td class="n">${res}</td></tr>`}).join('');
-  return `<div class="card"><div class="h2">${LG.season} schedule</div><div class="tw"><table><thead><tr><th>Week</th><th>Opponent</th><th class="n">Result</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+  return `<div class="card"><div class="h2">${LG.season} schedule</div><div class="tw"><table class="sched"><thead><tr><th>Week</th><th>Opponent</th><th class="n">Result</th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
 }
 let RANK_DIV=null;
 let RANK_MODE='top',RES_WEEK=null,RES_FILTER='all';
@@ -494,7 +499,7 @@ function hubLeague(){
   const groups=['FBS','FCS'].map(d=>{const cs=LG.confs.map((x,i)=>[x,i]).filter(([x])=>x.div===d);return cs.length?`<optgroup label="${d}">${cs.map(([x,i])=>`<option value="${i}" ${i===c?'selected':''}>${esc(x.name)} (${LG.teams.filter(t=>t.conf===i).length})</option>`).join('')}</optgroup>`:''}).join('');
   return `<div class="card"><div class="h2">League</div><p class="note">${LG.teams.length} programs in ${LG.confs.length} conferences.</p>
     <div class="field-row"><label for="leagueConf">Conference</label><select id="leagueConf">${groups}</select></div></div>
-  <div class="card"><div class="eyebrow">${esc(confName(c))}${LG.confs[c].ind?'':' standings'}</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th><th class="n">OVR</th><th></th></tr></thead><tbody>${confStandings(LG,c).map(t=>`<tr class="${t.id===LG.user?'me':''}"><td>${tcell(t,rankTag(t.id)+teamName(t))}</td><td class="n">${LG.confs[c].ind?'—':t.rec.cw+'–'+t.rec.cl}</td><td class="n">${recStr(t)}</td><td class="n">${tOvr99(teamOvr(t))}</td><td class="n"><button class="linkbtn" id="edit-${t.id}">Edit</button></td></tr>`).join('')}</tbody></table></div></div>
+  <div class="card"><div class="eyebrow">${esc(confName(c))}${LG.confs[c].ind?'':' standings'}</div><div class="tw"><table><thead><tr><th>Team</th><th class="n">Conf</th><th class="n">All</th><th class="n">OVR</th><th></th></tr></thead><tbody>${confStandings(LG,c).map(t=>`<tr class="${t.id===LG.user?'me':''}"><td class="tn">${tcell(t,rankTag(t.id)+teamName(t))}</td><td class="n">${LG.confs[c].ind?'—':t.rec.cw+'–'+t.rec.cl}</td><td class="n">${recStr(t)}</td><td class="n">${tOvr99(teamOvr(t))}</td><td class="n"><button class="linkbtn" id="edit-${t.id}">Edit</button></td></tr>`).join('')}</tbody></table></div></div>
   <div class="card"><div class="h2">Team pack</div><p class="note">Rename and recolor the whole league at once. Export the list, edit it, import it back.</p>
     <div class="btns"><button class="btn ghost" id="packExport">Export team pack</button><button class="btn ghost" id="packImport">Import team pack</button></div></div>
   <div class="card"><div class="h2">Create a school</div><p class="note">Design a program and swap it in for any CPU team. The schedule stays valid.</p>
@@ -557,7 +562,7 @@ function hubSettings(){
     +row('Celebration button',tg('setCel',s.celebrate!==false))
     +row('Camera shake',tg('setShk',s.shake!==false))+regs('ctl','more'))
   +sec('gfx','Graphics & sound',
-     row('Art style',seg('setS',[['retro','Pixel (default)'],['3d','3D broadcast']],s.style==='3d'?'3d':'retro'))
+     (G2D==='nogl'?`<p class="note">3D broadcast needs WebGL 2, so this device shows the 2D view.</p>`:'')
     +row('Sound',tg('setM',!s.muted,s.muted?0:1))
     +regs('gfx','main')
     +row('Crowd',seg('setCr',[['low','Sparse'],['normal','Normal'],['high','Rowdy']],s.crowd||'normal'))
@@ -599,7 +604,7 @@ function hubSettings(){
   +other.map(c=>sec('x-'+c.replace(/\W+/g,''),esc(c),regs(c,'main'),regs(c,'more'))).join('')
   +sec('about','About',
      `<div class="kv"><span>Version</span><b>7.7</b></div><div class="btns"><button class="btn ghost sm" id="setHelp">How to play</button><button class="btn ghost sm" id="setNew">What’s new</button></div>
-      <p class="note">An original game. School badges use abbreviations, not official logos. Barlow Condensed and Silkscreen fonts under the SIL Open Font License.</p>`,'')
+      <p class="note">An original game. School badges use abbreviations, not official logos. Barlow Condensed font under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
   +`</div>`;
 }
 /* How to play: one card per part of the game, a line per idea */
@@ -632,7 +637,7 @@ function bindHub(){
   document.querySelectorAll('[id^="pl-"]').forEach(b=>b.onclick=()=>openPlayer(+b.id.slice(3)));
   document.querySelectorAll('[id^="edit-"]').forEach(b=>b.onclick=()=>openEditor(+b.id.slice(5),()=>{saveNow();rerender()}));
   const seg=(id,f)=>{const e=document.getElementById(id);if(!e)return;e.querySelectorAll('button').forEach(b=>b.onclick=()=>{f(b.dataset.v);saveNow();rerender()})};
-  seg('setQ',v=>LG.settings.qlen=+v);seg('setD',v=>LG.settings.diff=+v);seg('setM',v=>{LG.settings.muted=v==='1';muted=LG.settings.muted});seg('setS',v=>{LG.settings.style=v;LG.settings.pix1=1;applyStyle()});
+  seg('setQ',v=>LG.settings.qlen=+v);seg('setD',v=>LG.settings.diff=+v);seg('setM',v=>{LG.settings.muted=v==='1';muted=LG.settings.muted});
   const S2=(id,k,f)=>seg(id,v=>{LG.settings[k]=f?f(v):v});const B=v=>v==='1';
   S2('setDef','defMode');S2('setDP','defPlayer');S2('setPC','pclock',v=>+v);S2('setZ','zoom',v=>v==='auto'?'auto':+v);S2('setCel','celebrate',B);S2('setPre','pregame',B);S2('setHalf','halftime',B);S2('setTk','ticker',B);S2('setPkg','pkg');S2('setGfx','gfx',B);S2('setCoin','coin',B);S2('setInj','injuries',B);S2('setHap','haptics',B);S2('setTap','uiSounds',B);S2('setBig','bigText',B);S2('setCB','cb',B);
   for(const k of ['acc','run','cov','tkl','inj'])seg('sl-'+k,v=>{LG.settings.sl=LG.settings.sl||{};LG.settings.sl[k]=+v});S2('setRp','replay');S2('setLow','lower',B);S2('setWP','wp',v=>v==='0'?false:v);S2('setDB','db',B);S2('setBug','bugPos');S2('setBS','bugSize');S2('setBA','hudAlpha',v=>+v);S2('setCr','crowd');S2('setSt','studentTheme');S2('setSide','sideline',B);S2('setPy','pyro',B);S2('setStar','stars',B);S2('setRt','routes',B);S2('setStk','stickUI',B);S2('setTurf','specialTurf',B);S2('setShk','shake',B);
