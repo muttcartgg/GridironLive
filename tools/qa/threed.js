@@ -88,6 +88,7 @@ async function run(b,w,h,tag,errs,full){
   const stats=await p.evaluate(()=>g3Stats());note('perf',stats);
   console.log(tag,log.join(' | '));return p;
 }
-(async()=>{const b=await Q.launch(),errs=[];
+module.exports={DRIVER,Q};
+if(require.main===module)(async()=>{const b=await Q.launch(),errs=[];
   try{await run(b,844,390,'land',errs,true);await run(b,390,844,'port',errs,false)}catch(e){errs.push('SCRIPT '+e.message)}
   console.log('frames in',OUT);console.log('ERRORS',errs.length?errs.slice(0,15):'none');await b.close();process.exit(errs.length?1:0)})();

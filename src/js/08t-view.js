@@ -32,6 +32,8 @@ function g3Init(){
     const sun=new THREE.DirectionalLight('#fff4e0',2.6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
     const sh=sun.shadow.camera;sh.left=-42;sh.right=42;sh.top=42;sh.bottom=-42;sh.near=10;sh.far=420;sun.shadow.bias=-.0004;sun.shadow.normalBias=.02;
     sc.add(sun);sc.add(sun.target);G3.sun=sun;
+    /* the opposite light banks at night (no shadow; zero by day, so every shader compiles once for all light stages) */
+    const fill=new THREE.DirectionalLight('#dfe7ff',0);sc.add(fill);sc.add(fill.target);G3.fill=fill;
     G3.actors=new THREE.Group();G3.actors.name='actors';sc.add(G3.actors);
     G3.ov=g3MakeOverlays();sc.add(G3.ov.group);
     if(document.fonts&&document.fonts.load)Promise.all([document.fonts.load('700 80px "Barlow Condensed"'),document.fonts.load('italic 800 80px "Barlow Condensed"')]).then(()=>{G3.fontOk=true}).catch(()=>{G3.fontOk=true});else G3.fontOk=true;
@@ -161,43 +163,87 @@ function g3CamMode(){
   if(S.phase==='dead'&&S.celebrate)return 'cine';
   if((S.phase==='live'||S.phase==='dead')&&play&&play.st)return 'st';
   return 'tv'}
+/* screen fit for the TV rig: the ground rows `far` (its players' helmets) and `near` must sit between the score bug and the
+   bottom UI. Returns the target depth (centred, or `bias` of the way toward the far limit, never showing more than the
+   ground beyond row `fill` above the far side; when the span does not fit the far row wins) and widens up to wMax. Ground row z projects to NDC y = (tz−z)·sinP / (D + (tz−z)·cosP) / t. */
+const G3FIT=[0,0,0,0];
+function g3Fit(w,wMax,far,near,P,D,bias,fill){
+  const H=G3.h||1,a=G3.w/Math.max(1,H),sp=Math.sin(P),cp=Math.cos(P),bug=Math.min(H*.42,G3.bugY||48);
+  const yT=1-2*bug/H,yB=2*G3.bot/H-1;let tz=(far+near)/2;
+  for(let it=0;it<4;it++){const t=w/(2*D)/a,dT=sp-yT*t*cp,E=dT>1e-4?yT*t*D/dT:1e4,En=yB*t*D/(sp+yB*t*cp),hi=far+E,lo=near-En;
+    G3FIT[2]=lo;G3FIT[3]=hi;if(lo<=hi){const b=bias==null?(far+near)/2:lo+(hi-lo)*bias;tz=clamp(Math.max(b,Math.min(fill+E,hi)),lo,hi);break}tz=hi;if(w>=wMax-1e-3)break;w=Math.min(wMax,w*Math.min(1.6,(near-far)/Math.max(1,E+En))*1.03)}
+  G3FIT[0]=w;G3FIT[1]=tz;return G3FIT}
+/* photo mode: the 2D pan (cam.x / cam.y, in 2D yards) and zoom (cam.z) drive the 3D shot, finger-for-finger */
+function g3Photo(cs,P){const p=G3.pho||(G3.pho={cx:cam.x,cy:cam.y,z:cam.z||1,w:cs.w,x:cs.x,tz:cs.z});
+  const k=scE()*(cs.w/Math.max(1,G3.w));p.x+=(cam.x-p.cx)*k;p.tz+=(cam.y-p.cy)*k*VY/Math.max(.2,Math.sin(P));p.cx=cam.x;p.cy=cam.y;
+  p.x=clamp(p.x,-20,140);p.tz=clamp(p.tz,-12,FW+10);cs.x=p.x;cs.z=p.tz;cs.w=clamp(p.w/Math.max(.3,(cam.z||1)/p.z),6,120);cs.xv=cs.zv=cs.wv=0}
 function g3Camera(dt){
   const port=G3.h>G3.w*1.2,mode=g3CamMode(),cs=G3.cs;let cut=false;
-  if(mode!==G3.mode){if(G3.mode&&(mode==='cine'||G3.mode==='cine'||mode==='kick'||G3.mode==='kick'))S.cutA=Math.max(S.cutA||0,.8);cut=true;G3.mode=mode}
-  if((S.cutN||0)!==G3.cutN){G3.cutN=S.cutN||0;cut=true}
-  if(mode==='kick'){const [x0,y0]=g3KickSpot(),c=G3.cam,k=kick||G3.lastKick,fl=!k||k.stage==='flight'?Math.min(1,k?k.flight:1):0;c.position.set(x0-13.5,5.6+fl*1.5,y0+(CEN-y0)*.25);
+  if(mode!==G3.mode){if(G3.mode&&(mode==='cine'||G3.mode==='cine'||mode==='kick'||G3.mode==='kick'))S.cutA=Math.max(S.cutA||0,.8);cut=true;G3.mode=mode;cs.t0=G3.t}
+  if((S.cutN||0)!==G3.cutN){G3.cutN=S.cutN||0;cut=true;cs.t0=G3.t}
+  if(!S.photo)G3.pho=null;
+  if(mode==='kick'&&!S.photo){const [x0,y0]=g3KickSpot(),c=G3.cam,k=kick||G3.lastKick,fl=!k||k.stage==='flight'?Math.min(1,k?k.flight:1):0;c.position.set(x0-13.5,5.6+fl*1.5,y0+(CEN-y0)*.25);
     const lx=lerp(120,Math.max(ball.x,x0+20),fl*.25),ly=lerp(2.4,Math.min(9,ball.z||4),fl*.35);c.lookAt(lx,ly,CEN+(y0-CEN)*.15);c.fov=port?50:28;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=x0+20;cs.z=CEN;return}
-  if(mode==='cine'){const h=S.celebrate||(play&&play.carrier)||null,bx=h?h.x:ball.x,by=h?h.y:ball.y;
-    if(cut||cs.cx==null){cs.cx=bx;cs.cz=by;cs.ca=-.55}g3Damp(cs,'cx',bx,.35,dt);g3Damp(cs,'cz',by,.35,dt);cs.ca+=dt*.12;
-    const r=port?16:15,c=G3.cam;c.position.set(cs.cx+Math.sin(cs.ca)*r,3.3,cs.cz+Math.cos(cs.ca)*r);c.lookAt(cs.cx,1.2,cs.cz);c.fov=port?44:28;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=cs.cx;cs.z=cs.cz;return}
-  /* TV + special teams: what the shot follows (fx, fz), how wide it is (w), smoothing (st) */
-  let w=port?26:40,fx=S.los+w*.12,fz=lerp(CEN,S.ballY,.45),st=.55,wst=.9,pitch=port?25:17.5,dist=port?80:88;
+  /* replays ride the ball low and close; a touchdown pushes in on the scorer and drifts round him */
+  if(mode==='cine'&&!S.photo){const cel=S.phase!=='replay'&&S.celebrate,h=cel||null,hb=!h&&ball.state==='held'&&play&&play.carrier;
+    const bx=h?h.x:hb?play.carrier.x:ball.x,by=h?h.y:hb?play.carrier.y:ball.y;
+    if(cut||cs.cx==null){cs.cx=bx;cs.cz=by;cs.cxv=cs.czv=0;cs.ca=cel?-.75:-.42}g3Damp(cs,'cx',bx,cel?.3:.18,dt);g3Damp(cs,'cz',by,cel?.35:.24,dt);cs.ca+=dt*(cel?.2:.07);
+    const age=G3.t-(cs.t0||0),q=1-Math.pow(1-clamp(age/1.1,0,1),3),r=(port?17:15.5)*(cel?1.45-.5*q:1.08-.08*q),c=G3.cam;
+    c.position.set(cs.cx+Math.sin(cs.ca)*r,cel?2.4+.5*q:3.1,cs.cz+Math.cos(cs.ca)*r);c.lookAt(cs.cx,cel?1.25:1.05,cs.cz);c.fov=port?42:26;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=cs.cx;cs.z=cs.cz;return}
+  /* TV + special teams: what the shot follows (fx), the ground rows it must keep in view (far, near), how wide it is (w),
+     smoothing (st). Landscape is the classic press-box angle; portrait climbs higher so the field, not the stands, fills
+     the tall frame. Runs tighten (bigger players) with a lead from the carrier's smoothed velocity. */
+  let pitch=port?36:18.5,dist=port?64:88;
+  let w=port?24:36,wMax=port?30:42,fx=S.los+w*(port?.06:.12),far=null,near=null,st=.5,wst=.8,bias=null;
   const live=(S.phase==='live'||S.phase==='dead'||S.phase==='replay')&&play;
-  if(mode==='st'){w=port?40:62;pitch+=5;dist+=8;const t=ball.state==='air'?null:play.carrier;if(t){fx=t.x+clamp((t.vx||0)*.6,-6,6);fz=lerp(CEN,t.y,.5)}else{fx=lerp(ball.x,ball.tx||ball.x,.35);fz=lerp(CEN,ball.y,.4)}st=.45}
+  if(mode==='st'){pitch+=port?2:4;dist+=8;const t=ball.state==='air'?null:play.carrier;
+    if(t){g3Lead(cs,t,dt);w=port?26:44;wMax=port?34:54;fx=t.x+clamp(cs.lvx*(port?.35:.55),-7,7);far=t.y-6;near=t.y+4;st=.26}
+    else{w=port?34:60;wMax=port?46:70;fx=lerp(ball.x,ball.tx==null?ball.x:ball.tx,.35);far=Math.min(ball.y,ball.ty==null?ball.y:ball.ty)-4;near=Math.max(ball.y,ball.ty==null?ball.y:ball.ty)+4;st=.42}}
   else if(live){const h=play.carrier||Q;
-    if(ball.state==='air'&&!ball.pitch){const far=hyp((ball.tx||0)-(ball.fx||0),(ball.ty||0)-(ball.fy||0));fx=lerp(ball.x,ball.tx,.5);fz=lerp(CEN,lerp(ball.y,ball.ty,.5),.85);w=clamp(far+(port?6:18),port?28:44,port?44:66);st=.4;wst=.7}
-    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);fx=lerp(Q.x,aim.x,.5);fz=lerp(CEN,lerp(Q.y,aim.y,.5),.9);w=clamp(d*(port?.75:1.05)+(port?16:18),port?28:44,port?48:66);st=.3;wst=.4}
-    else if(h){if(play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){w=port?30:48;fx=Q.x+w*.24;fz=lerp(CEN,Q.y,.4)}
-      else{fx=h.x+clamp((h.vx||0)*.5,-4,7);fz=lerp(CEN,h.y,.6);w=port?26:(Math.abs(h.vx||0)>6&&Math.abs(h.x-S.los)>14?46:40);st=.34}}
-    if(S.phase==='dead'){fx=cs.x;fz=cs.z;w=cs.w}}
-  else if(S.phase==='presnap'||S.phase==='pat'||S.phase==='wait'){fx=S.los+w*(port?.05:.12);fz=lerp(CEN,S.ballY,.45)}
-  fx=clamp(fx,-6+w*.4,126-w*.4);fz=clamp(fz,port?18:14,port?36:40);
-  if(cut){cs.x=fx;cs.z=fz;cs.w=w;cs.xv=cs.zv=cs.wv=0}else{g3Damp(cs,'x',fx,st,dt);g3Damp(cs,'z',fz,st*1.3,dt);g3Damp(cs,'w',w,wst,dt)}
-  /* keep the ball inside the frame when the spring lags */
-  if(live&&S.phase!=='dead'){const b=ball.state==='air'?ball:(play.carrier||Q);if(b){const hw=cs.w*.42;let o=b.x<cs.x-hw?b.x+hw-cs.x:b.x>cs.x+hw?b.x-hw-cs.x:0;if(o){cs.x+=o*Math.min(1,dt*9);cs.xv=0}}}
-  g3Rig(cs.x,cs.z-(port?1:3),cs.w,pitch,dist,0);
+    if(ball.state==='air'&&!ball.pitch){const tx=ball.tx==null?ball.x:ball.tx,ty=ball.ty==null?ball.y:ball.ty,fx0=ball.fx==null?ball.x:ball.fx,fy0=ball.fy==null?ball.y:ball.fy,d=hyp(tx-fx0,ty-fy0);
+      fx=lerp(ball.x,tx,.5);w=clamp(d*(port?.6:.9)+(port?10:16),port?24:40,port?40:64);wMax=port?48:70;far=Math.min(ty,ball.y)-1;near=Math.max(ty,ball.y,fy0)+2;st=.36;wst=.6;bias=.7}
+    else if(aim&&Q){const d=hyp(aim.x-Q.x,aim.y-Q.y);fx=lerp(Q.x,aim.x,.5);w=clamp(d*(port?.7:1.02)+(port?12:16),port?26:42,port?44:66);wMax=port?52:72;
+      far=Math.min(aim.y-1,-1.5);near=Math.max(Q.y,aim.y)+2;st=.3;wst=.4;bias=.85}
+    else if(h&&play.type==='pass'&&!play.thrown&&!play.scramble&&h===Q){
+      /* dropback: from the QB to the deepest receiver, every route's depth on screen */
+      let x1=Q.x+12,y0=Q.y,y1=Q.y;for(const p of OFF){if(p===Q||p.blocker||!eligible(p))continue;if(p.x>x1)x1=p.x;if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}
+      const x0=Q.x-5;w=clamp((x1-x0)*1.08+4,port?26:44,port?40:62);wMax=port?44:66;fx=Math.max((x0+x1)/2,x0+w*.42);far=y0-1;near=y1+1.5;st=.38;wst=.7;bias=.75}
+    else if(h){g3Lead(cs,h,dt);const open=Math.abs(h.x-S.los)>12&&Math.hypot(h.vx||0,h.vy||0)>6;
+      w=port?(open?23:21):(open?35:31);wMax=port?28:44;fx=h.x+clamp(cs.lvx*(port?.32:.5),port?-3.5:-5,port?4:7.5);far=h.y-5;near=h.y+4;st=.2;wst=.7}
+    if(S.phase==='dead'){fx=cs.x;far=null;w=cs.w}}
+  else if(S.phase==='presnap'||S.phase==='pat'||S.phase==='wait'){
+    let y0=S.ballY-4,y1=S.ballY+4;for(const p of P){if(p.y<y0)y0=p.y;if(p.y>y1)y1=p.y}far=y0-1;near=y1+1;bias=.85}
+  /* fit: helmets of the far row below the score bug, the near row above the bottom UI */
+  const Pr=pitch*Math.PI/180;let tz=cs.z;
+  if(far!=null){G3.bot=G3.h-Math.max(SAFE.b||0,22,G3.bugB||0)-(S.phase==='presnap'?G3.h*(port?.12:.2):G3.h*(port?.08:.04));
+    const f=g3Fit(w,Math.max(w,wMax),far-2.15/Math.tan(Pr),near,Pr,dist,bias,port?-3:-5);w=f[0];tz=f[1];G3.dbg=[+far.toFixed(1),+near.toFixed(1),+w.toFixed(1),+tz.toFixed(1),+f[2].toFixed(1),+f[3].toFixed(1)]}
+  else if(!live)tz=lerp(CEN,S.ballY,.45);
+  fx=clamp(fx,-6+w*.4,126-w*.4);tz=clamp(tz,port?6:4,port?47:44);
+  if(S.photo){g3Photo(cs,Pr);g3Rig(cs.x,cs.z,cs.w,pitch,dist,0);return}
+  if(cut){cs.x=fx;cs.z=tz;cs.w=w;cs.xv=cs.zv=cs.wv=0}else{g3Damp(cs,'x',fx,st,dt);g3Damp(cs,'z',tz,st*1.6,dt);g3Damp(cs,'w',w,wst,dt)}
+  /* keep the ball inside the frame when the spring lags (the spring keeps its velocity: no hitch) */
+  if(live&&S.phase!=='dead'){const b=ball.state==='air'?ball:(play.carrier||Q);if(b){const hw=cs.w*.43;let o=b.x<cs.x-hw?b.x+hw-cs.x:b.x>cs.x+hw?b.x-hw-cs.x:0;if(o)cs.x+=o*Math.min(1,dt*10)}}
+  g3Rig(cs.x,cs.z,cs.w,pitch,dist,0);
 }
+/* the carrier's velocity, smoothed (the lead must not twitch on every cut) */
+function g3Lead(cs,h,dt){if(cs.lp!==h){cs.lp=h;cs.lvx=h.vx||0;return}cs.lvx+=((h.vx||0)-cs.lvx)*Math.min(1,dt*4.5)}
 /* ---------- light, shadows, sky, crowd, video board, weather ---------- */
-const G3L={day:{h:['#c6dcff','#3d5a2c',1.15],s:['#fff3df',2.7],el:56,dx:-.55,dz:-.83,ex:1},late:{h:['#d8d2c4','#3d5130',1.0],s:['#ffd9a8',2.4],el:34,dx:-.88,dz:-.47,ex:1},
-  sunset:{h:['#c08a7a','#2f3a22',.85],s:['#ff9a55',2.1],el:13,dx:-.97,dz:-.24,ex:1.02},night:{h:['#4a5878','#141c12',.38],s:['#f1f5ff',2.7],el:64,dx:-.25,dz:.55,ex:1.06}};
+const G3L={day:{h:['#c4dbff','#3f5d2c',1.12],s:['#fff4e2',2.75],f:0,el:56,dx:-.55,dz:-.83,ex:1},late:{h:['#d8d2c4','#3d5130',1.0],s:['#ffd9a8',2.45],f:0,el:34,dx:-.88,dz:-.47,ex:1},
+  sunset:{h:['#c09284','#2c3620',.98],s:['#ff9a52',2.9],f:.3,el:11,dx:-.98,dz:-.2,ex:1.02},night:{h:['#2a3552','#0a0f09',.2],s:['#eef3ff',3.35],f:.95,el:62,dx:-.5,dz:-.62,ex:1}};
+/* the key light (sun, or the far light banks at night) follows the shot; its shadow box is snapped to whole shadow-map
+   texels in light space, so shadows do not crawl or shimmer while the camera pans */
+const G3SH={half:42,map:2048};
 function g3Light(){const st=G3.env?G3.env.stage:'day',L=G3L[st]||G3L.day,wk=G3.env?G3.env.wk:'dry',dim=wk!=='dry'&&st!=='night'?.62:1,hm=wk!=='dry'?1.2:1;
-  G3.hemi.color.set(L.h[0]);G3.hemi.groundColor.set(L.h[1]);G3.hemi.intensity=L.h[2]*hm;G3.sun.color.set(L.s[0]);G3.sun.intensity=L.s[1]*dim;G3.R.toneMappingExposure=L.ex;
-  const e=L.el*Math.PI/180,tx=Math.round(G3.cs.x/.04)*.04,tz=Math.round(G3.cs.z/.04)*.04;G3.sun.target.position.set(tx,0,tz);G3.sun.position.set(tx+L.dx*Math.cos(e)*160,Math.sin(e)*160,tz+L.dz*Math.cos(e)*160);G3.sun.target.updateMatrixWorld();
-  if(!G3.fogK||G3.fogK!==st+wk){G3.fogK=st+wk;const c=(SKY3[st]||SKY3.day)[1];G3.scene.fog=st==='night'?new THREE.Fog('#05070d',110,520):new THREE.Fog(wk==='dry'?c:'#8a929c',wk==='dry'?260:150,wk==='dry'?1500:700)}}
+  G3.hemi.color.set(L.h[0]);G3.hemi.groundColor.set(L.h[1]);G3.hemi.intensity=L.h[2]*hm;G3.sun.color.set(L.s[0]);G3.sun.intensity=L.s[1]*dim;G3.R.toneMappingExposure=L.ex;G3.fill.intensity=L.f*dim;
+  const e=L.el*Math.PI/180,ce=Math.cos(e),dx=L.dx*ce,dy=Math.sin(e),dz=L.dz*ce,rl=Math.hypot(dz,dx)||1,rx=dz/rl,rz=-dx/rl,ux=dy*rz,uy=dz*rx-dx*rz,uz=-dy*rx,tx=G3.cs.x,tz=G3.cs.z;
+  const q=2*G3SH.half/G3SH.map,a=tx*rx+tz*rz,b=tx*ux+tz*uz,da=Math.round(a/q)*q-a,db=Math.round(b/q)*q-b,X=tx+da*rx+db*ux,Y=db*uy,Z=tz+da*rz+db*uz;
+  G3.sun.target.position.set(X,Y,Z);G3.sun.position.set(X+dx*160,Y+dy*160,Z+dz*160);G3.sun.target.updateMatrixWorld();
+  G3.fill.target.position.set(tx,0,tz);G3.fill.position.set(tx-dx*100,60,tz-dz*100+40);G3.fill.target.updateMatrixWorld();
+  if(!G3.fogK||G3.fogK!==st+wk){G3.fogK=st+wk;const c=(SKY3[st]||SKY3.day)[1];G3.scene.fog=st==='night'?new THREE.Fog('#03050a',120,560):new THREE.Fog(wk==='dry'?c:'#8a929c',wk==='dry'?260:150,wk==='dry'?1500:700)}}
 onFx('td',()=>{G3.ex=1});onFx('roar',()=>{G3.ex=Math.max(G3.ex,.75)});onFx('turnover',()=>{G3.ex=Math.max(G3.ex,.85)});onFx('safety',()=>{G3.ex=Math.max(G3.ex,.8)});
 onFx('fg',e=>{if(e&&e.good)G3.ex=Math.max(G3.ex,.7)});onFx('tackle',e=>{if(e&&e.big)G3.ex=Math.max(G3.ex,.4)});
 function g3Crowd(dt,now){const m=G3.env&&G3.env.crowd;if(!m)return;if(S.celebrate)G3.ex=Math.max(G3.ex,.6);G3.ex=Math.max(0,G3.ex-dt*.22);const u=m.material.uniforms,st=G3.env.stage;
-  u.uT.value=now/1000;u.uJ.value=G3.ex;u.uL.value=st==='night'?.5:st==='sunset'?.78:G3.env.wk!=='dry'?.8:1}
+  u.uT.value=now/1000;u.uJ.value=G3.ex;u.uL.value=st==='night'?.56:st==='sunset'?.8:G3.env.wk!=='dry'?.8:1;u.uN.value=st==='night'?1:st==='sunset'?.4:0}
 function g3Board(now){const b=G3.env&&G3.env.board;if(!b||now-(b.t||0)<500)return;b.t=now;const dd=$('#dd'),k=[S.score[0],S.score[1],S.q,Math.ceil(S.clock),dd?dd.textContent:''].join('|');if(k===b.key)return;b.key=k;t3BoardDraw(b.cv);b.tex.needsUpdate=true}
 function g3Weather(dt){let k=S.wx==='Rain'?'rain':S.wx==='Snow'?'snow':'';if(typeof stdIndoor==='function'&&stdIndoor())k='';
   if(k!==G3.wxk){if(G3.wx){G3.scene.remove(G3.wx.obj);G3.wx.obj.geometry.dispose();G3.wx.obj.material.dispose();if(G3.wx.tex)G3.wx.tex.dispose()}G3.wx=null;G3.wxk=k;
@@ -223,6 +269,9 @@ function draw3D(now){
   if(S.game!==G3.gref){if(G3.gref!==undefined)g3ResetAth();G3.gref=S.game}   // a game ended / a new one began
   if(G3.cv.style.display!=='block')g3Show(true);
   if(++G3.fr%12===1)G3.cover=!!document.querySelector('#app>.screen:not([hidden])');if(G3.cover)return;   // a menu covers the field: no render
+  /* the score bug's footprint (top, or bottom when Settings put it there): the TV fit keeps the far row clear of it */
+  if(G3.fr%30===1){const sb=$('#sb'),bb=document.documentElement.dataset.bug==='bottom';let t=Math.max(14,SAFE.t||0)+6,bt=0;
+    if(sb&&!sb.hidden){const r=sb.getBoundingClientRect();if(r.height>0){if(bb)bt=(H||innerHeight)-r.top+4;else t=Math.max(t,r.bottom+4)}}G3.bugY=t;G3.bugB=bt}
   const dt=Math.min(.1,Math.max(0,(now-(G3.last||now))/1000));G3.last=now;G3.t+=dt;
   g3Size();const rb=G3.key;g3EnsureEnv();const rebuilt=rb!==G3.key;g3Camera(dt);g3Light();g3Crowd(dt,now);g3Board(now);g3Weather(dt);g3KickBall();g3Overlays(now);
   if(typeof ath3dFrame==='function'){if(G3.ph)g3DropPlaceholders();try{ath3dFrame(G3.actors,now,dt)}catch(e){if(!G3.athErr){G3.athErr=1;console.warn('ath3dFrame',e)}}}else g3Placeholders();
@@ -241,7 +290,7 @@ function g3Overlay2D(c,now){
   if(S.phase==='live'||S.phase==='presnap')drawStick(c);
   g3KickUI(c,now);
   if(G3.env&&(G3.env.stage==='night'||G3.env.stage==='sunset')&&S.phase!=='kick'){const g=G3.vig&&G3.vig.w===W&&G3.vig.h===H&&G3.vig.st===G3.env.stage?G3.vig.g:null;let gr=g;
-    if(!gr){gr=c.createRadialGradient(W/2,H*.55,Math.min(W,H)*.35,W/2,H*.55,Math.hypot(W,H)*.62);gr.addColorStop(0,'rgba(0,0,8,0)');gr.addColorStop(1,G3.env.stage==='night'?'rgba(0,2,10,.5)':'rgba(20,6,0,.28)');G3.vig={w:W,h:H,st:G3.env.stage,g:gr}}
+    if(!gr){gr=c.createRadialGradient(W/2,H*.55,Math.min(W,H)*.35,W/2,H*.55,Math.hypot(W,H)*.62);gr.addColorStop(0,'rgba(0,0,8,0)');gr.addColorStop(.55,G3.env.stage==='night'?'rgba(0,2,12,.12)':'rgba(30,10,0,.05)');gr.addColorStop(1,G3.env.stage==='night'?'rgba(0,2,12,.62)':'rgba(30,10,0,.3)');G3.vig={w:W,h:H,st:G3.env.stage,g:gr}}
     c.fillStyle=gr;c.fillRect(0,0,W,H)}
   if(S.ts<.9){const a=(1-S.ts)*.9,bh=H*.07;c.fillStyle=`rgba(0,0,0,${a})`;c.fillRect(0,0,W,bh);c.fillRect(0,H-bh,W,bh)}
 }
