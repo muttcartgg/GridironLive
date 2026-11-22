@@ -1,4 +1,5 @@
-/* Screenshots of the main screens and a live play, landscape (844x390) and portrait (390x844), at 2x.
+/* Screenshots of the main screens and a live play in the 3D broadcast style (real WebGL, so the frames are slow to
+   render headless), landscape (844x390) and portrait (390x844), at 2x.
    NODE_PATH=$(npm root -g) node tools/qa/shots.js [web/index.html] [outdir]   (default outdir: /tmp/gl-shots) */
 const Q=require('./_boot');const fs=require('fs');
 (async()=>{const OUT=process.argv[3]||'/tmp/gl-shots';fs.mkdirSync(OUT,{recursive:true});const b=await Q.launch();const errs=[];

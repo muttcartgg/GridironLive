@@ -18,4 +18,7 @@ NODE_PATH=$(npm root -g) node tools/qa/stadiums.js [stadiums.json] [web/index.ht
 ```
 
 Each takes an optional path to the built page (default `web/index.html`) and a team abbreviation (default UGA).
+Pages from `_boot.js` get the QA flag `window.__QA2D__`: the game draws with its 2D fallback renderer, because headless
+Chromium renders WebGL in software (slow). `threed.js` and `shots.js` open their pages with `{gl3d:true}` to test the real
+3D broadcast view, the only art style players see.
 Exit code is 1 when a page error was thrown. Look at screenshots with an image viewer (or the Read tool).
