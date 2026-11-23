@@ -3,6 +3,8 @@
          turf wear and snow, time of day, fireworks, field storming, poses
    ========================================================= */
 const hostT=()=>S.neutral?S.home:(S.userHome?S.home:S.away);
+/* where the game is played: the neutral site (bowls, title games), else the host's stadium (the imported name when there is one) */
+const venueOf=()=>S.neutral?String((S.game&&S.game.site)||'Neutral site'):(hostT().stadium||hostT().city);
 const isNight=()=>S.slot==='Primetime'||(S.slot==='Afternoon'&&progress()>.66);
 const SPECIAL_TURF={BOIS:['#1d4fb0','#1a46a0'],EWU:['#b3262d','#9e2127'],CCU:['#1b8f8c','#177d7a'],UCA:['#6d6f76','#4f2d7f']};
 function turfColors(night){const t=hostT(),sd=typeof stdOf==='function'?stdOf(t):null,cu=t.stad&&t.stad.turf||sd&&sd.tf,sp=LG.settings.specialTurf!==false&&(cu?[cu,shade(cu,-.1)]:SPECIAL_TURF[t.abbr]);if(sp)return night?[shade(sp[0],-.15),shade(sp[1],-.15)]:sp;

@@ -219,10 +219,14 @@ function t3LightPanel(){const cv=document.createElement('canvas');cv.width=128;c
 /* draw img fitted (aspect kept) into a mw x mh box centred at cx,cy */
 function t3Fit(g,img,cx,cy,mw,mh,a){const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,k=Math.min(mw/iw,mh/ih);g.globalAlpha=a==null?1:a;try{g.drawImage(img,cx-iw*k/2,cy-ih*k/2,iw*k,ih*k)}catch(e){}g.globalAlpha=1}
 /* the venue: the host's stadium (t.stadium, the imported name when there is one) or the neutral site without its city */
-function t3Venue(){if(S.neutral){const g=S.game;return String((g&&g.site)||'').split(',')[0].trim().slice(0,40)}const h=hostT();return String(h.stadium||'').trim().slice(0,40)}
+function t3Venue(){if(S.neutral){const g=S.game;return String((g&&g.site)||'').split(',')[0].trim().slice(0,40)}return String(hostT().stadium||'').trim().slice(0,40)}
 /* the press-box roof sign: the venue's name in lit letters on a dark facade, a host-colour band below */
 function t3Sign(name,c1){const cv=document.createElement('canvas');cv.width=1024;cv.height=112;const g=cv.getContext('2d');g.fillStyle='#15191f';g.fillRect(0,0,1024,112);g.fillStyle=shade(c1,-.12);g.fillRect(0,100,1024,12);
   g.fillStyle='#F4F2EA';g.font='800 72px "Big Shoulders Display",'+FFONT;g.textAlign='center';g.textBaseline='middle';g.fillText(String(name||'').toUpperCase(),512,54,972);return cv}
+/* the wall board at midfield on the far side (in the TV shot): the venue's name on a dark LED panel, host-colour edges */
+function t3WallSign(name,c1){const cv=document.createElement('canvas');cv.width=1024;cv.height=96;const g=cv.getContext('2d');g.fillStyle='#0d1015';g.fillRect(0,0,1024,96);g.fillStyle=c1;g.fillRect(0,0,1024,7);g.fillRect(0,89,1024,7);
+  g.fillStyle='#F4F2EA';g.font='800 62px "Big Shoulders Display",'+FFONT;g.textAlign='center';g.textBaseline='middle';g.fillText(String(name||'').toUpperCase(),512,51,992);
+  g.fillStyle='rgba(255,255,255,.1)';for(let x=0;x<1024;x+=4)g.fillRect(x,0,1,96);return cv}
 /* a square canvas holding one logo (blank without one): mh caps its height (share of the side), a its opacity */
 function t3LogoCv(cv,img,mh,a){cv.width=cv.width;const g=cv.getContext('2d'),n=cv.width;if(img)t3Fit(g,img,n/2,n/2,n-8,(mh||1)*(n-8),a);return cv}
 /* the logo for a spot: the school's designed badge (10c) wins, as in the menus; else the imported logo (02c) */
@@ -293,13 +297,16 @@ function t3Build(){
   add(t3Band(SEG_NEAR,...T3P.lowBack,30,1),dark);add(t3Band(SEG_NEAR,...T3P.lowTop,30,1),conc);
   add(t3Band(SEG_UP,...T3P.suites,8,1),sui);add(t3Band(SEG_UP,...T3P.ledge,30,1),conc);
   add(t3Band(SEG_UP,...T3P.up,2,Math.round((T3P.up[1][0]-T3P.up[0][0])/1.12)),seat);add(t3Band(SEG_UP,...T3P.back,30,1),dark);add(t3Band(SEG_UP,...T3P.rim,30,1),conc);
+  /* the venue's name on a wall board at midfield, far side (just in front of the ribbon) */
+  const vn=t3Venue();if(vn){const wsT=keep(t3Tex(t3WallSign(vn,h.c1)));const ws=new THREE.Mesh(new THREE.PlaneGeometry(24,24*96/1024),keep(new THREE.MeshStandardMaterial({map:wsT,emissiveMap:wsT,emissive:'#ffffff',emissiveIntensity:o.night?1.25:.45,roughness:.6})));
+    ws.position.set(60,1.2,BOWL.cz-BOWL.hz+.06);E.add(ws)}
   /* press box above the far upper deck; a camera deck behind the near lower bowl */
   const pbT=keep(t3Tex(t3Suites(),true,true));pbT.repeat.set(10,1);
   const pbm=keep(new THREE.MeshStandardMaterial({map:pbT,emissiveMap:pbT,emissive:'#ffffff',emissiveIntensity:o.night?.8:.12,roughness:.35}));
   const pb=new THREE.Mesh(new THREE.BoxGeometry(76,9,8),[dark,dark,dark,dark,pbm,dark]);pb.position.set(60,39.5+4.5,BOWL.cz-BOWL.hz-52-3.5);E.add(pb);
   const pbr=new THREE.Mesh(new THREE.BoxGeometry(80,1,11),conc);pbr.position.set(60,49,pb.position.z);E.add(pbr);
   /* the venue's name on a sign along the front of the press-box roof, facing the field */
-  const vn=t3Venue();if(vn){const sgT=keep(t3Tex(t3Sign(vn,h.c1)));const sg=new THREE.Mesh(new THREE.PlaneGeometry(66,66*112/1024),keep(new THREE.MeshBasicMaterial({map:sgT,toneMapped:false})));sg.position.set(60,49.5+66*112/2048+.2,pb.position.z+5.45);E.add(sg)}
+  if(vn){const sgT=keep(t3Tex(t3Sign(vn,h.c1)));const sg=new THREE.Mesh(new THREE.PlaneGeometry(66,66*112/1024),keep(new THREE.MeshBasicMaterial({map:sgT,toneMapped:false})));sg.position.set(60,49.5+66*112/2048+.2,pb.position.z+5.45);E.add(sg)}
   /* video board over the right end, live score */
   const bcv=t3Board();t3BoardDraw(bcv,null);const bt=keep(t3Tex(bcv));const bm=keep(new THREE.MeshBasicMaterial({map:bt,toneMapped:false}));
   const board=new THREE.Mesh(new THREE.PlaneGeometry(34,17),bm);board.rotation.y=-Math.PI/2;board.position.set(BOWL.cx+BOWL.hx+50,50,CEN);E.add(board);
