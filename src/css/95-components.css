@@ -412,7 +412,9 @@ table.box td{font-size:13.5px}
 .cfb-t i{font:800 17px/1 var(--f-disp);font-style:normal;text-align:right;color:var(--c-mute)}
 .cfb-t b{font:800 17px/1 var(--f-disp);text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .cfb-t .cfpr-mono,.cfb-t img{width:28px;height:28px;font-size:11px}
-.cfb-bye .cfb-t{min-height:72px;background:#232427}.cfb-bye .cfb-t b{font-size:21px}.cfb-bye .cfb-t i{color:#D8B257;font-size:22px}
+.cfb-bye .cfb-t{min-height:72px;background:#232427}.cfb-bye .cfb-t b{font-size:21px}
+.cfpr-t b.l1{font-size:20px}.cfpr-t b.l2{font-size:17px}/* long names in the bracket wrap to two tight lines instead of being cut */
+.cfb-t b.l1,.cfb-t b.l2{white-space:normal;line-height:.92;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}.cfb-t b.l1{font-size:15px}.cfb-t b.l2{font-size:14px}.cfb-bye .cfb-t b.l1{font-size:19px}.cfb-bye .cfb-t b.l2{font-size:17px}.cfb-bye .cfb-t i{color:#D8B257;font-size:22px}
 .cfb-qf b{display:block;font:800 18px/1.05 var(--f-disp);text-transform:uppercase}
 @media (max-width:560px){.cfb-path{grid-template-columns:1fr 1fr}.cfb-qf{grid-column:1/-1;display:flex;align-items:baseline;gap:8px}.cfb-qf small{margin:0}}
 :where(.screen) .card.cfp-new{flex-direction:row;align-items:center;justify-content:space-between;gap:12px;border-top:2px solid transparent;border-image:var(--metal-gold) 1}

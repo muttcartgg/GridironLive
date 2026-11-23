@@ -14,12 +14,14 @@ function cfpData(){
 }
 const cfpUnseen=()=>{const d=LG&&!LG.rtg&&LG.phase!=='offseason'?cfpData():null;return d&&LG.cfpSeen!==d.key?d:null};
 function cfpMark(t,sz){const lg=typeof logoHTML==='function'?logoHTML(t,sz||40,'cfpr-lg'):'';return lg||`<span class="cfpr-mono" style="--c:${t.c1};--k:${inkOn(t.c1)}">${esc(t.abbr)}</span>`}
+/* a school name that steps down a size when it's long, so 'James Madison' or 'North Dakota State' fits instead of being cut */
+function cfpNm(t){const n=(t.city||'').length;return `<b${n>15?' class="l2"':n>10?' class="l1"':''}>${esc(t.city)}</b>`}
 function cfpRow(d,id,i,link){
   const t=T(id),sd=d.seeds.indexOf(id)+1,au=d.auto.has(id),pv=d.prev.indexOf(id);
   const mv=!d.prev.length?'':pv<0?'<i class="nw">New</i>':pv>i?`<i class="up">Up ${pv-i}</i>`:pv<i?`<i class="dn">Down ${i-pv}</i>`:'';
   const tags=(sd&&sd<=4?'<span class="cft bye">Bye</span>':'')+(sd>4?`<span class="cft sd">Seed ${sd}</span>`:'')+(au?'<span class="cft au">Auto bid</span>':'')+(!sd&&i<12?'<span class="cft out">Out</span>':'');
   return `<div class="cfpr${sd?' in':''}${sd&&sd<=4?' bye':''}${id===LG.user?' me':''}" data-r="${i+1}"${link?` data-team="${id}"`:''} style="--c1:${t.c1}">`
-    +`<b class="cfpr-n">${i+1}</b><span class="cfpr-m">${cfpMark(t)}</span><span class="cfpr-t"><b>${esc(t.city)}</b><small>${recStr(t)} · ${esc(confName(t.conf))}${mv?' '+mv:''}</small></span><span class="cfpr-x">${tags}</span></div>`;
+    +`<b class="cfpr-n">${i+1}</b><span class="cfpr-m">${cfpMark(t)}</span><span class="cfpr-t">${cfpNm(t)}<small>${recStr(t)} · ${esc(confName(t.conf))}${mv?' '+mv:''}</small></span><span class="cfpr-x">${tags}</span></div>`;
 }
 function cfpLock(d,big){
   return `<div class="cfpb-lock${big?' big':''}"><span class="k">College Football Playoff</span><span class="r">Rankings</span><span class="w">${esc(d.label)}</span></div>`;
@@ -36,7 +38,7 @@ function cfpOutHTML(d){
 /* the bracket a Selection Day show ends on, by seed: the bye team, the first-round game it waits on, the quarterfinal */
 function cfpBracketHTML(d){
   const s=d.seeds;if(s.length<12)return '';const B=LG.cfp&&LG.cfp.bw||(typeof cfpBowls==='function'?cfpBowls(LG,s):{qf:[]});
-  const tm=id=>{const t=T(id);return `<span class="cfb-t" style="--c1:${t.c1}"><i>${s.indexOf(id)+1}</i>${cfpMark(t,28)}<b>${esc(t.city)}</b></span>`};
+  const tm=id=>{const t=T(id);return `<span class="cfb-t" style="--c1:${t.c1}"><i>${s.indexOf(id)+1}</i>${cfpMark(t,28)}${cfpNm(t)}</span>`};
   return `<div class="cfb"><div class="cfb-h">The bracket</div>${[0,1,2,3].map(k=>{const j=3-k,hi=s[4+j],lo=s[11-j],q=B.qf&&B.qf[k];
     return `<div class="cfb-path" data-k="${k}"><div class="cfb-bye"><small>Bye</small>${tm(s[k])}</div><div class="cfb-r1"><small>First round at ${esc(T(hi).stadium||T(hi).city)}</small>${tm(hi)}${tm(lo)}</div><div class="cfb-qf"><small>Quarterfinal</small><b>${esc(q&&q.n||'Quarterfinal')}</b>${q&&q.d?`<small>${esc(q.d)}</small>`:''}</div></div>`}).join('')}</div>`;
 }
