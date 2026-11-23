@@ -246,6 +246,7 @@ const NAV_ICO={home:'<path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V2
 const navOf=v=>NAV.find(n=>n[2].includes(v))||NAV[0];
 function showHub(tab){
   const prev=TAB,wasHidden=$('#hub').hidden;if(tab==='roster')tab='team';
+  if(tab&&tab!=='rankings'&&typeof cfpClose==='function'&&$('#cfpShow'))cfpClose(true);
   invalidate();hideAll();if(tab&&VIEWS[tab])TAB=tab;if(LG.rtg&&(TAB==='recruit'||TAB==='program'))TAB='home';S.phase='hub';applyStyle();ensureCareer(LG);
   const u=T(LG.user);applyTeamTheme(u);
   const ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null,top=$('#hubTop');top.style.setProperty('--hd',deepC(u));
@@ -300,7 +301,7 @@ function hubHome(){
     <div class="sp-k"><div><em>Record</em><b>${recStr(u)}</b></div>${cpos?`<div><em>${esc(confName(u.conf))}</em><b>${ordinal(cpos)}</b></div>`:''}<div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div></div>
     <div class="sp-track" aria-hidden="true">${track}</div><div class="sp-foot"><span>AD expects ${tgt}+ wins</span><span class="${hsC==='hot'?'res-l':''}">Hot seat: ${esc(hsN.toLowerCase())}</span></div></div>`;
   const news=LG.news.length?`<div class="card news"><div class="news-h"><span class="eyebrow">This week</span><button class="linkbtn" id="homeNews">All news</button></div><div class="list">${LG.news.slice(0,3).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
-  return tourHTML()+main+decisionHTML()+`<div class="grid2">${season}${news}</div>`+(typeof rcHomeCard==='function'?rcHomeCard():'');
+  return tourHTML()+main+(typeof cfpHomeHTML==='function'?cfpHomeHTML():'')+decisionHTML()+`<div class="grid2">${season}${news}</div>`+(typeof rcHomeCard==='function'?rcHomeCard():'');
 }
 /* weekly front-office decision: a card on Home instead of a popup; the answer stays on the card until next week */
 function decisionHTML(){
@@ -389,10 +390,7 @@ function hubRankings(){
       ${others?`<p class="note"><b>Others receiving votes:</b> ${others}</p>`:''}
       <p class="note">Voted like the media poll: each week starts from last week's ballot. A win holds a team's spot or moves it up (more for ranked, top-10 and road wins), a loss drops it by how good the opponent was and the margin, and a bye holds. A ranked team that wins falls at most two spots, and a team that beat a team with the same or a worse record is always ranked ahead of it. SOS is a rank; Power is points better than an average team; PF/G and PA/G are points scored and allowed per game.</p></div>`;
   }else if(cfp){
-    const c=ensureCFP(LG),fin=LG.week>LG.R||LG.phase==='offseason';
-    body=!c.length?`<div class="card"><div class="eyebrow">College Football Playoff</div><div class="h2">CFP rankings</div><p class="note">${LG.phase==='offseason'?'No CFP rankings were kept for this season.':`Not released yet — first rankings after Week ${cfpFrom(LG)}. Until then the playoff projection uses the AP Top 25.`}</p></div>`
-      :`<div class="card"><div class="eyebrow">${fin?'Final rankings · selection day':'Selection committee · after '+esc(last)}</div><div class="h2">CFP Top 25</div>${pollTab(c,LG.cfpPrev||[],'CFP ')}
-      <p class="note">The committee ranks résumés, not reputations, and starts fresh every week: record, strength of schedule, wins over CFP-ranked teams, bad losses, head-to-head and common opponents${fin?', plus conference titles':''}. Its final rankings pick and seed the 12-team playoff.</p></div>`;
+    body=cfpBoardHTML();   /* selection-show board and reveal (04e) */
   }else if(RANK_MODE==='all'){
     body=`<div class="card"><div class="setrow"><div class="h2">All ${div} teams · ${list.length}</div>${toggle}</div><div class="tw"><table class="rtab">${head(true)}<tbody>${list.map((id,i)=>row(id,i,true)).join('')}</tbody></table></div></div>`;
   }else{
@@ -620,7 +618,8 @@ function hubHelp(){
 }
 function bindHub(){
   if(TAB==='program'){bindCareer();bindUniCard()}
-  if(TAB==='home'&&!LG.rtg){bindDecision();bindTour();on('homeNews',()=>{showHub('feed');$('#hubScroll').scrollTop=0})}
+  if(TAB==='rankings'&&RANK_MODE==='cfp'&&typeof cfpBind==='function')cfpBind();
+  if(TAB==='home'&&!LG.rtg){bindDecision();bindTour();if(typeof cfpHomeBind==='function')cfpHomeBind();on('homeNews',()=>{showHub('feed');$('#hubScroll').scrollTop=0})}
   document.querySelectorAll('details.more').forEach(d=>d.ontoggle=()=>{d.open?SET_OPEN.add(d.dataset.k):SET_OPEN.delete(d.dataset.k)});
   on('setHelp',()=>{showHub('help');$('#hubScroll').scrollTop=0});on('setNew',openWhatsNew);
   on('newSchool',()=>openSchoolBuilder({mode:'create',L:LG,done:rerender}));
