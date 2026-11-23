@@ -200,7 +200,7 @@ const BC={
     return `<div class="tvs"><b>${f(la)}</b><div class="tvb"><i style="--w:${wl.toFixed(1)}%;background:${tvCol(L0)}"></i></div><em>${lab}</em><div class="tvb r"><i style="--w:${wr.toFixed(1)}%;background:${tvCol(R0)}"></i></div><b>${f(lb)}</b></div>`},
   quarterCard(q){
     if(LG.settings.gfx===false)return;const st=S.stats,os=S.ostats,half=q===3;
-    this.showQ(`${this.cardHead(half?'Halftime':`End of ${ordQ(q-1).toLowerCase()} quarter`,esc(hostT().stadium||hostT().city))}${this.linescore()}<div class="qstats">${this.statRow('Total yards',st.passYds+st.rushYds,os.passYds+os.rushYds)}${this.statRow('Win prob',Math.round(winProbLive()*100),100-Math.round(winProbLive()*100),v=>v+'%')}</div>`,'',3400);
+    this.showQ(`${this.cardHead(half?'Halftime':`End of ${ordQ(q-1).toLowerCase()} quarter`,esc(venueOf()))}${this.linescore()}<div class="qstats">${this.statRow('Total yards',st.passYds+st.rushYds,os.passYds+os.rushYds)}${this.statRow('Win prob',Math.round(winProbLive()*100),100-Math.round(winProbLive()*100),v=>v+'%')}</div>`,'',3400);
     drumline(true);this.wpShow(4.5);
   },
   twoMin(){
@@ -212,13 +212,13 @@ const BC={
   intro(){
     if(LG.settings.gfx===false)return;const g=S.game;const side=t=>`<div class="it" style="--c:${t.c1}">${tvLogo(t,'lg')}<div><b>${rankTag(t.id)}${esc(t.city)}</b><small>${esc(t.name)} · ${recStr(t)}</small></div></div>`;
     const [[a],[h]]=this.sides();
-    this.showQ(`${this.cardHead(esc(g.tag||(isConfGame(g)?confName(hostT().conf)+' matchup':'Nonconference')),esc(hostT().stadium||hostT().city))}<div class="intro">${side(a)}<span class="at">${S.neutral?'VS':'AT'}</span>${side(h)}</div><div class="qfoot">${WX_ICON[S.wx]} ${esc(S.wx)} · ${S.temp}°F${S.wind&&S.wind.mph>3?' · wind '+S.wind.mph+' mph':''} · ${esc(S.slot)} · Att. ${S.att.toLocaleString()}</div>`,'intro',3600);
+    this.showQ(`${this.cardHead(esc(g.tag||(isConfGame(g)?confName(hostT().conf)+' matchup':'Nonconference')),esc(venueOf()))}<div class="intro">${side(a)}<span class="at">${S.neutral?'VS':'AT'}</span>${side(h)}</div><div class="qfoot">${WX_ICON[S.wx]} ${esc(S.wx)} · ${S.temp}°F${S.wind&&S.wind.mph>3?' · wind '+S.wind.mph+' mph':''} · ${esc(S.slot)} · Att. ${S.att.toLocaleString()}</div>`,'intro',3600);
   },
   /* final score graphic (called by finalGraphic in 08c) */
   finalCard(won,pog,g){
     const tops=t=>this.leaders(t).slice(0,2).map(x=>`<span><em>${x[0]}</em> ${esc(x[1])} <small>${esc(x[2])}</small></span>`).join('');
     const tl=([t,i])=>`<div class="fl" style="--c:${t.c1}"><b>${esc(t.abbr)}</b>${tops(t)||'<span><small>—</small></span>'}</div>`;
-    this.showQ(`${this.cardHead(`Final${S.ot?' · '+(S.otRound>1?S.otRound:'')+'OT':''}`,g.tag?esc(g.tag):esc(hostT().stadium||hostT().city))}${this.linescore(true)}<div class="flead">${this.sides().map(tl).join('')}</div>${pog?`<div class="pog"><span class="tag gold">Player of the game</span><b>${esc(fullName(pog))}</b><small>${pog.pos} · ${esc(S.home.abbr)}</small></div>`:''}`,'qfin',2900);
+    this.showQ(`${this.cardHead(`Final${S.ot?' · '+(S.otRound>1?S.otRound:'')+'OT':''}`,g.tag?esc(g.tag):esc(venueOf()))}${this.linescore(true)}<div class="flead">${this.sides().map(tl).join('')}</div>${pog?`<div class="pog"><span class="tag gold">Player of the game</span><b>${esc(fullName(pog))}</b><small>${pog.pos} · ${esc(S.home.abbr)}</small></div>`:''}`,'qfin',2900);
   },
   leaders(t){const ps=(t===S.home?S.pst:S.opst)||{},ros=t.roster||[];const best=k=>{let b=null,v=0;for(const id in ps){if((ps[id][k]||0)>v){const p=ros.find(x=>x.id==id);if(p){b=p;v=ps[id][k]}}}return b};
     const q=best('py'),r=best('ry'),w=best('recy'),out=[];if(q)out.push(['PASS',q.last,`${ps[q.id].pc}/${ps[q.id].pa} · ${ps[q.id].py} yds${ps[q.id].ptd?' · '+ps[q.id].ptd+' TD':''}`,q]);if(r)out.push(['RUSH',r.last,`${ps[r.id].ra} car · ${ps[r.id].ry} yds${ps[r.id].rtd?' · '+ps[r.id].rtd+' TD':''}`,r]);if(w)out.push(['REC',w.last,`${ps[w.id].rec} rec · ${ps[w.id].recy} yds`,w]);return out},   // [label, last name, line, player]
@@ -258,7 +258,7 @@ const BC={
     const keys=[[u,keyToGame(u,o)],[o,keyToGame(o,u)]];
     const perf=t=>{const l=this.leaders(t);return `<div class="perf" style="--c:${t.c1}"><div class="ph">${tvLogo(t,'xs')}<b>${esc(t.abbr)}</b></div>${l.length?l.map(x=>`<div class="pr wph">${photoHTML(x[3],30,'xs',t,true)}<em>${x[0]}</em><b>${esc(x[1])}</b><small>${esc(x[2])}</small></div>`).join(''):'<p class="note">No leaders yet.</p>'}</div>`};
     $('#studioBody').innerHTML=`<div class="stv-head" style="--a:${A.c1};--b:${Hm.c1}">
-        <div class="stv-bar"><span class="net">GLN</span><b>${half?'Halftime report':'Pregame show'}</b><span class="ven">${esc(hostT().stadium||hostT().city)}</span></div>
+        <div class="stv-bar"><span class="net">GLN</span><b>${half?'Halftime report':'Pregame show'}</b><span class="ven"><i class="lf">Live from </i>${esc(venueOf())}</span></div>
         <div class="stv-mu">${side(A,'a')}<div class="mid">${half?`<b class="hs">${S.score[ai]}<i>–</i>${S.score[hi]}</b><small>Halftime</small>`:`<b class="at">${S.neutral?'VS':'AT'}</b><small>${esc(S.slot||'')}</small>`}</div>${side(Hm,'b')}</div>
         <div class="stv-wp"><span>${esc(A.abbr)} ${wpP(wA)}%</span><div class="bar"><i style="--w:${(wA*100).toFixed(1)}%;background:${tvCol(A)}"></i><i style="background:${tvCol(Hm)}"></i></div><span>${100-wpP(wA)}% ${esc(Hm.abbr)}</span><em>Win probability</em></div></div>
       ${half?`<div class="stv-grid"><div class="card stv-card"><div class="eyebrow">Linescore</div>${this.linescore()}</div>

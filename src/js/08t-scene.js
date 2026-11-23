@@ -4,10 +4,13 @@
    (0 = far sideline), world Y = up. The TV camera sits on the near side (Z > FW), so the layout matches the 2D views.
    Everything here is built once per game (t3Env, keyed by the host, both teams, the light and the weather) and cached:
    a canvas turf (mowing stripes, noise, end zones in the host's colours, white border) with a tiling grain bump map,
-   painted lines as one merged mesh, yard numbers and the end-zone words (the school name and the nickname, never a
-   logo) as decals from one atlas, goalposts, pylons, benches, a two-tier bowl (horseshoe upper deck, open on the
-   camera side) with ribbon boards and a suite band, an instanced crowd (home colours, a student section, an away
-   corner) that hops on big plays, a press box, light towers, a live video board, and the sky dome.
+   painted lines as one merged mesh, yard numbers and the end-zone words (the school name and the nickname) as decals
+   from one atlas, goalposts, pylons, benches, a two-tier bowl (horseshoe upper deck, open on the camera side) with
+   ribbon boards and a suite band, an instanced crowd (home colours, a student section, an away corner) that hops on
+   big plays, a press box with the venue's name on its roof sign, light towers, a live video board, and the sky dome.
+   Logos are only the user's own imported images (02c logoTexImage) or the school's designed badge, never drawn here:
+   the midfield logo, small logos beside the end-zone words, logos on the ribbon boards and both logos on the video
+   board each own a small canvas texture that starts blank (today's look) and is redrawn when its logo arrives.
    ========================================================= */
 const T3F={x0:-16,x1:136,y0:-16,y1:FW+16,ppy:12};   // turf texture extent (yards) and pixels per yard
 const BOWL={cx:60,cz:CEN,hx:75,hz:42,r:20};          // the bowl's inner edge: a rounded rectangle around the field
@@ -69,7 +72,7 @@ function t3Atlas(o){
   const words=[String(o.host.city||o.host.name||'HOME').toUpperCase(),String(o.host.name||o.host.city||'').toUpperCase()];
   words.forEach((wd,i)=>{const y0=T3A.words+i*T3A.wordH;g.save();g.font='800 260px "Big Shoulders Display",'+FFONT;const mw=g.measureText(wd).width||1000,asc2=g.measureText('H').actualBoundingBoxAscent||190;
     g.translate(1024,y0+T3A.wordH/2+asc2*.5*Math.min(1.08,236/asc2));g.scale(Math.min(1880/mw,1.15),Math.min(1.08,236/asc2));g.textAlign='center';g.lineJoin='round';g.lineWidth=22;g.strokeStyle=edge;g.strokeText(wd,0,0);g.fillStyle=ink;g.fillText(wd,0,0);g.restore();
-    cells.push({word:i,u0:0,u1:1,v0:1-(y0+T3A.wordH)/T3A.h,v1:1-y0/T3A.h})});
+    cells.push({word:i,u0:0,u1:1,v0:1-(y0+T3A.wordH)/T3A.h,v1:1-y0/T3A.h,tw:(mw*Math.min(1880/mw,1.15)+22)/T3A.w*44})});
   return {cv,cells};
 }
 /* ---------- geometry helpers ---------- */
@@ -138,9 +141,12 @@ const T3P={wall:[[0,0],[0,2.4]],walk:[[0,2.4],[1.2,2.4]],low:[[1.2,2.4],[25,14.3
   suites:[[25,14.3],[25,19.6]],ledge:[[25,19.6],[27.5,19.6]],up:[[27.5,19.6],[52,35.6]],back:[[52,35.6],[52,39.5]],rim:[[52,39.5],[54,39.5]]};
 const SEG_UP=[0,1,2,6,7],SEG_ALL=[0,1,2,3,4,5,6,7],SEG_NEAR=[3,4,5];
 /* canvases for the stands: ribbon board, suite windows, seat rows */
-function t3Ribbon(o){const cv=document.createElement('canvas');cv.width=1024;cv.height=64;const g=cv.getContext('2d'),c1=o.host.c1,ink=inkOn(c1);
+function t3Ribbon(o,img,cv){cv=cv||document.createElement('canvas');cv.width=1024;cv.height=64;const g=cv.getContext('2d'),c1=o.host.c1,ink=inkOn(c1);
   g.fillStyle=shade(c1,-.25);g.fillRect(0,0,1024,64);g.fillStyle=ink;g.font='800 44px "Big Shoulders Display",'+FFONT;g.textBaseline='middle';g.textAlign='center';
-  const w=String(o.host.city||o.host.name).toUpperCase();g.fillText(w,256,34);g.fillStyle=o.host.c2||'#fff';g.fillText(String(o.host.name||'').toUpperCase(),768,34);
+  const w=String(o.host.city||o.host.name).toUpperCase(),n=String(o.host.name||'').toUpperCase();
+  /* with the imported logo: logo · SCHOOL · logo · NICKNAME, repeating around the bowl */
+  if(img){g.fillText(w,288,34,400);g.fillStyle=o.host.c2||'#fff';g.fillText(n,800,34,400);t3Fit(g,img,32,32,54,54);t3Fit(g,img,544,32,54,54)}
+  else{g.fillText(w,256,34);g.fillStyle=o.host.c2||'#fff';g.fillText(n,768,34)}
   g.fillStyle='rgba(255,255,255,.12)';for(let x=0;x<1024;x+=4)g.fillRect(x,0,1,64);return cv}
 function t3Suites(){const cv=document.createElement('canvas');cv.width=256;cv.height=64;const g=cv.getContext('2d'),r=t3Rng(5);g.fillStyle='#1d2229';g.fillRect(0,0,256,64);
   for(let x=0;x<256;x+=32){const lit=r();g.fillStyle=`rgb(${120+lit*110|0},${130+lit*100|0},${150+lit*70|0})`;g.fillRect(x+3,14,26,36);g.fillStyle='rgba(20,24,30,.55)';g.fillRect(x+3,34,26,16)}
@@ -196,16 +202,54 @@ function t3Sideline(o){const r=t3Rng(19),inst=[];
   const m=t3CrowdMesh(inst,t3Player(),.9,2.05);m.renderOrder=0;return m}
 /* ---------- video board (live score), press box, light towers ---------- */
 function t3Board(){const cv=document.createElement('canvas');cv.width=512;cv.height=256;return cv}
-function t3BoardDraw(cv){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.home;if(!A||!Hm)return;
+function t3BoardDraw(cv,lg){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.home;if(!A||!Hm)return;
   g.fillStyle='#07090d';g.fillRect(0,0,512,256);g.fillStyle=shade(h.c1,-.3);g.fillRect(0,0,512,46);g.fillStyle=inkOn(shade(h.c1,-.3));g.font='800 34px "Big Shoulders Display",'+FFONT;g.textAlign='center';g.textBaseline='middle';
   g.fillText(String(h.city||h.name).toUpperCase(),256,25);
-  const side=(t,sc,x)=>{g.fillStyle=t.c1;g.fillRect(x,60,236,118);g.fillStyle=inkOn(t.c1);g.font='800 40px "Big Shoulders Display",'+FFONT;g.fillText(String(t.abbr||t.name).toUpperCase(),x+118,84);g.font='800 84px "Big Shoulders Display",'+FFONT;g.fillText(String(sc),x+118,144)};
-  side(A,S.score[1],14);side(Hm,S.score[0],262);
+  /* a team's logo (when imported) sits on a dark plate beside its score */
+  const side=(t,sc,x,img)=>{g.fillStyle=t.c1;g.fillRect(x,60,236,118);let cx=x+118,mw=224;
+    if(img){g.fillStyle='rgba(6,8,12,.84)';g.fillRect(x+8,68,98,102);t3Fit(g,img,x+57,119,86,86);cx=x+171;mw=124}
+    g.fillStyle=inkOn(t.c1);g.font='800 40px "Big Shoulders Display",'+FFONT;g.fillText(String(t.abbr||t.name).toUpperCase(),cx,84,mw);g.font='800 84px "Big Shoulders Display",'+FFONT;g.fillText(String(sc),cx,144,mw)};
+  side(A,S.score[1],14,lg&&lg.a);side(Hm,S.score[0],262,lg&&lg.h);
   g.fillStyle='#FFD23F';g.font='800 40px "Big Shoulders Display",'+FFONT;const q=S.ot?'OT':(typeof qName==='function'?qName(S.q):'Q'+S.q);g.fillText(`${q}   ${typeof fmtClock==='function'?fmtClock(S.clock):''}`,256,206);
   g.fillStyle='#cfd6e0';g.font='700 26px "Big Shoulders Display",'+FFONT;const dd=$('#dd');g.fillText(dd?dd.textContent.toUpperCase():'',256,238);
   g.fillStyle='rgba(255,255,255,.06)';for(let y=0;y<256;y+=3)g.fillRect(0,y,512,1)}
 function t3Glow(){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,250,1)');gr.addColorStop(.18,'rgba(255,250,235,.55)');gr.addColorStop(.5,'rgba(200,215,255,.12)');gr.addColorStop(1,'rgba(200,215,255,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return cv}
 function t3LightPanel(){const cv=document.createElement('canvas');cv.width=128;cv.height=64;const g=cv.getContext('2d');g.fillStyle='#20252c';g.fillRect(0,0,128,64);for(let y=0;y<4;y++)for(let x=0;x<8;x++){g.fillStyle='#e9eef7';g.beginPath();g.arc(8+x*16,8+y*16,6,0,7);g.fill()}return cv}
+/* ---------- imported logos and the venue name ---------- */
+/* draw img fitted (aspect kept) into a mw x mh box centred at cx,cy */
+function t3Fit(g,img,cx,cy,mw,mh,a){const iw=img.naturalWidth||img.width||1,ih=img.naturalHeight||img.height||1,k=Math.min(mw/iw,mh/ih);g.globalAlpha=a==null?1:a;try{g.drawImage(img,cx-iw*k/2,cy-ih*k/2,iw*k,ih*k)}catch(e){}g.globalAlpha=1}
+/* the venue: the host's stadium (t.stadium, the imported name when there is one) or the neutral site without its city */
+function t3Venue(){if(S.neutral){const g=S.game;return String((g&&g.site)||'').split(',')[0].trim().slice(0,40)}return String(hostT().stadium||'').trim().slice(0,40)}
+/* the press-box roof sign: the venue's name in lit letters on a dark facade, a host-colour band below */
+function t3Sign(name,c1){const cv=document.createElement('canvas');cv.width=1024;cv.height=112;const g=cv.getContext('2d');g.fillStyle='#15191f';g.fillRect(0,0,1024,112);g.fillStyle=shade(c1,-.12);g.fillRect(0,100,1024,12);
+  g.fillStyle='#F4F2EA';g.font='800 72px "Big Shoulders Display",'+FFONT;g.textAlign='center';g.textBaseline='middle';g.fillText(String(name||'').toUpperCase(),512,54,972);return cv}
+/* the wall board at midfield on the far side (in the TV shot): the venue's name on a dark LED panel, host-colour edges */
+function t3WallSign(name,c1){const cv=document.createElement('canvas');cv.width=1024;cv.height=96;const g=cv.getContext('2d');g.fillStyle='#0d1015';g.fillRect(0,0,1024,96);g.fillStyle=c1;g.fillRect(0,0,1024,7);g.fillRect(0,89,1024,7);
+  g.fillStyle='#F4F2EA';g.font='800 62px "Big Shoulders Display",'+FFONT;g.textAlign='center';g.textBaseline='middle';g.fillText(String(name||'').toUpperCase(),512,51,992);
+  g.fillStyle='rgba(255,255,255,.1)';for(let x=0;x<1024;x+=4)g.fillRect(x,0,1,96);return cv}
+/* a square canvas holding one logo (blank without one): mh caps its height (share of the side), a its opacity */
+function t3LogoCv(cv,img,mh,a){cv.width=cv.width;const g=cv.getContext('2d'),n=cv.width;if(img)t3Fit(g,img,n/2,n/2,n-8,(mh||1)*(n-8),a);return cv}
+/* the logo for a spot: the school's designed badge (10c) wins, as in the menus; else the imported logo (02c) */
+function t3LogoSrc(t,dark){if(!t)return Promise.resolve(null);
+  if(t.bdg&&typeof bdgCanvas==='function'){try{return Promise.resolve(bdgCanvas(t,256))}catch(e){return Promise.resolve(null)}}
+  return typeof logoTexImage==='function'?logoTexImage(t,dark):Promise.resolve(null)}
+const t3LogoId=(t,dark)=>!t?'':t.bdg?'b'+t.id+'.'+JSON.stringify(t.bdg).length:typeof teamLogoURL==='function'?teamLogoURL(t,dark):'';
+/* (re)request the logos whenever what they would be changes (a pack filled in, Settings > Show imported logos): each spot
+   is redrawn in place on its own small canvas; the video board picks its logos up on its next refresh */
+function t3Logos(env){if(!env||env.dead)return;const o=env.o,L=env.logo,fld=!o.neutral;
+  const want=[[fld&&L.mf?o.host:null,false],[fld&&L.ez?o.host:null,L.ezDark],[fld?o.host:null,L.ribDark],[S.home,true],[S.away,true]];
+  const k=want.map(([t,d])=>t3LogoId(t,d)).join('|');if(k===env.lk)return;env.lk=k;const n=++env.ln;
+  want.forEach(([t,d],i)=>{(t?t3LogoSrc(t,d):Promise.resolve(null)).then(img=>{if(env.dead||env.ln!==n||L.cur[i]===img)return;L.cur[i]=img;
+    if(i===0){if(L.mf){t3LogoCv(L.mf.cv,img,.75,.94);L.mf.tex.needsUpdate=true}}
+    else if(i===1){if(L.ez){t3LogoCv(L.ez.cv,img,1,.95);L.ez.tex.needsUpdate=true}}
+    else if(i===2){t3Ribbon(o,img,L.rib.image);L.rib.needsUpdate=true}
+    else{L[i===3?'h':'a']=img;env.board.key=''}}).catch(e=>console.warn('logo',e))})}
+/* ground decals for the logos: midfield (reads left to right on TV, a 12 yd box) and one beside each end of each end-zone
+   word, sized to the letters and kept inside the sidelines */
+function t3LogoDecals(at,mid){const full={u0:0,v0:0,u1:1,v1:1},ez=[];
+  for(const [x,ci,s] of [[5,9,-1],[115,10,1]]){const tw=at.cells[ci].tw||40,sz=Math.min(4.8,CEN-.8-tw/2-1.1);if(sz<3.2)continue;const d=tw/2+1.1+sz/2;
+    for(const sg of [-1,1])ez.push({x,z:CEN+sg*d,rx:0,rz:s,ux:s,uz:0,w:sz,h:sz,c:full})}
+  return {mid:mid?t3Decals([{x:60,z:CEN,rx:1,rz:0,ux:0,uz:-1,w:12,h:12,c:full}]):null,ez:ez.length?t3Decals(ez):null}}
 /* ---------- sky dome by time slot ---------- */
 const SKY3={day:['#2f63b4','#a9c8ea','#d8e6f3'],late:['#4a6fa9','#d9c39e','#efd9b5'],sunset:['#1a2550','#e6814a','#f4b06d'],night:['#000003','#01040c','#081022']};
 function t3Sky(st){const c=SKY3[st]||SKY3.day,M=new THREE.ShaderMaterial({side:THREE.BackSide,depthWrite:false,uniforms:{cT:{value:t3Col(c[0])},cH:{value:t3Col(c[1])},cG:{value:t3Col(c[2])}},
@@ -216,9 +260,9 @@ function t3Sky(st){const c=SKY3[st]||SKY3.day,M=new THREE.ShaderMaterial({side:T
     }`});
   const m=new THREE.Mesh(new THREE.SphereGeometry(1800,32,16),M);m.renderOrder=-10;m.frustumCulled=false;return m}
 /* ---------- build the whole environment ---------- */
-function t3EnvKey(){const h=hostT();return [h.id,h.c1,h.c2,h.city,h.name,S.home.id,S.away.id,S.home.c1,S.away.c1,lightStage(),wxKind(),G3.fontOk?1:0].join('|')}
+function t3EnvKey(){const h=hostT();return [h.id,h.c1,h.c2,h.city,h.name,S.home.id,S.away.id,S.home.c1,S.away.c1,lightStage(),wxKind(),G3.fontOk?1:0,S.neutral?1:0,t3Venue(),typeof stadOf==='function'&&stadOf(h).mid===0?0:1].join('|')}
 function t3Build(){
-  const h=hostT(),st=lightStage(),wk=wxKind(),o={host:h,away:h===S.home?S.away:S.home,snow:wk==='snow',wet:wk==='wet',night:st==='night',dusk:st==='sunset'},E=new THREE.Group(),own=[];
+  const h=hostT(),st=lightStage(),wk=wxKind(),o={host:h,away:h===S.home?S.away:S.home,snow:wk==='snow',wet:wk==='wet',night:st==='night',dusk:st==='sunset',neutral:!!S.neutral},E=new THREE.Group(),own=[];
   const keep=x=>{own.push(x);return x};
   /* turf */
   const turf=keep(t3Tex(t3Turf(o)));turf.generateMipmaps=true;turf.minFilter=THREE.LinearMipmapLinearFilter;
@@ -232,12 +276,17 @@ function t3Build(){
   const lines=new THREE.Mesh(t3Lines(),lm);lines.receiveShadow=true;E.add(lines);
   const at=t3Atlas(o),atx=keep(t3Tex(at.cv));const dec=new THREE.Mesh(t3FieldDecals(at),keep(new THREE.MeshStandardMaterial({map:atx,transparent:true,depthWrite:false,roughness:.85,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3})));
   dec.receiveShadow=true;dec.renderOrder=1;E.add(dec);
+  /* imported logos on the turf: blank canvases until a logo arrives (t3Logos) */
+  const lgo={cur:[undefined,undefined,undefined,undefined,undefined],ezDark:lum(h.c1)<.45,ribDark:lum(shade(h.c1,-.25))<.45},mid=!(typeof stadOf==='function'&&stadOf(h).mid===0),ld=t3LogoDecals(at,mid);
+  const decM=tx=>keep(new THREE.MeshStandardMaterial({map:tx,transparent:true,depthWrite:false,roughness:.85,polygonOffset:true,polygonOffsetFactor:-3,polygonOffsetUnits:-3}));
+  for(const [k,gm,n] of [['mf',ld.mid,512],['ez',ld.ez,256]]){if(!gm)continue;const cv=document.createElement('canvas');cv.width=cv.height=n;const tx=keep(t3Tex(cv));tx.generateMipmaps=true;tx.minFilter=THREE.LinearMipmapLinearFilter;
+    const m=new THREE.Mesh(gm,decM(tx));m.receiveShadow=true;m.renderOrder=1;E.add(m);lgo[k]={cv,tex:tx,mesh:m}}
   /* props */
   const props=new THREE.Mesh(t3Props(o),keep(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.55,metalness:.15})));props.castShadow=true;E.add(props);
   /* the bowl */
   const nk=o.night?.2:1,conc=keep(new THREE.MeshStandardMaterial({color:t3Col('#5b616a').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide})),dark=keep(new THREE.MeshStandardMaterial({color:t3Col('#2b3038').multiplyScalar(nk),roughness:.95,side:THREE.DoubleSide}));
   const seatT=keep(t3Tex(t3Seats(o),true,true)),seat=keep(new THREE.MeshStandardMaterial({map:seatT,color:t3Col('#ffffff').multiplyScalar(o.night?.2:1),roughness:.9,side:THREE.DoubleSide}));
-  const ribT=keep(t3Tex(t3Ribbon(o),true,true)),rib=keep(new THREE.MeshStandardMaterial({map:ribT,emissiveMap:ribT,emissive:'#ffffff',emissiveIntensity:o.night?1.25:.45,roughness:.6,side:THREE.DoubleSide}));
+  const ribT=keep(t3Tex(t3Ribbon(o),true,true));lgo.rib=ribT;const rib=keep(new THREE.MeshStandardMaterial({map:ribT,emissiveMap:ribT,emissive:'#ffffff',emissiveIntensity:o.night?1.25:.45,roughness:.6,side:THREE.DoubleSide}));
   /* the boards are seen from the field (their back faces): from outside the bowl, e.g. the TV camera behind the near
      stands, the front faces show a plain dark board, never mirrored text */
   rib.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n\tif(gl_FrontFacing)diffuseColor.rgb=vec3(.05,.055,.065);').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n\tif(gl_FrontFacing)totalEmissiveRadiance=vec3(0.);')};rib.customProgramCacheKey=()=>'t3ribBack';
@@ -248,13 +297,18 @@ function t3Build(){
   add(t3Band(SEG_NEAR,...T3P.lowBack,30,1),dark);add(t3Band(SEG_NEAR,...T3P.lowTop,30,1),conc);
   add(t3Band(SEG_UP,...T3P.suites,8,1),sui);add(t3Band(SEG_UP,...T3P.ledge,30,1),conc);
   add(t3Band(SEG_UP,...T3P.up,2,Math.round((T3P.up[1][0]-T3P.up[0][0])/1.12)),seat);add(t3Band(SEG_UP,...T3P.back,30,1),dark);add(t3Band(SEG_UP,...T3P.rim,30,1),conc);
+  /* the venue's name on a wall board at midfield, far side (just in front of the ribbon) */
+  const vn=t3Venue();if(vn){const wsT=keep(t3Tex(t3WallSign(vn,h.c1)));const ws=new THREE.Mesh(new THREE.PlaneGeometry(24,24*96/1024),keep(new THREE.MeshStandardMaterial({map:wsT,emissiveMap:wsT,emissive:'#ffffff',emissiveIntensity:o.night?1.25:.45,roughness:.6})));
+    ws.position.set(60,1.2,BOWL.cz-BOWL.hz+.06);E.add(ws)}
   /* press box above the far upper deck; a camera deck behind the near lower bowl */
   const pbT=keep(t3Tex(t3Suites(),true,true));pbT.repeat.set(10,1);
   const pbm=keep(new THREE.MeshStandardMaterial({map:pbT,emissiveMap:pbT,emissive:'#ffffff',emissiveIntensity:o.night?.8:.12,roughness:.35}));
   const pb=new THREE.Mesh(new THREE.BoxGeometry(76,9,8),[dark,dark,dark,dark,pbm,dark]);pb.position.set(60,39.5+4.5,BOWL.cz-BOWL.hz-52-3.5);E.add(pb);
   const pbr=new THREE.Mesh(new THREE.BoxGeometry(80,1,11),conc);pbr.position.set(60,49,pb.position.z);E.add(pbr);
+  /* the venue's name on a sign along the front of the press-box roof, facing the field */
+  if(vn){const sgT=keep(t3Tex(t3Sign(vn,h.c1)));const sg=new THREE.Mesh(new THREE.PlaneGeometry(66,66*112/1024),keep(new THREE.MeshBasicMaterial({map:sgT,toneMapped:false})));sg.position.set(60,49.5+66*112/2048+.2,pb.position.z+5.45);E.add(sg)}
   /* video board over the right end, live score */
-  const bcv=t3Board();t3BoardDraw(bcv);const bt=keep(t3Tex(bcv));const bm=keep(new THREE.MeshBasicMaterial({map:bt,toneMapped:false}));
+  const bcv=t3Board();t3BoardDraw(bcv,null);const bt=keep(t3Tex(bcv));const bm=keep(new THREE.MeshBasicMaterial({map:bt,toneMapped:false}));
   const board=new THREE.Mesh(new THREE.PlaneGeometry(34,17),bm);board.rotation.y=-Math.PI/2;board.position.set(BOWL.cx+BOWL.hx+50,50,CEN);E.add(board);
   const bfr=new THREE.Mesh(new THREE.BoxGeometry(2,19,37),dark);bfr.position.set(board.position.x+1.1,50,CEN);E.add(bfr);
   for(const dz of [-12,12]){const leg=new THREE.Mesh(new THREE.BoxGeometry(1.5,14,1.5),conc);leg.position.set(board.position.x+1,36,CEN+dz);E.add(leg)}
@@ -271,6 +325,7 @@ function t3Build(){
   /* sky */
   const sky=t3Sky(st);E.add(sky);own.push(sky.material,sky.geometry,crowd.material,crowd.geometry,crowd.material.uniforms.uTex.value);
   E.traverse(x=>{if(x.isMesh&&x.geometry)own.push(x.geometry)});
-  return {group:E,own,crowd,side,board:{cv:bcv,tex:bt,key:''},night:o.night,stage:st,wk,field};
+  const env={group:E,own,crowd,side,board:{cv:bcv,tex:bt,key:''},night:o.night,stage:st,wk,field,o,logo:lgo,lk:null,ln:0};
+  t3Logos(env);return env;
 }
-function t3Dispose(env){if(!env)return;env.group.parent&&env.group.parent.remove(env.group);const seen=new Set();for(const x of env.own){if(!x||seen.has(x))continue;seen.add(x);if(x.dispose)x.dispose()}}
+function t3Dispose(env){if(!env)return;env.dead=true;env.group.parent&&env.group.parent.remove(env.group);const seen=new Set();for(const x of env.own){if(!x||seen.has(x))continue;seen.add(x);if(x.dispose)x.dispose()}}

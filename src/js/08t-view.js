@@ -246,7 +246,9 @@ onFx('fg',e=>{if(e&&e.good)G3.ex=Math.max(G3.ex,.7)});onFx('tackle',e=>{if(e&&e.
 function g3Crowd(dt,now){const m=G3.env&&G3.env.crowd;if(!m)return;if(S.celebrate)G3.ex=Math.max(G3.ex,.6);G3.ex=Math.max(0,G3.ex-dt*.22);const u=m.material.uniforms,st=G3.env.stage;
   const sd=G3.env.side;if(sd){const v=sd.material.uniforms;v.uT.value=now/1000;v.uJ.value=G3.ex*.8;v.uL.value=st==='night'?1:st==='sunset'?.9:1;v.uN.value=0}
   u.uT.value=now/1000;u.uJ.value=G3.ex;u.uL.value=st==='night'?.34:st==='sunset'?.8:G3.env.wk!=='dry'?.8:1;u.uN.value=st==='night'?1:st==='sunset'?.4:0}
-function g3Board(now){const b=G3.env&&G3.env.board;if(!b||now-(b.t||0)<500)return;b.t=now;const dd=$('#dd'),k=[S.score[0],S.score[1],S.q,Math.ceil(S.clock),dd?dd.textContent:''].join('|');if(k===b.key)return;b.key=k;t3BoardDraw(b.cv);b.tex.needsUpdate=true}
+/* twice a second: the logos (t3Logos re-requests them only when they would change) and the video board, redrawn when the
+   score, clock, down or its logos change */
+function g3Board(now){const b=G3.env&&G3.env.board;if(!b||now-(b.t||0)<500)return;b.t=now;t3Logos(G3.env);const dd=$('#dd'),k=[S.score[0],S.score[1],S.q,Math.ceil(S.clock),dd?dd.textContent:''].join('|');if(k===b.key)return;b.key=k;t3BoardDraw(b.cv,G3.env.logo);b.tex.needsUpdate=true}
 function g3Weather(dt){let k=S.wx==='Rain'?'rain':S.wx==='Snow'?'snow':'';if(typeof stdIndoor==='function'&&stdIndoor())k='';
   if(k!==G3.wxk){if(G3.wx){G3.scene.remove(G3.wx.obj);G3.wx.obj.geometry.dispose();G3.wx.obj.material.dispose();if(G3.wx.tex)G3.wx.tex.dispose()}G3.wx=null;G3.wxk=k;
     if(k){const n=k==='rain'?1700:2200,pos=new Float32Array(n*(k==='rain'?6:3)),G=new THREE.BufferGeometry(),r=t3Rng(3),P0=[];for(let i=0;i<n;i++)P0.push([r(),r()*36,r(),.7+r()*.6,r()*6.28]);G.setAttribute('position',new THREE.BufferAttribute(pos,3));

@@ -36,6 +36,7 @@ final class GameViewController: UIViewController, WKScriptMessageHandler {
         content.add(WeakScriptHandler(self), name: "haptic")
         content.add(WeakScriptHandler(self), name: "export")
         content.add(WeakScriptHandler(self), name: "device")
+        content.add(WeakScriptHandler(self), name: "img")
         let noSelect = "var s=document.createElement('style');s.textContent='html,body,canvas,div,span,button{-webkit-user-select:none!important;user-select:none!important;-webkit-touch-callout:none!important}input,textarea,select{-webkit-user-select:text!important;user-select:text!important}';document.documentElement.appendChild(s);document.addEventListener('contextmenu',function(e){e.preventDefault()},true);document.addEventListener('selectstart',function(e){var t=e.target;if(!(t&&t.closest&&t.closest('input,textarea')))e.preventDefault()},true);"
         content.addUserScript(WKUserScript(source: noSelect, injectionTime: .atDocumentEnd, forMainFrameOnly: true))
         config.userContentController = content
@@ -188,6 +189,8 @@ final class GameViewController: UIViewController, WKScriptMessageHandler {
             }
         case "device":
             pushDeviceInfo()
+        case "img":
+            fetchImage(message.body)
         case "kv":
             guard let body = message.body as? [String: Any], let key = body["k"] as? String else { return }
             let value = body["v"] as? String ?? ""
@@ -210,6 +213,82 @@ final class GameViewController: UIViewController, WKScriptMessageHandler {
             out[k] = UserDefaults.standard.string(forKey: prefix + k) ?? ""
         }
         webView.evaluateJavaScript("window.__kvReply&&window.__kvReply(\(id),\(Self.json(out, fallback: "{}")))", completionHandler: nil)
+    }
+
+    // MARK: - Team logos for the 3D view (WebGL needs CORS-clean images; the logo CDN may not send CORS headers)
+
+    private static let imageLimit = 3 * 1024 * 1024
+    private let imageQueue = DispatchQueue(label: "gridironlive.img", qos: .userInitiated)
+
+    /// { id, url } → window.__imgReply(id, "data:image/...;base64,..." or "") on the main thread.
+    /// https only, at most 3 MB, PNG / JPEG / GIF / WebP only; kept on disk in Caches/logos, keyed by a hash of the URL.
+    private func fetchImage(_ body: Any) {
+        guard let req = body as? [String: Any] else { return }
+        let id = (req["id"] as? Int) ?? 0
+        let text = (req["url"] as? String) ?? ""
+        guard let url = URL(string: text), url.scheme?.lowercased() == "https", url.host != nil else {
+            replyImage(id: id, dataURL: "")
+            return
+        }
+        imageQueue.async { [weak self] in
+            let file = GameViewController.imageCacheFile(for: text)
+            if let file = file, let cached = try? Data(contentsOf: file), cached.count <= GameViewController.imageLimit {
+                let mime = GameViewController.imageMime(cached)
+                if !mime.isEmpty {
+                    let dataURL = "data:" + mime + ";base64," + cached.base64EncodedString()
+                    DispatchQueue.main.async { self?.replyImage(id: id, dataURL: dataURL) }
+                    return
+                }
+            }
+            var request = URLRequest(url: url, cachePolicy: .useProtocolCachePolicy, timeoutInterval: 20)
+            request.setValue("image/png,image/*;q=0.8", forHTTPHeaderField: "Accept")
+            let task = URLSession.shared.dataTask(with: request) { data, response, error in
+                var dataURL = ""
+                let status = (response as? HTTPURLResponse)?.statusCode ?? 0
+                if error == nil, status == 200, let data = data, !data.isEmpty, data.count <= GameViewController.imageLimit {
+                    let mime = GameViewController.imageMime(data)
+                    if !mime.isEmpty {
+                        dataURL = "data:" + mime + ";base64," + data.base64EncodedString()
+                        if let file = file { try? data.write(to: file, options: .atomic) }
+                    }
+                }
+                DispatchQueue.main.async { self?.replyImage(id: id, dataURL: dataURL) }
+            }
+            task.resume()
+        }
+    }
+
+    /// The reply is only digits, a fixed MIME type and base64, so it goes into the script as a plain quoted literal.
+    private func replyImage(id: Int, dataURL: String) {
+        webView?.evaluateJavaScript("window.__imgReply&&window.__imgReply(\(id),'\(dataURL)')", completionHandler: nil)
+    }
+
+    /// Caches/logos/<FNV-1a 64-bit hash of the URL>; nil when the folder cannot be made (then nothing is cached).
+    private static func imageCacheFile(for url: String) -> URL? {
+        guard let caches = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first else { return nil }
+        let dir = caches.appendingPathComponent("logos", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true, attributes: nil)
+        } catch {
+            return nil
+        }
+        var hash: UInt64 = 0xcbf29ce484222325
+        for byte in url.utf8 {
+            hash ^= UInt64(byte)
+            hash = hash &* 0x100000001b3
+        }
+        return dir.appendingPathComponent(String(hash, radix: 16) + "-" + String(url.utf8.count) + ".img")
+    }
+
+    /// The image type from the file's first bytes ("" when it is not a PNG, JPEG, GIF or WebP).
+    private static func imageMime(_ data: Data) -> String {
+        let b = [UInt8](data.prefix(12))
+        if b.count >= 8 && b[0] == 0x89 && b[1] == 0x50 && b[2] == 0x4E && b[3] == 0x47 { return "image/png" }
+        if b.count >= 3 && b[0] == 0xFF && b[1] == 0xD8 && b[2] == 0xFF { return "image/jpeg" }
+        if b.count >= 6 && b[0] == 0x47 && b[1] == 0x49 && b[2] == 0x46 && b[3] == 0x38 { return "image/gif" }
+        if b.count >= 12 && b[0] == 0x52 && b[1] == 0x49 && b[2] == 0x46 && b[3] == 0x46
+            && b[8] == 0x57 && b[9] == 0x45 && b[10] == 0x42 && b[11] == 0x50 { return "image/webp" }
+        return ""
     }
 
     /// Back up to Files: write the text to a temp file and open the system export sheet (iCloud Drive, On My iPhone...).

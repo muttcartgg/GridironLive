@@ -210,6 +210,8 @@ function openRosterImport(L,done,opt){
       else if(cur&&pv.stdOnly){const s=applyStadiums(L,stdList(pk));msg.push(`${s.teams} stadiums`)}
       else if(cur){const s=applyRosterPack(L,pk,{keepUser:keep});msg.push(`${s.teams} teams updated`+(s.coaches?`, ${s.coaches} coaches`:'')+(s.custom?`, ${s.custom} custom players`:'')+(s.std?`, ${s.std} stadiums`:'')+(s.fs?`, ${s.fs} fight songs`:''))}
       if(save&&!pv.fsOnly){try{if(pv.stdOnly)stdSave(stdList(pk));else packSave(pk);saved=true;msg.push('saved for new dynasties')}catch(e){msg.push(e.message)}}
+      /* installed but not applied: this dynasty still gets the logos and stadium names (nothing else) */
+      if(live&&!pv.fsOnly&&!pv.stdOnly&&Array.isArray(pk.teams)){if(cur){if(L.settings)L.settings.packMeta=1}else if(saved){const n=packFillMeta(L,pk);if(n)msg.push(`logos and stadium names for ${n} teams`)}}
       closeModal();toast(msg.join(' · ')||'Nothing to import');done&&done({saved,applied:cur})}catch(e){console.error(e);b.disabled=false;b.textContent='Import';err('Import failed: '+e.message)}},30)});
   };render();
 }
@@ -256,6 +258,40 @@ function teamLogo(t,dark){
 }
 const teamLogoURL=(t,dark)=>logosOn()?logoURL(t,dark):'';
 function logoHTML(t,size,cls){const u=teamLogoURL(t);if(!u)return '';size=size||28;return `<img class="tlogo ${cls||''}" src="${esc(u)}" width="${size}" height="${size}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`}
+/* a CORS-clean Image of a team's imported logo, for WebGL textures (the 3D field, video board, ribbon boards)
+   → Promise<HTMLImageElement|null>. The iOS shell fetches it natively (messageHandlers.img {id,url} → window.__imgReply(id,
+   dataURL or '')), so the CDN needs no CORS headers; a browser loads it with crossOrigin='anonymous' (no CORS header: the
+   load fails and the 3D view keeps its plain look). One promise per URL: a failure is never retried in this session. */
+const LOGO_TEX=new Map(),LOGO_REQ={};let logoReqN=0;
+window.__imgReply=(id,d)=>{const f=LOGO_REQ[id];if(f){delete LOGO_REQ[id];f(typeof d==='string'?d:'')}};
+const logoImgLoad=(src,cors)=>new Promise(res=>{const img=new Image();if(cors)img.crossOrigin='anonymous';img.decoding='async';
+  img.onload=()=>{const ok=()=>res(img.naturalWidth>0?img:null);if(img.decode)img.decode().then(ok,ok);else ok()};img.onerror=()=>res(null);img.src=src});   /* decoded off the frame before it is drawn */
+function logoNative(u){let h=null;try{h=window.webkit&&window.webkit.messageHandlers&&window.webkit.messageHandlers.img}catch(e){h=null}if(!h)return null;
+  return new Promise(res=>{const id=++logoReqN,tm=setTimeout(()=>{delete LOGO_REQ[id];res('')},30000);LOGO_REQ[id]=d=>{clearTimeout(tm);res(d)};
+    try{h.postMessage({id,url:u})}catch(e){clearTimeout(tm);delete LOGO_REQ[id];res('')}}).then(d=>/^data:image\//.test(d)?logoImgLoad(d,false):null)}
+function logoTexImage(t,dark){
+  try{if(!logosOn())return Promise.resolve(null);const u=logoURL(t,dark);if(!u)return Promise.resolve(null);let p=LOGO_TEX.get(u);if(p)return p;
+    p=/^data:/i.test(u)?logoImgLoad(u,false):(logoNative(u)||logoImgLoad(u,true));p=p.catch(()=>null);LOGO_TEX.set(u,p);return p}
+  catch(e){return Promise.resolve(null)}
+}
+/* dynasties started before the pack was imported (or imported without "Apply to this dynasty now") still get the imported
+   logos and venue names: each matched team (espnId / abbr / school, as packMatch) that has no logo gets logo + logoDark, and one
+   still on its generated "<School> Stadium" (no stadium design, not renamed) gets the pack's stadium + capacity. Rosters, colours,
+   coaches and everything else stay as they are. On load this runs once per dynasty (LG.settings.packMeta); installing a pack runs it again. */
+function packFillMeta(L,pk){
+  if(!L||L.kind!=='ncaa'||!pk||!Array.isArray(pk.teams))return 0;const {pairs}=packMatch(L,pk);let n=0;
+  for(const [t,e] of pairs){let ch=0;const lg=safeURL(e.logo),ld=safeURL(e.logoDark);
+    if(!t.logo&&!t.logoDark&&(lg||ld)){t.logo=lg||ld;t.logoDark=ld||lg;ch=1}
+    if(e.stadium&&!t.std&&(!t.stadium||t.stadium===t.city+' Stadium')){const s=String(e.stadium).slice(0,40);if(s!==t.stadium){t.stadium=s;ch=1}const c=parseInt(e.capacity);if(c>=1000&&c<=200000)t.cap=c}
+    if(ch)n++}
+  if(L.settings)L.settings.packMeta=1;return n;
+}
+function packMetaOnLoad(L){
+  if(!L||L.kind!=='ncaa'||!L.settings||L.settings.packMeta)return;
+  const run=()=>{if(typeof LG==='undefined'||LG!==L||L.settings.packMeta||!packSavedOn())return 0;const pk=packLoadSaved();if(!pk)return 0;const n=packFillMeta(L,pk);if(n){try{saveNow()}catch(e){}}return n};
+  if(KV.ready(PACK_KEY)){run();return}
+  KV.need([PACK_KEY]).then(()=>{if(run()&&S.phase==='hub'&&typeof showHub==='function'&&!document.querySelector('#modal:not([hidden])'))showHub(TAB)}).catch(e=>console.error(e));
+}
 
 /* ---------- real player photos (links only: nothing is downloaded or stored in the save) ----------
    Imported players carry their ESPN id as p.espnId (a digit string; rosterEnc saves it as a number), award snapshots as e.
