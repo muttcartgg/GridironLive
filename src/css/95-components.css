@@ -475,3 +475,13 @@ table.box td{font-size:13.5px}
 #splash .logo{font:800 clamp(72px,22vw,140px)/.8 var(--f-disp);text-align:left;letter-spacing:0;animation:logoIn var(--t-med) var(--ease-out)}
 #splash .logo span{display:inline-block;margin-top:.1em;padding:.1em .34em .06em .26em;font-size:.46em;background:var(--c-acc);color:var(--c-acc-ink);clip-path:polygon(0 0,100% 0,calc(100% - .22em) 100%,0 100%)}
 @keyframes logoIn{from{opacity:0;transform:translateY(6px)}}
+
+/* colour swatches: square chips with a chalk ring when chosen */
+.ue-sw button,.ue-sw .cust{border-radius:0;border:1px solid rgba(236,233,226,.22);box-shadow:none}
+.ue-sw button[aria-pressed="true"],.ue-sw .cust[aria-pressed="true"]{outline:2px solid var(--c-chalk);outline-offset:2px;border-color:var(--c-base)}
+.ue-sw button.auto{border-radius:var(--r1)}
+
+/* title: the section rule under the wordmark is a yard-line ruler, the one field motif on the screen */
+.ttl-h{position:relative;border-top:0!important;padding-top:16px}
+.ttl-h::before{content:"";position:absolute;left:0;right:0;top:0;height:7px;background:linear-gradient(var(--c-rule2),var(--c-rule2)) 0 0/100% 1px no-repeat,repeating-linear-gradient(90deg,var(--c-rule2) 0 1px,transparent 1px 10%) 0 0/100% 7px no-repeat}
+@media (prefers-reduced-motion:reduce){.cfps .rv,.cfps .cfpr.rv .cfpr-n,#hubBody.fade>*,#modal>.panel,#pausem>.panel{animation:none}}

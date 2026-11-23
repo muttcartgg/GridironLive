@@ -55,4 +55,3 @@
   --disp:var(--f-disp);--body:var(--f-text);--dw:800;--dstyle:normal;--dtrack:0;
 }
 body{font-family:var(--f-text);font-size:var(--fs-t2);font-variant-numeric:tabular-nums}
-@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:1ms!important;animation-iteration-count:1!important;transition-duration:1ms!important}}

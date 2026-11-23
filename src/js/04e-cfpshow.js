@@ -17,7 +17,7 @@ function cfpMark(t,sz){const lg=typeof logoHTML==='function'?logoHTML(t,sz||40,'
 function cfpRow(d,id,i,link){
   const t=T(id),sd=d.seeds.indexOf(id)+1,au=d.auto.has(id),pv=d.prev.indexOf(id);
   const mv=!d.prev.length?'':pv<0?'<i class="nw">New</i>':pv>i?`<i class="up">Up ${pv-i}</i>`:pv<i?`<i class="dn">Down ${i-pv}</i>`:'';
-  const tags=(sd&&sd<=4?'<span class="cft bye">Bye</span>':'')+(sd?`<span class="cft sd">Seed ${sd}</span>`:'')+(au?'<span class="cft au">Auto bid</span>':'')+(!sd&&i<12?'<span class="cft out">Out</span>':'');
+  const tags=(sd&&sd<=4?'<span class="cft bye">Bye</span>':'')+(sd>4?`<span class="cft sd">Seed ${sd}</span>`:'')+(au?'<span class="cft au">Auto bid</span>':'')+(!sd&&i<12?'<span class="cft out">Out</span>':'');
   return `<div class="cfpr${sd?' in':''}${sd&&sd<=4?' bye':''}${id===LG.user?' me':''}" data-r="${i+1}"${link?` data-team="${id}"`:''} style="--c1:${t.c1}">`
     +`<b class="cfpr-n">${i+1}</b><span class="cfpr-m">${cfpMark(t)}</span><span class="cfpr-t"><b>${esc(t.city)}</b><small>${recStr(t)} · ${esc(confName(t.conf))}${mv?' '+mv:''}</small></span><span class="cfpr-x">${tags}</span></div>`;
 }
