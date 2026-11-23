@@ -24,7 +24,7 @@
 .rc-top>span.me{color:var(--fg)}
 .rc-top .badge.sm{--s:20px;border-width:1.5px;font-size:7px}
 .rc-int{display:flex;flex-direction:column;align-items:flex-end;gap:5px;min-width:62px}
-.rc-int b{font:800 italic 21px/1 var(--tv);font-variant-numeric:tabular-nums}
+.rc-int b{font:800 21px/1 var(--tv);font-variant-numeric:tabular-nums}
 .rc-int .tag{white-space:nowrap;font-size:10.5px;padding:3px 6px 2px}
 .rc-head .rc-tabs{display:flex;margin-top:4px}
 .rc-head .rc-tabs button{flex:1}
@@ -51,8 +51,8 @@
 .aw-win{display:flex;align-items:center;gap:12px;margin:8px 0 10px}
 .aw-win b{display:block;font:800 20px/1.1 var(--tv)}.aw-win small{display:block}
 .aw-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:10px 0}
-.aw-t{padding:10px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);min-width:0}
-.aw-t em{display:block;font-style:normal;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--gold)}
+.aw-t{padding:10px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);min-width:0}
+.aw-t em{display:block;font-style:normal;font-size:10.5px;letter-spacing:0;text-transform:none;color:var(--gold)}
 .aw-t b{display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .aw-t small{color:var(--mute);font-size:11px}
 .aw-t.me,.lrow.me{box-shadow:inset 3px 0 0 var(--team)}
@@ -63,17 +63,17 @@
 .tl .tags{margin-top:4px}
 
 /* ---------- Road to Glory (05i): career hub, grades, recruit creator ---------- */
-.rtg-card{background:linear-gradient(135deg,color-mix(in srgb,var(--c1,#22324d) 34%,transparent),transparent 62%),var(--panel)}
+.rtg-card{background:linear-gradient(135deg,color-mix(in srgb,var(--c1,#303031) 34%,transparent),transparent 62%),var(--panel)}
 .rtg-id{display:flex;align-items:center;gap:14px;margin-bottom:10px}
 .rtg-nm{flex:1;min-width:0}.rtg-nm .h1{line-height:1.02;overflow-wrap:anywhere}
-.rtg-ovr{flex:none;display:flex;flex-direction:column;align-items:center;padding:8px 12px;border-radius:12px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
-.rtg-ovr b{font:800 34px/1 var(--tv)}.rtg-ovr small{font:700 10px/1 var(--tv);letter-spacing:.16em;color:var(--mute)}
+.rtg-ovr{flex:none;display:flex;flex-direction:column;align-items:center;padding:8px 12px;border-radius:2px;background:rgba(0,0,0,.28);border:1px solid var(--line)}
+.rtg-ovr b{font:800 34px/1 var(--tv)}.rtg-ovr small{font:700 10px/1 var(--body);letter-spacing:0;color:var(--mute)}
 .rtg-attrs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:6px;margin:10px 0}
-.rtg-at{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.rtg-at{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:2px;background:rgba(255,255,255,.04);border:1px solid var(--line)}
 .rtg-at span{flex:1;min-width:0;font-size:12px;color:var(--mute)}.rtg-at b{font:800 18px/1 var(--tv)}.rtg-at .btn.sm{padding:5px 8px;font-size:11px}
-.rtg-g{flex:none;display:inline-grid;place-items:center;min-width:38px;height:30px;padding:0 6px;border-radius:8px;font:800 17px/1 var(--tv);color:#0B1220;background:#8D99AD}
+.rtg-g{flex:none;display:inline-grid;place-items:center;min-width:38px;height:30px;padding:0 6px;border-radius:2px;font:800 17px/1 var(--tv);color:#121213;background:#9A9996}
 .rtg-g.ga{background:#5BD38C}.rtg-g.gb{background:#7FB6FF}.rtg-g.gc{background:#E6B33C}.rtg-g.gf{background:#FF6B5E}.rtg-g.gn{background:rgba(255,255,255,.12);color:var(--mute);font-size:12px}
-.rtg-g.big{min-width:76px;height:64px;font-size:38px;border-radius:14px}
+.rtg-g.big{min-width:76px;height:64px;font-size:38px;border-radius:4px}
 .rtg-post{display:flex;align-items:center;gap:16px}
 .rtg-nil .btns{flex:none;gap:6px}
 .rtg-off .badge{flex:none}

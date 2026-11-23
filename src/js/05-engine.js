@@ -211,7 +211,7 @@ function showOpt(head,opts){
   opts.forEach(o=>{const b=document.createElement('button');b.className='play '+(o.cls||'');b.innerHTML=`<b>${o.t}</b><small>${o.s||''}</small>`;b.onclick=()=>{ac();$('#opt').hidden=true;o.f()};row.appendChild(b)});
   $('#opt').hidden=false;
 }
-function flagMsg(m){fx('flag',{x:ball.x,y:ball.y,m});logPBP('Flag: '+m);if(typeof BC!=='undefined'&&BC.flagCard(m)){sfx('whistle');BC.say('flag',{m});return}const f=$('#flag');f.textContent='🚩 '+m;f.classList.add('show');clearTimeout(flagMsg.t);flagMsg.t=setTimeout(()=>f.classList.remove('show'),2600);sfx('whistle');if(typeof BC!=='undefined')BC.say('flag',{m})}
+function flagMsg(m){fx('flag',{x:ball.x,y:ball.y,m});logPBP('Flag: '+m);if(typeof BC!=='undefined'&&BC.flagCard(m)){sfx('whistle');BC.say('flag',{m});return}const f=$('#flag');f.textContent='Flag: '+m;f.classList.add('show');clearTimeout(flagMsg.t);flagMsg.t=setTimeout(()=>f.classList.remove('show'),2600);sfx('whistle');if(typeof BC!=='undefined')BC.say('flag',{m})}
 function callSpecial(k){
   if(S.phase!=='presnap')return;$('#call').hidden=true;$('#toBtn').hidden=true;
   if(k==='punt')return doPunt();
@@ -965,7 +965,7 @@ function gameOver(){
   const trophy=g.rival&&won&&u.trophy;
   $('#postBody').innerHTML=`
     ${storm?'<div class="storm">Fans storm the field!</div>':''}
-    ${trophy?`<div class="card hero trophy"><div class="tro">🏆</div><div><div class="eyebrow">Rivalry trophy</div><div class="h2">${esc(u.trophy)} stays in ${esc(u.city)}</div><p class="note">The team hoists the trophy at midfield.</p></div></div>`:''}
+    ${trophy?`<div class="card hero trophy"><div class="tro"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4h10v4.5a5 5 0 0 1-10 0zM17 5.5h2.5a2.5 2.5 0 0 1-2.8 4.2M7 5.5H4.5a2.5 2.5 0 0 0 2.8 4.2M12 13.5V17M8.5 20h7l-.8-3h-5.4z"/></svg></div><div><div class="eyebrow">Rivalry trophy</div><div class="h2">${esc(u.trophy)} stays in ${esc(u.city)}</div><p class="note">The team hoists the trophy at midfield.</p></div></div>`:''}
     <div class="card hero"><div class="eyebrow">Final${S.ot?' · '+(S.otRound>1?S.otRound:'')+'OT':''}${g.tag?' · '+esc(g.tag):''}${S.simmed?' · simulated finish':''}</div>
       <div class="final"><div class="side">${badge(u,'lg')}<small>${esc(teamName(u))}</small><strong style="color:${u.c1}">${us}</strong></div><span class="eyebrow">–</span><div class="side">${badge(opp,'lg')}<small>${esc(teamName(opp))}</small><strong style="color:${opp.c1}">${them}</strong></div></div>
       <div class="result" style="color:${won?'var(--ok)':'var(--hot)'}">${won?'Victory':'Defeat'}</div>

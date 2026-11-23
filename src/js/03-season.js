@@ -7,7 +7,8 @@ const T=id=>LG.teams[id];
 const WEEK_NAMES=['Championship Week','Bowls & Playoffs','Playoff Quarterfinals','Playoff Semifinals','National Championships'];
 function weekLabel(L){if(L.phase==='offseason')return 'Offseason';const w=L.weeks[L.week];return w?w.label:'Season complete'}
 function weatherFor(i){const r=Math.random();if(i>=8&&r<.13)return 'Snow';if(r<.2)return 'Rain';if(r<.32)return 'Wind';return 'Clear'}
-const WX_ICON={Clear:'☀︎',Rain:'☂︎',Snow:'❄︎',Wind:'⚑'};
+const WXI=d=>`<svg class="wxi" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">${d}</svg>`;
+const WX_ICON={Clear:WXI('<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M5.6 18.4 7 17M17 7l1.4-1.4"/>'),Rain:WXI('<path d="M7 15a4 4 0 0 1 .4-8A5 5 0 0 1 17 8.6 3.3 3.3 0 0 1 17 15z"/><path d="m9 18-1 2.5M13 18l-1 2.5M17 18l-1 2.5"/>'),Snow:WXI('<path d="M12 3v18M4.2 7.5l15.6 9M4.2 16.5l15.6-9"/>'),Wind:WXI('<path d="M3 9h11a3 3 0 1 0-3-3M3 15h15a3 3 0 1 1-3 3"/>')};
 const isInd=(L,t)=>!!(L.confs[t.conf]&&L.confs[t.conf].ind);
 
 /* ---------- 2026 scheduler ----------

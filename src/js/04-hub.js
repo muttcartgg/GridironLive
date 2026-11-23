@@ -97,7 +97,7 @@ function showSlots(){
   hideAll();S.phase='menu';LG=null;SLOT=null;applyStyle();if(typeof g3Show==='function')g3Show(false);if(typeof ath3dReset==='function')try{ath3dReset()}catch(e){}
   const m=Saves.meta();$('#setup').classList.add('title');
   const card=n=>{const s=m.slots[n];
-    if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="sl-et"><span class="h2">New dynasty</span><span class="note">Slot ${n} · empty</span></span></button>`;
+    if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="sl-et"><span class="h2">New dynasty</span><span class="note">Slot ${n} is empty</span></span></button>`;
     const t={abbr:s.abbr,c1:s.c1,c2:s.c2,logo:s.logo},wk=/^Week (\d+)$/.exec(s.label||''),bak=KV.has('gl3.bak'+n);
     return `<div class="slot full" style="--c1:${s.c1};--c2:${s.c2};--d:${deepC(t)}">
       <div class="sl-head"><span class="sl-wm" aria-hidden="true">${esc(s.abbr)}</span>${badge(t,'lg')}<div class="sl-id"><small>Slot ${n}${s.live?' · <i class="sl-live">Game in progress</i>':''}</small><b>${esc(s.team)}</b><span>${esc(s.coach)} · ${esc(s.name)}</span></div></div>
@@ -106,14 +106,13 @@ function showSlots(){
       <div class="btns"><button class="btn" id="slotGo-${n}">${s.live?'Resume':'Continue'}</button><button class="btn ghost sm" id="slotDel-${n}">Delete</button>${bak?`<button class="btn ghost sm" id="slotBak-${n}">Restore backup · ${timeAgo(+KV.get('gl3.bakt'+n))}</button>`:''}</div>
       <div id="slotConf-${n}" class="sl-conf" hidden><p class="note" style="color:#FF8A96">Delete this dynasty for good?</p><div class="btns"><button class="btn danger sm" id="slotYes-${n}">Delete</button><button class="btn ghost sm" id="slotNo-${n}">Keep</button></div></div></div>`};
   $('#setupBody').innerHTML=`
-    <header class="ttl"><div class="ttl-net"><span class="gln">GLN</span><span>College football dynasty</span></div>
-      <h1 class="ttl-word" aria-label="Gridiron Live"><span class="g">Gridiron</span><span class="l"><i></i>Live</span></h1>
-      <div class="ttl-sub"><span>265 programs</span><span>2026 season</span></div>
-      <button class="ttl-new" id="whatsNew"><i></i>What’s new</button></header>
-    <div class="eyebrow ttl-h">Your dynasties <span class="ttl-cnt">${SLOTS.filter(n=>m.slots[n]).length} of ${SLOTS.length}</span></div>
+    <header class="ttl"><h1 class="ttl-word" aria-label="Gridiron Live"><span class="g">Gridiron</span><span class="l">Live</span></h1>
+      <p class="ttl-sub">College football dynasty. 265 programs, 2026 season.</p>
+      <button class="ttl-new" id="whatsNew">What’s new</button></header>
+    <div class="eyebrow ttl-h">Dynasties <span class="ttl-cnt">${SLOTS.filter(n=>m.slots[n]).length} of ${SLOTS.length} slots used</span></div>
     <div class="slots">${SLOTS.map(card).join('')}</div>
     <div class="grid2 ttl-more">
-      <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">Any two programs, one game, nothing saved.</p></div><button class="btn ghost" id="quickPlay">Play</button></div>
+      <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">One game between any two programs. Nothing is saved.</p></div><button class="btn ghost" id="quickPlay">Play</button></div>
       <div class="card ttl-act"><span class="ta-ic">${ICO.code}</span><div><div class="h2">Restore</div><p class="note">From a backup file or a save code.</p></div><span style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost sm" id="restoreFile">File</button><button class="btn ghost sm" id="importCode">Code</button></span></div></div>`;
   on('restoreFile',()=>openRestoreFile(showSlots));
   on('quickPlay',()=>{ac();openQuickPlay()});
@@ -314,7 +313,7 @@ function bindDecision(){
   ev.opts.forEach((o,i)=>on('evo-'+i,()=>{const msg=o[1](LG,p);LG.fan=clamp(LG.fan,0,100);LG.morale=clamp(LG.morale,0,100);LG.event=null;LG.evRes={wk:LG.week,season:LG.season,title:o[0],msg};saveNow();haptic('success');rerender()}));
 }
 /* first-run tour: four short cards at the top of Home, once per device */
-const TOUR=[['Your week starts here','Play or sim this week’s game from Home. Everything else can wait.'],['Find your next class','Recruiting is where you spend weekly hours on prospects. Your staff can do it for you.'],['Build the program','Program holds your staff, facilities, practice plan and uniforms.'],['Make it yours','More › Settings: difficulty, quarter length and how much of each game you play.']];
+const TOUR=[['Home','Play or sim this week’s game here.'],['Recruiting','Spend your weekly hours on prospects, or let your staff do it.'],['Program','Staff, facilities, practice plan and uniforms.'],['Settings','Under More: difficulty, quarter length and how much of each game you play.']];
 let TOUR_I=0;
 function tourHTML(){
   if(LG.rtg||LG.phase!=='regular'||KV.get('gl.tourDone'))return '';const [h,d]=TOUR[TOUR_I];
@@ -604,7 +603,7 @@ function hubSettings(){
   +other.map(c=>sec('x-'+c.replace(/\W+/g,''),esc(c),regs(c,'main'),regs(c,'more'))).join('')
   +sec('about','About',
      `<div class="kv"><span>Version</span><b>7.7</b></div><div class="btns"><button class="btn ghost sm" id="setHelp">How to play</button><button class="btn ghost sm" id="setNew">What’s new</button></div>
-      <p class="note">An original game. School badges use abbreviations, not official logos. Barlow Condensed font under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
+      <p class="note">An original game. School badges use abbreviations, not official logos. Big Shoulders Display and Chivo fonts under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
   +`</div>`;
 }
 /* How to play: one card per part of the game, a line per idea */
@@ -794,7 +793,7 @@ function stripPortal(p){const q={...p};delete q.from;delete q.signed;q.num=0;q.s
 function hubFeed(){
   const f=(LG.feed||[]);
   return leagueNewsHTML()+`<div class="card"><div class="h2">The feed</div><p class="note">Fan reactions from around the country. Every account is made up.</p>
-    ${f.length?f.slice(0,60).map(x=>`<div class="post"><span class="av" style="background:${x.c}">${esc(x.n.split(' ').map(w=>w[0]).join('').slice(0,2))}</span><div><div class="h">${esc(x.n)} <small>${esc(x.h)} · ${x.s} wk ${x.wk}</small></div><p>${esc(x.t)}</p><div class="eng">♥ ${x.likes.toLocaleString()} · ↻ ${Math.round(x.likes/7).toLocaleString()}${x.team!=null&&T(x.team)?` · <span data-team="${x.team}" style="color:var(--fg);text-decoration:underline">${esc(T(x.team).abbr)}</span>`:''}</div></div></div>`).join(''):'<p class="note">Play a week and the feed fills up.</p>'}</div>`;
+    ${f.length?f.slice(0,60).map(x=>`<div class="post"><span class="av" style="background:${x.c}">${esc(x.n.split(' ').map(w=>w[0]).join('').slice(0,2))}</span><div><div class="h">${esc(x.n)} <small>${esc(x.h)} · ${x.s} wk ${x.wk}</small></div><p>${esc(x.t)}</p><div class="eng">${x.likes.toLocaleString()} likes · ${Math.round(x.likes/7).toLocaleString()} reposts${x.team!=null&&T(x.team)?` · <span data-team="${x.team}" style="color:var(--fg);text-decoration:underline">${esc(T(x.team).abbr)}</span>`:''}</div></div></div>`).join(''):'<p class="note">Play a week and the feed fills up.</p>'}</div>`;
 }
 function openTeamPage(id){
   const t=T(id);if(!t)return;const L=LG;let tab='overview';

@@ -57,7 +57,7 @@ function penStat(team,k,y){const st=team===S.home?S.stats:S.ostats;if(!st)return
 function penAnnounce(m){
   logPBP('Flag: '+m);
   if(typeof BC!=='undefined'&&typeof BC.flagCard==='function'&&BC.flagCard(m)){if(BC.say)BC.say('flag',{m});return}
-  const f=$('#flag');if(f){f.textContent='🚩 '+m;f.classList.add('show');clearTimeout(penAnnounce.t);penAnnounce.t=setTimeout(()=>f.classList.remove('show'),2600)}
+  const f=$('#flag');if(f){f.textContent='Flag: '+m;f.classList.add('show');clearTimeout(penAnnounce.t);penAnnounce.t=setTimeout(()=>f.classList.remove('show'),2600)}
   if(typeof BC!=='undefined'&&BC.say)BC.say('flag',{m});
 }
 const sideWord=(f)=>`${f.team.abbr} ${f.side==='o'?(play&&play.st&&(play.st.kind==='ko'||play.st.kind==='punt')?'return team':'offense'):(play&&play.st&&(play.st.kind==='ko'||play.st.kind==='punt')?'kicking team':'defense')}`;
@@ -175,7 +175,7 @@ function runoffOffer(f,cont){
     return need?useTO():doRun()};
   if(def===S.home){const rec=S.q===2||lead>=0,A={t:'Take the runoff',s:left<=0?`Ends the ${hw}`:`Clock to ${fmtClock(left)}`,f:runIt},D={t:'No runoff',s:`Clock stays at ${fmtClock(S.clock)}`,cls:'alt',f:cont};
     penAnnounce(`${PN[f.k]} · ${sideWord(f)} · 10-second runoff option`);
-    return showOpt(`<b>🚩 ${esc(PN[f.k])}</b> · inside the last minute · take a 10-second runoff?`,rec?[A,D]:[D,A])}
+    return showOpt(`<b>Flag: ${esc(PN[f.k])}</b> · inside the last minute · take a 10-second runoff?`,rec?[A,D]:[D,A])}
   /* CPU defense: protect a lead or a tie, and give nobody extra time before the half */
   return S.q===2||lead>=0?runIt():cont();
 }
@@ -308,7 +308,7 @@ function penResolve(){
   if(bv>=dv+.25)return acc();
   const f=best.f,A={t:'Accept',s:best.txt,f:acc},D={t:'Decline',s:dec.txt,cls:'alt',f:decl};
   penAnnounce(`${PN[f.k]} · ${sideWord(f)} · your call`);
-  showOpt(`<b>🚩 ${esc(PN[f.k])}</b> · ${esc(sideWord(f))} · accept or decline?`,bv>=dv?[A,D]:[D,A]);
+  showOpt(`<b>Flag: ${esc(PN[f.k])}</b> · ${esc(sideWord(f))} · accept or decline?`,bv>=dv?[A,D]:[D,A]);
 }
 function penDecline(f){const pl=play;pl.penDone=true;penAnnounce(`${PN[f.k]} · ${sideWord(f)} · declined`);fx('penalty',{name:PN[f.k],yards:0,on:f.side,team:f.team,accepted:false,k:f.k});applyResult()}
 function penAccept(a){
@@ -352,7 +352,7 @@ function penResolveKick(){
     if(!recv||endX==null||endX<ax)return recvBall(ax,y,'15 yards from the spot');
     if(r.sk==='td')return decline();
     if(!user)return decline();
-    return showOpt(`<b>🚩 ${PN.kci}</b> · ${esc(kt.abbr)} · accept or decline?`,[{t:'Decline',s:`Keep the return · ball at the ${spotLabelFor(endX,'home')}`,f:decline},{t:'Accept',s:`15 yards · ball at the ${spotLabelFor(Math.min(109,ax),'home')}`,cls:'alt',f:()=>recvBall(ax,y,'15 yards from the spot')}])}
+    return showOpt(`<b>Flag: ${PN.kci}</b> · ${esc(kt.abbr)} · accept or decline?`,[{t:'Decline',s:`Keep the return · ball at the ${spotLabelFor(endX,'home')}`,f:decline},{t:'Accept',s:`15 yards · ball at the ${spotLabelFor(Math.min(109,ax),'home')}`,cls:'alt',f:()=>recvBall(ax,y,'15 yards from the spot')}])}
   if(f.k==='rik'||f.k==='rok'){   // the kicking team may keep the ball: from the previous spot
     const ks=kt===S.home?'home':'away',L=st.L,ltg=120-st.ltg,y=Math.min(f.k==='rok'?15:5,(110-L)/2),nx=Math.round((L+y)*2)/2,first=f.k==='rok'||nx>=ltg,down=first?1:4,fdx=first?Math.min(110,nx+10):ltg;
     const av=epx(nx,down,fdx-nx),dvv=r.sk==='td'&&r.team===rt?-6.3:recv?-epx(endX,1,10):r.team===kt&&r.sk==='td'?6.3:r.team===kt?epx(120-r.x,1,10):-epx(30,1,10);
@@ -362,7 +362,7 @@ function penResolveKick(){
         if(ks==='away'&&down===1)return boundary(()=>oppPossession(110-nx,'Penalty on the punt'));boundary(toPresnap)},1000)};
     if(kt!==S.home)return (av>=dvv?accept:decline)();
     if(av>=dvv+.25)return accept();
-    return showOpt(`<b>🚩 ${PN[f.k]}</b> · ${esc(rt.abbr)} · accept or decline?`,[{t:'Decline',s:'Keep the result of the punt',f:decline},{t:'Accept',s:`${Math.round(y)} yards · ${ddAt(nx,down,fdx,ks)}`,cls:'alt',f:accept}])}
+    return showOpt(`<b>Flag: ${PN[f.k]}</b> · ${esc(rt.abbr)} · accept or decline?`,[{t:'Decline',s:'Keep the result of the punt',f:decline},{t:'Accept',s:`${Math.round(y)} yards · ${ddAt(nx,down,fdx,ks)}`,cls:'alt',f:accept}])}
   /* personal fouls by the kicking team on the returner: 15 from the end of the return */
   if(!recv||r.sk==='td')return decline();
   const y=Math.min(15,(110-endX)/2);return recvBall(endX+y,y,'15 yards from the end of the return');
