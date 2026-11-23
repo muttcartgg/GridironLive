@@ -429,7 +429,9 @@ function hubPlayoff(){
     return `<div class="bmatch">${lab?`<div class="blab">${esc(lab)}</div>`:''}${team(ha,sa,wa,done&&!wa,seedOf(ha))}${team(hb,sb,wb,done&&!wb,seedOf(hb))}</div>`};
   const W=g=>g&&g.hs!=null?winner(g):null;
   /* bracket order top to bottom: QF0 (1 vs 8/9), QF3 (4 vs 5/12), QF1 (2 vs 7/10), QF2 (3 vs 6/11) */
-  const r1=[3,0,2,1].map(k=>c.r1[k]?game(c.r1[k],null,null,`#${5+k} vs #${12-k}`):game(null,s[4+k],s[11-k],`#${5+k} vs #${12-k} · on campus`));
+  /* first round on the higher seed's campus: its stadium (the imported name when there is one) */
+  const at=id=>{const t=id!=null?T(id):null;return t&&t.stadium?' · '+t.stadium:' · on campus'};
+  const r1=[3,0,2,1].map(k=>c.r1[k]?game(c.r1[k],null,null,`#${5+k} vs #${12-k}`+at(c.r1[k].h)):game(null,s[4+k],s[11-k],`#${5+k} vs #${12-k}`+at(s[4+k])));
   const B=c.bw||cfpBowls(LG,s),bl=b=>b.n+(b.d?' · '+b.d:''),fl='National Championship'+(B.fin.s?' · '+B.fin.d+' · '+B.fin.s.split(', ').pop():'');
   const qf=[0,3,1,2].map(k=>c.qf[k]?game(c.qf[k],null,null,bl(B.qf[k])):game(null,s[k],W(c.r1[[3,2,1,0][k]]),bl(B.qf[k])));
   const sf=[0,1].map(k=>c.sf[k]?game(c.sf[k],null,null,bl(B.sf[k])):game(null,W(c.qf[k===0?0:1]),W(c.qf[k===0?3:2]),bl(B.sf[k])));

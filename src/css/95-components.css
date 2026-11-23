@@ -221,7 +221,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
 .res-g .rt b,.bt b{font:800 18px/1 var(--f-disp)}
 .bmatch{background:var(--c-raise);border:0;border-radius:0;box-shadow:none}
 .bcol.fin .bmatch{box-shadow:inset 0 0 0 1px var(--c-acc)}
-.blab{background:none;color:var(--c-mute);font:600 11.5px/1.2 var(--f-text);padding:6px 10px 2px}
+.blab{background:none;color:var(--c-mute);font:600 11.5px/1.2 var(--f-text);padding:6px 10px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .bhead{font:600 12.5px/1.2 var(--f-text);letter-spacing:0;text-transform:none;color:var(--c-mute);text-align:left}
 .bt.w{background:color-mix(in srgb,var(--c1) 26%,transparent)}
 .bt.me .nm{color:var(--c-acc)}

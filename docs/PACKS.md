@@ -13,6 +13,10 @@ Gridiron Live ships with generated players and text badges only. Real rosters an
 
 Logos are links (https or `data:` images), so they need a connection the first time each logo loads. Without one, the generated badges are shown. **Show imported logos** turns them off. **Remove imported data** deletes the stored pack and clears logos from the current dynasty.
 
+The 3D view uses the same logos: the home team's at midfield, small ones beside the end-zone words, on the ribbon boards, and both teams' on the video board next to the scores. The venue's name (the pack's `stadium`) is on the press-box sign and a wall board at midfield. On iPhone the app fetches these images itself (the `img` bridge in `GameViewController.swift`: https only, up to 3 MB, cached in the app's Caches folder), because WebGL can only use images the CDN allows with CORS; in a browser they load with CORS, and a logo that cannot load leaves that spot as it was.
+
+A dynasty started before the pack was imported (or imported without **Apply to this dynasty now**) still gets the logos and stadium names: when the pack is saved, and once when such a dynasty is opened, each matched team without a logo gets one, and a team still on its generated "School Stadium" gets the pack's stadium name and capacity. Rosters, colors and coaches are not touched.
+
 ## Format (version 2)
 
 ```json

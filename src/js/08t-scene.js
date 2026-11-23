@@ -240,8 +240,8 @@ function t3Logos(env){if(!env||env.dead)return;const o=env.o,L=env.logo,fld=!o.n
   const want=[[fld&&L.mf?o.host:null,false],[fld&&L.ez?o.host:null,L.ezDark],[fld?o.host:null,L.ribDark],[S.home,true],[S.away,true]];
   const k=want.map(([t,d])=>t3LogoId(t,d)).join('|');if(k===env.lk)return;env.lk=k;const n=++env.ln;
   want.forEach(([t,d],i)=>{(t?t3LogoSrc(t,d):Promise.resolve(null)).then(img=>{if(env.dead||env.ln!==n||L.cur[i]===img)return;L.cur[i]=img;
-    if(i===0){t3LogoCv(L.mf.cv,img,.75,.94);L.mf.tex.needsUpdate=true}
-    else if(i===1){t3LogoCv(L.ez.cv,img,1,.95);L.ez.tex.needsUpdate=true}
+    if(i===0){if(L.mf){t3LogoCv(L.mf.cv,img,.75,.94);L.mf.tex.needsUpdate=true}}
+    else if(i===1){if(L.ez){t3LogoCv(L.ez.cv,img,1,.95);L.ez.tex.needsUpdate=true}}
     else if(i===2){t3Ribbon(o,img,L.rib.image);L.rib.needsUpdate=true}
     else{L[i===3?'h':'a']=img;env.board.key=''}}).catch(e=>console.warn('logo',e))})}
 /* ground decals for the logos: midfield (reads left to right on TV, a 12 yd box) and one beside each end of each end-zone
