@@ -123,7 +123,7 @@ function showSlots(){
     /* saves the shell did not inject at launch arrive on demand: a brief loading state on the button */
     on('slotGo-'+n,async()=>{flushSave();const btn=document.getElementById('slotGo-'+n),wait=Saves.keys(n).some(k=>!KV.ready(k));if(wait&&btn){btn.disabled=true;btn.textContent='Loading…'}
       const sk=wait?setTimeout(()=>{if(S.phase==='menu'&&!LG)showLoading('Opening your dynasty…')},250):0;
-      const L=await Saves.loadAsync(n);clearTimeout(sk);if(btn){btn.disabled=false;btn.textContent=Saves.meta().slots[n]&&Saves.meta().slots[n].live?'Resume':'Continue'}if(LG||S.phase!=='menu')return;if(!L){toast('That save could not be opened');showSlots();return}LG=L;SLOT=n;bumpUID(LG);muted=!!LG.settings.muted;applyStyle();showHub('home')});
+      const L=await Saves.loadAsync(n);clearTimeout(sk);if(btn){btn.disabled=false;btn.textContent=Saves.meta().slots[n]&&Saves.meta().slots[n].live?'Resume':'Continue'}if(LG||S.phase!=='menu')return;if(!L){toast('That save could not be opened');showSlots();return}LG=L;SLOT=n;bumpUID(LG);if(typeof packMetaOnLoad==='function')packMetaOnLoad(LG);muted=!!LG.settings.muted;applyStyle();showHub('home')});
     on('slotDel-'+n,()=>{$('#slotConf-'+n).hidden=false});on('slotNo-'+n,()=>{$('#slotConf-'+n).hidden=true});on('slotYes-'+n,()=>{Saves.del(n);showSlots()});
   }
   on('importCode',()=>{
