@@ -41,7 +41,7 @@ const KICK={Noon:'12:00 PM',Afternoon:'3:30 PM',Primetime:'7:30 PM'};
 const fcTemp=(g,wk)=>{const b=84-(wk||0)*3.2-(g.slot==='Primetime'?7:g.slot==='Noon'?-3:0);return Math.round(g.wx==='Snow'?27:g.wx==='Rain'?Math.max(38,b-6):Math.max(30,b))};
 const lineStr=(a,b,s)=>{const v=Math.round(Math.abs(s)*2)/2;return v<.5?'Pick ’em':`${(s>0?a:b).abbr} −${v}`};
 const ICO={play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
-  code:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
+  code:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
 /* the slot meta keeps the imported logo (if any) so the title screen can show it without opening the save */
 if(!Saves._lg){const t0=Saves.touch;Saves._lg=1;Saves.touch=function(slot,L){t0.call(this,slot,L);try{const u=L.teams[L.user],lg=typeof teamLogoURL==='function'?teamLogoURL(u):'';if(lg){const m=this.meta();if(m.slots[slot]){m.slots[slot].logo=lg;this.writeMeta(m)}}}catch(e){}}}
 
