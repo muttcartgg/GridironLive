@@ -1,0 +1,57 @@
+/* =========================================================
+   01 · Tokens and style guide. Every other stylesheet reads these; change a value here, not in a component.
+
+   Idea: the game's own Saturday broadcast package. Charcoal studio, chalk-white type, team colour doing the
+   talking, one goalpost-yellow accent for the things a football viewer looks for first (rank, down and distance,
+   where you are). Graphics are cut like TV graphics: square corners, straight rules, an angled end on bands.
+
+   Colour (use few at once)
+     --c-base   #161718  screen background          --c-chalk  #ECE9E2  primary text
+     --c-raise  #1E1F21  sheets, modals, HUD panels  --c-mute   #A19E97  secondary text
+     --c-ctrl   #292A2D  controls, wells             --c-faint  #6F6D68  disabled, axis labels
+     --c-rule   chalk 12%  dividers                  --c-rule2  chalk 24%  control outlines
+     --c-acc    #F2C230  goalpost yellow: rank, down & distance, selected tab marker, focus. Never a fill for
+                         large areas, never decoration.
+     --c-win / --c-loss  results only. Team colours (--team, --c1) fill bands, score bug blocks, primary buttons.
+   Type (two families)
+     Display  Big Shoulders Display 700/800, upright, tracking 0. Scores, team names, rank numerals, banners,
+              screen titles. Team names and banners in capitals; titles as written.
+     Text     Chivo 400/600/700, sentence case, tabular figures (Chivo's default). Everything you read or tap.
+     Scale    display 64 · 44 · 30 · 22 · 18      text 17 · 15 · 13 · 11.5
+   Space      4 · 8 · 12 · 16 · 24 · 32 (left-aligned content on a 16px gutter)
+   Radius     0 for panels, bands and banners; 2px for buttons, inputs, chips; 4px is the ceiling
+   Components
+     section   a 1px rule on top, a display title, rows under it. No card backgrounds, no cards in cards.
+     band      solid team colour with an angled right end (hub header, game hero, banners, score bug)
+     button    primary = team colour fill; secondary = 1px outline; text button = underline on press
+     segmented 1px outline box, selected segment filled chalk with base-coloured text
+     tag       small text-face label on a 10% tint, 2px corners
+     table     text face, right-aligned tabular numbers, 1px rules, selected row marked by a 3px team edge
+   Motion     120 ms press, 180 ms enter, ease-out, transform and opacity only, nothing bounces; off with
+              reduced motion.
+   Icons      one stroke set: 24px grid, 1.75 stroke, square caps where it reads, no emoji.
+   ========================================================= */
+@font-face{font-family:'Big Shoulders Display';src:url(data:font/woff2;base64,__FONT:big-shoulders-display-latin-700-normal.woff2__) format('woff2');font-weight:700;font-style:normal;font-display:swap}
+@font-face{font-family:'Big Shoulders Display';src:url(data:font/woff2;base64,__FONT:big-shoulders-display-latin-800-normal.woff2__) format('woff2');font-weight:800 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Chivo';src:url(data:font/woff2;base64,__FONT:chivo-latin-400-normal.woff2__) format('woff2');font-weight:300 500;font-style:normal;font-display:swap}
+@font-face{font-family:'Chivo';src:url(data:font/woff2;base64,__FONT:chivo-latin-600-normal.woff2__) format('woff2');font-weight:600;font-style:normal;font-display:swap}
+@font-face{font-family:'Chivo';src:url(data:font/woff2;base64,__FONT:chivo-latin-700-normal.woff2__) format('woff2');font-weight:700 900;font-style:normal;font-display:swap}
+
+:root{
+  --c-base:#161718;--c-raise:#1E1F21;--c-ctrl:#292A2D;--c-rule:rgba(236,233,226,.12);--c-rule2:rgba(236,233,226,.24);
+  --c-chalk:#ECE9E2;--c-mute:#A19E97;--c-faint:#6F6D68;--c-acc:#F2C230;--c-acc-ink:#191402;
+  --c-win:#4CB97E;--c-loss:#E5484D;--c-warn:#E9A23B;--c-info:#62A8E5;
+  --f-disp:'Big Shoulders Display','Arial Narrow',system-ui,sans-serif;
+  --f-text:'Chivo',-apple-system,'Segoe UI',Roboto,system-ui,sans-serif;
+  --fs-d1:64px;--fs-d2:44px;--fs-d3:30px;--fs-d4:22px;--fs-d5:18px;
+  --fs-t1:17px;--fs-t2:15px;--fs-t3:13px;--fs-t4:11.5px;
+  --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;
+  --r0:0;--r1:2px;--r2:4px;--cut:16px;
+  --t-fast:.12s;--t-med:.18s;--ease-out:cubic-bezier(.2,.7,.3,1);
+
+  /* the names the older stylesheets use, pointed at the system */
+  --ink:var(--c-base);--panel:var(--c-raise);--panel2:var(--c-ctrl);--line:var(--c-rule);
+  --fg:var(--c-chalk);--mute:var(--c-mute);--gold:var(--c-acc);--hot:var(--c-loss);--ok:var(--c-win);--warn:var(--c-warn);
+  --disp:var(--f-disp);--body:var(--f-text);--dw:800;--dstyle:normal;--dtrack:0;
+}
+body{font-family:var(--f-text);font-size:var(--fs-t2);font-variant-numeric:tabular-nums}

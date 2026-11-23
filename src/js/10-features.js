@@ -25,7 +25,7 @@ const windX=()=>S.wind?Math.cos(S.wind.ang)*(uOff()?1:-1):0,windY=()=>S.wind?Mat
 function windHTML(){
   const w=S.wind;if(!w||w.mph<4)return `${WX_ICON[S.wx]} ${S.wx}`;
   const deg=Math.atan2(windY()*VY,windX())*180/Math.PI;
-  return `${WX_ICON[S.wx]} ${w.mph} MPH <i class="warr" style="transform:rotate(${deg.toFixed(0)}deg)">➜</i>`;
+  return `${WX_ICON[S.wx]} ${w.mph} MPH <i class="warr" style="transform:rotate(${deg.toFixed(0)}deg)"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h15M13 6l6 6-6 6"/></svg></i>`;
 }
 
 /* coin toss: call it, then receive or defer */

@@ -8,8 +8,8 @@
 .pph>.pph-c>img{position:absolute;left:0;top:0;width:100%;height:100%;object-fit:cover;object-position:50% 0;opacity:0;transition:opacity .25s}
 .pph.ok .pph-sil{display:none}
 .pph.ok>.pph-c>img{opacity:1}
-.pph>.pph-n{position:absolute;inset:0;display:grid;place-items:center;padding-top:calc(var(--s)*.3);font:italic 800 calc(var(--s)*.38)/1 var(--tv);letter-spacing:-.02em;color:var(--k);text-shadow:0 1px 2px rgba(0,0,0,.35)}
-.pph.ok>.pph-n{inset:auto 0 0 auto;display:block;min-width:calc(var(--s)*.42);padding:2px 3px 1px;border-radius:5px;background:var(--c1);box-shadow:0 0 0 1.5px var(--c2);font-size:max(9px,calc(var(--s)*.25));text-align:center;text-shadow:none}
+.pph>.pph-n{position:absolute;inset:0;display:grid;place-items:center;padding-top:calc(var(--s)*.3);font:800 calc(var(--s)*.38)/1 var(--tv);letter-spacing:-.02em;color:var(--k);text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.pph.ok>.pph-n{inset:auto 0 0 auto;display:block;min-width:calc(var(--s)*.42);padding:2px 3px 1px;border-radius:4px;background:var(--c1);box-shadow:0 0 0 1.5px var(--c2);font-size:max(9px,calc(var(--s)*.25));text-align:center;text-shadow:none}
 .pph.xs.ok>.pph-n{display:none}
 /* where avatars sit */
 .lrow .l>.pph{margin-right:-2px}

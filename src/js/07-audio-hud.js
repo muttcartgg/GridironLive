@@ -65,7 +65,7 @@ function banner(m,c,sub){
   const pts={td:'+6',two:'+2',safety:'+2',fg:'+3'}[k]||'';
   const col=k==='miss'?'#2A313C':c||'#2A313C';
   b.className='k-'+k;b.style.setProperty('--bc',col);b.style.setProperty('--btc',k==='miss'?'#fff':String(col).startsWith('#')?inkOn(col):'#fff');if(t){b.style.setProperty('--b2',t.c2||'#fff')}else b.style.removeProperty('--b2');
-  b.querySelector('.bl').innerHTML=k==='miss'?'<i class="x">✕</i>':t?tvLogo(t,'b'):'';b.querySelector('.bl').hidden=!t&&k!=='miss';
+  b.querySelector('.bl').innerHTML=k==='miss'?'<i class="x"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><path d="M6 6l12 12M18 6 6 18"/></svg></i>':t?tvLogo(t,'b'):'';b.querySelector('.bl').hidden=!t&&k!=='miss';
   b.querySelector('.ki').textContent=kicker;b.querySelector('.ki').hidden=!kicker;b.querySelector('.ti').textContent=title;
   b.querySelector('.su').textContent=su;b.querySelector('.su').hidden=!su;const p=b.querySelector('.pt');p.textContent=pts;p.hidden=!pts;
   b.classList.remove('on');void b.offsetWidth;b.classList.add('on');bannerAt=performance.now();clearTimeout(banner.t);banner.t=setTimeout(()=>b.classList.remove('on'),k==='td'||k==='two'?2700:2300);

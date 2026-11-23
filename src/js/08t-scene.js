@@ -58,7 +58,7 @@ const T3A={w:2048,h:1280,cell:[512,200],words:600,wordH:300};
 function t3Atlas(o){
   const cv=document.createElement('canvas');cv.width=T3A.w;cv.height=T3A.h;const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);
   const num=['10','20','30','40'],cells=[];
-  const fnt='700 280px "Barlow Condensed",'+FFONT;g.font=fnt;const m=g.measureText('0'),asc=m.actualBoundingBoxAscent||200,sy=196/asc;
+  const fnt='700 280px "Big Shoulders Display",'+FFONT;g.font=fnt;const m=g.measureText('0'),asc=m.actualBoundingBoxAscent||200,sy=196/asc;
   const digit=(ch,cx,cy)=>{g.save();g.translate(cx,cy);const mw=g.measureText(ch).width||120;g.scale(130/mw,sy);g.textAlign='center';g.textBaseline='alphabetic';g.fillText(ch,0,0);g.restore()};
   let k=0;for(const s of [...num.map(n=>[n,-1]),...num.map(n=>[n,1]),['50',0]]){const cx=(k%4)*512+256,cy=Math.floor(k/4)*200;g.fillStyle='#F3F3EE';g.font=fnt;
     digit(s[0][0],cx-88,cy+198);digit(s[0][1],cx+88,cy+198);
@@ -67,7 +67,7 @@ function t3Atlas(o){
   /* end-zone words: the school (left end zone) and the nickname (right), fitted to the width, outlined */
   const ink=t3Dark(o.host.c1)||lum(o.host.c1)<.45?'#FFFFFF':'#0B0E14',edge=o.host.c2&&Math.abs(lum(o.host.c2)-lum(ink))>.25?o.host.c2:shade(o.host.c1,-.5);
   const words=[String(o.host.city||o.host.name||'HOME').toUpperCase(),String(o.host.name||o.host.city||'').toUpperCase()];
-  words.forEach((wd,i)=>{const y0=T3A.words+i*T3A.wordH;g.save();g.font='italic 800 260px "Barlow Condensed",'+FFONT;const mw=g.measureText(wd).width||1000,asc2=g.measureText('H').actualBoundingBoxAscent||190;
+  words.forEach((wd,i)=>{const y0=T3A.words+i*T3A.wordH;g.save();g.font='800 260px "Big Shoulders Display",'+FFONT;const mw=g.measureText(wd).width||1000,asc2=g.measureText('H').actualBoundingBoxAscent||190;
     g.translate(1024,y0+T3A.wordH/2+asc2*.5*Math.min(1.08,236/asc2));g.scale(Math.min(1880/mw,1.15),Math.min(1.08,236/asc2));g.textAlign='center';g.lineJoin='round';g.lineWidth=22;g.strokeStyle=edge;g.strokeText(wd,0,0);g.fillStyle=ink;g.fillText(wd,0,0);g.restore();
     cells.push({word:i,u0:0,u1:1,v0:1-(y0+T3A.wordH)/T3A.h,v1:1-y0/T3A.h})});
   return {cv,cells};
@@ -139,7 +139,7 @@ const T3P={wall:[[0,0],[0,2.4]],walk:[[0,2.4],[1.2,2.4]],low:[[1.2,2.4],[25,14.3
 const SEG_UP=[0,1,2,6,7],SEG_ALL=[0,1,2,3,4,5,6,7],SEG_NEAR=[3,4,5];
 /* canvases for the stands: ribbon board, suite windows, seat rows */
 function t3Ribbon(o){const cv=document.createElement('canvas');cv.width=1024;cv.height=64;const g=cv.getContext('2d'),c1=o.host.c1,ink=inkOn(c1);
-  g.fillStyle=shade(c1,-.25);g.fillRect(0,0,1024,64);g.fillStyle=ink;g.font='italic 800 44px "Barlow Condensed",'+FFONT;g.textBaseline='middle';g.textAlign='center';
+  g.fillStyle=shade(c1,-.25);g.fillRect(0,0,1024,64);g.fillStyle=ink;g.font='800 44px "Big Shoulders Display",'+FFONT;g.textBaseline='middle';g.textAlign='center';
   const w=String(o.host.city||o.host.name).toUpperCase();g.fillText(w,256,34);g.fillStyle=o.host.c2||'#fff';g.fillText(String(o.host.name||'').toUpperCase(),768,34);
   g.fillStyle='rgba(255,255,255,.12)';for(let x=0;x<1024;x+=4)g.fillRect(x,0,1,64);return cv}
 function t3Suites(){const cv=document.createElement('canvas');cv.width=256;cv.height=64;const g=cv.getContext('2d'),r=t3Rng(5);g.fillStyle='#1d2229';g.fillRect(0,0,256,64);
@@ -197,12 +197,12 @@ function t3Sideline(o){const r=t3Rng(19),inst=[];
 /* ---------- video board (live score), press box, light towers ---------- */
 function t3Board(){const cv=document.createElement('canvas');cv.width=512;cv.height=256;return cv}
 function t3BoardDraw(cv){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.home;if(!A||!Hm)return;
-  g.fillStyle='#07090d';g.fillRect(0,0,512,256);g.fillStyle=shade(h.c1,-.3);g.fillRect(0,0,512,46);g.fillStyle=inkOn(shade(h.c1,-.3));g.font='italic 800 34px "Barlow Condensed",'+FFONT;g.textAlign='center';g.textBaseline='middle';
+  g.fillStyle='#07090d';g.fillRect(0,0,512,256);g.fillStyle=shade(h.c1,-.3);g.fillRect(0,0,512,46);g.fillStyle=inkOn(shade(h.c1,-.3));g.font='800 34px "Big Shoulders Display",'+FFONT;g.textAlign='center';g.textBaseline='middle';
   g.fillText(String(h.city||h.name).toUpperCase(),256,25);
-  const side=(t,sc,x)=>{g.fillStyle=t.c1;g.fillRect(x,60,236,118);g.fillStyle=inkOn(t.c1);g.font='800 40px "Barlow Condensed",'+FFONT;g.fillText(String(t.abbr||t.name).toUpperCase(),x+118,84);g.font='800 84px "Barlow Condensed",'+FFONT;g.fillText(String(sc),x+118,144)};
+  const side=(t,sc,x)=>{g.fillStyle=t.c1;g.fillRect(x,60,236,118);g.fillStyle=inkOn(t.c1);g.font='800 40px "Big Shoulders Display",'+FFONT;g.fillText(String(t.abbr||t.name).toUpperCase(),x+118,84);g.font='800 84px "Big Shoulders Display",'+FFONT;g.fillText(String(sc),x+118,144)};
   side(A,S.score[1],14);side(Hm,S.score[0],262);
-  g.fillStyle='#FFD23F';g.font='800 40px "Barlow Condensed",'+FFONT;const q=S.ot?'OT':(typeof qName==='function'?qName(S.q):'Q'+S.q);g.fillText(`${q}   ${typeof fmtClock==='function'?fmtClock(S.clock):''}`,256,206);
-  g.fillStyle='#cfd6e0';g.font='700 26px "Barlow Condensed",'+FFONT;const dd=$('#dd');g.fillText(dd?dd.textContent.toUpperCase():'',256,238);
+  g.fillStyle='#FFD23F';g.font='800 40px "Big Shoulders Display",'+FFONT;const q=S.ot?'OT':(typeof qName==='function'?qName(S.q):'Q'+S.q);g.fillText(`${q}   ${typeof fmtClock==='function'?fmtClock(S.clock):''}`,256,206);
+  g.fillStyle='#cfd6e0';g.font='700 26px "Big Shoulders Display",'+FFONT;const dd=$('#dd');g.fillText(dd?dd.textContent.toUpperCase():'',256,238);
   g.fillStyle='rgba(255,255,255,.06)';for(let y=0;y<256;y+=3)g.fillRect(0,y,512,1)}
 function t3Glow(){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,250,1)');gr.addColorStop(.18,'rgba(255,250,235,.55)');gr.addColorStop(.5,'rgba(200,215,255,.12)');gr.addColorStop(1,'rgba(200,215,255,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return cv}
 function t3LightPanel(){const cv=document.createElement('canvas');cv.width=128;cv.height=64;const g=cv.getContext('2d');g.fillStyle='#20252c';g.fillRect(0,0,128,64);for(let y=0;y<4;y++)for(let x=0;x<8;x++){g.fillStyle='#e9eef7';g.beginPath();g.arc(8+x*16,8+y*16,6,0,7);g.fill()}return cv}

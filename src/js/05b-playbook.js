@@ -311,13 +311,13 @@ function aiPickFront(team,sit,pc){
 /* tiny play diagram for the playbook grid */
 function playSVG(p){
   const f=FORMS[p.form],X0=48,sx=1.8,sy=.82,Y=y=>28+y*sy,Xp=x=>X0+x*sx;let s=`<svg viewBox="0 0 100 56" aria-hidden="true"><line x1="${X0}" y1="3" x2="${X0}" y2="53" stroke="rgba(77,163,255,.7)" stroke-width="1"/>`;
-  for(const dy of [-2.2,-1.1,0,1.1,2.2])s+=`<rect x="${Xp(-.7)-1.6}" y="${Y(dy)-1.6}" width="3.2" height="3.2" fill="#9aa4b2"/>`;
+  for(const dy of [-2.2,-1.1,0,1.1,2.2])s+=`<rect x="${Xp(-.7)-1.6}" y="${Y(dy)-1.6}" width="3.2" height="3.2" fill="#A7A49D"/>`;
   const rp=p.run&&p.run.rpo||[];
   const draw=(k,pos)=>{const [x,y]=pos;const px=Xp(x),py=Y(y);s+=`<circle cx="${px}" cy="${py}" r="2.2" fill="${k==='QB'?'#fff':'var(--team)'}"/>`;
     const rt=p.r&&p.r[k];if(rt&&ROUTES[rt]){const inD=y<0?1:y>0?-1:1;let pts=[[px,py]];for(const [a,b] of ROUTES[rt].w){pts.push([Xp(x+a),Y(clamp(y+b*inD,-26,26))])}
       if(!ROUTES[rt].stop){const a=pts[pts.length-2],z=pts[pts.length-1],dx=z[0]-a[0],dy=z[1]-a[1],d=hyp(dx,dy)||1;pts.push([z[0]+dx/d*6,z[1]+dy/d*6])}
-      s+=`<polyline points="${pts.map(q=>q.join(',')).join(' ')}" fill="none" stroke="${p.screen===k||p.dbl===k?'#FFD23F':'#fff'}" stroke-width="1.4" stroke-linejoin="round" opacity=".9"${rp.includes(k)?' stroke-dasharray="2.5 1.6"':''}/>`}
-    if(p.run&&p.run.carrier===k){const g=p.run.gap;s+=`<path d="M${px},${py} L${Xp(2)},${Y(g)} L${Xp(9)},${Y(g)}" fill="none" stroke="#FFD23F" stroke-width="1.6"/>`}
+      s+=`<polyline points="${pts.map(q=>q.join(',')).join(' ')}" fill="none" stroke="${p.screen===k||p.dbl===k?'#F2C230':'#fff'}" stroke-width="1.4" stroke-linejoin="round" opacity=".9"${rp.includes(k)?' stroke-dasharray="2.5 1.6"':''}/>`}
+    if(p.run&&p.run.carrier===k){const g=p.run.gap;s+=`<path d="M${px},${py} L${Xp(2)},${Y(g)} L${Xp(9)},${Y(g)}" fill="none" stroke="#F2C230" stroke-width="1.6"/>`}
     if(p.run&&(p.run.read||p.run.triple||p.run.option)&&k==='QB'){const g=p.run.read?(p.run.inv?2:-p.run.gap*1.8-3):p.run.gap+3;s+=`<path d="M${px},${py} L${Xp(1)},${Y(g)} L${Xp(7)},${Y(g)}" fill="none" stroke="#fff" stroke-width="1.2" stroke-dasharray="2 1.6" opacity=".85"/>`}};
   for(const k of ['X','H','Y','Z','R','QB'])draw(k,f[k]);
   return s+'</svg>';

@@ -41,7 +41,7 @@ const KICK={Noon:'12:00 PM',Afternoon:'3:30 PM',Primetime:'7:30 PM'};
 const fcTemp=(g,wk)=>{const b=84-(wk||0)*3.2-(g.slot==='Primetime'?7:g.slot==='Noon'?-3:0);return Math.round(g.wx==='Snow'?27:g.wx==='Rain'?Math.max(38,b-6):Math.max(30,b))};
 const lineStr=(a,b,s)=>{const v=Math.round(Math.abs(s)*2)/2;return v<.5?'Pick ’em':`${(s>0?a:b).abbr} −${v}`};
 const ICO={play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
-  code:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
+  code:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
 /* the slot meta keeps the imported logo (if any) so the title screen can show it without opening the save */
 if(!Saves._lg){const t0=Saves.touch;Saves._lg=1;Saves.touch=function(slot,L){t0.call(this,slot,L);try{const u=L.teams[L.user],lg=typeof teamLogoURL==='function'?teamLogoURL(u):'';if(lg){const m=this.meta();if(m.slots[slot]){m.slots[slot].logo=lg;this.writeMeta(m)}}}catch(e){}}}
 
@@ -97,7 +97,7 @@ function showSlots(){
   hideAll();S.phase='menu';LG=null;SLOT=null;applyStyle();if(typeof g3Show==='function')g3Show(false);if(typeof ath3dReset==='function')try{ath3dReset()}catch(e){}
   const m=Saves.meta();$('#setup').classList.add('title');
   const card=n=>{const s=m.slots[n];
-    if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="sl-et"><span class="h2">New dynasty</span><span class="note">Slot ${n} · empty</span></span></button>`;
+    if(!s)return `<button class="slot empty" id="slotNew-${n}"><span class="sl-plus" aria-hidden="true">+</span><span class="sl-et"><span class="h2">New dynasty</span><span class="note">Slot ${n} is empty</span></span></button>`;
     const t={abbr:s.abbr,c1:s.c1,c2:s.c2,logo:s.logo},wk=/^Week (\d+)$/.exec(s.label||''),bak=KV.has('gl3.bak'+n);
     return `<div class="slot full" style="--c1:${s.c1};--c2:${s.c2};--d:${deepC(t)}">
       <div class="sl-head"><span class="sl-wm" aria-hidden="true">${esc(s.abbr)}</span>${badge(t,'lg')}<div class="sl-id"><small>Slot ${n}${s.live?' · <i class="sl-live">Game in progress</i>':''}</small><b>${esc(s.team)}</b><span>${esc(s.coach)} · ${esc(s.name)}</span></div></div>
@@ -106,14 +106,13 @@ function showSlots(){
       <div class="btns"><button class="btn" id="slotGo-${n}">${s.live?'Resume':'Continue'}</button><button class="btn ghost sm" id="slotDel-${n}">Delete</button>${bak?`<button class="btn ghost sm" id="slotBak-${n}">Restore backup · ${timeAgo(+KV.get('gl3.bakt'+n))}</button>`:''}</div>
       <div id="slotConf-${n}" class="sl-conf" hidden><p class="note" style="color:#FF8A96">Delete this dynasty for good?</p><div class="btns"><button class="btn danger sm" id="slotYes-${n}">Delete</button><button class="btn ghost sm" id="slotNo-${n}">Keep</button></div></div></div>`};
   $('#setupBody').innerHTML=`
-    <header class="ttl"><div class="ttl-net"><span class="gln">GLN</span><span>College football dynasty</span></div>
-      <h1 class="ttl-word" aria-label="Gridiron Live"><span class="g">Gridiron</span><span class="l"><i></i>Live</span></h1>
-      <div class="ttl-sub"><span>265 programs</span><span>2026 season</span></div>
-      <button class="ttl-new" id="whatsNew"><i></i>What’s new</button></header>
-    <div class="eyebrow ttl-h">Your dynasties <span class="ttl-cnt">${SLOTS.filter(n=>m.slots[n]).length} of ${SLOTS.length}</span></div>
+    <header class="ttl"><h1 class="ttl-word" aria-label="Gridiron Live"><span class="g">Gridiron</span><span class="l">Live</span></h1>
+      <p class="ttl-sub">College football dynasty. 265 programs, 2026 season.</p>
+      <button class="ttl-new" id="whatsNew">What’s new</button></header>
+    <div class="eyebrow ttl-h">Dynasties <span class="ttl-cnt">${SLOTS.filter(n=>m.slots[n]).length} of ${SLOTS.length} slots used</span></div>
     <div class="slots">${SLOTS.map(card).join('')}</div>
     <div class="grid2 ttl-more">
-      <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">Any two programs, one game, nothing saved.</p></div><button class="btn ghost" id="quickPlay">Play</button></div>
+      <div class="card ttl-act"><span class="ta-ic">${ICO.play}</span><div><div class="h2">Quick play</div><p class="note">One game between any two programs. Nothing is saved.</p></div><button class="btn ghost" id="quickPlay">Play</button></div>
       <div class="card ttl-act"><span class="ta-ic">${ICO.code}</span><div><div class="h2">Restore</div><p class="note">From a backup file or a save code.</p></div><span style="display:flex;flex-direction:column;gap:6px"><button class="btn ghost sm" id="restoreFile">File</button><button class="btn ghost sm" id="importCode">Code</button></span></div></div>`;
   on('restoreFile',()=>openRestoreFile(showSlots));
   on('quickPlay',()=>{ac();openQuickPlay()});
@@ -247,6 +246,7 @@ const NAV_ICO={home:'<path d="M4 10.5 12 4l8 6.5V19a1 1 0 0 1-1 1h-4.5v-5.5h-5V2
 const navOf=v=>NAV.find(n=>n[2].includes(v))||NAV[0];
 function showHub(tab){
   const prev=TAB,wasHidden=$('#hub').hidden;if(tab==='roster')tab='team';
+  if(tab&&tab!=='rankings'&&typeof cfpClose==='function'&&$('#cfpShow'))cfpClose(true);
   invalidate();hideAll();if(tab&&VIEWS[tab])TAB=tab;if(LG.rtg&&(TAB==='recruit'||TAB==='program'))TAB='home';S.phase='hub';applyStyle();ensureCareer(LG);
   const u=T(LG.user);applyTeamTheme(u);
   const ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null,top=$('#hubTop');top.style.setProperty('--hd',deepC(u));
@@ -301,7 +301,7 @@ function hubHome(){
     <div class="sp-k"><div><em>Record</em><b>${recStr(u)}</b></div>${cpos?`<div><em>${esc(confName(u.conf))}</em><b>${ordinal(cpos)}</b></div>`:''}<div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div></div>
     <div class="sp-track" aria-hidden="true">${track}</div><div class="sp-foot"><span>AD expects ${tgt}+ wins</span><span class="${hsC==='hot'?'res-l':''}">Hot seat: ${esc(hsN.toLowerCase())}</span></div></div>`;
   const news=LG.news.length?`<div class="card news"><div class="news-h"><span class="eyebrow">This week</span><button class="linkbtn" id="homeNews">All news</button></div><div class="list">${LG.news.slice(0,3).map((n,i)=>`<div class="lrow${i?'':' lead'}"><span>${esc(n.t)}</span></div>`).join('')}</div></div>`:'';
-  return tourHTML()+main+decisionHTML()+`<div class="grid2">${season}${news}</div>`+(typeof rcHomeCard==='function'?rcHomeCard():'');
+  return tourHTML()+main+(typeof cfpHomeHTML==='function'?cfpHomeHTML():'')+decisionHTML()+`<div class="grid2">${season}${news}</div>`+(typeof rcHomeCard==='function'?rcHomeCard():'');
 }
 /* weekly front-office decision: a card on Home instead of a popup; the answer stays on the card until next week */
 function decisionHTML(){
@@ -314,7 +314,7 @@ function bindDecision(){
   ev.opts.forEach((o,i)=>on('evo-'+i,()=>{const msg=o[1](LG,p);LG.fan=clamp(LG.fan,0,100);LG.morale=clamp(LG.morale,0,100);LG.event=null;LG.evRes={wk:LG.week,season:LG.season,title:o[0],msg};saveNow();haptic('success');rerender()}));
 }
 /* first-run tour: four short cards at the top of Home, once per device */
-const TOUR=[['Your week starts here','Play or sim this week’s game from Home. Everything else can wait.'],['Find your next class','Recruiting is where you spend weekly hours on prospects. Your staff can do it for you.'],['Build the program','Program holds your staff, facilities, practice plan and uniforms.'],['Make it yours','More › Settings: difficulty, quarter length and how much of each game you play.']];
+const TOUR=[['Home','Play or sim this week’s game here.'],['Recruiting','Spend your weekly hours on prospects, or let your staff do it.'],['Program','Staff, facilities, practice plan and uniforms.'],['Settings','Under More: difficulty, quarter length and how much of each game you play.']];
 let TOUR_I=0;
 function tourHTML(){
   if(LG.rtg||LG.phase!=='regular'||KV.get('gl.tourDone'))return '';const [h,d]=TOUR[TOUR_I];
@@ -390,10 +390,7 @@ function hubRankings(){
       ${others?`<p class="note"><b>Others receiving votes:</b> ${others}</p>`:''}
       <p class="note">Voted like the media poll: each week starts from last week's ballot. A win holds a team's spot or moves it up (more for ranked, top-10 and road wins), a loss drops it by how good the opponent was and the margin, and a bye holds. A ranked team that wins falls at most two spots, and a team that beat a team with the same or a worse record is always ranked ahead of it. SOS is a rank; Power is points better than an average team; PF/G and PA/G are points scored and allowed per game.</p></div>`;
   }else if(cfp){
-    const c=ensureCFP(LG),fin=LG.week>LG.R||LG.phase==='offseason';
-    body=!c.length?`<div class="card"><div class="eyebrow">College Football Playoff</div><div class="h2">CFP rankings</div><p class="note">${LG.phase==='offseason'?'No CFP rankings were kept for this season.':`Not released yet — first rankings after Week ${cfpFrom(LG)}. Until then the playoff projection uses the AP Top 25.`}</p></div>`
-      :`<div class="card"><div class="eyebrow">${fin?'Final rankings · selection day':'Selection committee · after '+esc(last)}</div><div class="h2">CFP Top 25</div>${pollTab(c,LG.cfpPrev||[],'CFP ')}
-      <p class="note">The committee ranks résumés, not reputations, and starts fresh every week: record, strength of schedule, wins over CFP-ranked teams, bad losses, head-to-head and common opponents${fin?', plus conference titles':''}. Its final rankings pick and seed the 12-team playoff.</p></div>`;
+    body=cfpBoardHTML();   /* selection-show board and reveal (04e) */
   }else if(RANK_MODE==='all'){
     body=`<div class="card"><div class="setrow"><div class="h2">All ${div} teams · ${list.length}</div>${toggle}</div><div class="tw"><table class="rtab">${head(true)}<tbody>${list.map((id,i)=>row(id,i,true)).join('')}</tbody></table></div></div>`;
   }else{
@@ -604,7 +601,7 @@ function hubSettings(){
   +other.map(c=>sec('x-'+c.replace(/\W+/g,''),esc(c),regs(c,'main'),regs(c,'more'))).join('')
   +sec('about','About',
      `<div class="kv"><span>Version</span><b>7.7</b></div><div class="btns"><button class="btn ghost sm" id="setHelp">How to play</button><button class="btn ghost sm" id="setNew">What’s new</button></div>
-      <p class="note">An original game. School badges use abbreviations, not official logos. Barlow Condensed font under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
+      <p class="note">An original game. School badges use abbreviations, not official logos. Big Shoulders Display and Chivo fonts under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
   +`</div>`;
 }
 /* How to play: one card per part of the game, a line per idea */
@@ -621,7 +618,8 @@ function hubHelp(){
 }
 function bindHub(){
   if(TAB==='program'){bindCareer();bindUniCard()}
-  if(TAB==='home'&&!LG.rtg){bindDecision();bindTour();on('homeNews',()=>{showHub('feed');$('#hubScroll').scrollTop=0})}
+  if(TAB==='rankings'&&RANK_MODE==='cfp'&&typeof cfpBind==='function')cfpBind();
+  if(TAB==='home'&&!LG.rtg){bindDecision();bindTour();if(typeof cfpHomeBind==='function')cfpHomeBind();on('homeNews',()=>{showHub('feed');$('#hubScroll').scrollTop=0})}
   document.querySelectorAll('details.more').forEach(d=>d.ontoggle=()=>{d.open?SET_OPEN.add(d.dataset.k):SET_OPEN.delete(d.dataset.k)});
   on('setHelp',()=>{showHub('help');$('#hubScroll').scrollTop=0});on('setNew',openWhatsNew);
   on('newSchool',()=>openSchoolBuilder({mode:'create',L:LG,done:rerender}));
@@ -794,7 +792,7 @@ function stripPortal(p){const q={...p};delete q.from;delete q.signed;q.num=0;q.s
 function hubFeed(){
   const f=(LG.feed||[]);
   return leagueNewsHTML()+`<div class="card"><div class="h2">The feed</div><p class="note">Fan reactions from around the country. Every account is made up.</p>
-    ${f.length?f.slice(0,60).map(x=>`<div class="post"><span class="av" style="background:${x.c}">${esc(x.n.split(' ').map(w=>w[0]).join('').slice(0,2))}</span><div><div class="h">${esc(x.n)} <small>${esc(x.h)} · ${x.s} wk ${x.wk}</small></div><p>${esc(x.t)}</p><div class="eng">♥ ${x.likes.toLocaleString()} · ↻ ${Math.round(x.likes/7).toLocaleString()}${x.team!=null&&T(x.team)?` · <span data-team="${x.team}" style="color:var(--fg);text-decoration:underline">${esc(T(x.team).abbr)}</span>`:''}</div></div></div>`).join(''):'<p class="note">Play a week and the feed fills up.</p>'}</div>`;
+    ${f.length?f.slice(0,60).map(x=>`<div class="post"><span class="av" style="background:${x.c}">${esc(x.n.split(' ').map(w=>w[0]).join('').slice(0,2))}</span><div><div class="h">${esc(x.n)} <small>${esc(x.h)} · ${x.s} wk ${x.wk}</small></div><p>${esc(x.t)}</p><div class="eng">${x.likes.toLocaleString()} likes · ${Math.round(x.likes/7).toLocaleString()} reposts${x.team!=null&&T(x.team)?` · <span data-team="${x.team}" style="color:var(--fg);text-decoration:underline">${esc(T(x.team).abbr)}</span>`:''}</div></div></div>`).join(''):'<p class="note">Play a week and the feed fills up.</p>'}</div>`;
 }
 function openTeamPage(id){
   const t=T(id);if(!t)return;const L=LG;let tab='overview';
