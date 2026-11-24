@@ -11,6 +11,7 @@ const toWorld=(sx,sy)=>is3D()?screenToField(sx,sy,.9):[(sx-W/2)/scE()+cam.x,(sy-
 function resize(){
   DPR=Math.min(3,window.devicePixelRatio||1);W=innerWidth;H=innerHeight;
   cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);cv.style.width=W+'px';cv.style.height=H+'px';
+  if(typeof sbPlace==='function')sbPlace();   // the bug's side follows the orientation (07c)
   const sb=$('#sb'),bottomBug=document.documentElement.dataset.bug==='bottom';
   topY=(sb.hidden||bottomBug?20:sb.getBoundingClientRect().bottom)+6;
   /* camera scale fitted to this phone (06a): consistent player size, enough field, clear of the notch / Dynamic Island and the HUD */

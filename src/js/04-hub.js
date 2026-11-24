@@ -585,7 +585,7 @@ function hubSettings(){
     +row('Score ticker',tg('setTk',s.ticker!==false))
     +row('Player cards',tg('setLow',s.lower!==false))
     +row('Decibel meter',tg('setDB',s.db!==false))
-    +row('Score bug position',seg('setBug',[['top','Top'],['bottom','Bottom']],s.bugPos||'top'))
+    +row('Score bug in landscape',seg('setBug',[['bottom','Bottom'],['top','Top']],s.bugPos==='top'?'top':'bottom'))
     +row('Score bug size',seg('setBS',[['s','Small'],['m','Medium'],['l','Large']],s.bugSize||'m'))
     +row('Score bug opacity',seg('setBA',[[1,'Solid'],[.8,'80%'],[.6,'60%']],s.hudAlpha!=null?s.hudAlpha:1)))
   +sec('data','Rosters &amp; data',
@@ -603,7 +603,7 @@ function hubSettings(){
   +other.map(c=>sec('x-'+c.replace(/\W+/g,''),esc(c),regs(c,'main'),regs(c,'more'))).join('')
   +sec('about','About',
      `<div class="kv"><span>Version</span><b>7.7</b></div><div class="btns"><button class="btn ghost sm" id="setHelp">How to play</button><button class="btn ghost sm" id="setNew">What’s new</button></div>
-      <p class="note">An original game. School badges use abbreviations, not official logos. Big Shoulders Display and Chivo fonts under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
+      <p class="note">An original game. School badges use abbreviations, not official logos. League Gothic and Libre Franklin fonts under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
   +`</div>`;
 }
 /* How to play: one card per part of the game, a line per idea */

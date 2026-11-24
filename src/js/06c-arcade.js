@@ -133,7 +133,7 @@ function arcHint(pl){
 function arcDraw(c,s,now){
   if(!arcade()||S.phase!=='live'||!play||play.st)return;
   if(arcQB()){
-    c.save();c.font=`800 ${Math.round(clamp(s*.72,13,19))}px "Big Shoulders Display",-apple-system,system-ui,sans-serif`;c.textAlign='center';c.textBaseline='middle';
+    c.save();c.font=`400 ${Math.round(clamp(s*.72,13,19))}px "League Gothic",-apple-system,system-ui,sans-serif`;c.textAlign='center';c.textBaseline='middle';
     for(const o of arcRcvs()){const [,nd]=nearest(DEF,o.x,o.y,d=>d.stun<=0),col=openCol(nd);let [bx,by]=arcBadge(o);const r=clamp(s*.62,11,17),off=bx>W-r-4||bx<r+4;bx=clamp(bx,r+4,W-r-4);by=clamp(by,r+4,H-r-4);
       const hi=aim&&aim.r===o;c.globalAlpha=1;c.fillStyle='rgba(22,23,24,.86)';c.beginPath();c.arc(bx,by,r+(hi?3:0),0,7);c.fill();c.lineWidth=hi?4:3;c.strokeStyle=col;c.stroke();
       c.fillStyle='#fff';c.fillText(String(o.num!=null?o.num:''),bx,by+.5);

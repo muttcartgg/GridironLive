@@ -36,7 +36,7 @@ function g3Init(){
     const fill=new THREE.DirectionalLight('#dfe7ff',0);sc.add(fill);sc.add(fill.target);G3.fill=fill;
     G3.actors=new THREE.Group();G3.actors.name='actors';sc.add(G3.actors);
     G3.ov=g3MakeOverlays();sc.add(G3.ov.group);
-    if(document.fonts&&document.fonts.load)Promise.all([document.fonts.load('700 80px "Big Shoulders Display"'),document.fonts.load('800 80px "Big Shoulders Display"')]).then(()=>{G3.fontOk=true}).catch(()=>{G3.fontOk=true});else G3.fontOk=true;
+    if(document.fonts&&document.fonts.load)Promise.all([document.fonts.load('400 80px "League Gothic"'),document.fonts.load('700 20px "Libre Franklin"')]).then(()=>{G3.fontOk=true}).catch(()=>{G3.fontOk=true});else G3.fontOk=true;
     G3.ok=true;return true;
   }catch(e){console.warn('3D broadcast unavailable:',e&&e.message);G3.ok=false;return false}
 }
@@ -147,10 +147,10 @@ function g3KickUI(c,now){const k=kick;if(!k||S.phase!=='kick')return;const [x0,y
     const an=Math.atan2(B[1]-A[1],B[0]-A[0]);c.translate(B[0],B[1]);c.rotate(an);c.fillStyle='#fff';c.beginPath();c.moveTo(16,0);c.lineTo(-9,11);c.lineTo(-9,-11);c.closePath();c.fill();c.setTransform(DPR,0,0,DPR,0,0)}
   if(k.stage==='power'||k.stage==='flight'){const bx=W-Math.max(42,SAFE.r+34),bt=H*.2,bb=H*.74,bh=bb-bt,pw=k.stage==='power'?k.pow:k.lockP;
     c.fillStyle='rgba(6,9,14,.66)';c.fillRect(bx-15,bt-4,30,bh+8);const pg=c.createLinearGradient(0,bb,0,bt);pg.addColorStop(0,'#3BD98A');pg.addColorStop(.7,'#F2B33D');pg.addColorStop(1,'#FF4D5E');c.fillStyle=pg;c.fillRect(bx-11,bb-pw*bh,22,pw*bh);
-    const ny=bb-Math.min(1,k.need)*bh;c.strokeStyle='#FFD23F';c.lineWidth=3;c.beginPath();c.moveTo(bx-21,ny);c.lineTo(bx+21,ny);c.stroke();c.fillStyle='#fff';c.font='800 13px "Big Shoulders Display",'+FFONT;c.textAlign='right';c.textBaseline='middle';c.fillText('NEEDED',bx-24,ny);
+    const ny=bb-Math.min(1,k.need)*bh;c.strokeStyle='#FFD23F';c.lineWidth=3;c.beginPath();c.moveTo(bx-21,ny);c.lineTo(bx+21,ny);c.stroke();c.fillStyle='#fff';c.font='400 13px "League Gothic",'+FFONT;c.textAlign='right';c.textBaseline='middle';c.fillText('NEEDED',bx-24,ny);
     c.textAlign='center';c.fillText('POWER',bx,bb+16)}
-  if(k.stage==='flight'&&k.flight>=1){c.font='800 54px "Big Shoulders Display",'+FFONT;c.textAlign='center';c.textBaseline='middle';c.lineWidth=6;c.strokeStyle='rgba(0,0,0,.55)';const tx=k.good?'GOOD!':k.blocked?'BLOCKED':'NO GOOD';c.strokeText(tx,W/2,H*.3);c.fillStyle=k.good?'#3BD98A':'#FF4D5E';c.fillText(tx,W/2,H*.3)}
-  if(S.wx==='Wind'||k.drift){c.fillStyle='#fff';c.font='800 15px "Big Shoulders Display",'+FFONT;c.textAlign='left';c.textBaseline='top';c.fillText(`WIND ${k.drift<0?'◀':'▶'}`,Math.max(14,SAFE.l+10),Math.max(topY,60))}
+  if(k.stage==='flight'&&k.flight>=1){c.font='400 54px "League Gothic",'+FFONT;c.textAlign='center';c.textBaseline='middle';c.lineWidth=6;c.strokeStyle='rgba(0,0,0,.55)';const tx=k.good?'GOOD!':k.blocked?'BLOCKED':'NO GOOD';c.strokeText(tx,W/2,H*.3);c.fillStyle=k.good?'#3BD98A':'#FF4D5E';c.fillText(tx,W/2,H*.3)}
+  if(S.wx==='Wind'||k.drift){c.fillStyle='#fff';c.font='400 15px "League Gothic",'+FFONT;c.textAlign='left';c.textBaseline='top';c.fillText(`WIND ${k.drift<0?'◀':'▶'}`,Math.max(14,SAFE.l+10),Math.max(topY,60))}
   c.restore()}
 /* ---------- cameras ---------- */
 function g3Damp(o,k,tgt,st,dt){const v=k+'v',w=2/st,x=w*dt,e=1/(1+x+.48*x*x+.235*x*x*x),ch=o[k]-tgt,tmp=((o[v]||0)+w*ch)*dt;o[v]=((o[v]||0)-w*tmp)*e;o[k]=tgt+(ch+tmp)*e}
@@ -310,7 +310,7 @@ function g3ToastSweep(){const ph=S.phase;if(ph==='presnap'&&G3.lph!=='presnap'&&
    distance, the stick, the kick meter, the slow-motion letterbox */
 function g3Overlay2D(c,now){
   const s=scE();
-  if(G3.aimTxt){const p=fieldToScreen(G3.aimTxt.x,G3.aimTxt.y,0);c.save();c.font='800 14px "Big Shoulders Display",'+FFONT;c.textAlign='center';c.textBaseline='bottom';c.fillStyle='#fff';c.shadowColor='rgba(0,0,0,.85)';c.shadowBlur=5;c.fillText(G3.aimTxt.t,p[0],p[1]-16);c.restore()}
+  if(G3.aimTxt){const p=fieldToScreen(G3.aimTxt.x,G3.aimTxt.y,0);c.save();c.font='400 14px "League Gothic",'+FFONT;c.textAlign='center';c.textBaseline='bottom';c.fillStyle='#fff';c.shadowColor='rgba(0,0,0,.85)';c.shadowBlur=5;c.fillText(G3.aimTxt.t,p[0],p[1]-16);c.restore()}
   const me=G3.ov.ring.visible?G3.ov.ring.position:null;if(me&&S.phase!=='kick'){const p=fieldToScreen(me.x,me.z,2.55),b=Math.sin(now/180)*3,x=p[0],y=p[1]-10+b;c.save();c.beginPath();c.moveTo(x,y);c.lineTo(x-8,y-11);c.lineTo(x+8,y-11);c.closePath();c.fillStyle='#FFD23F';c.strokeStyle='rgba(0,0,0,.6)';c.lineWidth=1.5;c.stroke();c.fill();c.restore()}
   if(typeof arcDraw==='function'&&S.phase==='live')arcDraw(c,s,now);
   if(S.phase==='live'||S.phase==='presnap')drawStick(c);

@@ -61,7 +61,7 @@ const T3A={w:2048,h:1280,cell:[512,200],words:600,wordH:300};
 function t3Atlas(o){
   const cv=document.createElement('canvas');cv.width=T3A.w;cv.height=T3A.h;const g=cv.getContext('2d');g.clearRect(0,0,cv.width,cv.height);
   const num=['10','20','30','40'],cells=[];
-  const fnt='700 280px "Big Shoulders Display",'+FFONT;g.font=fnt;const m=g.measureText('0'),asc=m.actualBoundingBoxAscent||200,sy=196/asc;
+  const fnt='400 280px "League Gothic",'+FFONT;g.font=fnt;const m=g.measureText('0'),asc=m.actualBoundingBoxAscent||200,sy=196/asc;
   const digit=(ch,cx,cy)=>{g.save();g.translate(cx,cy);const mw=g.measureText(ch).width||120;g.scale(130/mw,sy);g.textAlign='center';g.textBaseline='alphabetic';g.fillText(ch,0,0);g.restore()};
   let k=0;for(const s of [...num.map(n=>[n,-1]),...num.map(n=>[n,1]),['50',0]]){const cx=(k%4)*512+256,cy=Math.floor(k/4)*200;g.fillStyle='#F3F3EE';g.font=fnt;
     digit(s[0][0],cx-88,cy+198);digit(s[0][1],cx+88,cy+198);
@@ -70,7 +70,7 @@ function t3Atlas(o){
   /* end-zone words: the school (left end zone) and the nickname (right), fitted to the width, outlined */
   const ink=t3Dark(o.host.c1)||lum(o.host.c1)<.45?'#FFFFFF':'#0B0E14',edge=o.host.c2&&Math.abs(lum(o.host.c2)-lum(ink))>.25?o.host.c2:shade(o.host.c1,-.5);
   const words=[String(o.host.city||o.host.name||'HOME').toUpperCase(),String(o.host.name||o.host.city||'').toUpperCase()];
-  words.forEach((wd,i)=>{const y0=T3A.words+i*T3A.wordH;g.save();g.font='800 260px "Big Shoulders Display",'+FFONT;const mw=g.measureText(wd).width||1000,asc2=g.measureText('H').actualBoundingBoxAscent||190;
+  words.forEach((wd,i)=>{const y0=T3A.words+i*T3A.wordH;g.save();g.font='400 260px "League Gothic",'+FFONT;const mw=g.measureText(wd).width||1000,asc2=g.measureText('H').actualBoundingBoxAscent||190;
     g.translate(1024,y0+T3A.wordH/2+asc2*.5*Math.min(1.08,236/asc2));g.scale(Math.min(1880/mw,1.15),Math.min(1.08,236/asc2));g.textAlign='center';g.lineJoin='round';g.lineWidth=22;g.strokeStyle=edge;g.strokeText(wd,0,0);g.fillStyle=ink;g.fillText(wd,0,0);g.restore();
     cells.push({word:i,u0:0,u1:1,v0:1-(y0+T3A.wordH)/T3A.h,v1:1-y0/T3A.h,tw:(mw*Math.min(1880/mw,1.15)+22)/T3A.w*44})});
   return {cv,cells};
@@ -142,7 +142,7 @@ const T3P={wall:[[0,0],[0,2.4]],walk:[[0,2.4],[1.2,2.4]],low:[[1.2,2.4],[25,14.3
 const SEG_UP=[0,1,2,6,7],SEG_ALL=[0,1,2,3,4,5,6,7],SEG_NEAR=[3,4,5];
 /* canvases for the stands: ribbon board, suite windows, seat rows */
 function t3Ribbon(o,img,cv){cv=cv||document.createElement('canvas');cv.width=1024;cv.height=64;const g=cv.getContext('2d'),c1=o.host.c1,ink=inkOn(c1);
-  g.fillStyle=shade(c1,-.25);g.fillRect(0,0,1024,64);g.fillStyle=ink;g.font='800 44px "Big Shoulders Display",'+FFONT;g.textBaseline='middle';g.textAlign='center';
+  g.fillStyle=shade(c1,-.25);g.fillRect(0,0,1024,64);g.fillStyle=ink;g.font='400 44px "League Gothic",'+FFONT;g.textBaseline='middle';g.textAlign='center';
   const w=String(o.host.city||o.host.name).toUpperCase(),n=String(o.host.name||'').toUpperCase();
   /* with the imported logo: logo · SCHOOL · logo · NICKNAME, repeating around the bowl */
   if(img){g.fillText(w,288,34,400);g.fillStyle=o.host.c2||'#fff';g.fillText(n,800,34,400);t3Fit(g,img,32,32,54,54);t3Fit(g,img,544,32,54,54)}
@@ -203,15 +203,15 @@ function t3Sideline(o){const r=t3Rng(19),inst=[];
 /* ---------- video board (live score), press box, light towers ---------- */
 function t3Board(){const cv=document.createElement('canvas');cv.width=512;cv.height=256;return cv}
 function t3BoardDraw(cv,lg){const g=cv.getContext('2d'),h=hostT(),A=S.away,Hm=S.home;if(!A||!Hm)return;
-  g.fillStyle='#07090d';g.fillRect(0,0,512,256);g.fillStyle=shade(h.c1,-.3);g.fillRect(0,0,512,46);g.fillStyle=inkOn(shade(h.c1,-.3));g.font='800 34px "Big Shoulders Display",'+FFONT;g.textAlign='center';g.textBaseline='middle';
+  g.fillStyle='#07090d';g.fillRect(0,0,512,256);g.fillStyle=shade(h.c1,-.3);g.fillRect(0,0,512,46);g.fillStyle=inkOn(shade(h.c1,-.3));g.font='400 34px "League Gothic",'+FFONT;g.textAlign='center';g.textBaseline='middle';
   g.fillText(String(h.city||h.name).toUpperCase(),256,25);
   /* a team's logo (when imported) sits on a dark plate beside its score */
   const side=(t,sc,x,img)=>{g.fillStyle=t.c1;g.fillRect(x,60,236,118);let cx=x+118,mw=224;
     if(img){g.fillStyle='rgba(6,8,12,.84)';g.fillRect(x+8,68,98,102);t3Fit(g,img,x+57,119,86,86);cx=x+171;mw=124}
-    g.fillStyle=inkOn(t.c1);g.font='800 40px "Big Shoulders Display",'+FFONT;g.fillText(String(t.abbr||t.name).toUpperCase(),cx,84,mw);g.font='800 84px "Big Shoulders Display",'+FFONT;g.fillText(String(sc),cx,144,mw)};
+    g.fillStyle=inkOn(t.c1);g.font='400 40px "League Gothic",'+FFONT;g.fillText(String(t.abbr||t.name).toUpperCase(),cx,84,mw);g.font='400 84px "League Gothic",'+FFONT;g.fillText(String(sc),cx,144,mw)};
   side(A,S.score[1],14,lg&&lg.a);side(Hm,S.score[0],262,lg&&lg.h);
-  g.fillStyle='#FFD23F';g.font='800 40px "Big Shoulders Display",'+FFONT;const q=S.ot?'OT':(typeof qName==='function'?qName(S.q):'Q'+S.q);g.fillText(`${q}   ${typeof fmtClock==='function'?fmtClock(S.clock):''}`,256,206);
-  g.fillStyle='#cfd6e0';g.font='700 26px "Big Shoulders Display",'+FFONT;const dd=$('#dd');g.fillText(dd?dd.textContent.toUpperCase():'',256,238);
+  g.fillStyle='#FFD23F';g.font='400 40px "League Gothic",'+FFONT;const q=S.ot?'OT':(typeof qName==='function'?qName(S.q):'Q'+S.q);g.fillText(`${q}   ${typeof fmtClock==='function'?fmtClock(S.clock):''}`,256,206);
+  g.fillStyle='#cfd6e0';g.font='400 26px "League Gothic",'+FFONT;const dd=$('#dd');g.fillText(dd?dd.textContent.toUpperCase():'',256,238);
   g.fillStyle='rgba(255,255,255,.06)';for(let y=0;y<256;y+=3)g.fillRect(0,y,512,1)}
 function t3Glow(){const cv=document.createElement('canvas');cv.width=cv.height=128;const g=cv.getContext('2d'),gr=g.createRadialGradient(64,64,0,64,64,64);gr.addColorStop(0,'rgba(255,255,250,1)');gr.addColorStop(.18,'rgba(255,250,235,.55)');gr.addColorStop(.5,'rgba(200,215,255,.12)');gr.addColorStop(1,'rgba(200,215,255,0)');g.fillStyle=gr;g.fillRect(0,0,128,128);return cv}
 function t3LightPanel(){const cv=document.createElement('canvas');cv.width=128;cv.height=64;const g=cv.getContext('2d');g.fillStyle='#20252c';g.fillRect(0,0,128,64);for(let y=0;y<4;y++)for(let x=0;x<8;x++){g.fillStyle='#e9eef7';g.beginPath();g.arc(8+x*16,8+y*16,6,0,7);g.fill()}return cv}
@@ -222,10 +222,10 @@ function t3Fit(g,img,cx,cy,mw,mh,a){const iw=img.naturalWidth||img.width||1,ih=i
 function t3Venue(){if(S.neutral){const g=S.game;return String((g&&g.site)||'').split(',')[0].trim().slice(0,40)}return String(hostT().stadium||'').trim().slice(0,40)}
 /* the press-box roof sign: the venue's name in lit letters on a dark facade, a host-colour band below */
 function t3Sign(name,c1){const cv=document.createElement('canvas');cv.width=1024;cv.height=112;const g=cv.getContext('2d');g.fillStyle='#15191f';g.fillRect(0,0,1024,112);g.fillStyle=shade(c1,-.12);g.fillRect(0,100,1024,12);
-  g.fillStyle='#F4F2EA';g.font='800 72px "Big Shoulders Display",'+FFONT;g.textAlign='center';g.textBaseline='middle';g.fillText(String(name||'').toUpperCase(),512,54,972);return cv}
+  g.fillStyle='#F4F2EA';g.font='400 72px "League Gothic",'+FFONT;g.textAlign='center';g.textBaseline='middle';g.fillText(String(name||'').toUpperCase(),512,54,972);return cv}
 /* the wall board at midfield on the far side (in the TV shot): the venue's name on a dark LED panel, host-colour edges */
 function t3WallSign(name,c1){const cv=document.createElement('canvas');cv.width=1024;cv.height=96;const g=cv.getContext('2d');g.fillStyle='#0d1015';g.fillRect(0,0,1024,96);g.fillStyle=c1;g.fillRect(0,0,1024,7);g.fillRect(0,89,1024,7);
-  g.fillStyle='#F4F2EA';g.font='800 62px "Big Shoulders Display",'+FFONT;g.textAlign='center';g.textBaseline='middle';g.fillText(String(name||'').toUpperCase(),512,51,992);
+  g.fillStyle='#F4F2EA';g.font='400 62px "League Gothic",'+FFONT;g.textAlign='center';g.textBaseline='middle';g.fillText(String(name||'').toUpperCase(),512,51,992);
   g.fillStyle='rgba(255,255,255,.1)';for(let x=0;x<1024;x+=4)g.fillRect(x,0,1,96);return cv}
 /* a square canvas holding one logo (blank without one): mh caps its height (share of the side), a its opacity */
 function t3LogoCv(cv,img,mh,a){cv.width=cv.width;const g=cv.getContext('2d'),n=cv.width;if(img)t3Fit(g,img,n/2,n/2,n-8,(mh||1)*(n-8),a);return cv}

@@ -344,15 +344,19 @@ table.box{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;
 <div id="app">
   <canvas id="field" aria-label="Football field"></canvas>
 
-  <header id="sb" hidden>
-    <div class="sb-main">
-      <div class="tm" id="tmA"><span class="tlg"><i class="mono"></i><img class="lg" alt="" hidden referrerpolicy="no-referrer" onerror="this.hidden=true;this.closest('.tm').classList.remove('haslg')"></span><span class="nm"><span class="r1"><span class="rk"></span><b class="ab">BBB</b></span><span class="r2"><small class="rec"></small><span class="tos"></span></span></span><span class="pos"></span><b class="sc">0</b></div>
-      <div class="tm" id="tmH"><span class="tlg"><i class="mono"></i><img class="lg" alt="" hidden referrerpolicy="no-referrer" onerror="this.hidden=true;this.closest('.tm').classList.remove('haslg')"></span><span class="nm"><span class="r1"><span class="rk"></span><b class="ab">AAA</b></span><span class="r2"><small class="rec"></small><span class="tos"></span></span></span><span class="pos"></span><b class="sc">0</b></div>
-      <div class="clk"><span id="qtr">1ST</span><span id="gclk">3:00</span></div>
-      <div class="pc" id="pclk">:25</div>
+  <header id="sb" hidden aria-label="Score">
+    <div class="sbx">
+      <div class="sb-tag" id="sbTag"><b></b><small></small></div>
+      <div class="tm" id="tmA"><span class="tlg"><i class="mono"></i><img class="lg" alt="" hidden referrerpolicy="no-referrer" onerror="this.hidden=true;this.closest('.tm').classList.remove('haslg')"></span><span class="nm"><span class="r1"><span class="rk"></span><b class="ab">BBB</b><span class="pos" aria-hidden="true"><svg viewBox="0 0 20 12"><ellipse cx="10" cy="6" rx="9.2" ry="5.4"/><path d="M6.5 6h7M8.3 4.6v2.8M10 4.6v2.8M11.7 4.6v2.8"/></svg></span></span><small class="rec"></small></span><b class="sc"><span class="sv">0</span></b><span class="tos"></span></div>
+      <div class="tm" id="tmH"><span class="tlg"><i class="mono"></i><img class="lg" alt="" hidden referrerpolicy="no-referrer" onerror="this.hidden=true;this.closest('.tm').classList.remove('haslg')"></span><span class="nm"><span class="r1"><span class="rk"></span><b class="ab">AAA</b><span class="pos" aria-hidden="true"><svg viewBox="0 0 20 12"><ellipse cx="10" cy="6" rx="9.2" ry="5.4"/><path d="M6.5 6h7M8.3 4.6v2.8M10 4.6v2.8M11.7 4.6v2.8"/></svg></span></span><small class="rec"></small></span><b class="sc"><span class="sv">0</span></b><span class="tos"></span></div>
+      <div class="sb-r">
+        <div class="sb-st"><span class="qc"><span id="qtr">1ST</span><span id="gclk">15:00</span></span><span class="pc" id="pclk">:25</span></div>
+        <div class="sb-dd"><b id="dd">1st &amp; 10</b><small><span id="spot">25</span><span id="stam"></span><span id="wxs"></span></small></div>
+        <div class="sb-msg" id="sbMsg" aria-live="polite"></div>
+      </div>
+      <div class="sb-td" id="sbTD" aria-live="polite"></div>
     </div>
-    <div class="sb-sub"><span id="dd">1st &amp; 10</span><span id="spot">25</span><span id="stam">100%</span><span id="wxs">Clear</span></div>
-    <div id="drv" hidden></div>
+    <div class="sb-rail"><div id="drv" hidden></div><div class="sb-tab" id="sbTab" hidden></div></div>
   </header>
   <div id="rcard"></div>
   <div id="sit"></div>

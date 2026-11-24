@@ -240,37 +240,6 @@ table.box td{font-size:13.5px}
 /* =========================================================
    in-game HUD
    ========================================================= */
-/* score bug: team-colour blocks, a dark clock block, an angled right end, and a yellow down-and-distance flag */
-.sb-main{height:40px;background:var(--c-raise);border-radius:0;box-shadow:0 2px 8px rgba(0,0,0,.4);clip-path:polygon(0 0,100% 0,calc(100% - 10px) 100%,0 100%);padding-right:10px}
-.sb-main::before{display:none}
-#sb .tm{background:var(--c);color:var(--k,#fff);box-shadow:inset -1px 0 0 rgba(0,0,0,.3);padding-right:0}
-#sb .tm.has{box-shadow:inset -1px 0 0 rgba(0,0,0,.3),inset 0 -3px 0 var(--c-acc)}
-#sb .tlg{width:34px;background:rgba(0,0,0,.18);box-shadow:none}
-#sb .tm.haslg .tlg{background:rgba(0,0,0,.18)}
-#sb .mono{font:800 18px/1 var(--f-disp);color:var(--k,#fff);letter-spacing:0;text-shadow:none}
-#sb .ab{font:800 19px/1 var(--f-disp);letter-spacing:.01em}
-#sb .rk{font:700 12px/1 var(--f-disp);color:inherit;opacity:.75}
-#sb .rec{font:600 10px/1 var(--f-text);color:inherit;opacity:.72;letter-spacing:0}
-#sb .tos i{border-radius:0;background:var(--c-acc)}#sb .tos i.u{background:rgba(0,0,0,.28)}
-#sb .sc{align-self:stretch;display:grid;place-items:center;min-width:42px;padding:0 6px;background:rgba(0,0,0,.26);font:800 28px/1 var(--f-disp);text-align:center;color:#fff}
-#sb .pos{background:var(--c-acc);box-shadow:none}
-#sb .pos::after{background:var(--c-acc-ink)}
-#sb .tm.scored::after{background:rgba(255,255,255,.22);animation:sbGlint .5s var(--ease-out) .1s}
-@keyframes sbGlint{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
-@keyframes sbPop{40%{color:var(--c-acc)}}
-#sb .fly{font:800 22px/1 var(--f-disp)}
-#sb .clk{min-width:58px;box-shadow:inset -1px 0 0 var(--c-rule)}
-#qtr{font:600 10.5px/1 var(--f-text);letter-spacing:0;color:var(--c-mute)}
-#gclk{font:800 21px/1 var(--f-disp)}
-#gclk.run::after{border-radius:0;width:4px;height:4px;animation:none;background:var(--c-win)}
-#sb .pc{min-width:34px;background:none;font:800 17px/1 var(--f-disp)}
-#sb .pc.low{background:var(--c-loss);animation:none}
-.sb-sub{height:22px;margin-top:0;border-radius:0;box-shadow:0 2px 8px rgba(0,0,0,.35);font:600 12px/1 var(--f-text);letter-spacing:0;text-transform:none}
-.sb-sub span{background:var(--c-raise);padding:0 8px;box-shadow:inset -1px 0 0 var(--c-rule)}
-#dd{background:var(--c-acc);color:var(--c-acc-ink);font:800 15px/1 var(--f-disp);letter-spacing:.01em;text-transform:uppercase;padding:0 10px}
-#sb.rz #dd{background:var(--c-loss);color:#fff}
-#drv{border-radius:0;font:600 11px/1 var(--f-text);letter-spacing:0;background:var(--c-raise)}
-@media (max-width:420px){.sb-main{height:38px}#sb .sc{min-width:36px;font-size:25px}#sb .ab{font-size:17px}#sb .tlg{width:30px}}
 #sit{border-radius:0;box-shadow:0 2px 8px rgba(0,0,0,.4)}
 #sit b{font:800 17px/1 var(--f-disp);letter-spacing:.01em}
 #sit small{background:var(--c-raise);font:600 12.5px/1 var(--f-text);color:var(--c-chalk)}

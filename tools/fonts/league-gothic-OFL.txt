@@ -1,5 +1,4 @@
-Chivo. Files from the @fontsource/chivo npm package (latin subset, weights 400, 600 and 700).
-Copyright 2019 The Chivo Project Authors (https://github.com/Omnibus-Type/Chivo) Chivo-Italic[wght].ttf: Copyright 2019 The Chivo Project Authors (https://github.com/Omnibus-Type/Chivo)
+Copyright 2020 The League Gothic Project Authors (https://github.com/theleagueof/league-gothic)
 
 This Font Software is licensed under the SIL Open Font License, Version 1.1.
 This license is copied below, and is also available with a FAQ at:
