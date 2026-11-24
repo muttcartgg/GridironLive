@@ -250,9 +250,16 @@ function showHub(tab){
   invalidate();hideAll();if(tab&&VIEWS[tab])TAB=tab;if(LG.rtg&&(TAB==='recruit'||TAB==='program'))TAB='home';S.phase='hub';applyStyle();ensureCareer(LG);
   const u=T(LG.user);applyTeamTheme(u);
   const ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null,top=$('#hubTop');top.style.setProperty('--hd',deepC(u));
-  top.innerHTML=`<span class="ht-wm" aria-hidden="true">${esc(u.abbr)}</span>${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)} <span>${esc(u.name)}</span></b><small>${LG.rtg&&typeof rtgMe==='function'&&rtgMe()?esc(fullName(rtgMe()))+' · #'+rtgMe().num+' '+rtgMe().pos+' · coach '+esc(LG.coach.name):esc(LG.coach.name)}</small></div>
-    <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div>
-    <div class="pills">${LG.rtg?`<span class="pill" title="Skill points">${LG.rtg.sp} SP</span><span class="pill" title="Your NIL earnings">${money(LG.rtg.nil.cash)} NIL</span>`:`<span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL and revenue-sharing budget left">${money(LG.nil)} NIL</span>`}</div>`;
+  /* header: a lower third in team colour (logo, school, nickname, record, conference record, rank) over a strap with the
+     coach and the resources, all on the stadium backdrop (04f hubBackdrop) */
+  const me=LG.rtg&&typeof rtgMe==='function'?rtgMe():null,cn=LG.coach.name&&LG.coach.name!=='Coach'?LG.coach.name:'';
+  const res=LG.rtg?[['Skill points',LG.rtg.sp],['NIL earnings',money(LG.rtg.nil.cash)]]:[['Coaching credits',LG.credits],['NIL budget',money(LG.nil)]];
+  top.innerHTML=`<div class="ht-band">${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)}</b><span class="nick">${esc(u.name)}</span></div>
+    <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div></div>
+    <div class="ht-sub"><span class="ht-coach">${me?`<em>${esc(me.pos)} #${me.num}</em><b>${esc(fullName(me))}</b>`:`<em>Head coach</em>${cn?`<b>${esc(cn)}</b>`:'<button class="ht-name" id="htName">Add your name</button>'}`}</span>${res.map(([l,v])=>`<span class="ht-res"><em>${l}</em><b>${v}</b></span>`).join('')}</div>`;
+  on('htName',renameCoach);
+  {const bg=hubBackdrop(u);$('#hub').style.setProperty('--hub-bg',bg?`url(${bg})`:'none')}
+  hubTicker();
   const nav=LG.rtg?NAV.filter(([k])=>k!=='recruit'&&k!=='program'):NAV,cur=navOf(TAB);NAV_LAST[cur[0]]=TAB;   /* Road to Glory: the coach-only screens are the CPU coach's */
   $('#tabs').innerHTML=nav.map(([k,l,vs])=>`<button role="tab" id="tab-${k}" aria-selected="${cur[0]===k}"><svg viewBox="0 0 24 24" aria-hidden="true">${NAV_ICO[k]}</svg><span>${k==='home'&&LG.rtg?'Career':l}</span>${k==='home'&&LG.event?'<span class="dot" aria-label="Decision waiting"></span>':''}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{const n=NAV.find(x=>x[0]===b.id.slice(4));const same=n===navOf(TAB);showHub(same?n[2][0]:NAV_LAST[n[0]]||n[2][0]);$('#hubScroll').scrollTop=0});

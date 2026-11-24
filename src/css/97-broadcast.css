@@ -1,0 +1,218 @@
+/* =========================================================
+   97 · The menus as a TV graphics package (after the user's "too modern, feels empty"): layered bars and panels,
+   team-colour fields, a sheen on top, a bevel underneath, real drop shadows. League Gothic for anything said on air
+   (titles, names, numbers), Libre Franklin for what you read; small labels in tracked capitals.
+     panel      graphite gradient, 1px top highlight, black hairline, drop shadow; corners 4px
+     title bar  a lower-third strip on top of a panel: team-colour edge, uppercase League Gothic
+     field      team colour, lighter at the top-left, darker at the bottom-right, a sheen over the top half
+     button     one family: team-colour bevel (primary), graphite bevel (secondary), white bevel (light)
+     backdrop   the hub sits on a painted night stadium (04f hubBackdrop); other screens on a turf-and-yard-line texture
+   ========================================================= */
+:root{
+  --p-top:rgba(40,42,49,.97);--p-mid:rgba(25,26,31,.97);--p-bot:rgba(17,18,22,.98);
+  --g-panel:linear-gradient(180deg,var(--p-top) 0%,var(--p-mid) 42%,var(--p-bot) 100%);
+  --g-bar:linear-gradient(180deg,#363941 0%,#25272D 55%,#1D1F24 100%);
+  --g-field:linear-gradient(104deg,color-mix(in srgb,var(--team) 82%,#fff) 0%,var(--team) 30%,color-mix(in srgb,var(--team) 66%,#000) 100%);
+  --g-sheen:linear-gradient(180deg,rgba(255,255,255,.17) 0%,rgba(255,255,255,.04) 46%,rgba(255,255,255,0) 50%);
+  --bevel:inset 0 1px 0 rgba(255,255,255,.08),0 0 0 1px rgba(0,0,0,.55),0 10px 22px rgba(0,0,0,.38);
+  --lab:700 10.5px/1.1 var(--f-text);--lab-track:.08em;
+}
+
+/* ---------- backdrops ---------- */
+.screen{background:
+  radial-gradient(130% 60% at 50% -8%,color-mix(in srgb,var(--team) 34%,transparent),transparent 62%),
+  repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 1px,transparent 1px 72px),
+  linear-gradient(180deg,#16181D 0%,#0E0F12 60%,#0A0B0D 100%)}
+#hub{background:linear-gradient(180deg,rgba(8,9,12,.15),rgba(8,9,12,.55) 46%,rgba(8,9,12,.9) 100%),var(--hub-bg,none) center 18%/cover no-repeat,#0B0C0F}
+
+/* ---------- hub header: a lower third over the stadium ---------- */
+#hub .hub-top{display:flex;flex-direction:column;align-items:stretch;gap:0;padding:calc(env(safe-area-inset-top,0px) + 10px) max(12px,env(safe-area-inset-right,0px)) 10px max(12px,env(safe-area-inset-left,0px));background:none;box-shadow:none;overflow:visible;border:0}
+#hub .ht-band{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"b w s";align-items:center;gap:12px;padding:8px 10px 8px 8px;border-radius:4px 4px 0 0;overflow:hidden;
+  background:var(--g-field);color:var(--btn-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 12px 26px rgba(0,0,0,.5)}
+#hub .ht-band::after{content:"";position:absolute;inset:0;background:var(--g-sheen);pointer-events:none}
+#hub .ht-band::before{content:"";position:absolute;right:-40px;top:0;bottom:0;width:46%;background:repeating-linear-gradient(115deg,rgba(255,255,255,.05) 0 2px,transparent 2px 9px);pointer-events:none}
+#hub .ht-band>.badge{grid-area:b;--s:52px;position:relative;z-index:1;filter:drop-shadow(0 3px 6px rgba(0,0,0,.45))}
+#hub .ht-band .who{grid-area:w;position:relative;z-index:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+#hub .ht-band .who small{font:var(--lab);letter-spacing:var(--lab-track);text-transform:uppercase;color:inherit;opacity:.82;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hub .ht-band .who b{align-self:auto;padding:0;background:none;clip-path:none;color:inherit;font:400 36px/.9 var(--f-disp);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 2px 0 rgba(0,0,0,.18)}
+#hub .ht-band .who .nick{font:600 13.5px/1.1 var(--f-text);opacity:.92;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#hub .ht-band .ht-stats{grid-area:s;position:relative;z-index:1;display:flex;gap:4px}
+#hub .ht-band .ht-stats div{display:flex;flex-direction:column;align-items:center;gap:4px;min-width:54px;padding:7px 8px 6px;border:0;border-radius:3px;background:rgba(0,0,0,.34);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),inset 0 -1px 0 rgba(0,0,0,.3)}
+#hub .ht-band .ht-stats div:first-child{padding-left:8px}
+#hub .ht-band .ht-stats em{font:700 9px/1 var(--f-text);font-style:normal;letter-spacing:.1em;text-transform:uppercase;color:inherit;opacity:.78}
+#hub .ht-band .ht-stats b{font:400 25px/.95 var(--f-num);color:inherit;letter-spacing:.02em}
+#hub .ht-band .ht-stats .g b{color:var(--c-acc);text-shadow:0 1px 0 rgba(0,0,0,.4)}
+#hub .ht-sub{display:flex;align-items:center;gap:6px 16px;flex-wrap:wrap;padding:7px 12px;border-radius:0 0 4px 4px;background:linear-gradient(180deg,#22242A,#141519);box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--team) 70%,#000),0 12px 26px rgba(0,0,0,.45)}
+#hub .ht-sub>span{display:inline-flex;align-items:baseline;gap:6px;white-space:nowrap;min-width:0}
+#hub .ht-sub em{font:var(--lab);font-style:normal;letter-spacing:var(--lab-track);text-transform:uppercase;color:var(--c-acc)}
+#hub .ht-sub b{font:700 13px/1.1 var(--f-text);color:var(--c-chalk)}
+#hub .ht-sub .ht-coach{margin-right:auto}
+#hub .ht-name{min-height:28px;margin:-4px 0;padding:0 10px;border:0;border-radius:3px;background:linear-gradient(180deg,#3A3D45,#2A2C32);box-shadow:inset 0 1px 0 rgba(255,255,255,.12);font:700 12px/1 var(--f-text);color:var(--c-chalk)}
+
+/* ---------- sub-tabs strip and the main tab bar ---------- */
+#hub>.subtabs{background:linear-gradient(180deg,rgba(18,19,23,.92),rgba(12,13,16,.94));border-bottom:0;box-shadow:inset 0 -1px 0 rgba(255,255,255,.06),0 6px 14px rgba(0,0,0,.3);padding-top:0;padding-bottom:0}
+#hub>.subtabs button{min-height:40px;padding:0 14px;font:400 18px/1 var(--f-disp);letter-spacing:.05em;text-transform:uppercase;color:#9E9B95}
+#hub>.subtabs button[aria-selected="true"]{color:#fff;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--team) 26%,transparent))}
+#hub>.subtabs button[aria-selected="true"]::after{height:3px;background:var(--team);box-shadow:0 -1px 6px color-mix(in srgb,var(--team) 60%,transparent)}
+#hub>.tabs{background:linear-gradient(180deg,#1E2025,#101114);border-top:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 -6px 16px rgba(0,0,0,.4)}
+#hub>.tabs button{font:700 9.5px/1.1 var(--f-text);letter-spacing:.03em;text-transform:uppercase;color:#8E8B85}
+#hub>.tabs button[aria-selected="true"]{color:#fff;background:linear-gradient(180deg,color-mix(in srgb,var(--team) 55%,transparent),color-mix(in srgb,var(--team) 22%,transparent));box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
+#hub>.tabs button[aria-selected="true"]::before{left:0;right:0;top:0;height:3px;background:var(--c-acc)}
+#hub>.tabs button[aria-selected="true"] svg{color:#fff}
+@media (orientation:landscape) and (max-height:520px){
+  #hub{grid-template-rows:auto auto minmax(0,1fr) auto}
+  #hub>.tabs{grid-row:1/5;box-shadow:inset -1px 0 0 rgba(255,255,255,.06),6px 0 16px rgba(0,0,0,.35)}
+  #hub>.tabs button[aria-selected="true"]::before{left:0;right:auto;top:0;bottom:0;width:3px;height:auto}
+  #hub>.tkr{grid-column:2;grid-row:4}
+  #hub .hub-top{padding-top:calc(env(safe-area-inset-top,0px) + 6px);padding-bottom:6px;padding-left:12px}
+  #hub .ht-band{padding:5px 8px 5px 6px;gap:10px}
+  #hub .ht-band>.badge{--s:40px}
+  #hub .ht-band .who b{font-size:28px}
+  #hub .ht-band .who .nick{display:none}
+  #hub .ht-band .ht-stats div{min-width:48px;padding:5px 7px 4px}
+  #hub .ht-band .ht-stats b{font-size:21px}
+  #hub .ht-sub{padding:5px 12px}
+}
+@media (max-width:540px){
+  #hub .ht-band{grid-template-columns:auto minmax(0,1fr);grid-template-areas:"b w" "s s";row-gap:8px}
+  #hub .ht-band .ht-stats{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(0,1fr)}
+  #hub .ht-band .who b{font-size:32px}
+  #hub .ht-sub{gap:4px 12px}
+  #hub .ht-sub .ht-coach{flex-basis:100%}
+}
+
+/* ---------- the hub's bottom ticker; the in-game ticker shares the look ---------- */
+#hub>.tkr{order:8;flex:none;position:relative;display:flex;align-items:stretch;height:28px;overflow:hidden;background:linear-gradient(180deg,#1C1D22,#0D0E11);box-shadow:inset 0 1px 0 rgba(255,255,255,.09),inset 0 -1px 0 rgba(0,0,0,.6)}
+.tkr .lab,#ticker .lab{position:relative;z-index:1;flex:none;display:flex;align-items:center;gap:6px;padding:0 16px 0 max(10px,env(safe-area-inset-left,0px));background:linear-gradient(180deg,color-mix(in srgb,var(--c-acc) 80%,#fff),var(--c-acc) 60%,color-mix(in srgb,var(--c-acc) 80%,#000));color:var(--c-acc-ink);
+  font:400 16px/1 var(--f-disp);letter-spacing:.07em;text-transform:uppercase;clip-path:polygon(0 0,100% 0,calc(100% - 9px) 100%,0 100%)}
+#ticker .lab::before{font:400 12px/1 var(--f-disp);letter-spacing:.04em;border-radius:2px}
+.tkr .run{display:flex;align-items:center;white-space:nowrap;font:600 12.5px/1 var(--f-text);animation:tick 60s linear infinite;padding-left:24px}
+.tkr .tk{display:inline-flex;align-items:center;gap:8px;padding:0 4px}
+.tkr .tt{display:inline-flex;align-items:center;gap:4px;color:#C9C7C1}.tkr .tt.w{color:#fff}
+.tkr .tt b{font:400 16px/1 var(--f-num);letter-spacing:.02em;color:#fff}
+.tkr .dot{display:inline-block;width:8px;height:8px;border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.3)}
+.tkr .tlogo{flex:none;width:16px;height:16px;object-fit:contain;filter:drop-shadow(0 0 1px rgba(0,0,0,.6))}
+.tkr sup{font-size:10px;color:var(--c-acc);vertical-align:baseline;margin-right:1px}
+.tkr em{font:700 10px/1 var(--f-text);font-style:normal;letter-spacing:.08em;text-transform:uppercase;color:var(--c-mute);margin-left:2px}
+.tkr .tk.hl em{color:var(--c-acc);margin-right:6px}
+.tkr .sep{display:inline-block;width:1px;height:12px;background:rgba(255,255,255,.18);margin:0 14px}
+#ticker{background:linear-gradient(180deg,#1C1D22,#0D0E11);box-shadow:inset 0 1px 0 rgba(255,255,255,.09)}
+#ticker .tt b{font:400 15px/1 var(--f-num);letter-spacing:.02em}
+#ticker em{font:700 10px/1 var(--f-text);letter-spacing:.08em;text-transform:uppercase}
+
+/* ---------- panels ---------- */
+.wrap{gap:12px}
+#hubScroll{padding-top:12px}
+:where(.screen,#modal,#pausem) .grid2{gap:12px}
+:is(.screen,#modal,#pausem) .card:not(.ng){position:relative;background:var(--g-panel);border:0;border-radius:4px;padding:12px 14px 14px;gap:10px;box-shadow:var(--bevel)}
+:is(.screen,#modal,#pausem) .card.hero:not(.ng){background:linear-gradient(180deg,color-mix(in srgb,var(--team) 30%,#2A2C33) 0%,var(--p-mid) 46%,var(--p-bot) 100%)}
+#hubBody>.card:first-child,#hubBody>.grid2:first-child>.card,#postBody>.card:first-child{padding-top:12px}
+/* title bar: the first heading of a panel becomes a lower-third strip with a team-colour edge */
+:is(.screen,#modal,#pausem) .card:not(.ng)>:is(.h2,.eyebrow):first-child{position:relative;margin:-12px -14px 2px;padding:10px 14px 8px 20px;border-radius:4px 4px 0 0;background:var(--g-bar);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.09),inset 0 -1px 0 rgba(0,0,0,.6);color:#fff;font:400 21px/1 var(--f-disp);letter-spacing:.045em;text-transform:uppercase;text-wrap:balance}
+:is(.screen,#modal,#pausem) .card:not(.ng)>.eyebrow:first-child{font-size:17px;color:#E9E6DF}
+:is(.screen,#modal,#pausem) .card:not(.ng)>:is(.h2,.eyebrow):first-child::before{content:"";display:block;position:absolute;left:0;top:0;bottom:0;width:7px;border-radius:4px 0 0 0;background:linear-gradient(180deg,color-mix(in srgb,var(--team) 75%,#fff),var(--team) 55%,color-mix(in srgb,var(--team) 70%,#000))}
+:is(.screen,#modal,#pausem) .card.tour{background:var(--g-panel);border-top:0;box-shadow:var(--bevel),inset 0 3px 0 var(--c-acc)}
+:is(.screen,#modal,#pausem) .card.tour>:is(.h2,.eyebrow):first-child::before{background:var(--c-acc)}
+:is(.screen,#modal,#pausem) .card.dec{box-shadow:var(--bevel),inset 0 3px 0 var(--c-acc)}
+
+/* ---------- type ---------- */
+:where(.screen,#modal,#pausem) .h1{font:400 var(--fs-d2)/.9 var(--f-disp);letter-spacing:.02em;text-transform:uppercase;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+:where(.screen,#modal,#pausem) .h2{font:400 23px/1 var(--f-disp);letter-spacing:.03em}
+:where(.screen,#modal,#pausem) .eyebrow{font:var(--lab);letter-spacing:var(--lab-track);text-transform:uppercase;color:var(--c-mute)}
+:where(.screen,#modal,#pausem) .field-row label{font:var(--lab);letter-spacing:var(--lab-track);text-transform:uppercase}
+:where(.screen,#modal,#pausem) .note{font-size:13.5px;line-height:1.45}
+
+/* ---------- buttons: one family ---------- */
+.btn,:where(.screen,#modal,#pausem) .btn{min-height:46px;padding:0 20px;border:0;border-radius:3px;font:800 13.5px/1.05 var(--f-text);letter-spacing:.07em;text-transform:uppercase;color:var(--btn-ink);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--team) 78%,#fff) 0%,var(--team) 46%,color-mix(in srgb,var(--team) 78%,#000) 100%);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.3),inset 0 -2px 0 rgba(0,0,0,.22),0 0 0 1px rgba(0,0,0,.45),0 6px 14px rgba(0,0,0,.35);text-shadow:0 1px 0 rgba(0,0,0,.18)}
+.btn.ghost,:where(.screen,#modal,#pausem) .btn.ghost,:where(.screen,#modal,#pausem) .card.tour .btns .btn{background:linear-gradient(180deg,#3A3D45 0%,#2A2C32 48%,#1F2025 100%);color:var(--c-chalk);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset 0 -2px 0 rgba(0,0,0,.25),0 0 0 1px rgba(0,0,0,.55),0 6px 14px rgba(0,0,0,.3);text-shadow:none}
+.btn.light,:where(.screen,#modal,#pausem) .btn.light{background:linear-gradient(180deg,#FFFFFF,#E4E1DA 55%,#CFCBC2);color:#121316;box-shadow:inset 0 1px 0 #fff,inset 0 -2px 0 rgba(0,0,0,.14),0 0 0 1px rgba(0,0,0,.45),0 6px 14px rgba(0,0,0,.3);text-shadow:none}
+.btn.danger,:where(.screen,#modal,#pausem) .btn.danger{background:linear-gradient(180deg,#F06A6E,#D6383E 50%,#A9242A);color:#fff}
+.btn.sm,:where(.screen,#modal,#pausem) .btn.sm{min-height:36px;padding:0 13px;font-size:12px;letter-spacing:.06em}
+.btn.sm[aria-pressed="true"],:where(.screen,#modal,#pausem) .btn.sm[aria-pressed="true"]{background:linear-gradient(180deg,#FFFFFF,#DAD6CE);color:#121316;text-shadow:none}
+.btn:disabled{opacity:.45;filter:saturate(.4)}
+:where(.screen,#modal,#pausem) .linkbtn,.linkbtn{min-height:32px;padding:0 11px;border:0;border-radius:3px;background:linear-gradient(180deg,#34363D,#25272C);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 0 0 1px rgba(0,0,0,.5);font:700 11.5px/1 var(--f-text);letter-spacing:.06em;text-transform:uppercase;color:var(--c-chalk)}
+
+/* ---------- chips, segmented controls, tags ---------- */
+:where(.screen,#modal,#pausem) .chipbtn,.chipbtn{min-height:34px;padding:0 12px;border:0;border-radius:3px;background:linear-gradient(180deg,#30323A,#222429);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px rgba(0,0,0,.5);
+  font:700 12px/1 var(--f-text);letter-spacing:.05em;text-transform:uppercase;color:#B5B2AB}
+:where(.screen,#modal,#pausem) .chipbtn[aria-pressed="true"],.chipbtn[aria-pressed="true"]{background:linear-gradient(180deg,color-mix(in srgb,var(--team) 80%,#fff),var(--team) 50%,color-mix(in srgb,var(--team) 80%,#000));color:var(--btn-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 0 0 1px rgba(0,0,0,.5)}
+:where(.screen,#modal,#pausem) .seg,.seg{border:0;border-radius:3px;background:linear-gradient(180deg,#141519,#1C1D22);box-shadow:inset 0 1px 3px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.06);padding:2px;gap:2px}
+:where(.screen,#modal,#pausem) .seg button,.seg button{min-height:34px;border-radius:2px;font:700 12px/1.1 var(--f-text);letter-spacing:.05em;text-transform:uppercase;color:#A9A69F}
+:where(.screen,#modal,#pausem) .seg button+button,.seg button+button{box-shadow:none}
+:where(.screen,#modal,#pausem) .seg button[aria-pressed="true"],.seg button[aria-pressed="true"]{background:linear-gradient(180deg,color-mix(in srgb,var(--team) 80%,#fff),var(--team) 50%,color-mix(in srgb,var(--team) 80%,#000));color:var(--btn-ink);box-shadow:inset 0 1px 0 rgba(255,255,255,.25)}
+:where(.screen,#modal,#pausem) .tag,.tag{border-radius:2px;padding:4px 7px 3px;font:700 10.5px/1.1 var(--f-text);letter-spacing:.06em;text-transform:uppercase;background:linear-gradient(180deg,rgba(255,255,255,.15),rgba(255,255,255,.07));box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+
+/* ---------- stat graphics: tables, rows, tiles ---------- */
+:is(.screen,#modal,#pausem) th{padding:8px 6px 7px;background:linear-gradient(180deg,#2B2D34,#1E2025);border-bottom:0;font:700 10px/1.1 var(--f-text);letter-spacing:.09em;text-transform:uppercase;color:#CFCBC3}
+:is(.screen,#modal,#pausem) th:first-child{border-radius:3px 0 0 0}:is(.screen,#modal,#pausem) th:last-child{border-radius:0 3px 0 0}
+:is(.screen,#modal,#pausem) td{border-bottom:1px solid rgba(255,255,255,.05)}
+:is(.screen,#modal,#pausem) tbody tr:nth-child(even) td{background:rgba(255,255,255,.03)}
+:is(.screen,#modal,#pausem) tr.me td{background:linear-gradient(90deg,color-mix(in srgb,var(--team) 36%,transparent),color-mix(in srgb,var(--team) 14%,transparent))}
+:is(.screen,#modal,#pausem) tr.me td:first-child{box-shadow:inset 4px 0 0 var(--team)}
+:is(.screen,#modal,#pausem) .lrow{border-bottom:1px solid rgba(255,255,255,.05);padding:8px 4px}
+:is(.screen,#modal,#pausem) .list>.lrow:nth-child(even){background:rgba(255,255,255,.025)}
+:is(.screen,#modal,#pausem) .rrow{padding:9px 6px;border-bottom:1px solid rgba(255,255,255,.05)}
+:is(.screen,#modal,#pausem) .rrow:nth-of-type(even){background:rgba(255,255,255,.025)}
+:is(.screen,#modal,#pausem) .rrow .meta b{font:400 19px/1 var(--f-disp);letter-spacing:.03em}
+:is(.screen,#modal,#pausem) .kpis{gap:6px}
+:is(.screen,#modal,#pausem) .kpis div{border:0;border-radius:3px;padding:8px 10px 7px;background:linear-gradient(180deg,rgba(0,0,0,.34),rgba(0,0,0,.22));box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(0,0,0,.35)}
+:is(.screen,#modal,#pausem) .kpis em{font:700 9.5px/1.1 var(--f-text);letter-spacing:.09em;text-transform:uppercase}
+:is(.screen,#modal,#pausem) .kpis b{font:400 30px/1 var(--f-num);letter-spacing:.02em}
+:is(.screen,#modal,#pausem) .kv b{font:400 21px/1 var(--f-num);letter-spacing:.02em}
+:is(.screen,#modal,#pausem) .tcase .tile{border:0;border-radius:3px;background:rgba(0,0,0,.28);box-shadow:inset 0 1px 0 rgba(255,255,255,.06);padding:10px}
+.meter,:where(.screen,#modal,#pausem) .meter{height:6px;border-radius:1px;background:rgba(0,0,0,.45);box-shadow:inset 0 1px 1px rgba(0,0,0,.5)}
+.meter i{background-image:linear-gradient(180deg,rgba(255,255,255,.3),rgba(255,255,255,0) 60%)}
+.ovr{font:400 15px/1 var(--f-num);letter-spacing:.02em;padding:3px 6px 2px;box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+.grade{font:400 17px/1 var(--f-num);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px rgba(0,0,0,.4)}
+:is(.screen,#modal,#pausem) .num,:is(.screen,#modal,#pausem) .rank{font-family:var(--f-num);font-weight:400;letter-spacing:.02em}
+
+/* ---------- next game / pregame: the show's matchup board ---------- */
+:is(.screen,#modal) .card.ng{border-radius:4px;overflow:hidden;background:var(--g-panel);box-shadow:var(--bevel)}
+.ng-bar{background:var(--g-bar);box-shadow:inset 0 -1px 0 rgba(0,0,0,.6);padding:9px 14px;font:var(--lab);letter-spacing:var(--lab-track);text-transform:uppercase;color:#D9D6CF}
+.ng-ko{color:#fff}
+.ng-mu{position:relative}
+.ng-mu::after{content:"";position:absolute;inset:0;background:var(--g-sheen);pointer-events:none}
+.ng-t .tx b{font:400 clamp(28px,8vw,40px)/.9 var(--f-disp);letter-spacing:.02em;text-shadow:0 2px 0 rgba(0,0,0,.25)}
+.ng-t .tx small,.ng-t .tx em{font-weight:700}
+.ng-mid .at{font:400 34px/1 var(--f-disp);text-shadow:0 2px 0 rgba(0,0,0,.35)}
+.ng-mid .ln{background:linear-gradient(180deg,#2B2D34,#16171B);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 4px 10px rgba(0,0,0,.4);font:700 12px/1 var(--f-text);letter-spacing:.05em;text-transform:uppercase;padding:6px 8px}
+.ng-wp{border-top:0;background:linear-gradient(180deg,rgba(0,0,0,.3),rgba(0,0,0,.1))}
+.ng-wp b{font:400 26px/1 var(--f-num)}
+.ng-wp em{font:var(--lab);letter-spacing:var(--lab-track);text-transform:uppercase}
+.ng-wp .bar{height:8px;box-shadow:inset 0 1px 2px rgba(0,0,0,.5)}
+.ng-meta{font:600 12.5px/1.25 var(--f-text)}
+
+/* ---------- modals and sheets ---------- */
+#modal>.panel,#pausem>.panel{background:var(--g-panel);border:0;border-radius:4px;box-shadow:inset 0 3px 0 var(--team),0 0 0 1px rgba(0,0,0,.6),0 18px 40px rgba(0,0,0,.55)}
+@media (max-width:600px) and (orientation:portrait){#modal>.panel{border-radius:6px 6px 0 0}}
+:is(#modal,#pausem) .panel>.h2:first-child,:is(#modal,#pausem) .panel>.h1:first-child{text-transform:uppercase}
+#modal .btns.cta{background:linear-gradient(180deg,rgba(24,25,30,.96),rgba(14,15,18,.98));border-top:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.sheet{background:linear-gradient(180deg,transparent,rgba(9,10,12,.9) 30%,rgba(9,10,12,.97))}
+.sheet h3{font:var(--lab);letter-spacing:var(--lab-track);text-transform:uppercase;color:#CFCBC3}
+.sheet h3 b{color:#fff}
+.play{border:0;border-radius:3px;background:linear-gradient(180deg,#30323A 0%,#212328 55%,#191A1E 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.1),0 0 0 1px rgba(0,0,0,.6),0 6px 14px rgba(0,0,0,.35)}
+.play::before{width:5px;background:linear-gradient(180deg,color-mix(in srgb,var(--team) 75%,#fff),var(--team))}
+.play b{font:400 20px/1 var(--f-disp);letter-spacing:.04em}
+.play small{font:600 11.5px/1.2 var(--f-text)}
+
+/* ---------- title + setup ---------- */
+.ttl-word{font:400 clamp(80px,min(27vw,22vh),150px)/.8 var(--f-disp);letter-spacing:.01em}
+.ttl-word .g{text-shadow:0 4px 0 rgba(0,0,0,.35)}
+.ttl-h{font:400 var(--fs-d4)/1 var(--f-disp)!important;letter-spacing:.04em;text-transform:uppercase}
+#setup .slot{border-radius:4px;background:var(--g-panel);box-shadow:var(--bevel)}
+#setup .slot.empty{background:rgba(255,255,255,.03);box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+#setup .tp{border-radius:3px;background:linear-gradient(90deg,color-mix(in srgb,var(--c1) 30%,#24262C),#1C1D22 46%,#16171B);box-shadow:var(--bevel);border-left:5px solid var(--c1)}
+#setup .tp .meta b{font:400 24px/.95 var(--f-disp);letter-spacing:.02em}
+#setup .tp .o,.tp .ovr{font-family:var(--f-num);font-weight:400}
+.sl-id b{font:400 28px/.95 var(--f-disp);letter-spacing:.02em}
+.sl-stats b{font:400 26px/1 var(--f-num)}
+#modal .td-id .h2{font:400 clamp(34px,9.5vw,48px)/.9 var(--f-disp);letter-spacing:.02em}
+.td-hero{position:relative;background:linear-gradient(104deg,color-mix(in srgb,var(--d) 80%,#fff),var(--d) 30%,color-mix(in srgb,var(--d) 70%,#000));box-shadow:inset 0 -4px 0 var(--c2)}
+
+/* ---------- post-game ---------- */
+.final strong{font:400 68px/1 var(--f-num)}
+.result{font:400 clamp(40px,11vw,60px)/1 var(--f-disp);letter-spacing:.02em;text-transform:uppercase}

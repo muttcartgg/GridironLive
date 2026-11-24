@@ -15,7 +15,7 @@ function resize(){
   const sb=$('#sb'),bottomBug=document.documentElement.dataset.bug==='bottom';
   topY=(sb.hidden||bottomBug?20:sb.getBoundingClientRect().bottom)+6;
   /* camera scale fitted to this phone (06a): consistent player size, enough field, clear of the notch / Dynamic Island and the HUD */
-  SAFE=safeInsets();const av=H-topY-(bottomBug&&!sb.hidden?70:0);sc=fitScale(av);
+  SAFE=safeInsets();const av=H-topY-(bottomBug&&!sb.hidden?Math.max(70,H-sb.getBoundingClientRect().top+4):0);sc=fitScale(av);
 }
 addEventListener('resize',resize);
 const aimScale=()=>maxRange()/(Math.min(W,H)*.55);
