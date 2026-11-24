@@ -171,6 +171,15 @@
 .grade{font:400 17px/1 var(--f-num);box-shadow:inset 0 1px 0 rgba(255,255,255,.2),0 0 0 1px rgba(0,0,0,.4)}
 :is(.screen,#modal,#pausem) .num,:is(.screen,#modal,#pausem) .rank{font-family:var(--f-num);font-weight:400;letter-spacing:.02em}
 
+/* ---------- imported logos: clean, no shield or chip behind them; the monogram only when there is no logo or it fails ---------- */
+.badge.hl.ok{background:none;border:0;clip-path:none;box-shadow:none;padding:0;filter:drop-shadow(0 2px 3px rgba(0,0,0,.45))}
+.badge.hl.ok img{left:0;top:0;width:100%;height:100%}
+.tvl.hl{filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+.tvl.hl img{inset:0;width:100%;height:100%}
+.tlogo{filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+#drv .tvl{--s:14px}
+@media (max-width:540px){.bt .badge.hl.ok{display:grid;--s:18px}.bt:has(.badge.hl.ok){grid-template-columns:18px 18px 1fr auto}}
+
 /* ---------- next game / pregame: the show's matchup board ---------- */
 :is(.screen,#modal) .card.ng{border-radius:4px;overflow:hidden;background:var(--g-panel);box-shadow:var(--bevel)}
 .ng-bar{background:var(--g-bar);box-shadow:inset 0 -1px 0 rgba(0,0,0,.6);padding:9px 14px;font:var(--lab);letter-spacing:var(--lab-track);text-transform:uppercase;color:#D9D6CF}

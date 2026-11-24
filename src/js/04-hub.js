@@ -3,7 +3,7 @@
    ========================================================= */
 let TAB='home',SETUP=null,ROSTER_FILTER='All';
 /* team badge: the generated shield, or the imported logo on a light shield once it loads (02c-packs.js) */
-const badge=(t,cls='')=>{if(t.bdg&&typeof bdgURL==='function')return `<span class="badge bd ${cls}"><img src="${bdgURL(t)}" alt="${esc(t.abbr)}" decoding="async"></span>`;const u=typeof teamLogoURL==='function'?teamLogoURL(t):'';return `<span class="badge ${cls}${u?' hl':''}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"><span class="ab">${esc(t.abbr)}</span>`:esc(t.abbr)}</span>`};
+const badge=(t,cls='')=>{if(t.bdg&&typeof bdgURL==='function')return `<span class="badge bd ${cls}"><img src="${bdgURL(t)}" alt="${esc(t.abbr)}" decoding="async"></span>`;const u=typeof teamLogoURL==='function'?teamLogoURL(t,true):'';return `<span class="badge ${cls}${u?' hl':''}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"><span class="ab">${esc(t.abbr)}</span>`:esc(t.abbr)}</span>`};
 const recStr=t=>`${t.rec.w}â€“${t.rec.l}`;
 const tcell=(t,label)=>`<div class="tname" data-team="${t.id}" style="cursor:pointer">${badge(t,'sm')}<span>${esc(label||rankTag(t.id)+t.city)}</span></div>`;
 function applyTeamTheme(t){const r=document.documentElement.style;r.setProperty('--team',t.c1);r.setProperty('--team2',t.c2);r.setProperty('--btn-ink',inkOn(t.c1))}
@@ -43,7 +43,7 @@ const lineStr=(a,b,s)=>{const v=Math.round(Math.abs(s)*2)/2;return v<.5?'Pick â€
 const ICO={play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
   code:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
 /* the slot meta keeps the imported logo (if any) so the title screen can show it without opening the save */
-if(!Saves._lg){const t0=Saves.touch;Saves._lg=1;Saves.touch=function(slot,L){t0.call(this,slot,L);try{const u=L.teams[L.user],lg=typeof teamLogoURL==='function'?teamLogoURL(u):'';if(lg){const m=this.meta();if(m.slots[slot]){m.slots[slot].logo=lg;this.writeMeta(m)}}}catch(e){}}}
+if(!Saves._lg){const t0=Saves.touch;Saves._lg=1;Saves.touch=function(slot,L){t0.call(this,slot,L);try{const u=L.teams[L.user],lg=typeof teamLogoURL==='function'?teamLogoURL(u,true):'';if(lg){const m=this.meta();if(m.slots[slot]){m.slots[slot].logo=lg;this.writeMeta(m)}}}catch(e){}}}
 
 /* title screen backdrop: two light towers, sweeping beams and drifting haze on a tiny canvas the CSS scales up (soft for free).
    ~30 fps, stops as soon as the title screen is hidden; one still frame with reduced motion. */

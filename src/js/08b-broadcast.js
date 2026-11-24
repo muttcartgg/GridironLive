@@ -84,7 +84,7 @@ const BC={
     if(S.score.join('-')!==this.wpScore){this.wpScore=S.score.join('-');this.wpPend=true}
     if(this.wpPend&&(S.phase==='presnap'||S.phase==='pat'))this.wpSample();
     if(mode!=='off'&&(mode==='always'||this.wpT>0))this.wpRender();
-    this.trackScore();const dt=$('#drv');if(dt){const t=this.driveText(),nh=!t||LG.settings.gfx===false;if(dt.textContent!==t)dt.textContent=t;if(dt.hidden!==nh){dt.hidden=nh;sbMeasure()}}
+    this.trackScore();const dt=$('#drv');if(dt){const t=this.driveText(),nh=!t||LG.settings.gfx===false,tm=offT(),k=t+'|'+(tm&&tm.abbr);if(dt.dataset.k!==k){dt.dataset.k=k;dt.innerHTML=t?`${tm?tvLogo(tm,'xs'):''}<span>${esc(t)}</span>`:''}if(dt.hidden!==nh){dt.hidden=nh;sbMeasure()}}
     if(this.dbOn){const d=$('#dbm'),v=Math.round(this.hype*100);if(+d.dataset.v!==v){d.dataset.v=v;d.querySelector('i').style.transform=`scaleY(${this.hype.toFixed(2)})`;d.querySelector('span').textContent=Math.round(78+this.hype*42)+' dB'}}
     if(this.lastQ!==S.q){if(this.lastQ===2&&S.q===3&&$('#studio').hidden)this.quarterCard(3);this.lastQ=S.q}
     if(this.hudN%5===0){sbPlace();sbMeasure()}   // the bug's footprint for the HUD that stacks against it (07c)
