@@ -79,6 +79,7 @@
   #hub .ht-band .who b{font-size:32px}
   #hub .ht-sub{gap:4px 12px}
   #hub .ht-sub .ht-coach{flex-basis:100%}
+  #hub>.tabs button{font-size:9px;letter-spacing:0}
 }
 
 /* ---------- the hub's bottom ticker; the in-game ticker shares the look ---------- */
