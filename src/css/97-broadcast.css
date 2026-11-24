@@ -51,7 +51,8 @@
 
 /* ---------- sub-tabs strip and the main tab bar ---------- */
 #hub>.subtabs{background:linear-gradient(180deg,rgba(18,19,23,.92),rgba(12,13,16,.94));border-bottom:0;box-shadow:inset 0 -1px 0 rgba(255,255,255,.06),0 6px 14px rgba(0,0,0,.3);padding-top:0;padding-bottom:0}
-#hub>.subtabs button{min-height:40px;padding:0 14px;font:400 18px/1 var(--f-disp);letter-spacing:.05em;text-transform:uppercase;color:#9E9B95}
+#hub>.subtabs button{min-height:40px;padding:0 14px;font:700 18px/1 var(--f-disp);letter-spacing:.03em;text-transform:uppercase;color:#9E9B95}
+@media (max-width:540px){#hub>.subtabs button{padding:0 9px;font-size:16px;letter-spacing:.01em}}   /* five labels fit a 390 pt screen in the wider display face */
 #hub>.subtabs button[aria-selected="true"]{color:#fff;background:linear-gradient(180deg,transparent,color-mix(in srgb,var(--team) 26%,transparent))}
 #hub>.subtabs button[aria-selected="true"]::after{height:3px;background:var(--team);box-shadow:0 -1px 6px color-mix(in srgb,var(--team) 60%,transparent)}
 #hub>.tabs{background:linear-gradient(180deg,#1E2025,#101114);border-top:0;box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 -6px 16px rgba(0,0,0,.4)}

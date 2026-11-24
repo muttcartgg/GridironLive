@@ -262,7 +262,7 @@ table.box td{font-size:13.5px}
 #banner .bt{padding:10px 18px 12px}
 #banner .ki{font:600 13px/1 var(--f-text);letter-spacing:0;text-transform:none;opacity:.9}
 #banner.k-int .ki,#banner.k-fum .ki,#banner.k-downs .ki{border-radius:0;background:var(--c-acc);color:var(--c-acc-ink);padding:3px 6px}
-#banner .ti{font:800 clamp(42px,9.4vw,72px)/.86 var(--f-disp);letter-spacing:.005em;text-shadow:none}
+#banner .ti{font:800 min(clamp(42px,9.4vw,72px),calc((min(600px,100vw - 24px) - 190px) / (var(--n,9) * .52)))/.86 var(--f-disp);letter-spacing:.005em;text-shadow:none}
 #banner .su{font:600 13px/1.15 var(--f-text);letter-spacing:0;text-transform:none}
 #banner .pt{background:rgba(0,0,0,.24);padding:0 26px 0 18px;font:800 clamp(34px,7vw,52px)/1 var(--f-disp)}
 @keyframes bnBg{0%{transform:translateX(-102%)}7%,90%{transform:none}100%{transform:translateX(102%)}}
