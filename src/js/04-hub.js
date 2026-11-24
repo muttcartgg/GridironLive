@@ -258,7 +258,7 @@ function showHub(tab){
     <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div></div>
     <div class="ht-sub"><span class="ht-coach">${me?`<em>${esc(me.pos)} #${me.num}</em><b>${esc(fullName(me))}</b>`:`<em>Head coach</em>${cn?`<b>${esc(cn)}</b>`:'<button class="ht-name" id="htName">Add your name</button>'}`}</span>${res.map(([l,v])=>`<span class="ht-res"><em>${l}</em><b>${v}</b></span>`).join('')}</div>`;
   on('htName',renameCoach);
-  {const bg=hubBackdrop(u);$('#hub').style.setProperty('--hub-bg',bg?`url(${bg})`:'none')}
+  {const bg=hubBackdrop(u),h=$('#hub');if(h._bg!==bg){h._bg=bg;h.style.setProperty('--hub-bg',bg?`url(${bg})`:'none')}}
   hubTicker();
   const nav=LG.rtg?NAV.filter(([k])=>k!=='recruit'&&k!=='program'):NAV,cur=navOf(TAB);NAV_LAST[cur[0]]=TAB;   /* Road to Glory: the coach-only screens are the CPU coach's */
   $('#tabs').innerHTML=nav.map(([k,l,vs])=>`<button role="tab" id="tab-${k}" aria-selected="${cur[0]===k}"><svg viewBox="0 0 24 24" aria-hidden="true">${NAV_ICO[k]}</svg><span>${k==='home'&&LG.rtg?'Career':l}</span>${k==='home'&&LG.event?'<span class="dot" aria-label="Decision waiting"></span>':''}</button>`).join('');
