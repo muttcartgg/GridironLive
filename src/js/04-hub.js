@@ -3,7 +3,7 @@
    ========================================================= */
 let TAB='home',SETUP=null,ROSTER_FILTER='All';
 /* team badge: the generated shield, or the imported logo on a light shield once it loads (02c-packs.js) */
-const badge=(t,cls='')=>{if(t.bdg&&typeof bdgURL==='function')return `<span class="badge bd ${cls}"><img src="${bdgURL(t)}" alt="${esc(t.abbr)}" decoding="async"></span>`;const u=typeof teamLogoURL==='function'?teamLogoURL(t):'';return `<span class="badge ${cls}${u?' hl':''}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"><span class="ab">${esc(t.abbr)}</span>`:esc(t.abbr)}</span>`};
+const badge=(t,cls='')=>{if(t.bdg&&typeof bdgURL==='function')return `<span class="badge bd ${cls}"><img src="${bdgURL(t)}" alt="${esc(t.abbr)}" decoding="async"></span>`;const u=typeof teamLogoURL==='function'?teamLogoURL(t,true):'';return `<span class="badge ${cls}${u?' hl':''}" style="--c1:${t.c1};--c2:${t.c2};--bt:${inkOn(t.c1)}">${u?`<img src="${esc(u)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onload="this.parentNode.classList.add('ok')" onerror="this.remove()"><span class="ab">${esc(t.abbr)}</span>`:esc(t.abbr)}</span>`};
 const recStr=t=>`${t.rec.w}–${t.rec.l}`;
 const tcell=(t,label)=>`<div class="tname" data-team="${t.id}" style="cursor:pointer">${badge(t,'sm')}<span>${esc(label||rankTag(t.id)+t.city)}</span></div>`;
 function applyTeamTheme(t){const r=document.documentElement.style;r.setProperty('--team',t.c1);r.setProperty('--team2',t.c2);r.setProperty('--btn-ink',inkOn(t.c1))}
@@ -43,7 +43,7 @@ const lineStr=(a,b,s)=>{const v=Math.round(Math.abs(s)*2)/2;return v<.5?'Pick �
 const ICO={play:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>',
   code:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/></svg>'};
 /* the slot meta keeps the imported logo (if any) so the title screen can show it without opening the save */
-if(!Saves._lg){const t0=Saves.touch;Saves._lg=1;Saves.touch=function(slot,L){t0.call(this,slot,L);try{const u=L.teams[L.user],lg=typeof teamLogoURL==='function'?teamLogoURL(u):'';if(lg){const m=this.meta();if(m.slots[slot]){m.slots[slot].logo=lg;this.writeMeta(m)}}}catch(e){}}}
+if(!Saves._lg){const t0=Saves.touch;Saves._lg=1;Saves.touch=function(slot,L){t0.call(this,slot,L);try{const u=L.teams[L.user],lg=typeof teamLogoURL==='function'?teamLogoURL(u,true):'';if(lg){const m=this.meta();if(m.slots[slot]){m.slots[slot].logo=lg;this.writeMeta(m)}}}catch(e){}}}
 
 /* title screen backdrop: two light towers, sweeping beams and drifting haze on a tiny canvas the CSS scales up (soft for free).
    ~30 fps, stops as soon as the title screen is hidden; one still frame with reduced motion. */
@@ -250,9 +250,16 @@ function showHub(tab){
   invalidate();hideAll();if(tab&&VIEWS[tab])TAB=tab;if(LG.rtg&&(TAB==='recruit'||TAB==='program'))TAB='home';S.phase='hub';applyStyle();ensureCareer(LG);
   const u=T(LG.user);applyTeamTheme(u);
   const ap=rankOf(u.id),cfp=u.div==='FBS'?cfpOf(u.id):null,top=$('#hubTop');top.style.setProperty('--hd',deepC(u));
-  top.innerHTML=`<span class="ht-wm" aria-hidden="true">${esc(u.abbr)}</span>${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)} <span>${esc(u.name)}</span></b><small>${LG.rtg&&typeof rtgMe==='function'&&rtgMe()?esc(fullName(rtgMe()))+' · #'+rtgMe().num+' '+rtgMe().pos+' · coach '+esc(LG.coach.name):esc(LG.coach.name)}</small></div>
-    <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div>
-    <div class="pills">${LG.rtg?`<span class="pill" title="Skill points">${LG.rtg.sp} SP</span><span class="pill" title="Your NIL earnings">${money(LG.rtg.nil.cash)} NIL</span>`:`<span class="pill" title="Coaching credits">${LG.credits} CC</span><span class="pill" title="NIL and revenue-sharing budget left">${money(LG.nil)} NIL</span>`}</div>`;
+  /* header: a lower third in team colour (logo, school, nickname, record, conference record, rank) over a strap with the
+     coach and the resources, all on the stadium backdrop (04f hubBackdrop) */
+  const me=LG.rtg&&typeof rtgMe==='function'?rtgMe():null,cn=LG.coach.name&&LG.coach.name!=='Coach'?LG.coach.name:'';
+  const res=LG.rtg?[['Skill points',LG.rtg.sp],['NIL earnings',money(LG.rtg.nil.cash)]]:[['Coaching credits',LG.credits],['NIL budget',money(LG.nil)]];
+  top.innerHTML=`<div class="ht-band">${badge(u,'lg')}<div class="who"><small>${LG.season} · ${esc(weekLabel(LG))} · ${esc(confName(u.conf))}</small><b>${esc(u.city)}</b><span class="nick">${esc(u.name)}</span></div>
+    <div class="ht-stats"><div><em>Record</em><b>${recStr(u)}</b></div><div><em>Conf</em><b>${u.rec.cw}–${u.rec.cl}</b></div><div class="${ap?'g':''}"><em>${u.div==='FCS'?'FCS':'AP'}</em><b>${ap?'#'+ap:'NR'}</b></div>${cfp?`<div class="g"><em>CFP</em><b>#${cfp}</b></div>`:''}</div></div>
+    <div class="ht-sub"><span class="ht-coach">${me?`<em>${esc(me.pos)} #${me.num}</em><b>${esc(fullName(me))}</b>`:`<em>Head coach</em>${cn?`<b>${esc(cn)}</b>`:'<button class="ht-name" id="htName">Add your name</button>'}`}</span>${res.map(([l,v])=>`<span class="ht-res"><em>${l}</em><b>${v}</b></span>`).join('')}</div>`;
+  on('htName',renameCoach);
+  {const bg=hubBackdrop(u),h=$('#hub');if(h._bg!==bg){h._bg=bg;h.style.setProperty('--hub-bg',bg?`url(${bg})`:'none')}}
+  hubTicker();
   const nav=LG.rtg?NAV.filter(([k])=>k!=='recruit'&&k!=='program'):NAV,cur=navOf(TAB);NAV_LAST[cur[0]]=TAB;   /* Road to Glory: the coach-only screens are the CPU coach's */
   $('#tabs').innerHTML=nav.map(([k,l,vs])=>`<button role="tab" id="tab-${k}" aria-selected="${cur[0]===k}"><svg viewBox="0 0 24 24" aria-hidden="true">${NAV_ICO[k]}</svg><span>${k==='home'&&LG.rtg?'Career':l}</span>${k==='home'&&LG.event?'<span class="dot" aria-label="Decision waiting"></span>':''}</button>`).join('');
   $('#tabs').querySelectorAll('button').forEach(b=>b.onclick=()=>{const n=NAV.find(x=>x[0]===b.id.slice(4));const same=n===navOf(TAB);showHub(same?n[2][0]:NAV_LAST[n[0]]||n[2][0]);$('#hubScroll').scrollTop=0});
@@ -585,7 +592,7 @@ function hubSettings(){
     +row('Score ticker',tg('setTk',s.ticker!==false))
     +row('Player cards',tg('setLow',s.lower!==false))
     +row('Decibel meter',tg('setDB',s.db!==false))
-    +row('Score bug position',seg('setBug',[['top','Top'],['bottom','Bottom']],s.bugPos||'top'))
+    +row('Score bug in landscape',seg('setBug',[['bottom','Bottom'],['top','Top']],s.bugPos==='top'?'top':'bottom'))
     +row('Score bug size',seg('setBS',[['s','Small'],['m','Medium'],['l','Large']],s.bugSize||'m'))
     +row('Score bug opacity',seg('setBA',[[1,'Solid'],[.8,'80%'],[.6,'60%']],s.hudAlpha!=null?s.hudAlpha:1)))
   +sec('data','Rosters &amp; data',
@@ -603,7 +610,7 @@ function hubSettings(){
   +other.map(c=>sec('x-'+c.replace(/\W+/g,''),esc(c),regs(c,'main'),regs(c,'more'))).join('')
   +sec('about','About',
      `<div class="kv"><span>Version</span><b>7.7</b></div><div class="btns"><button class="btn ghost sm" id="setHelp">How to play</button><button class="btn ghost sm" id="setNew">What’s new</button></div>
-      <p class="note">An original game. School badges use abbreviations, not official logos. Big Shoulders Display and Chivo fonts under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
+      <p class="note">An original game. School badges use abbreviations, not official logos. League Gothic and Libre Franklin fonts under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
   +`</div>`;
 }
 /* How to play: one card per part of the game, a line per idea */

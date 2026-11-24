@@ -14,9 +14,10 @@
                          large areas, never decoration.
      --c-win / --c-loss  results only. Team colours (--team, --c1) fill bands, score bug blocks, primary buttons.
    Type (two families)
-     Display  Big Shoulders Display 700/800, upright, tracking 0. Scores, team names, rank numerals, banners,
-              screen titles. Team names and banners in capitals; titles as written.
-     Text     Chivo 400/600/700, sentence case, tabular figures (Chivo's default). Everything you read or tap.
+     Display  League Gothic (one weight; any font-weight maps to it, never faux bold), upright, tracking .015em.
+              Scores, clocks, team names, rank numerals, banners, screen titles. Team names and banners in capitals.
+     Text     Libre Franklin 400/500/600/700/800 (a Franklin Gothic revival), sentence case, tabular figures.
+              Everything you read or tap; small caps-style labels are 700 at 10-11px with .06em tracking.
      Scale    display 64 · 44 · 30 · 22 · 18      text 17 · 15 · 13 · 11.5
    Space      4 · 8 · 12 · 16 · 24 · 32 (left-aligned content on a 16px gutter)
    Radius     0 for panels, bands and banners; 2px for buttons, inputs, chips; 4px is the ceiling
@@ -31,18 +32,20 @@
               reduced motion.
    Icons      one stroke set: 24px grid, 1.75 stroke, square caps where it reads, no emoji.
    ========================================================= */
-@font-face{font-family:'Big Shoulders Display';src:url(data:font/woff2;base64,__FONT:big-shoulders-display-latin-700-normal.woff2__) format('woff2');font-weight:700;font-style:normal;font-display:swap}
-@font-face{font-family:'Big Shoulders Display';src:url(data:font/woff2;base64,__FONT:big-shoulders-display-latin-800-normal.woff2__) format('woff2');font-weight:800 900;font-style:normal;font-display:swap}
-@font-face{font-family:'Chivo';src:url(data:font/woff2;base64,__FONT:chivo-latin-400-normal.woff2__) format('woff2');font-weight:300 500;font-style:normal;font-display:swap}
-@font-face{font-family:'Chivo';src:url(data:font/woff2;base64,__FONT:chivo-latin-600-normal.woff2__) format('woff2');font-weight:600;font-style:normal;font-display:swap}
-@font-face{font-family:'Chivo';src:url(data:font/woff2;base64,__FONT:chivo-latin-700-normal.woff2__) format('woff2');font-weight:700 900;font-style:normal;font-display:swap}
+@font-face{font-family:'League Gothic';src:url(data:font/woff2;base64,__FONT:league-gothic-latin-400-normal.woff2__) format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-400-normal.woff2__) format('woff2');font-weight:300 450;font-style:normal;font-display:swap}
+@font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-500-normal.woff2__) format('woff2');font-weight:451 550;font-style:normal;font-display:swap}
+@font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-600-normal.woff2__) format('woff2');font-weight:551 650;font-style:normal;font-display:swap}
+@font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-700-normal.woff2__) format('woff2');font-weight:651 750;font-style:normal;font-display:swap}
+@font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-800-normal.woff2__) format('woff2');font-weight:751 900;font-style:normal;font-display:swap}
 
 :root{
   --c-base:#161718;--c-raise:#1E1F21;--c-ctrl:#292A2D;--c-rule:rgba(236,233,226,.12);--c-rule2:rgba(236,233,226,.24);
   --c-chalk:#ECE9E2;--c-mute:#A19E97;--c-faint:#6F6D68;--c-acc:#F2C230;--c-acc-ink:#191402;
   --c-win:#4CB97E;--c-loss:#E5484D;--c-warn:#E9A23B;--c-info:#62A8E5;
-  --f-disp:'Big Shoulders Display','Arial Narrow',system-ui,sans-serif;
-  --f-text:'Chivo',-apple-system,'Segoe UI',Roboto,system-ui,sans-serif;
+  --f-disp:'League Gothic','Arial Narrow',system-ui,sans-serif;
+  --f-text:'Libre Franklin',-apple-system,'Segoe UI',Roboto,system-ui,sans-serif;
+  --f-num:'League Gothic','Arial Narrow',system-ui,sans-serif;
   --fs-d1:64px;--fs-d2:44px;--fs-d3:30px;--fs-d4:22px;--fs-d5:18px;
   --fs-t1:17px;--fs-t2:15px;--fs-t3:13px;--fs-t4:11.5px;
   --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;
@@ -52,6 +55,6 @@
   /* the names the older stylesheets use, pointed at the system */
   --ink:var(--c-base);--panel:var(--c-raise);--panel2:var(--c-ctrl);--line:var(--c-rule);
   --fg:var(--c-chalk);--mute:var(--c-mute);--gold:var(--c-acc);--hot:var(--c-loss);--ok:var(--c-win);--warn:var(--c-warn);
-  --disp:var(--f-disp);--body:var(--f-text);--dw:800;--dstyle:normal;--dtrack:0;
+  --disp:var(--f-disp);--body:var(--f-text);--dw:400;--dstyle:normal;--dtrack:.015em;
 }
 body{font-family:var(--f-text);font-size:var(--fs-t2);font-variant-numeric:tabular-nums}

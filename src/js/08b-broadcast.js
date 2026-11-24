@@ -17,7 +17,7 @@ const BC={
     const g=S.game,hr=rankOf(S.home.id),ar=rankOf(S.away.id),big=(hr&&ar)||g.rival||g.post||S.slot==='Primetime'||(hr&&hr<=10)||(ar&&ar<=10);
     const mid=hr||ar||isConfGame(g);
     this.pkg=this.set().pkg&&this.set().pkg!=='auto'?this.set().pkg:big?'national':mid?'regional':'stream';
-    const r=document.documentElement;r.dataset.pkg=this.pkg;r.dataset.bug=this.set().bugPos||'top';r.dataset.bugsize=this.set().bugSize||'m';
+    const r=document.documentElement;r.dataset.pkg=this.pkg;sbPlace();r.dataset.bugsize=this.set().bugSize||'m';if(typeof SBUG!=='undefined')SBUG.clear();sbTag();
     $('#sb').style.opacity=this.set().hudAlpha!=null?this.set().hudAlpha:1;
     this.shown=new Set();this.lateShown={};this.rzShown=false;if(!resumed){S.line=[[0,0,0,0,0],[0,0,0,0,0]];S.lineLast=[0,0]}this.hype=S.userHome||!S.neutral?.35:.25;SCENE.fw=[];SCENE.coach={};SCENE.chainA=SCENE.chainB=null;
     this.buildLeague();if(!resumed||S.temp==null)this.conditions();
@@ -84,10 +84,10 @@ const BC={
     if(S.score.join('-')!==this.wpScore){this.wpScore=S.score.join('-');this.wpPend=true}
     if(this.wpPend&&(S.phase==='presnap'||S.phase==='pat'))this.wpSample();
     if(mode!=='off'&&(mode==='always'||this.wpT>0))this.wpRender();
-    this.trackScore();const dt=$('#drv');if(dt){const t=this.driveText();if(dt.textContent!==t)dt.textContent=t;dt.hidden=!t||LG.settings.gfx===false}
+    this.trackScore();const dt=$('#drv');if(dt){const t=this.driveText(),nh=!t||LG.settings.gfx===false,tm=offT(),k=t+'|'+(tm&&tm.abbr);if(dt.dataset.k!==k){dt.dataset.k=k;dt.innerHTML=t?`${tm?tvLogo(tm,'xs'):''}<span>${esc(t)}</span>`:''}if(dt.hidden!==nh){dt.hidden=nh;sbMeasure()}}
     if(this.dbOn){const d=$('#dbm'),v=Math.round(this.hype*100);if(+d.dataset.v!==v){d.dataset.v=v;d.querySelector('i').style.transform=`scaleY(${this.hype.toFixed(2)})`;d.querySelector('span').textContent=Math.round(78+this.hype*42)+' dB'}}
     if(this.lastQ!==S.q){if(this.lastQ===2&&S.q===3&&$('#studio').hidden)this.quarterCard(3);this.lastQ=S.q}
-    if(this.hudN%5===0){const sb=$('#sb');const b=sb.hidden?0:Math.round(sb.getBoundingClientRect().bottom);if(b!==this.sbB){this.sbB=b;document.documentElement.style.setProperty('--sbB',b+'px')}}
+    if(this.hudN%5===0){sbPlace();sbMeasure()}   // the bug's footprint for the HUD that stacks against it (07c)
   },
   /* ---------- win probability: bar, sparkline of the game, swing callout ---------- */
   wpSample(){
@@ -115,7 +115,7 @@ const BC={
       case 'open':this.setRibbon('WELCOME TO '+hostT().city.toUpperCase(),6);break;
       case 'quarter':break;
       case 'flag':sceneEvent('flag',{});this.sound('flag');break;
-      case 'timeout':this.chip(`TIMEOUT · ${d.t.abbr}`,d.t.c1,`${d.t===S.home?S.to[0]:S.to[1]} left`);drumline(false);break;
+      case 'timeout':{const n=d.t===S.home?S.to[0]:S.to[1];SBUG.msg('Timeout',`${d.t.abbr} · ${n} left`,d.t.c1,2400,{team:d.t});drumline(false);break}
       case 'fg':if(d.good){this.sound('fg');this.hype=Math.min(1,this.hype+.3)}break;
       case 'first':if(Math.random()<.25)this.sound('first');break;
       case 'bighit':this.hype=Math.min(1,this.hype+.35);sceneEvent('big',{team:d.d.team});break;
@@ -123,13 +123,13 @@ const BC={
   },
   /* result card: play type, who, yards, what's next */
   card(kind,main,sub,color,big){
-    if(LG.settings.gfx===false)return false;
+    if(LG.settings.gfx===false)return false;if(kind==='REPLAY REVIEW'){const m=String(main).replace(/&[a-z#0-9]+;/gi,' ');/^(Overturned|Confirmed|Ruling stands)$/.test(m)?SBUG.review(null,m,sub):SBUG.review(sub||m)}   // the bug carries the review status (07c)
     const el=$('#rcard');el.style.setProperty('--rc',color);el.classList.toggle('big',!!big);el.classList.remove('flag');
     el.innerHTML=`<span class="k">${esc(kind)}</span><b>${main}</b>${sub?`<small>${esc(sub)}</small>`:''}`;ctlTipHide();
     $('#lower').classList.remove('on');el.classList.remove('on');void el.offsetWidth;el.classList.add('on');clearTimeout(this.cardT);this.cardT=setTimeout(()=>el.classList.remove('on'),big?2800:2200);return true;
   },
   chip(text,color,sub,cls){if(LG.settings.gfx===false)return;const el=$('#sit');el.className=cls||'';el.style.setProperty('--sc',color||'var(--gold)');el.style.setProperty('--sk',String(color||'').startsWith('#')?inkOn(color):'#fff');el.innerHTML=`<b>${esc(text)}</b>${sub?`<small>${esc(sub)}</small>`:''}`;ctlTipHide();void el.offsetWidth;el.classList.add('on');clearTimeout(this.chipT);this.chipT=setTimeout(()=>el.classList.remove('on'),2400)},
-  firstDown(e){if(!e||!e.team||S.conv)return;this.chip('First down',e.team.c1,e.x!=null?spotLabelFor(Math.min(109,e.x),S.poss):'','fd')},
+  firstDown(e){if(!e||!e.team||S.conv)return;SBUG.msg('1st down',e.x!=null?spotLabelFor(Math.min(109,e.x),S.poss):'','#F2C230',1800,{dd:true})},   // the down module turns yellow (07c)
   bannerSub(t){const b=$('#banner');if(!b.classList.contains('on'))return;const s=b.querySelector('.su');s.textContent=t;s.hidden=!t},
   snap(){
     clearTimeout(this.qWait);$('#qcard').classList.remove('on');$('#rcard').classList.remove('on');
@@ -201,13 +201,13 @@ const BC={
   quarterCard(q){
     if(LG.settings.gfx===false)return;const st=S.stats,os=S.ostats,half=q===3;
     this.showQ(`${this.cardHead(half?'Halftime':`End of ${ordQ(q-1).toLowerCase()} quarter`,esc(venueOf()))}${this.linescore()}<div class="qstats">${this.statRow('Total yards',st.passYds+st.rushYds,os.passYds+os.rushYds)}${this.statRow('Win prob',Math.round(winProbLive()*100),100-Math.round(winProbLive()*100),v=>v+'%')}</div>`,'',3400);
-    drumline(true);this.wpShow(4.5);
+    drumline(true);this.wpShow(4.5);SBUG.msg(half?'Halftime':`End of ${ordQ(q-1)}`,half?'Second half next':`${ordQ(q)} quarter next`,'#F4F3EF',3000);
   },
   twoMin(){
     if(LG.settings.gfx===false)return;const tos=n=>[0,1,2].map(i=>`<i class="${i<n?'':'u'}"></i>`).join('');
     const row=([t,i])=>`<div class="tmr" style="--c:${t.c1}">${tvLogo(t,'sm')}<b>${esc(t.abbr)}</b><span class="pips">${tos(S.to[i])}</span><strong>${S.score[i]}</strong></div>`;
     this.showQ(`${this.cardHead('Two-minute timeout',`${fmtClock(S.clock)} left · ${S.q===4?'4th quarter':'end of the half'}`)}<div class="tmrs">${this.sides().map(row).join('')}</div>${this.statRow('Win prob',Math.round(winProbLive()*100),100-Math.round(winProbLive()*100),v=>v+'%')}`,'mini',2800);
-    drumline(true);
+    drumline(true);SBUG.msg('Two-minute warning',`${fmtClock(S.clock)} left · ${S.q===4?'4th quarter':'first half'}`,'#F4F3EF',2800);
   },
   intro(){
     if(LG.settings.gfx===false)return;const g=S.game;const side=t=>`<div class="it" style="--c:${t.c1}">${tvLogo(t,'lg')}<div><b>${rankTag(t.id)}${esc(t.city)}</b><small>${esc(t.name)} · ${recStr(t)}</small></div></div>`;
@@ -228,7 +228,7 @@ const BC={
     const host=hostT(),cap=host.div==='FCS'?R(9000,24000):Math.round(30000+host.prestige*15000+R(-4000,6000));
     S.att=Math.round(cap*(S.game.rival?1.03:1)*(1-crowdEmpty()*.4)*(S.neutral?.9:1));
   },
-  flagCard(m){if(LG.settings.gfx===false)return false;const parts=m.split(' · ');this.card('FLAG',esc(parts[0]),parts.slice(1).join(' · '),'#E8B500',false);$('#rcard').classList.add('flag');return true},
+  flagCard(m){if(LG.settings.gfx===false)return false;if(SBUG.flag(m))return true;const parts=m.split(' · ');this.card('FLAG',esc(parts[0]),parts.slice(1).join(' · '),'#E8B500',false);$('#rcard').classList.add('flag');return true},
   scoringDrive(t){const d=S.drive;if(!d||!d.plays)return;const tm=(Math.min(S.q,4)-Math.min(d.q,4))*S.qlen+d.clk-S.clock;this.chip('Scoring drive',t.c1,`${d.plays} plays · ${d.yds} yds · ${fmtClock(Math.max(0,tm))}`)},
   toChip(t){const s=S.stats,o=S.ostats,m=(o.int+(o.fumLost||0))-(s.int+(s.fumLost||0));this.chip('Turnover',t.c1,`${S.home.abbr} turnover margin ${m>0?'+':''}${m}`,'to');this.wpShow(4.5)},
   gameLine(p){if(LG.settings.lower===false)return;const m=p.user?S.pst:S.opst||{},st=m[p.pl.id];if(!st)return;const el=$('#lower');el.style.setProperty('--lc',p.team.c1);el.style.setProperty('--lt',inkOn(p.team.c1));this.lowerNum(el,p.pl,p.num);

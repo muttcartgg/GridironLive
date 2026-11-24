@@ -9,6 +9,11 @@ A college football dynasty game for iPhone, presented like a TV broadcast in 3D.
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 13.2: TV scoreboard and broadcast menus
+- New score bug: a TV scoreboard bar along the bottom centre in landscape (a compact bar across the top in portrait) with a game tag, both teams' tiles (logo or monogram, rank, abbreviation, record, score, timeout bars, possession football), the quarter, game clock and play clock (red at :05), and the down and distance with the ball spot. The old strip under the bug is folded in; stamina shows once it drops below 90%, wind from 10 mph.
+- Takeovers inside the bug: score flips with a flash of the team colour, a touchdown wipe with the logo, 1st down, a yellow flag slide-out with the foul, timeout (the used bar flashes out), two-minute warning, end of quarter, turnovers and replay reviews. Settings › Score bug in landscape: Bottom (default) or Top.
+- Menus restyled as a broadcast graphics package: League Gothic and Libre Franklin, a lower-third team header with the head coach (tap "Add your name"), record, conference record and rank, plain resource labels, a painted night-stadium backdrop, a scores ticker on the hub, panels with title bars, one bevelled button family.
+
 ## Version 12: 3D broadcast only
 
 - The Pixel style is gone: 3D broadcast is the one art style, and every dynasty switches to it once. The title screen and menus use the broadcast theme. Without WebGL 2 (or if 3D can't start) the game shows the 2D HD view, with one notice.

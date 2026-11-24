@@ -257,7 +257,7 @@ function teamLogo(t,dark){
     return !e.bad&&e.img.complete&&e.img.naturalWidth>0?e.img:null}catch(err){return null}
 }
 const teamLogoURL=(t,dark)=>logosOn()?logoURL(t,dark):'';
-function logoHTML(t,size,cls){const u=teamLogoURL(t);if(!u)return '';size=size||28;return `<img class="tlogo ${cls||''}" src="${esc(u)}" width="${size}" height="${size}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`}
+function logoHTML(t,size,cls){const u=teamLogoURL(t,true);if(!u)return '';size=size||28;return `<img class="tlogo ${cls||''}" src="${esc(u)}" width="${size}" height="${size}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none'">`}
 /* a CORS-clean Image of a team's imported logo, for WebGL textures (the 3D field, video board, ribbon boards)
    → Promise<HTMLImageElement|null>. The iOS shell fetches it natively (messageHandlers.img {id,url} → window.__imgReply(id,
    dataURL or '')), so the CDN needs no CORS headers; a browser loads it with crossOrigin='anonymous' (no CORS header: the

@@ -1,0 +1,187 @@
+/* =========================================================
+   96 · Score bug: the TV scoreboard bar (markup in index.html #sb, logic in 07c-scorebug.js).
+   Landscape: one bar along the bottom centre, above the safe area and the ticker, ~64% of the width.
+   Portrait: the same bar, compact, across the top. Settings › Score bug position (top / bottom) applies to landscape.
+   Left to right: game tag · away tile · home tile · state (quarter, game clock, play clock) · down & distance.
+   Tile: logo well (imported logo, else a monogram chip) · small rank + abbr · small record · possession football ·
+   score in big numerals; three timeout bars on a rail under the tile.
+   Takeovers stay inside the bug, 150-250 ms, ease-out, nothing bounces:
+     .sb-msg  wipes over the state + down modules (first down, timeout, two-minute, end of quarter, turnover, review)
+     .sb-td   wipes the whole bar in the scoring team's colour with its logo (touchdown)
+     .sb-tab  slides out of the bar's inner edge (the flag with the foul); #drv (drive tracker) shares that rail
+   The rail is part of the bug, so its footprint (--sbB top mode, --sbT bottom mode, 07c sbMeasure) moves
+   everything that stacks against the bug.
+   ========================================================= */
+:root{--sb-h:46px;--sb-w:clamp(500px,68vw,660px);--sb-bot:calc(env(safe-area-inset-bottom,0px) + 8px);--sb-k:1;--sbT:calc(env(safe-area-inset-bottom,0px) + 62px);
+  --sb-ink:#F4F3EF;--sb-base:#0E0F12;--sb-base2:#1A1B1F;--sb-rule:rgba(255,255,255,.08);--sb-flag:#FFD100;--sb-flag-ink:#171300}
+:root.ticker{--sb-bot:calc(env(safe-area-inset-bottom,0px) + 30px)}
+:root[data-bugsize="s"]{--sb-k:.88}:root[data-bugsize="l"]{--sb-k:1.1}
+
+#sb{position:absolute;z-index:8;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);width:var(--sb-w);max-width:calc(100% - 2*max(10px,env(safe-area-inset-left,0px),env(safe-area-inset-right,0px)));
+  transform:translateX(-50%) scale(var(--sb-k));transform-origin:top center;display:flex;flex-direction:column;pointer-events:none;color:var(--sb-ink);font-variant-numeric:tabular-nums}
+:root[data-bug="bottom"] #sb{top:auto;bottom:var(--sb-bot);flex-direction:column-reverse;transform-origin:bottom center}
+#sb:not([hidden]){animation:sbIn .22s var(--ease-out)}
+@keyframes sbIn{from{opacity:0}}
+
+/* the bar */
+#sb .sbx{position:relative;display:flex;align-items:stretch;height:var(--sb-h);border-radius:3px;overflow:hidden;background:linear-gradient(180deg,var(--sb-base2),var(--sb-base));
+  box-shadow:0 0 0 1px rgba(0,0,0,.6),0 8px 22px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.08)}
+
+/* game tag: conference in text (or the bowl / playoff), week under it */
+#sb .sb-tag{flex:none;min-width:42px;padding:0 7px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:#07080A;box-shadow:inset -1px 0 0 var(--sb-rule);position:relative}
+#sb .sb-tag::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--pkA,var(--c-acc))}
+#sb .sb-tag b{font:400 16px/1 var(--f-disp);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+#sb .sb-tag small{font:700 8.5px/1 var(--f-text);letter-spacing:.09em;color:var(--c-mute);text-transform:uppercase;white-space:nowrap}
+#sb .sb-tag small:empty{display:none}
+
+/* team tiles (#sb.uv puts the user's away game in TV order: away left, home right) */
+#tmA{order:1}#tmH{order:2}#sb.uv #tmH{order:1}#sb.uv #tmA{order:2}#sb .sb-r{order:3}
+#sb .tm{--k:#fff;position:relative;flex:1 1 0;min-width:0;display:flex;align-items:stretch;color:var(--k);
+  background:linear-gradient(180deg,color-mix(in srgb,var(--c) 84%,#fff) 0%,var(--c) 34%,color-mix(in srgb,var(--c) 78%,#000) 100%);box-shadow:inset -1px 0 0 rgba(0,0,0,.4)}
+#sb .tm::after{content:"";position:absolute;left:var(--sb-h);right:0;bottom:0;height:6px;background:rgba(0,0,0,.26);pointer-events:none}
+#sb .tlg{flex:none;width:var(--sb-h);display:grid;place-items:center;position:relative;background:color-mix(in srgb,var(--c) 30%,#0A0B0D);box-shadow:inset -1px 0 0 rgba(0,0,0,.45)}
+#sb .lg{position:absolute;inset:6px;width:calc(100% - 12px);height:calc(100% - 12px);object-fit:contain;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+#sb .mono{display:grid;place-items:center;width:calc(var(--sb-h) - 14px);height:calc(var(--sb-h) - 14px);border-radius:3px;font:400 calc(var(--sb-h)*.42)/1 var(--f-disp);font-style:normal;letter-spacing:.02em;color:var(--k);
+  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 80%,#fff),var(--c) 55%);box-shadow:inset 0 0 0 2px var(--c2)}
+#sb .tm.haslg .mono{display:none}
+#sb .tm.haslg .tlg{background:color-mix(in srgb,var(--c) 80%,#000);box-shadow:none}
+#sb .nm{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 3px 6px 8px}
+#sb .r1{display:flex;align-items:baseline;gap:3px;min-width:0}
+#sb .rk{font:700 10px/1 var(--f-text);opacity:.82;flex:none}
+#sb .rk:empty{display:none}
+#sb .ab{font:400 24px/.92 var(--f-disp);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;min-width:0}
+#sb .rec{font:600 9.5px/1 var(--f-text);letter-spacing:.03em;opacity:.8;white-space:nowrap;overflow:hidden}
+#sb .pos{flex:none;align-self:center;width:14px;height:8.5px;margin-left:2px;opacity:0;transform:translateX(-3px);transition:opacity var(--t-med),transform var(--t-med) var(--ease-out)}
+#sb .pos svg{display:block;width:100%;height:100%;overflow:visible}
+#sb .pos ellipse{fill:#7A3E17;stroke:#fff;stroke-width:1.3}
+#sb .pos path{fill:none;stroke:#fff;stroke-width:1.1}
+#sb .tm.has .pos{opacity:1;transform:none}
+#sb .sc{flex:none;width:calc(var(--sb-h) + 2px);position:relative;display:grid;place-items:center;overflow:hidden;background:rgba(0,0,0,.2);box-shadow:inset 1px 0 0 rgba(255,255,255,.07);perspective:120px}
+#sb .sv{grid-area:1/1;display:block;font:400 37px/1 var(--f-num);letter-spacing:.01em;padding-bottom:3px;backface-visibility:hidden}
+#sb .sv.out{animation:sbFlipOut .11s ease-in forwards}
+#sb .sv.in{animation:sbFlipIn .14s var(--ease-out) .1s both}
+@keyframes sbFlipOut{to{transform:rotateX(90deg);opacity:.2}}
+@keyframes sbFlipIn{from{transform:rotateX(-90deg);opacity:.2}}
+#sb .tm.flash::before{content:"";position:absolute;inset:0;z-index:2;pointer-events:none;background:color-mix(in srgb,var(--c) 45%,#fff);animation:sbFlash .5s var(--ease-out) forwards}
+@keyframes sbFlash{from{opacity:.9}to{opacity:0}}
+/* timeouts: three bars on the rail under the tile; a used one fades out with a flash */
+#sb .tos{position:absolute;left:calc(var(--sb-h) + 8px);bottom:2px;display:flex;gap:3px;z-index:1}
+#sb .tos i{width:12px;height:2px;background:currentColor;transition:opacity .25s}
+#sb .tos i.u{opacity:.2}
+#sb .tos i.go{animation:sbPip .7s var(--ease-out)}
+@keyframes sbPip{0%,35%{opacity:1;background:var(--sb-flag);box-shadow:0 0 6px var(--sb-flag)}100%{opacity:.2}}
+
+/* state: quarter over the game clock, play clock beside it (red at 5 or less) */
+#sb .sb-r{flex:none;position:relative;display:flex;align-items:stretch}
+#sb .sb-st{flex:none;display:flex;align-items:stretch;box-shadow:inset -1px 0 0 var(--sb-rule)}
+#sb .qc{position:relative;width:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+#qtr{font:700 9.5px/1 var(--f-text);letter-spacing:.09em;color:var(--c-mute);text-transform:uppercase}
+#gclk{font:400 28px/1 var(--f-num);letter-spacing:.01em}
+#sb .qc:has(#gclk.run)::after{content:"";position:absolute;top:7px;right:7px;width:4px;height:4px;border-radius:50%;background:var(--c-win)}
+#sb .pc{flex:none;width:34px;display:grid;place-items:center;font:400 20px/1 var(--f-num);background:rgba(255,255,255,.05);box-shadow:inset 1px 0 0 var(--sb-rule);transition:background var(--t-fast),color var(--t-fast)}
+#sb .pc.off{color:var(--c-faint)}
+#sb .pc.low{background:var(--c-loss);color:#fff}
+/* down & distance; ball spot, stamina and wind under it */
+#sb .sb-dd{flex:none;width:108px;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 10px;position:relative}
+#dd{font:400 22px/1 var(--f-disp);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+#sb.late #dd{color:var(--c-acc)}
+#sb .sb-dd small{display:flex;align-items:center;gap:6px;font:600 9.5px/1 var(--f-text);letter-spacing:.03em;color:var(--c-mute);white-space:nowrap;overflow:hidden}
+#spot{color:var(--sb-ink)}
+#sb.rz .sb-dd{box-shadow:inset 3px 0 0 var(--c-loss)}#sb.rz #spot{color:#FF8D91}
+#wxs:empty,#stam:empty{display:none}#wxs svg{width:10px;height:10px;vertical-align:-1px}#wxs .warr{margin-left:2px}#wxs .warr svg{width:9px;height:9px}
+
+/* message takeover over the state + down modules */
+#sb .sb-msg{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:3px;padding:0 12px;overflow:hidden;
+  background:var(--mc,#24262B);color:var(--mk,#fff);clip-path:inset(0 0 0 100%);transition:clip-path .2s var(--ease-out);visibility:hidden}
+#sb .sb-msg.on{clip-path:inset(0);visibility:visible}
+#sb .sb-msg.off{clip-path:inset(0 100% 0 0);visibility:visible;transition-duration:.16s}
+#sb .sb-msg.dd{left:auto;width:108px}
+#sb .sb-msg b{font:400 23px/1 var(--f-disp);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb .sb-msg small{font:600 9.5px/1.1 var(--f-text);letter-spacing:.04em;text-transform:uppercase;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb .sb-msg .tvl{--s:22px;position:absolute;right:10px;top:50%;margin-top:-11px}
+#sb .sb-msg:has(.tvl){padding-right:40px}
+/* touchdown: the scoring team's colour wipes across the whole bar with its logo */
+#sb .sb-td{position:absolute;inset:0;z-index:4;display:flex;align-items:center;gap:12px;padding:0 16px 0 7px;color:var(--k,#fff);
+  background:linear-gradient(100deg,color-mix(in srgb,var(--c) 78%,#fff) 0%,var(--c) 32%,color-mix(in srgb,var(--c) 72%,#000) 100%);clip-path:inset(0 100% 0 0);transition:clip-path .24s var(--ease-out);visibility:hidden}
+#sb .sb-td.on{clip-path:inset(0);visibility:visible}
+#sb .sb-td.off{clip-path:inset(0 0 0 100%);visibility:visible;transition-duration:.2s}
+#sb .sb-td .tvl{--s:calc(var(--sb-h) - 6px)}
+#sb .sb-td .tvl.hl{filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+#sb .sb-td .tvl img{inset:0;width:100%;height:100%}
+#sb .sb-td .tt{display:flex;flex-direction:column;gap:3px;min-width:0}
+#sb .sb-td b{font:400 32px/.95 var(--f-disp);letter-spacing:.05em;text-transform:uppercase;white-space:nowrap}
+#sb .sb-td small{font:700 9.5px/1 var(--f-text);letter-spacing:.09em;text-transform:uppercase;opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb .sb-td .pts{margin-left:auto;font:400 34px/1 var(--f-num);letter-spacing:.02em}
+#sb .sb-td::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);transform:translateX(-100%);pointer-events:none}
+#sb .sb-td.on::after{animation:sbSheen .6s var(--ease-out) .2s}
+@keyframes sbSheen{to{transform:translateX(100%)}}
+
+/* the rail on the bar's inner edge: drive tracker (left), slide-out tab (right) */
+#sb .sb-rail{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;min-height:0;overflow:hidden}
+#sb .sb-rail:has(>:not([hidden])){padding:3px 0}
+:root[data-bug="bottom"] #sb .sb-rail{align-items:flex-start}
+#drv{height:20px;display:flex;align-items:center;gap:6px;padding:0 9px 0 6px;border-radius:3px;background:rgba(14,15,18,.92);box-shadow:0 0 0 1px rgba(0,0,0,.5);font:700 9.5px/1 var(--f-text);letter-spacing:.07em;text-transform:uppercase;color:#CFCDC7;white-space:nowrap;margin:0}
+#sb .sb-tab{margin-left:auto;height:22px;max-width:72%;display:flex;align-items:center;gap:7px;padding:0 10px 0 8px;border-radius:3px;background:var(--sb-flag);color:var(--sb-flag-ink);box-shadow:0 0 0 1px rgba(0,0,0,.45);white-space:nowrap;overflow:hidden}
+#sb .sb-tab svg{width:13px;height:13px;flex:none}
+#sb .sb-tab b{font:400 17px/1 var(--f-disp);letter-spacing:.05em;text-transform:uppercase}
+#sb .sb-tab span{font:700 10px/1 var(--f-text);letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis}
+#sb .sb-tab.in{animation:sbTabDn .2s var(--ease-out)}
+:root[data-bug="bottom"] #sb .sb-tab.in{animation-name:sbTabUp}
+@keyframes sbTabDn{from{transform:translateY(-110%)}}
+@keyframes sbTabUp{from{transform:translateY(110%)}}
+
+/* ---------- portrait: the compact bar across the top ---------- */
+@media (max-width:540px){
+  :root{--sb-h:42px}
+  #sb{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));width:auto;max-width:none;transform:scale(var(--sb-k))}
+  #sb .sb-tag{display:none}
+  #sb .tlg{width:32px}
+  #sb .tm::after{left:32px;height:5px}
+  #sb .tos{left:37px;bottom:1.5px;gap:2px}#sb .tos i{width:8px}
+  #sb .mono{width:26px;height:26px;font-size:16px}
+  #sb .lg{inset:3px;width:calc(100% - 6px);height:calc(100% - 6px)}
+  #sb .nm{padding:0 2px 5px 5px;gap:2px}
+  #sb .pos{position:absolute;left:21px;bottom:6px;z-index:2;width:13px;height:8px;margin:0;filter:drop-shadow(0 1px 1px rgba(0,0,0,.6))}
+  #sb .ab{font-size:20px}
+  #sb .rk{font-size:9px}
+  #sb .rec{font-size:8.5px;letter-spacing:.01em}
+  #sb .sc{width:33px}
+  #sb .sv{font-size:31px}
+  #sb .qc{width:46px}
+  #gclk{font-size:23px}
+  #qtr{font-size:8.5px;letter-spacing:.06em}
+  #sb .qc:has(#gclk.run)::after{top:5px;right:4px}
+  #sb .pc{width:24px;font-size:16px}
+  #sb .sb-dd{width:72px;padding:0 6px}
+  #dd{font-size:18px}
+  #sb .sb-dd small{font-size:8.5px;gap:4px}
+  #wxs{display:none}
+  #sb .sb-msg{padding:0 8px}#sb .sb-msg.dd{width:72px}
+  #sb .sb-msg b{font-size:19px}#sb .sb-msg.long b{font-size:16px}#sb .sb-msg small{font-size:8.5px}
+  #sb .sb-msg .tvl{display:none}#sb .sb-msg:has(.tvl){padding-right:8px}
+  #sb .sb-td{gap:9px;padding:0 12px 0 5px}
+  #sb .sb-td b{font-size:27px}
+  #sb .sb-td .pts{font-size:28px}
+  #sb .sb-tab{max-width:100%}
+}
+@media (max-width:359px){#sb .rec{display:none}#sb .sb-dd{width:66px}}
+
+/* ---------- the HUD around the bug ---------- */
+/* top (portrait, or landscape set to top): chips, toasts and cards stack under the bar via --sbB (07c sbMeasure) */
+/* bottom (landscape): prompts and bars sit above the bug via --sbT; the action buttons clear its height on the right */
+:root[data-bug="bottom"] #snapBar,:root[data-bug="bottom"] #hint,:root[data-bug="bottom"] #apBar,:root[data-bug="bottom"] #replayBar,:root[data-bug="bottom"] #photoBar{bottom:calc(var(--sbT) + 8px);margin-bottom:0}
+:root[data-bug="bottom"] #hotBar,:root[data-bug="bottom"] #adjMenu{bottom:calc(var(--sbT) + 70px);margin-bottom:0}
+:root[data-bug="bottom"] #actBar{bottom:calc(var(--sb-bot) + var(--sb-h)*var(--sb-k) + 10px);margin-bottom:0}
+:root[data-bug="bottom"] #bulletBtn{bottom:calc(var(--sb-bot) + var(--sb-h)*var(--sb-k) + 66px)}
+:root[data-bug="bottom"] #celebBtn{top:auto;bottom:calc(var(--sbT) + 14px)}
+:root[data-bug="bottom"] #wm{bottom:calc(var(--sb-bot) + 2px)}
+:root[data-bug="bottom"] #opt,:root[data-bug="bottom"] #celebSheet{padding-bottom:calc(var(--sbT) + 10px)}
+:root[data-bug="bottom"] body:has(#kick:not([hidden])) #sb,:root[data-bug="bottom"] body:has(#call:not([hidden])) #sb{visibility:hidden}
+:root[data-bug="bottom"] #kmBan{top:calc(env(safe-area-inset-top,0px) + 12px)}
+:root[data-bug="bottom"] #kmOv{padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(var(--sbT) + 8px)}
+body:has(#snapBar:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0px) + 76px)}
+:root[data-bug="bottom"] body:has(#snapBar:not([hidden])) #hint{bottom:calc(var(--sbT) + 68px)}
+:root[data-bug="bottom"] #banner{top:26%}
+@media (min-width:541px){:root[data-bug="top"] #rcard,:root[data-bug="top"] #wpG{top:calc(var(--sbB,72px) + 8px)}}   /* landscape set to top: cards clear the bar */
+:root.photo #sb{display:none!important}
+@media (prefers-reduced-motion:reduce){#sb .sv.out,#sb .sv.in,#sb .tm.flash::before,#sb .tos i.go,#sb .sb-td.on::after,#sb .sb-tab.in{animation:none}#sb .sb-msg,#sb .sb-td{transition:none}}

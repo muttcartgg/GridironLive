@@ -68,6 +68,7 @@ function banner(m,c,sub){
   b.querySelector('.bl').innerHTML=k==='miss'?'<i class="x"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><path d="M6 6l12 12M18 6 6 18"/></svg></i>':t?tvLogo(t,'b'):'';b.querySelector('.bl').hidden=!t&&k!=='miss';
   b.querySelector('.ki').textContent=kicker;b.querySelector('.ki').hidden=!kicker;b.querySelector('.ti').textContent=title;
   b.querySelector('.su').textContent=su;b.querySelector('.su').hidden=!su;const p=b.querySelector('.pt');p.textContent=pts;p.hidden=!pts;
+  if(k==='td'&&t)SBUG.td(t,/pick six/i.test(m)?'Pick six · '+t.city:'',pts);else if((k==='int'||k==='fum'||k==='downs')&&t)SBUG.msg(title,su||t.abbr+' ball',t.c1,2600,{team:t});   // the score bug's own takeovers (07c)
   b.classList.remove('on');void b.offsetWidth;b.classList.add('on');bannerAt=performance.now();clearTimeout(banner.t);banner.t=setTimeout(()=>b.classList.remove('on'),k==='td'||k==='two'?2700:2300);
 }
 /* hints: short tips that fade; the same tip is shown at most four times per session */
@@ -89,23 +90,22 @@ function tvLogo(t,cls){const u=typeof teamLogoURL==='function'?teamLogoURL(t,tru
 function hud(){
   if(!S.home)return;const h=$('#tmH'),a=$('#tmA'),sb=$('#sb');
   sb.classList.toggle('uv',!S.userHome&&!S.neutral);
-  [[h,S.home],[a,S.away]].forEach(([el,t])=>{if(el.dataset.t!==t.abbr+t.c1){el.dataset.t=t.abbr+t.c1;el.style.setProperty('--c',t.c1);el.style.setProperty('--c2',t.c2||'#fff');el.style.setProperty('--k',inkOn(t.c1));el.querySelector('.mono').textContent=monoOf(t);el.querySelector('.ab').textContent=t.abbr}});
+  [[h,S.home],[a,S.away]].forEach(([el,t])=>{if(el.dataset.t!==t.abbr+t.c1){el.dataset.t=t.abbr+t.c1;el.style.setProperty('--c',t.c1);el.style.setProperty('--c2',t.c2||'#fff');el.style.setProperty('--k',inkOn(t.c1));el.querySelector('.mono').textContent=monoOf(t);el.querySelector('.ab').textContent=t.abbr;delete el.querySelector('.sc').dataset.v;sbTag()}});
   if(typeof teamLogoURL==='function')[[h,S.home],[a,S.away]].forEach(([el,t])=>{const im=el.querySelector('.lg');if(!im)return;const u=teamLogoURL(t,true);if(im.dataset.u!==u){im.dataset.u=u;if(u){im.hidden=false;im.src=u}else{im.hidden=true;im.removeAttribute('src')}}el.classList.toggle('haslg',!!u&&!im.hidden)});
   h.querySelector('.rk').textContent=rankOf(S.home.id)||'';a.querySelector('.rk').textContent=rankOf(S.away.id)||'';
   h.querySelector('.rec').textContent=recStr(S.home);a.querySelector('.rec').textContent=recStr(S.away);
-  const tos=n=>S.ot?'':[0,1,2].map(i=>`<i class="${i<n?'':'u'}"></i>`).join('');[[h,S.to[0]],[a,S.to[1]]].forEach(([el,n])=>{const k=S.ot?'ot':String(n);const e=el.querySelector('.tos');if(e.dataset.n!==k){e.dataset.n=k;e.innerHTML=tos(n)}});
-  [h,a].forEach((el,i)=>{const s=el.querySelector('.sc');if(+s.dataset.v!==S.score[i]){const from=+s.dataset.v||0;s.dataset.v=S.score[i];if(S.score[i]>lastScore[i]){countUp(s,from,S.score[i]);flyout(el,'+'+(S.score[i]-lastScore[i]))}else s.textContent=S.score[i]}});
+  /* timeouts: three bars under each tile; the one just used flashes out (96-scorebug .go) */
+  [[h,S.to[0]],[a,S.to[1]]].forEach(([el,n])=>{const k=S.ot?'ot':String(n),e=el.querySelector('.tos');if(e.dataset.n===k)return;const was=+e.dataset.n;e.dataset.n=k;
+    e.innerHTML=S.ot?'':[0,1,2].map(i=>`<i class="${i<n?'':'u'}${i>=n&&i<was?' go':''}"></i>`).join('')});
+  [h,a].forEach((el,i)=>sbScore(el,S.score[i],S.score[i]>lastScore[i]));
   lastScore=S.score.slice();h.classList.toggle('has',S.poss==='home');a.classList.toggle('has',S.poss==='away');
   $('#qtr').textContent=S.ot?(S.otRound>1?S.otRound:'')+'OT':qName(S.q);$('#gclk').textContent=S.ot?'—':fmtClock(S.clock);
-  const pc=$('#pclk'),show=S.phase==='presnap'&&!S.conv&&uOff();pc.textContent=show?':'+String(Math.ceil(S.playClock)).padStart(2,'0'):':--';pc.classList.toggle('low',show&&S.playClock<6);pc.classList.toggle('off',!show);
-  $('#dd').textContent=ddText();$('#spot').textContent=S.conv?'Conversion':spotLabel(S.los);sb.classList.toggle('rz',!S.conv&&S.los>=90&&S.phase!=='over');
+  const pc=$('#pclk'),show=S.phase==='presnap'&&!S.conv&&uOff(),pcs=Math.ceil(S.playClock);pc.textContent=show?':'+String(pcs).padStart(2,'0'):':--';pc.classList.toggle('low',show&&pcs<=5);pc.classList.toggle('off',!show);
+  $('#dd').textContent=ddText();$('#spot').textContent=S.conv?'Conversion':spotLabel(S.los);sb.classList.toggle('rz',!S.conv&&S.los>=90&&S.phase!=='over');sb.classList.toggle('late',!S.conv&&S.down>=3);
   $('#gclk').classList.toggle('run',!!S.clockRun&&!S.ot);$('#toBtn').hidden=!(S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0&&$('#call').hidden);   // an open call sheet carries its own Timeout button (05g)
   {const lv=S.phase==='live';if(lv!==hud.lv){hud.lv=lv;document.documentElement.classList.toggle('lv',lv)}}   // ball live: only the score bug (10-ui)
   if(typeof BC!=='undefined')BC.hud();
-  const st=teamStamina();const se=$('#stam');se.textContent='STA '+Math.round(st*100)+'%';se.style.color=st>.85?'var(--ok)':st>.75?'var(--warn)':'var(--hot)';
-  const wx=windHTML();if($('#wxs').dataset.w!==wx){$('#wxs').dataset.w=wx;$('#wxs').innerHTML=wx}
+  const st=teamStamina(),se=$('#stam'),sv=st<.9?'STA '+Math.round(st*100)+'%':'';if(se.textContent!==sv){se.textContent=sv;se.style.color=st>.85?'':st>.75?'var(--warn)':'var(--hot)'}
+  const wx=S.wind&&S.wind.mph>=10?windHTML().replace(/^[\s\S]*?(\d+ MPH)/,'$1'):'';if($('#wxs').dataset.w!==wx){$('#wxs').dataset.w=wx;$('#wxs').innerHTML=wx}
 }
 
-/* score bug: count the new score up and slide the points scored over the team's cell */
-function countUp(el,from,to){const t0=performance.now(),d=650;const f=now=>{const k=Math.min(1,(now-t0)/d);el.textContent=Math.round(from+(to-from)*k);if(k<1)requestAnimationFrame(f)};requestAnimationFrame(f)}
-function flyout(el,txt){el.querySelectorAll('.fly').forEach(x=>x.remove());const f=document.createElement('span');f.className='fly';f.textContent=txt;el.appendChild(f);el.classList.remove('scored');void el.offsetWidth;el.classList.add('scored');setTimeout(()=>{f.remove();el.classList.remove('scored')},1700)}
