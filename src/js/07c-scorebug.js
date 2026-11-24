@@ -31,11 +31,15 @@ function sbTagText(){
   let conf='';try{conf=S.home&&S.away&&g.h!=null&&isConfGame(g)?sbConf(T(g.h).conf):''}catch(e){conf=''}
   return conf?[conf,wk]:[wk||'Live',''];
 }
+/* ordinals as smaller caps on the baseline (2ND, 4TH & 2): escaped text with the suffix wrapped in .o (96-scorebug) */
+const sbOrd=s=>esc(s).replace(/(\d)(st|nd|rd|th)\b/gi,'$1<small class="o">$2</small>');
+/* set markup only when it changed (hud runs every frame); true when it did */
+function sbSet(el,h){if(!el||el._h===h)return false;el._h=h;el.innerHTML=h;return true}
 function sbTag(){const el=$('#sbTag');if(!el)return;const [a,b]=sbTagText();el.querySelector('b').textContent=a;el.querySelector('small').textContent=b}
 /* score cell: flip on a new score (anim), else just set it. Under the touchdown wipe the old number stays and flips
    when the wipe leaves. */
 function sbScore(el,v,anim){
-  const sc=el.querySelector('.sc');if(sc.dataset.v===String(v))return;const first=sc.dataset.v==null;sc.dataset.v=v;
+  const sc=el.querySelector('.sc');if(sc.dataset.v===String(v))return;const first=sc.dataset.v==null;sc.dataset.v=v;sc.classList.toggle('w3',String(v).length>2);
   if(first||!anim||document.hidden){sc.innerHTML=`<span class="sv">${v}</span>`;return}
   if(SBUG.tdOn){SBUG.pend.add(el);return}
   sbFlip(el,v);
@@ -55,7 +59,7 @@ const SBUG={
     if(!this.on())return;o=o||{};const el=$('#sbMsg');clearTimeout(this.mT);clearTimeout(this.mT2);
     const ink=String(bg||'').startsWith('#')?inkOn(bg):'#fff';
     el.className='sb-msg'+(o.dd?' dd':'')+(String(title).length>14?' long':'');el.style.setProperty('--mc',bg||'#24262B');el.style.setProperty('--mk',ink);
-    el.innerHTML=`<b>${esc(title)}</b>${sub?`<small>${esc(sub)}</small>`:''}${o.team&&!o.dd?tvLogo(o.team,'xs'):''}`;
+    el.innerHTML=`<b>${sbOrd(title)}</b>${sub?`<small>${esc(sub)}</small>`:''}${o.team&&!o.dd?tvLogo(o.team,'xs'):''}`;
     void el.offsetWidth;el.classList.add('on');
     this.mT=setTimeout(()=>{el.classList.remove('on');el.classList.add('off');this.mT2=setTimeout(()=>{el.className='sb-msg'+(o.dd?' dd':'')},180)},ms||2200);
   },
