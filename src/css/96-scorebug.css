@@ -164,7 +164,7 @@
 @media (min-width:541px) and (max-width:740px){#sb .sb-tag{display:none}}
 /* ---------- portrait: the compact bar across the top ---------- */
 @media (max-width:540px){
-  :root{--sb-h:42px;--sb-lgw:34px;--sb-lg:40px;--sb-sc:33px;--sb-qc:45px;--sb-pc:24px;--sb-dd:72px}
+  :root{--sb-h:42px;--sb-lgw:34px;--sb-lg:40px;--sb-sc:36px;--sb-qc:45px;--sb-pc:24px;--sb-dd:72px}
   #sb{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));width:auto;max-width:none;transform:scale(var(--sb-k))}
   #sb .sb-tag{display:none}
   #sb .mono{width:28px;height:28px;font-size:16px}
@@ -175,7 +175,7 @@
   #sb .r2{gap:4px}
   #sb .rec{font-size:8.5px;letter-spacing:.02em}
   #sb .tos{gap:2px}#sb .tos i{width:6px;height:2.5px}
-  #sb .sv{font-size:30px}
+  #sb .sv{font-size:29px}
   #sb .sc.w3 .sv{font-size:22px}
   #gclk{font-size:20px}
   #qtr{font-size:11px}

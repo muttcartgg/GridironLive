@@ -206,7 +206,7 @@ function renderCallCore(){
   $('#callRow').innerHTML=`<div class="cs-bar core"><div class="cs-tabs cs-groups">${[['run','Run'],['pass','Pass'],['special','Special']].map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===g}">${l}</button>`).join('')}</div>`+
     `<div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Run the last play again, straight to the snap">Repeat<small>${esc(S.lastPc.name)}</small></button>`:''}${toQuick()}</div></div>`+
     `<div class="cs-scroll"><div class="cs-picks core" aria-label="Coach's picks">${picks.map((x,i)=>`<button class="cp" data-pid="${x.p.id}"${i?'':' data-coach="1"'}><b><i>★</i> ${esc(x.p.name)}</b><small>${esc(x.short)}</small></button>`).join('')}</div>${kicks}`+
-    `<div class="pbgrid core">${list.map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b>${esc(p.name)}</b><small>${esc(p.tag)}</small></button>`).join('')}</div></div><div class="cs-more" aria-hidden="true">More ▾</div>`;
+    `<div class="pbgrid core">${list.map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b style="--n:${String(p.name).length}">${esc(p.name)}</b><small>${esc(p.tag)}</small></button>`).join('')}</div></div><div class="cs-more" aria-hidden="true">More ▾</div>`;
   const row=$('#callRow');
   row.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{ac();CALL_TAB=b.dataset.tab;renderCall()});
   const nb=row.querySelector('[data-nh]');if(nb)nb.onclick=()=>{ac();repeatLast()};
@@ -250,7 +250,7 @@ function renderCall(){
   if(CALL_TAB==='special')body=specials.map(([k,t,s])=>`<button class="play ${k.startsWith('fake')?'warn':'alt'}" data-sp="${k}"><b>${t}</b><small>${s}</small></button>`).join('');
   else{const list=PLAYBOOK.filter(p=>p.tab===CALL_TAB&&!(S.conv&&p.hail)),fams=[...new Set(list.map(p=>FORMS[p.form].g))];if(CALL_FORM&&!fams.includes(CALL_FORM))CALL_FORM='';
     if(fams.length>1)chips=`<button class="chip" data-fm="" aria-pressed="${!CALL_FORM}">All</button>`+fams.map(f=>`<button class="chip" data-fm="${f}" aria-pressed="${CALL_FORM===f}">${f}</button>`).join('');
-    body=list.filter(p=>!CALL_FORM||FORMS[p.form].g===CALL_FORM).map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b>${esc(p.name)}</b><small>${esc(p.form)}${p.run&&p.run.rpo?' · RPO':p.run&&(p.run.read||p.run.triple||p.run.option)?' · option':p.two?' · 2-min':''}</small></button>`).join('')}
+    body=list.filter(p=>!CALL_FORM||FORMS[p.form].g===CALL_FORM).map(p=>`<button class="pcard" data-pid="${p.id}">${playSVG(p)}<b style="--n:${String(p.name).length}">${esc(p.name)}</b><small>${esc(p.form)}${p.run&&p.run.rpo?' · RPO':p.run&&(p.run.read||p.run.triple||p.run.option)?' · option':p.two?' · 2-min':''}</small></button>`).join('')}
   const picks=coachPicks(3),nh=S.lastPc&&!S.conv&&S.down<4;
   $('#callRow').innerHTML=`<div class="cs-bar"><div class="cs-tabs">${tabs.map(([k,l])=>`<button data-tab="${k}" aria-pressed="${k===CALL_TAB}">${l}</button>`).join('')}</div><div class="cs-quick">${nh?`<button class="cs-q nh" data-nh="1" title="Repeat the last play at the line">No huddle<small>${esc(S.lastPc.name)}</small></button>`:''}<button class="cs-q coach" data-coach="1">Coach's pick<small>${esc(picks[0]?picks[0].p.name:'')}</small></button>${toQuick()}</div></div>`+
     (chips?`<div class="cs-chips">${chips}</div>`:'')+
