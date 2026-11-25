@@ -2802,6 +2802,8 @@ body:has(#snapBar:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0p
 :root[data-net="pyl"][data-ev] #sb .sbx{box-shadow:none}
 @media (max-width:540px){#sb .sb-ev{height:16px}#sb .sb-ev .el{font-size:calc(10.5px*var(--fk,1));letter-spacing:.1em}:root[data-ev="title"] #sb .sb-ev .el{font-size:calc(11px*var(--fk,1))}}
 @media (prefers-reduced-motion:reduce){:root[data-net] #sb .sb-msg,:root[data-net] #sb .sb-td{transition:none}}
+/* portrait: the network tag lives bottom-right, so it steps aside while the presnap bar or the action buttons sit there */
+:root[data-bug="top"]:has(#snapBar:not([hidden])) #wm,:root[data-bug="top"]:has(#actBar:not([hidden])) #wm{opacity:0;visibility:hidden}
 
 </style>
 </head>
