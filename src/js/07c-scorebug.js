@@ -35,7 +35,7 @@ function sbTagText(){
 const sbOrd=s=>esc(s).replace(/(\d)(st|nd|rd|th)\b/gi,'$1<small class="o">$2</small>');
 /* set markup only when it changed (hud runs every frame); true when it did */
 function sbSet(el,h){if(!el||el._h===h)return false;el._h=h;el.innerHTML=h;return true}
-function sbTag(){const el=$('#sbTag');if(!el)return;const [a,b]=sbTagText();el.querySelector('b').textContent=a;el.querySelector('small').textContent=b}
+function sbTag(){const el=$('#sbTag');if(!el)return;const [a,b]=sbTagText();el.querySelector(':scope>b').textContent=a;el.querySelector(':scope>small').textContent=b}
 /* score cell: flip on a new score (anim), else just set it. Under the touchdown wipe the old number stays and flips
    when the wipe leaves. */
 function sbScore(el,v,anim){
@@ -66,9 +66,9 @@ const SBUG={
   /* touchdown: the scoring team's colour wipes across the bar with its logo, then the new score flips in */
   td(t,sub,pts){
     if(!this.on()||!t)return;const el=$('#sbTD');clearTimeout(this.tT);clearTimeout(this.tT2);
-    el.className='sb-td';el.style.setProperty('--c',t.c1);el.style.setProperty('--k',inkOn(t.c1));
-    el.innerHTML=`${tvLogo(t,'')}<span class="tt"><b>Touchdown</b><small>${esc(sub||t.city+' '+t.name)}</small></span>${pts?`<span class="pts">${esc(pts)}</span>`:''}`;
-    void el.offsetWidth;el.classList.add('on');this.tdOn=true;this.pend.add(sbTile(t));
+    el.className='sb-td';el.style.setProperty('--c',t.c1);el.style.setProperty('--c2',t.c2||'#fff');el.style.setProperty('--k',inkOn(t.c1));el.style.setProperty('--msc',msCols(t)[0]);
+    el.innerHTML=`${tvLogo(t,'')}<span class="tt"><b>Touchdown</b><small>${esc(sub||t.city+' '+t.name)}</small></span><em class="tms">${esc(t.name||'')}</em>${pts?`<span class="pts">${esc(pts)}</span>`:''}`;
+    void el.offsetWidth;sbFitFont(el.querySelector('.tms'),.5);el.classList.add('on');this.tdOn=true;this.pend.add(sbTile(t));
     this.tT=setTimeout(()=>{el.classList.remove('on');el.classList.add('off');
       this.tT2=setTimeout(()=>{el.className='sb-td';this.tdOn=false;this.pend.forEach(x=>sbFlip(x,+x.querySelector('.sc').dataset.v));this.pend.clear()},210)},2500);
   },

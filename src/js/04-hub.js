@@ -282,7 +282,7 @@ function gameHero(g,wi,extra,link){
   const wp=winProb(u,opp,site),sp=pointSpread(u,opp,site),venue=g.neutral?g.site||'Neutral site':(home?u:opp).stadium;
   const side=(t,c)=>{const r=rankOf(t.id);return `<div class="ng-t ${c}"${link?` data-team="${t.id}"`:''}>${badge(t,'xl')}<div class="tx"><small>${r?`<i>#${r}</i> · `:''}${recStr(t)} · ${t.rec.cw}–${t.rec.cl} ${esc(confName(t.conf))}</small><b>${esc(t.city)}</b><em>${esc(t.name)} · OVR ${tOvr99(teamOvr(t))}</em></div></div>`};
   return `<div class="card ng" style="--a:${deepC(u)};--b:${deepC(opp)};--a1:${u.c1};--b1:${opp.c1}">
-    <div class="ng-bar"><span class="gln">GLN</span><span class="ng-wk">${esc(w?w.label:'')} · ${g.neutral?'Neutral':home?'Home':'Away'}</span><span class="ng-ko">${esc(KICK[g.slot]||g.slot||'')} <small>ET</small></span></div>
+    <div class="ng-bar">${netWM(netFor(g),'ng')}<span class="ng-wk">${esc(w?w.label:'')} · ${g.neutral?'Neutral':home?'Home':'Away'}</span><span class="ng-ko">${esc(KICK[g.slot]||g.slot||'')} <small>ET</small></span></div>
     <div class="ng-mu">${side(u,'a')}<div class="ng-mid"><span class="at">${home||g.neutral?'VS':'AT'}</span><span class="ln">${esc(lineStr(u,opp,sp))}</span></div>${side(opp,'b')}</div>
     <div class="ng-wp" style="--w:${(wp*100).toFixed(1)}%"><b>${wpP(wp)}%</b><span class="bar"><i></i><i></i></span><b>${100-wpP(wp)}%</b><em>Win odds</em></div>
     <div class="ng-meta"><span>${WX_ICON[g.wx]||''} ${esc(g.wx||'Clear')} · ${fcTemp(g,wi)}°</span><span>${esc(venue||'')}</span>${gameFlags(LG,g,wi).map(([c,l])=>`<span class="tag ${c}">${esc(l)}</span>`).join('')}</div>
@@ -587,7 +587,7 @@ function hubSettings(){
     +row('Halftime show',tg('setHalf',s.halftime!==false))
     +row('Broadcast graphics',tg('setGfx',s.gfx!==false))
     +row('Replays',seg('setRp',[['ask','Button'],['auto','Automatic'],['off','Off']],s.replay||'ask')),
-     row('Broadcast package',seg('setPkg',[['auto','Auto'],['national','National'],['regional','Regional'],['stream','Streaming']],s.pkg||'auto'))
+     row('Scorebug',seg('setPkg',[['auto','Auto'],...NET_IDS.map(k=>[k,esc(NETS[k].name)])],netForced()||'auto'),'Auto: each game wears the package of the network that carries it')
     +row('Win probability',seg('setWP',[['key','Key moments'],['always','Always'],[0,'Off']],s.wp===false?0:s.wp==='always'?'always':'key'))
     +row('Score ticker',tg('setTk',s.ticker!==false))
     +row('Player cards',tg('setLow',s.lower!==false))
