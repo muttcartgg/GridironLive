@@ -9,6 +9,10 @@ A college football dynasty game for iPhone, presented like a TV broadcast in 3D.
 - **Leagues:** all of FBS and FCS (team colors, real rivalries, strength based on recent results), 32 original schools, or your own team pack. Team packs can include real rosters.
 - **Saves:** 5 slots (compressed), autosave at every snap, resume a game mid-play, backup files (Files app) and save codes.
 
+## Version 13.3: broadcast type
+- Score bug restyled like a TV college-football bug, same size and place: a heavy, slightly condensed sports face (Barlow Semi Condensed 700/800) for team names, scores, clock and down, with ordinals in smaller caps (2ND, 4TH & 2); team-colour panels with a fine grain, a top-lit gradient and a bright top edge; bigger logos that stand a little proud of the bar; timeout dashes under the team name beside the record; a dark clock module with crisp etched rules and a yellow play clock.
+- The same face replaces League Gothic as the display font across the menus, banners and cards (League Gothic stays only for paint in the 3D stadium). Long play names, pregame team names and banner titles step down to fit.
+
 ## Version 13.2: TV scoreboard and broadcast menus
 - New score bug: a TV scoreboard bar along the bottom centre in landscape (a compact bar across the top in portrait) with a game tag, both teams' tiles (logo or monogram, rank, abbreviation, record, score, timeout bars, possession football), the quarter, game clock and play clock (red at :05), and the down and distance with the ball spot. The old strip under the bug is folded in; stamina shows once it drops below 90%, wind from 10 mph.
 - Takeovers inside the bug: score flips with a flash of the team colour, a touchdown wipe with the logo, 1st down, a yellow flag slide-out with the foul, timeout (the used bar flashes out), two-minute warning, end of quarter, turnovers and replay reviews. Settings › Score bug in landscape: Bottom (default) or Top.

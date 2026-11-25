@@ -66,7 +66,7 @@ function banner(m,c,sub){
   const col=k==='miss'?'#2A313C':c||'#2A313C';
   b.className='k-'+k;b.style.setProperty('--bc',col);b.style.setProperty('--btc',k==='miss'?'#fff':String(col).startsWith('#')?inkOn(col):'#fff');if(t){b.style.setProperty('--b2',t.c2||'#fff')}else b.style.removeProperty('--b2');
   b.querySelector('.bl').innerHTML=k==='miss'?'<i class="x"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><path d="M6 6l12 12M18 6 6 18"/></svg></i>':t?tvLogo(t,'b'):'';b.querySelector('.bl').hidden=!t&&k!=='miss';
-  b.querySelector('.ki').textContent=kicker;b.querySelector('.ki').hidden=!kicker;b.querySelector('.ti').textContent=title;
+  b.querySelector('.ki').textContent=kicker;b.querySelector('.ki').hidden=!kicker;b.querySelector('.ti').textContent=title;b.style.setProperty('--n',String(title).length);
   b.querySelector('.su').textContent=su;b.querySelector('.su').hidden=!su;const p=b.querySelector('.pt');p.textContent=pts;p.hidden=!pts;
   if(k==='td'&&t)SBUG.td(t,/pick six/i.test(m)?'Pick six · '+t.city:'',pts);else if((k==='int'||k==='fum'||k==='downs')&&t)SBUG.msg(title,su||t.abbr+' ball',t.c1,2600,{team:t});   // the score bug's own takeovers (07c)
   b.classList.remove('on');void b.offsetWidth;b.classList.add('on');bannerAt=performance.now();clearTimeout(banner.t);banner.t=setTimeout(()=>b.classList.remove('on'),k==='td'||k==='two'?2700:2300);
@@ -90,7 +90,7 @@ function tvLogo(t,cls){const u=typeof teamLogoURL==='function'?teamLogoURL(t,tru
 function hud(){
   if(!S.home)return;const h=$('#tmH'),a=$('#tmA'),sb=$('#sb');
   sb.classList.toggle('uv',!S.userHome&&!S.neutral);
-  [[h,S.home],[a,S.away]].forEach(([el,t])=>{if(el.dataset.t!==t.abbr+t.c1){el.dataset.t=t.abbr+t.c1;el.style.setProperty('--c',t.c1);el.style.setProperty('--c2',t.c2||'#fff');el.style.setProperty('--k',inkOn(t.c1));el.querySelector('.mono').textContent=monoOf(t);el.querySelector('.ab').textContent=t.abbr;delete el.querySelector('.sc').dataset.v;sbTag()}});
+  [[h,S.home],[a,S.away]].forEach(([el,t])=>{if(el.dataset.t!==t.abbr+t.c1){el.dataset.t=t.abbr+t.c1;el.style.setProperty('--c',t.c1);el.style.setProperty('--c2',t.c2||'#fff');el.style.setProperty('--k',inkOn(t.c1));el.querySelector('.mono').textContent=monoOf(t);const ab=el.querySelector('.ab');ab.textContent=t.abbr;ab.dataset.n=String(t.abbr).length;el.classList.toggle('lt',inkOn(t.c1)!=='#FFFFFF');delete el.querySelector('.sc').dataset.v;sbTag()}});
   if(typeof teamLogoURL==='function')[[h,S.home],[a,S.away]].forEach(([el,t])=>{const im=el.querySelector('.lg');if(!im)return;const u=teamLogoURL(t,true);if(im.dataset.u!==u){im.dataset.u=u;if(u){im.hidden=false;im.src=u}else{im.hidden=true;im.removeAttribute('src')}}el.classList.toggle('haslg',!!u&&!im.hidden)});
   h.querySelector('.rk').textContent=rankOf(S.home.id)||'';a.querySelector('.rk').textContent=rankOf(S.away.id)||'';
   h.querySelector('.rec').textContent=recStr(S.home);a.querySelector('.rec').textContent=recStr(S.away);
@@ -99,9 +99,9 @@ function hud(){
     e.innerHTML=S.ot?'':[0,1,2].map(i=>`<i class="${i<n?'':'u'}${i>=n&&i<was?' go':''}"></i>`).join('')});
   [h,a].forEach((el,i)=>sbScore(el,S.score[i],S.score[i]>lastScore[i]));
   lastScore=S.score.slice();h.classList.toggle('has',S.poss==='home');a.classList.toggle('has',S.poss==='away');
-  $('#qtr').textContent=S.ot?(S.otRound>1?S.otRound:'')+'OT':qName(S.q);$('#gclk').textContent=S.ot?'—':fmtClock(S.clock);
+  sbSet($('#qtr'),sbOrd(S.ot?(S.otRound>1?S.otRound:'')+'OT':qName(S.q)));$('#gclk').textContent=S.ot?'—':fmtClock(S.clock);
   const pc=$('#pclk'),show=S.phase==='presnap'&&!S.conv&&uOff(),pcs=Math.ceil(S.playClock);pc.textContent=show?':'+String(pcs).padStart(2,'0'):':--';pc.classList.toggle('low',show&&pcs<=5);pc.classList.toggle('off',!show);
-  $('#dd').textContent=ddText();$('#spot').textContent=S.conv?'Conversion':spotLabel(S.los);sb.classList.toggle('rz',!S.conv&&S.los>=90&&S.phase!=='over');sb.classList.toggle('late',!S.conv&&S.down>=3);
+  {const t=ddText(),e=$('#dd');if(sbSet(e,sbOrd(t)))e.classList.toggle('long',t.length>7&&!/^\d\w\w & \d+$/.test(t))}$('#spot').textContent=S.conv?'Conversion':spotLabel(S.los);sb.classList.toggle('rz',!S.conv&&S.los>=90&&S.phase!=='over');sb.classList.toggle('late',!S.conv&&S.down>=3);
   $('#gclk').classList.toggle('run',!!S.clockRun&&!S.ot);$('#toBtn').hidden=!(S.phase==='presnap'&&S.clockRun&&!S.ot&&S.to[0]>0&&S.clock>0&&$('#call').hidden);   // an open call sheet carries its own Timeout button (05g)
   {const lv=S.phase==='live';if(lv!==hud.lv){hud.lv=lv;document.documentElement.classList.toggle('lv',lv)}}   // ball live: only the score bug (10-ui)
   if(typeof BC!=='undefined')BC.hud();

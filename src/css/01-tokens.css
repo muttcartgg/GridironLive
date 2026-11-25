@@ -14,8 +14,12 @@
                          large areas, never decoration.
      --c-win / --c-loss  results only. Team colours (--team, --c1) fill bands, score bug blocks, primary buttons.
    Type (two families)
-     Display  League Gothic (one weight; any font-weight maps to it, never faux bold), upright, tracking .015em.
-              Scores, clocks, team names, rank numerals, banners, screen titles. Team names and banners in capitals.
+     Display  Barlow Semi Condensed, a heavy, sturdy, slightly condensed sports sans, upright, tabular figures.
+              Two cuts: 700 (Bold) answers every weight up to 749, so the many `font:400 … var(--f-disp)` rules read
+              bold, never faux bold; 750+ is 800 (ExtraBold) for scores, clocks and the score bug. Scores, clocks,
+              team names, rank numerals, banners, screen titles; team names and banners in capitals. Ordinals and
+              units sit in smaller caps on the baseline (2ND, 4TH & 2). White on team colour carries a soft shadow.
+              (League Gothic stays loaded only for paint inside the 3D world: turf numbers, end zones, stadium boards.)
      Text     Libre Franklin 400/500/600/700/800 (a Franklin Gothic revival), sentence case, tabular figures.
               Everything you read or tap; small caps-style labels are 700 at 10-11px with .06em tracking.
      Scale    display 64 · 44 · 30 · 22 · 18      text 17 · 15 · 13 · 11.5
@@ -32,6 +36,8 @@
               reduced motion.
    Icons      one stroke set: 24px grid, 1.75 stroke, square caps where it reads, no emoji.
    ========================================================= */
+@font-face{font-family:'Barlow Semi Condensed';src:url(data:font/woff2;base64,__FONT:barlow-semi-condensed-latin-700-normal.woff2__) format('woff2');font-weight:100 749;font-style:normal;font-display:swap}
+@font-face{font-family:'Barlow Semi Condensed';src:url(data:font/woff2;base64,__FONT:barlow-semi-condensed-latin-800-normal.woff2__) format('woff2');font-weight:750 900;font-style:normal;font-display:swap}
 @font-face{font-family:'League Gothic';src:url(data:font/woff2;base64,__FONT:league-gothic-latin-400-normal.woff2__) format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 @font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-400-normal.woff2__) format('woff2');font-weight:300 450;font-style:normal;font-display:swap}
 @font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-500-normal.woff2__) format('woff2');font-weight:451 550;font-style:normal;font-display:swap}
@@ -43,9 +49,9 @@
   --c-base:#161718;--c-raise:#1E1F21;--c-ctrl:#292A2D;--c-rule:rgba(236,233,226,.12);--c-rule2:rgba(236,233,226,.24);
   --c-chalk:#ECE9E2;--c-mute:#A19E97;--c-faint:#6F6D68;--c-acc:#F2C230;--c-acc-ink:#191402;
   --c-win:#4CB97E;--c-loss:#E5484D;--c-warn:#E9A23B;--c-info:#62A8E5;
-  --f-disp:'League Gothic','Arial Narrow',system-ui,sans-serif;
+  --f-disp:'Barlow Semi Condensed','Arial Narrow',system-ui,sans-serif;
   --f-text:'Libre Franklin',-apple-system,'Segoe UI',Roboto,system-ui,sans-serif;
-  --f-num:'League Gothic','Arial Narrow',system-ui,sans-serif;
+  --f-num:'Barlow Semi Condensed','Arial Narrow',system-ui,sans-serif;
   --fs-d1:64px;--fs-d2:44px;--fs-d3:30px;--fs-d4:22px;--fs-d5:18px;
   --fs-t1:17px;--fs-t2:15px;--fs-t3:13px;--fs-t4:11.5px;
   --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;

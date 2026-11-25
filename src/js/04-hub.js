@@ -610,7 +610,7 @@ function hubSettings(){
   +other.map(c=>sec('x-'+c.replace(/\W+/g,''),esc(c),regs(c,'main'),regs(c,'more'))).join('')
   +sec('about','About',
      `<div class="kv"><span>Version</span><b>7.7</b></div><div class="btns"><button class="btn ghost sm" id="setHelp">How to play</button><button class="btn ghost sm" id="setNew">What’s new</button></div>
-      <p class="note">An original game. School badges use abbreviations, not official logos. League Gothic and Libre Franklin fonts under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
+      <p class="note">An original game. School badges use abbreviations, not official logos. Barlow Semi Condensed, Libre Franklin and League Gothic fonts under the SIL Open Font License. 3D by three.js (MIT License).</p>`,'')
   +`</div>`;
 }
 /* How to play: one card per part of the game, a line per idea */
