@@ -21,7 +21,7 @@
    ========================================================= */
 :root{--sb-h:50px;--sb-w:clamp(500px,72vw,680px);--sb-bot:calc(env(safe-area-inset-bottom,0px) + 8px);--sb-k:1;--sbT:calc(env(safe-area-inset-bottom,0px) + 66px);
   --sb-ink:#F7F6F2;--sb-base:#0B0C0F;--sb-base2:#1C1E23;--sb-rule:rgba(255,255,255,.13);--sb-cut:rgba(0,0,0,.55);--sb-flag:#FFD100;--sb-flag-ink:#171300;
-  --sb-lgw:52px;--sb-lg:58px;--sb-sc:48px;--sb-qc:58px;--sb-pc:30px;--sb-dd:100px;--sb-ms:17.5px;
+  --sb-lgw:52px;--sb-lg:58px;--sb-sc:48px;--sb-qc:58px;--sb-pc:30px;--sb-dd:112px;--sb-ms:17.5px;
   --sbn1:#25272D;--sbn2:#0B0C0E;--sbt1:#24262B;--sbt2:#0E0F12;--sbacc:var(--c-acc);--sbkey:rgba(0,0,0,.7);
   --sb-tsh:0 1px 1px rgba(0,0,0,.55),0 0 6px rgba(0,0,0,.18)}
 :root.ticker{--sb-bot:calc(env(safe-area-inset-bottom,0px) + 30px)}
@@ -68,21 +68,21 @@
   background:linear-gradient(160deg,color-mix(in srgb,var(--c) 75%,#fff),var(--c) 55%,color-mix(in srgb,var(--c) 80%,#000));box-shadow:inset 0 0 0 2px var(--c2),0 2px 4px rgba(0,0,0,.4)}
 #sb .tm.haslg .mono{display:none}
 #sb .sbx:has(.sb-td.on) .lg{opacity:0}
-/* name block: rank + ABBR on top; the mascot in script under it with the record beside it */
+/* name block: rank + ABBR with the record at the right; the mascot in script across the whole line under them */
 #sb .nm{flex:1 1 auto;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-content:center;column-gap:6px;row-gap:2px;padding:1px 4px 0 7px;text-shadow:var(--tsh)}
-#sb .r1{grid-column:1/3;display:flex;align-items:baseline;gap:3px;min-width:0}
+#sb .r1{grid-column:1;grid-row:1;display:flex;align-items:baseline;gap:3px;min-width:0}
 #sb .rk{font:700 12px/1 var(--f-disp);opacity:.88;flex:none}
 #sb .rk:empty{display:none}
 #sb .ab{font:700 21px/.86 var(--f-disp);letter-spacing:.01em;text-transform:uppercase;white-space:nowrap;overflow:hidden;min-width:0}
 #sb .ab[data-n="4"]{font-size:18.5px}#sb .ab[data-n="5"],#sb .ab[data-n="6"]{font-size:16px}
 /* the mascot: brush script, secondary colour, a hard drop so it reads on any team colour; sized down to fit (07d) */
-#sb .ms{grid-column:1;grid-row:2;min-width:0;display:block;white-space:nowrap;overflow:visible;padding:0 2px 0 1px;margin-top:-1px;
+#sb .ms{grid-column:1/3;grid-row:2;min-width:0;display:block;white-space:nowrap;overflow:visible;padding:0 2px 0 1px;margin-top:-1px;
   font:400 calc(var(--sb-ms)*var(--fk,1))/1.12 var(--f-script);letter-spacing:.01em;color:var(--msc,var(--c2));
-  text-shadow:0 1px 0 rgba(0,0,0,.6),0 0 3px rgba(0,0,0,.35);transform:scaleX(var(--fx,1));transform-origin:left center}
+  text-shadow:1.5px 1.5px 0 var(--msh,rgba(0,0,0,.6)),0 0 3px rgba(0,0,0,.3);transform:scaleX(var(--fx,1));transform-origin:left center}
 #sb .tm.lt .ms{text-shadow:0 1px 0 rgba(255,255,255,.4)}
 #sb .ms:empty{display:none}
 #sb .r2{display:contents}
-#sb .rec{grid-column:2;grid-row:2;align-self:center;font:700 9.5px/1 var(--f-text);letter-spacing:.04em;opacity:.9;white-space:nowrap}
+#sb .rec{grid-column:2;grid-row:1;align-self:center;font:700 9.5px/1 var(--f-text);letter-spacing:.04em;opacity:.9;white-space:nowrap}
 /* possession: the football on the logo's lower inner corner, laces up, with a lift (it takes no room from the name) */
 #sb .pos{position:absolute;left:calc(var(--sb-lgw) - 18px);bottom:3px;z-index:3;width:17px;height:10.5px;opacity:0;transform:translateX(-3px);transition:opacity var(--t-med),transform var(--t-med) var(--ease-out);filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
 #sb .pos svg{display:block;width:100%;height:100%;overflow:visible}

@@ -91,7 +91,7 @@ function hud(){
   if(!S.home)return;const h=$('#tmH'),a=$('#tmA'),sb=$('#sb');
   sb.classList.toggle('uv',!S.userHome&&!S.neutral);
   [[h,S.home],[a,S.away]].forEach(([el,t])=>{if(el.dataset.t!==t.abbr+t.c1){el.dataset.t=t.abbr+t.c1;el.style.setProperty('--c',t.c1);el.style.setProperty('--c2',t.c2||'#fff');el.style.setProperty('--k',inkOn(t.c1));el.querySelector('.mono').textContent=monoOf(t);const ab=el.querySelector('.ab');ab.textContent=t.abbr;ab.dataset.n=String(t.abbr).length;el.classList.toggle('lt',inkOn(t.c1)!=='#FFFFFF');delete el.querySelector('.sc').dataset.v;
-    const ms=el.querySelector('.ms');if(ms){ms.textContent=t.name||'';const [mc,ml,md]=msCols(t);el.style.setProperty('--msc',mc);el.style.setProperty('--msl',ml);el.style.setProperty('--msd',md)}if(typeof sbFit==='function')sbFit.k='';sbTag()}});
+    const ms=el.querySelector('.ms');if(ms){ms.textContent=t.name||'';const [mc,ml,md,mh]=msCols(t);el.style.setProperty('--msc',mc);el.style.setProperty('--msl',ml);el.style.setProperty('--msd',md);el.style.setProperty('--msh',mh)}if(typeof sbFit==='function')sbFit.k='';sbTag()}});
   if(typeof teamLogoURL==='function')[[h,S.home],[a,S.away]].forEach(([el,t])=>{const im=el.querySelector('.lg');if(!im)return;const u=teamLogoURL(t,true);if(im.dataset.u!==u){im.dataset.u=u;if(u){im.hidden=false;im.src=u}else{im.hidden=true;im.removeAttribute('src')}}el.classList.toggle('haslg',!!u&&!im.hidden)});
   h.querySelector('.rk').textContent=rankOf(S.home.id)||'';a.querySelector('.rk').textContent=rankOf(S.away.id)||'';
   h.querySelector('.rec').textContent=recStr(S.home);a.querySelector('.rec').textContent=recStr(S.away);

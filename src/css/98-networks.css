@@ -52,7 +52,7 @@
 /* =========================================================
    PYLON: slanted tiles
    ========================================================= */
-:root[data-net="pyl"]{--sb-h:44px;--sb-w:clamp(500px,72vw,680px);--sb-lgw:44px;--sb-lg:34px;--sb-sc:42px;--sb-ms:11px;--py-s:9px;--py-o:#FF6A13;
+:root[data-net="pyl"]{--sb-h:44px;--sb-w:clamp(520px,77vw,700px);--sb-lgw:42px;--sb-lg:34px;--sb-sc:40px;--sb-ms:11px;--py-s:8px;--py-o:#FF6A13;
   --sbn1:#FF7A26;--sbn2:#F05A00;--sbt1:#17181B;--sbt2:#060607;--sbacc:#FFD23F;--sbkey:rgba(0,0,0,0)}
 :root[data-net="pyl"] #sb .sbx{background:none;box-shadow:none;gap:0;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
 /* every tile is a parallelogram; neighbours overlap by the slant so a 3px angled gap runs between them */
@@ -75,7 +75,7 @@
 :root[data-net="pyl"] #sb .rk{color:var(--py-o);opacity:1;font-weight:800}
 :root[data-net="pyl"] #sb .ms{font:400 calc(var(--sb-ms)*var(--fk,1))/1 var(--f-varsity);letter-spacing:.06em;text-transform:uppercase;color:var(--msl);text-shadow:none;margin-top:0}
 :root[data-net="pyl"] #sb .rec{color:#55575C;opacity:1}
-:root[data-net="pyl"] #sb .pos{left:auto;right:calc(var(--sb-sc) + 2px);bottom:auto;top:5px;width:14px;height:8.5px;filter:none}
+:root[data-net="pyl"] #sb .pos{left:calc(var(--sb-lgw) + var(--py-s) - 17px);bottom:3px;width:15px;height:9px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
 :root[data-net="pyl"] #sb .pos ellipse{fill:var(--py-o);stroke:#121316;stroke-width:1.2}
 :root[data-net="pyl"] #sb .pos path{stroke:#121316}
 :root[data-net="pyl"] #sb .sc{width:calc(var(--sb-sc) + var(--py-s));padding-right:var(--py-s);box-sizing:border-box;background:linear-gradient(180deg,#E4E2DB,#D3D1C9);box-shadow:inset 2px 0 0 #fff}
@@ -87,15 +87,15 @@
 :root[data-net="pyl"] #sb .tm.flash::before{background:var(--py-o)}
 /* clock tile (pylon orange): quarter and clock on one line, the play clock in a black chip; down tile (black) */
 :root[data-net="pyl"] #sb .sb-r{background:none;box-shadow:none}
-:root[data-net="pyl"] #sb .sb-st{background:linear-gradient(180deg,var(--sbn1),var(--sbn2));box-shadow:inset 0 1px 0 rgba(255,255,255,.35);padding:0 var(--py-s);align-items:center;gap:6px}
-:root[data-net="pyl"] #sb .qc{width:auto;flex-direction:row;align-items:baseline;gap:5px;box-shadow:none;padding-left:4px}
+:root[data-net="pyl"] #sb .sb-st{background:linear-gradient(180deg,var(--sbn1),var(--sbn2));box-shadow:inset 0 1px 0 rgba(255,255,255,.35);padding:0 calc(var(--py-s) + 2px) 0 var(--py-s);align-items:center;gap:5px}
+:root[data-net="pyl"] #sb .qc{width:auto;flex-direction:row;align-items:baseline;gap:4px;box-shadow:none;padding-left:3px}
 :root[data-net="pyl"] #sb #qtr{color:#2A1300;font-size:14px;font-weight:800}
-:root[data-net="pyl"] #sb #gclk{font-size:25px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.25)}
+:root[data-net="pyl"] #sb #gclk{font-size:24px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.25)}
 :root[data-net="pyl"] #sb .qc:has(#gclk.run)::after{top:-8px;right:-4px;background:#fff;box-shadow:none}
 :root[data-net="pyl"] #sb .pc{width:30px;height:26px;background:#121316;color:var(--sbacc);box-shadow:none;transform:skewX(-11deg)}
 :root[data-net="pyl"] #sb .pc.off{color:#77736B}
 :root[data-net="pyl"] #sb .pc.low{background:var(--c-loss);color:#fff}
-:root[data-net="pyl"] #sb .sb-dd{width:auto;min-width:96px;padding:0 calc(var(--py-s) + 6px) 0 calc(var(--py-s) + 4px);background:linear-gradient(180deg,#232428,#0A0A0C);box-shadow:none;margin-right:0;gap:4px}
+:root[data-net="pyl"] #sb .sb-dd{width:auto;min-width:86px;padding:0 calc(var(--py-s) + 5px) 0 calc(var(--py-s) + 3px);background:linear-gradient(180deg,#232428,#0A0A0C);box-shadow:none;margin-right:0;gap:4px}
 :root[data-net="pyl"] #sb #dd{font-size:20px;transform:skewX(-8deg)}
 :root[data-net="pyl"] #sb .sb-dd>small{color:#FF9A5C}
 :root[data-net="pyl"] #sb #spot{color:#fff}
@@ -138,7 +138,7 @@
 /* =========================================================
    CHALK: stacked rows, the mascot as the hero
    ========================================================= */
-:root[data-net="chk"]{--sb-h:58px;--ck-row:29px;--sb-w:clamp(420px,56vw,500px);--sb-lgw:40px;--sb-lg:36px;--sb-sc:40px;--sb-ms:20px;--ck-sl:#141B24;--ck-sl2:#0B1016;--ck-ch:#EEF0EA;
+:root[data-net="chk"]{--sb-h:58px;--ck-row:29px;--sb-w:clamp(440px,63vw,540px);--sb-lgw:40px;--sb-lg:36px;--sb-sc:40px;--sb-ms:20px;--ck-sl:#141B24;--ck-sl2:#0B1016;--ck-ch:#EEF0EA;
   --sbn1:#1C2631;--sbn2:#0C1117;--sbt1:#1C2631;--sbt2:#0C1117;--sbacc:#FFD23F;--sbkey:rgba(0,0,0,.75)}
 :root[data-net="chk"] #sb .sbx{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:var(--ck-row) var(--ck-row);height:auto;background:linear-gradient(180deg,var(--ck-sl),var(--ck-sl2))}
 :root[data-net="chk"] #sb .sbx::after{content:"";position:absolute;left:0;right:0;top:-3px;height:2px;z-index:5;pointer-events:none;background:repeating-linear-gradient(90deg,var(--ck-ch) 0 10px,transparent 10px 16px);opacity:.85}
@@ -185,6 +185,7 @@
 :root[data-net="chk"] #sb .sb-dd{grid-row:2;grid-column:1;width:auto;min-width:96px;flex-direction:row;align-items:baseline;gap:7px;padding:0 10px;box-shadow:none}
 :root[data-net="chk"] #sb #dd{font-size:16px;line-height:1}
 :root[data-net="chk"] #sb .sb-dd>small{font-size:8.5px;color:#93A2B4}
+:root[data-net="chk"] #wxs{display:none}
 :root[data-net="chk"] #sb.rz .sb-dd{box-shadow:inset 3px 0 0 var(--c-loss)}
 /* takeovers open from the centre; the touchdown writes the mascot big */
 :root[data-net="chk"] #sb .sb-msg{clip-path:inset(0 50% 0 50%);flex-direction:row;align-items:center;gap:8px;padding:0 10px}
@@ -204,7 +205,7 @@
 :root[data-net="chk"] #sb .sb-td .pts{order:3;margin-left:0;font-size:30px}
 :root[data-net="chk"] #sb .sb-tab{box-shadow:0 0 0 1px rgba(0,0,0,.5),inset 0 0 0 2px #FFE04D,inset 0 0 0 3px rgba(23,19,0,.45)}
 :root[data-net="chk"] #drv{background:linear-gradient(180deg,var(--ck-sl),var(--ck-sl2));color:var(--ck-ch)}
-@media (min-width:541px) and (max-width:740px){:root[data-net="chk"] #sb .sb-tag{display:flex}:root[data-net="chk"]{--sb-w:clamp(400px,62vw,470px)}}
+@media (min-width:541px) and (max-width:740px){:root[data-net="chk"] #sb .sb-tag{display:flex}:root[data-net="chk"]{--sb-w:clamp(420px,70vw,500px)}}
 @media (max-width:540px){
   :root[data-net="chk"]{--sb-h:56px;--ck-row:28px;--sb-lgw:32px;--sb-lg:30px;--sb-sc:34px;--sb-ms:17px}
   :root[data-net="chk"] #sb .sbx{flex-wrap:nowrap}
@@ -323,6 +324,7 @@
 #sb .sb-ev{display:flex;align-items:center;justify-content:center;gap:8px;height:17px;padding:0 10px;overflow:hidden;position:relative;
   background:linear-gradient(180deg,#26282D,#101114);box-shadow:0 0 0 1px var(--sbkey);color:#ECE9E2}
 #sb .sb-ev[hidden]{display:none}
+:root[data-ev] #sb .sb-tag>small{display:none}
 #sb .sb-ev .ek{flex:none;font:800 9px/1 var(--f-disp);font-style:normal;letter-spacing:.14em;text-transform:uppercase;padding:2px 5px 1px;box-shadow:inset 0 0 0 1px currentColor}
 #sb .sb-ev .el{min-width:0;white-space:nowrap;overflow:visible;font:800 calc(12px*var(--fk,1))/1 var(--f-disp);letter-spacing:.14em;text-transform:uppercase;transform:scaleX(var(--fx,1))}
 :root[data-ev] #sb .sb-ev{margin:0}
@@ -349,8 +351,8 @@
 :root[data-ev="title"] #sb .qc #gclk{color:#FBE7A6}
 /* conference championship: the network's accent and the conference's title */
 :root[data-ev="ccg"] #sb .sb-ev{background:linear-gradient(90deg,var(--pk1),var(--pk2) 50%,var(--pk1));box-shadow:0 0 0 1px var(--sbkey),inset 0 -2px 0 var(--pkA)}
-:root[data-ev="ccg"] #sb .sb-ev .ek{color:var(--pkA)}
-:root[data-ev="ccg"] #sb .sb-ev::after{content:"";width:5px;height:5px;transform:rotate(45deg);background:var(--pkA);flex:none}
+:root[data-ev="ccg"] #sb .sb-ev .ek{display:none}
+:root[data-ev="ccg"] #sb .sb-ev::before,:root[data-ev="ccg"] #sb .sb-ev::after{content:"";width:5px;height:5px;transform:rotate(45deg);background:var(--pkA);flex:none}
 /* the packages wear it in their own shape */
 :root[data-net="pyl"] #sb .sb-ev{clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);box-shadow:none;margin-left:12px;margin-right:12px}
 :root[data-net="chk"] #sb .sb-ev{box-shadow:0 0 0 1px var(--sbkey);background-size:auto}

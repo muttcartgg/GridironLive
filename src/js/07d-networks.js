@@ -71,7 +71,8 @@ function msCols(t){
   const onC=ok?c2:(l1>.55?'#0B0E14':'#FFFFFF');
   const onL=l1<.5?c1:l2<.5?c2:'#14161A';
   const onD=l2>.3&&l2>l1?c2:l1>.22?c1:l2>.22?c2:'#ECE9E2';
-  return [onC,onL,onD];
+  const sh=!ok&&l2<l1&&l2<.2?c2:'rgba(0,0,0,.6)';   // white script on the team colour: the dark secondary becomes its drop shadow
+  return [onC,onL,onD,sh];
 }
 function netApply(){
   const g=(typeof S!=='undefined'&&S.game)||null,id=netFor(g),ev=netEvent(g),r=document.documentElement;
@@ -89,6 +90,8 @@ function sbFit(force){
   const k=[innerWidth,innerHeight,R.dataset.net,R.dataset.ev||'',R.dataset.bugsize,R.dataset.bug,S.home&&S.home.abbr,S.away&&S.away.abbr].join('|');
   if(!force&&sbFit.k===k)return;sbFit.k=k;
   sb.querySelectorAll('.ms,.sb-ev .el').forEach(e=>{e.style.removeProperty('--fk');e.style.removeProperty('--fx')});
+  sb.querySelectorAll('.ab').forEach(e=>{e.style.fontSize=''});
+  sb.querySelectorAll('.ab').forEach(e=>{const w=e.clientWidth,n=e.scrollWidth;if(w>0&&n>w+.5)e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*Math.max(.6,(w-1)/n)).toFixed(1)+'px'});
   sb.querySelectorAll('.ms,.sb-ev .el').forEach(e=>{
     const w=e.clientWidth,n=e.scrollWidth;if(!(w>0)||n<=w+.5)return;let f=(w-1)/n;
     if(f>=.55){e.style.setProperty('--fk',f.toFixed(3));return}
