@@ -8,7 +8,7 @@
      CHALK      the conference network, stacked: one team per row in full team colour with the mascot written
                 big in brush script, a slate clock column (play clock standing the full height on the right), chalk
                 dashes between the rows; takeovers open from the centre
-     hashmark+  streaming: one rounded smoked-glass pill, no panels, a team-colour underline under each team,
+     hashmark+  streaming: one rounded smoked pill (no backdrop blur: it would re-blur the 3D field every frame), no panels, a team-colour underline under each team,
                 lime for possession and the play clock, sentence case; mascot small in script; takeovers fade in
    Postseason (data-ev on <html>): a strip on the bug's inner edge carries the event, and the neutral modules
    take the finish: bowl = bronze and gold foil · cfp = black, silver and a gold play clock · title = gold ·
@@ -201,7 +201,7 @@
 :root[data-net="chk"] #sb .sb-td .tvl{--s:48px}
 :root[data-net="chk"] #sb .sb-td .tt{order:2;align-items:flex-start}
 :root[data-net="chk"] #sb .sb-td b{font-size:16px;letter-spacing:.32em;line-height:1}
-:root[data-net="chk"] #sb .sb-td .tms{order:1;font-size:38px;line-height:1.2;transform:rotate(-4deg);overflow:visible;flex:none;max-width:60%}
+:root[data-net="chk"] #sb .sb-td .tms{order:1;font-size:38px;line-height:1.2;transform:rotate(-4deg);flex:0 1 auto;max-width:60%}
 :root[data-net="chk"] #sb .sb-td .pts{order:3;margin-left:0;font-size:30px}
 :root[data-net="chk"] #sb .sb-tab{box-shadow:0 0 0 1px rgba(0,0,0,.5),inset 0 0 0 2px #FFE04D,inset 0 0 0 3px rgba(23,19,0,.45)}
 :root[data-net="chk"] #drv{background:linear-gradient(180deg,var(--ck-sl),var(--ck-sl2));color:var(--ck-ch)}
@@ -239,7 +239,7 @@
    ========================================================= */
 :root[data-net="hm"]{--sb-h:42px;--sb-w:clamp(500px,70vw,640px);--sb-lgw:36px;--sb-lg:28px;--sb-sc:34px;--sb-ms:11.5px;--hm-l:#C8F53C;
   --sbn1:rgba(255,255,255,.09);--sbn2:rgba(255,255,255,.04);--sbt1:transparent;--sbt2:transparent;--sbacc:var(--hm-l);--sbkey:rgba(255,255,255,.12)}
-:root[data-net="hm"] #sb .sbx{border-radius:14px;padding:0 4px;background:rgba(14,16,17,.86);-webkit-backdrop-filter:blur(12px) saturate(1.3);backdrop-filter:blur(12px) saturate(1.3);
+:root[data-net="hm"] #sb .sbx{border-radius:14px;padding:0 4px;background:linear-gradient(180deg,rgba(30,33,34,.94),rgba(12,14,15,.94));
   box-shadow:0 0 0 1px var(--sbkey),0 8px 22px rgba(0,0,0,.45)}
 :root[data-net="hm"] #sb .sb-tag{background:none;box-shadow:none;min-width:0;padding:0 8px 0 10px;gap:3px;align-items:flex-start}
 :root[data-net="hm"] #sb .sb-tag::before{display:none}
@@ -266,8 +266,9 @@
 :root[data-net="hm"] #sb .sc{background:none;box-shadow:none;padding-bottom:6px}
 :root[data-net="hm"] #sb .sv{font-size:27px;text-shadow:none}
 :root[data-net="hm"] #sb .sc.w3 .sv{font-size:21px}
-:root[data-net="hm"] #sb .tos{bottom:auto;top:4px;right:auto;left:calc(var(--sb-lgw) - 4px);width:auto;gap:2px;display:none}
-:root[data-net="hm"] #sb .tos i{width:5px;height:5px;border-radius:50%;box-shadow:none}
+:root[data-net="hm"] #sb .ms{grid-column:1}
+:root[data-net="hm"] #sb .tos{position:static;grid-column:2;grid-row:2;align-self:center;justify-self:end;width:auto;gap:3px}
+:root[data-net="hm"] #sb .tos i{width:4px;height:4px;border-radius:50%;box-shadow:none}
 :root[data-net="hm"] #sb .tm.flash::before{border-radius:8px;background:color-mix(in srgb,var(--c) 50%,transparent)}
 /* clock pill: lighter glass inside the pill; the down in sentence case */
 :root[data-net="hm"] #sb .sb-r{margin:5px 0 5px 4px;border-radius:9px;background:linear-gradient(180deg,var(--sbn1),var(--sbn2));box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);overflow:hidden}

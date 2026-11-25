@@ -68,7 +68,7 @@ const SBUG={
     if(!this.on()||!t)return;const el=$('#sbTD');clearTimeout(this.tT);clearTimeout(this.tT2);
     el.className='sb-td';el.style.setProperty('--c',t.c1);el.style.setProperty('--c2',t.c2||'#fff');el.style.setProperty('--k',inkOn(t.c1));el.style.setProperty('--msc',msCols(t)[0]);
     el.innerHTML=`${tvLogo(t,'')}<span class="tt"><b>Touchdown</b><small>${esc(sub||t.city+' '+t.name)}</small></span><em class="tms">${esc(t.name||'')}</em>${pts?`<span class="pts">${esc(pts)}</span>`:''}`;
-    void el.offsetWidth;el.classList.add('on');this.tdOn=true;this.pend.add(sbTile(t));
+    void el.offsetWidth;sbFitFont(el.querySelector('.tms'),.5);el.classList.add('on');this.tdOn=true;this.pend.add(sbTile(t));
     this.tT=setTimeout(()=>{el.classList.remove('on');el.classList.add('off');
       this.tT2=setTimeout(()=>{el.className='sb-td';this.tdOn=false;this.pend.forEach(x=>sbFlip(x,+x.querySelector('.sc').dataset.v));this.pend.clear()},210)},2500);
   },

@@ -215,8 +215,8 @@
   #sb .sb-msg b{font-size:15px}#sb .sb-msg.long b{font-size:13px}#sb .sb-msg>small{font-size:8px}
   #sb .sb-msg .tvl{display:none}#sb .sb-msg:has(.tvl){padding-right:8px}
   #sb .sb-td{gap:9px;padding:0 12px 0 5px}
-  #sb .sb-td b{font-size:27px}
-  #sb .sb-td .tms{font-size:22px}
+  #sb .sb-td b{font-size:25px}
+  #sb .sb-td .tms{font-size:21px}
   #sb .sb-td .pts{font-size:28px}
   #sb .sb-tab{max-width:100%}
 }
@@ -230,7 +230,7 @@
 :root[data-bug="bottom"] #actBar{bottom:calc(var(--sbT) + 10px);margin-bottom:0}
 :root[data-bug="bottom"] #bulletBtn{bottom:calc(var(--sbT) + 66px)}
 :root[data-bug="bottom"] #celebBtn{top:auto;bottom:calc(var(--sbT) + 14px)}
-:root[data-bug="bottom"] #wm{bottom:calc(var(--sb-bot) + 2px)}
+:root[data-bug="bottom"] #wm{top:calc(env(safe-area-inset-top,0px) + 14px);bottom:auto}   /* the network tag: top-right corner, clear of the wider packages */
 :root[data-bug="bottom"] #opt,:root[data-bug="bottom"] #celebSheet{padding-bottom:calc(var(--sbT) + 10px)}
 :root[data-bug="bottom"] body:has(#kick:not([hidden])) #sb,:root[data-bug="bottom"] body:has(#call:not([hidden])) #sb{visibility:hidden}
 :root[data-bug="bottom"] #kmBan{top:calc(env(safe-area-inset-top,0px) + 12px)}

@@ -91,11 +91,13 @@ function sbFit(force){
   if(!force&&sbFit.k===k)return;sbFit.k=k;
   sb.querySelectorAll('.ms,.sb-ev .el').forEach(e=>{e.style.removeProperty('--fk');e.style.removeProperty('--fx')});
   sb.querySelectorAll('.ab').forEach(e=>{e.style.fontSize=''});
-  sb.querySelectorAll('.ab').forEach(e=>{const w=e.clientWidth,n=e.scrollWidth;if(w>0&&n>w+.5)e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*Math.max(.6,(w-1)/n)).toFixed(1)+'px'});
+  sb.querySelectorAll('.ab').forEach(e=>sbFitFont(e,.6));
   sb.querySelectorAll('.ms,.sb-ev .el').forEach(e=>{
     const w=e.clientWidth,n=e.scrollWidth;if(!(w>0)||n<=w+.5)return;let f=(w-1)/n;
     if(f>=.55){e.style.setProperty('--fk',f.toFixed(3));return}
     e.style.setProperty('--fk','.55');e.style.setProperty('--fx',Math.max(.4,f/.55).toFixed(3));
   });
 }
+/* one element's font scaled down until its text fits its box (the touchdown mascot, long abbreviations) */
+function sbFitFont(e,floor){if(!e)return;e.style.fontSize='';const w=e.clientWidth,n=e.scrollWidth;if(w>0&&n>w+.5)e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*Math.max(floor||.5,(w-1)/n)).toFixed(1)+'px'}
 try{if(document.fonts&&document.fonts.load)Promise.all(['20px "Kaushan Script"','20px "Graduate"'].map(f=>document.fonts.load(f))).then(()=>{sbFit.k=''}).catch(()=>{})}catch(e){}
