@@ -44,6 +44,9 @@
 @font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-600-normal.woff2__) format('woff2');font-weight:551 650;font-style:normal;font-display:swap}
 @font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-700-normal.woff2__) format('woff2');font-weight:651 750;font-style:normal;font-display:swap}
 @font-face{font-family:'Libre Franklin';src:url(data:font/woff2;base64,__FONT:libre-franklin-latin-800-normal.woff2__) format('woff2');font-weight:751 900;font-style:normal;font-display:swap}
+/* score-bug mascot faces (98-networks): a brush script and a collegiate block, both SIL OFL (tools/fonts) */
+@font-face{font-family:'Kaushan Script';src:url(data:font/woff2;base64,__FONT:kaushan-script-latin-400-normal.woff2__) format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
+@font-face{font-family:'Graduate';src:url(data:font/woff2;base64,__FONT:graduate-latin-400-normal.woff2__) format('woff2');font-weight:100 900;font-style:normal;font-display:swap}
 
 :root{
   --c-base:#161718;--c-raise:#1E1F21;--c-ctrl:#292A2D;--c-rule:rgba(236,233,226,.12);--c-rule2:rgba(236,233,226,.24);
@@ -52,6 +55,7 @@
   --f-disp:'Barlow Semi Condensed','Arial Narrow',system-ui,sans-serif;
   --f-text:'Libre Franklin',-apple-system,'Segoe UI',Roboto,system-ui,sans-serif;
   --f-num:'Barlow Semi Condensed','Arial Narrow',system-ui,sans-serif;
+  --f-script:'Kaushan Script','Brush Script MT',cursive;--f-varsity:'Graduate','Rockwell',Georgia,serif;
   --fs-d1:64px;--fs-d2:44px;--fs-d3:30px;--fs-d4:22px;--fs-d5:18px;
   --fs-t1:17px;--fs-t2:15px;--fs-t3:13px;--fs-t4:11.5px;
   --s1:4px;--s2:8px;--s3:12px;--s4:16px;--s5:24px;--s6:32px;

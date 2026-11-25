@@ -15,9 +15,7 @@ const BC={
   wpMode(){const v=LG&&LG.settings.wp;return v===false||v==='off'?'off':v==='always'?'always':'key'},
   gameStart(resumed){
     const g=S.game,hr=rankOf(S.home.id),ar=rankOf(S.away.id),big=(hr&&ar)||g.rival||g.post||S.slot==='Primetime'||(hr&&hr<=10)||(ar&&ar<=10);
-    const mid=hr||ar||isConfGame(g);
-    this.pkg=this.set().pkg&&this.set().pkg!=='auto'?this.set().pkg:big?'national':mid?'regional':'stream';
-    const r=document.documentElement;r.dataset.pkg=this.pkg;sbPlace();r.dataset.bugsize=this.set().bugSize||'m';if(typeof SBUG!=='undefined')SBUG.clear();sbTag();
+    const r=document.documentElement;this.net=this.pkg=netApply();sbPlace();   // the network that carries the game dresses the bug and every card (07d)r.dataset.bugsize=this.set().bugSize||'m';if(typeof SBUG!=='undefined')SBUG.clear();sbTag();
     $('#sb').style.opacity=this.set().hudAlpha!=null?this.set().hudAlpha:1;
     this.shown=new Set();this.lateShown={};this.rzShown=false;if(!resumed){S.line=[[0,0,0,0,0],[0,0,0,0,0]];S.lineLast=[0,0]}this.hype=S.userHome||!S.neutral?.35:.25;SCENE.fw=[];SCENE.coach={};SCENE.chainA=SCENE.chainB=null;
     this.buildLeague();if(!resumed||S.temp==null)this.conditions();
@@ -87,7 +85,7 @@ const BC={
     this.trackScore();const dt=$('#drv');if(dt){const t=this.driveText(),nh=!t||LG.settings.gfx===false,tm=offT(),k=t+'|'+(tm&&tm.abbr);if(dt.dataset.k!==k){dt.dataset.k=k;dt.innerHTML=t?`${tm?tvLogo(tm,'xs'):''}<span>${esc(t)}</span>`:''}if(dt.hidden!==nh){dt.hidden=nh;sbMeasure()}}
     if(this.dbOn){const d=$('#dbm'),v=Math.round(this.hype*100);if(+d.dataset.v!==v){d.dataset.v=v;d.querySelector('i').style.transform=`scaleY(${this.hype.toFixed(2)})`;d.querySelector('span').textContent=Math.round(78+this.hype*42)+' dB'}}
     if(this.lastQ!==S.q){if(this.lastQ===2&&S.q===3&&$('#studio').hidden)this.quarterCard(3);this.lastQ=S.q}
-    if(this.hudN%5===0){sbPlace();sbMeasure()}   // the bug's footprint for the HUD that stacks against it (07c)
+    if(this.hudN%5===0){sbPlace();sbFit();sbMeasure()}   // the bug's footprint for the HUD that stacks against it (07c)
   },
   /* ---------- win probability: bar, sparkline of the game, swing callout ---------- */
   wpSample(){
@@ -184,7 +182,7 @@ const BC={
   linescore(fin){const L=S.line||[[0,0,0,0,0],[0,0,0,0,0]],ot=S.ot||L[0][4]||L[1][4];const qs=ot?['1','2','3','4','OT']:['1','2','3','4'];const win=fin?(S.score[0]>S.score[1]?0:S.score[1]>S.score[0]?1:-1):-1;
     const row=(t,i)=>`<tr class="${win===i?'w':win>=0?'l':''}" style="--c:${tvCol(t)}"><td><span class="ln">${tvLogo(t,'sm')}<b>${esc(t.abbr)}</b><small>${recStr(t)}</small></span></td>${qs.map((_,k)=>`<td>${k<S.q||k===4&&ot||fin?L[i][k]:'–'}</td>`).join('')}<td class="tot">${S.score[i]}</td></tr>`;
     return `<table class="lscore"><thead><tr><th></th>${qs.map(q=>`<th>${q}</th>`).join('')}<th>T</th></tr></thead><tbody>${this.sides().map(([t,i])=>row(t,i)).join('')}</tbody></table>`},
-  cardHead(title,sub){return `<div class="qh"><span class="net">GLN</span><b>${title}</b>${sub?`<small>${sub}</small>`:''}</div>`},
+  cardHead(title,sub){return `<div class="qh">${netWM(this.net||'gln','net')}<b>${title}</b>${sub?`<small>${sub}</small>`:''}</div>`},
   /* graphics priority: an interactive sheet outranks every broadcast card. A full-screen card that comes up while a
      sheet is open (or during a live play) waits for the next dead ball (up to 20 s, then it is dropped), so it never covers the play list it can't be
      tapped through; the snap clears it (see snap) */
@@ -212,7 +210,7 @@ const BC={
   intro(){
     if(LG.settings.gfx===false)return;const g=S.game;const side=t=>`<div class="it" style="--c:${t.c1}">${tvLogo(t,'lg')}<div><b>${rankTag(t.id)}${esc(t.city)}</b><small>${esc(t.name)} · ${recStr(t)}</small></div></div>`;
     const [[a],[h]]=this.sides();
-    this.showQ(`${this.cardHead(esc(g.tag||(isConfGame(g)?confName(hostT().conf)+' matchup':'Nonconference')),esc(venueOf()))}<div class="intro">${side(a)}<span class="at">${S.neutral?'VS':'AT'}</span>${side(h)}</div><div class="qfoot">${WX_ICON[S.wx]} ${esc(S.wx)} · ${S.temp}°F${S.wind&&S.wind.mph>3?' · wind '+S.wind.mph+' mph':''} · ${esc(S.slot)} · Att. ${S.att.toLocaleString()}</div>`,'intro',3600);
+    this.showQ(`${this.cardHead(esc(g.tag||(isConfGame(g)?confName(hostT().conf)+' matchup':'Nonconference')),esc(venueOf()))}<div class="intro">${side(a)}<span class="at">${S.neutral?'VS':'AT'}</span>${side(h)}</div><div class="qfoot"><span class="qlive">Live on ${netWM(this.net||'gln','xs')}</span>${WX_ICON[S.wx]} ${esc(S.wx)} · ${S.temp}°F${S.wind&&S.wind.mph>3?' · wind '+S.wind.mph+' mph':''} · ${esc(S.slot)} · Att. ${S.att.toLocaleString()}</div>`,'intro',3600);
   },
   /* final score graphic (called by finalGraphic in 08c) */
   finalCard(won,pog,g){
@@ -258,7 +256,7 @@ const BC={
     const keys=[[u,keyToGame(u,o)],[o,keyToGame(o,u)]];
     const perf=t=>{const l=this.leaders(t);return `<div class="perf" style="--c:${t.c1}"><div class="ph">${tvLogo(t,'xs')}<b>${esc(t.abbr)}</b></div>${l.length?l.map(x=>`<div class="pr wph">${photoHTML(x[3],30,'xs',t,true)}<em>${x[0]}</em><b>${esc(x[1])}</b><small>${esc(x[2])}</small></div>`).join(''):'<p class="note">No leaders yet.</p>'}</div>`};
     $('#studioBody').innerHTML=`<div class="stv-head" style="--a:${A.c1};--b:${Hm.c1}">
-        <div class="stv-bar"><span class="net">GLN</span><b>${half?'Halftime report':'Pregame show'}</b><span class="ven"><i class="lf">Live from </i>${esc(venueOf())}</span></div>
+        <div class="stv-bar">${netWM(this.net||'gln','net')}<b>${half?'Halftime report':'Pregame show'}</b><span class="ven"><span class="lon">Live on <em>${esc((NETS[this.net]||NETS.gln).full)}</em></span><span class="lfv"><i class="lf">from </i>${esc(venueOf())}</span></span></div>
         <div class="stv-mu">${side(A,'a')}<div class="mid">${half?`<b class="hs">${S.score[ai]}<i>–</i>${S.score[hi]}</b><small>Halftime</small>`:`<b class="at">${S.neutral?'VS':'AT'}</b><small>${esc(S.slot||'')}</small>`}</div>${side(Hm,'b')}</div>
         <div class="stv-wp"><span>${esc(A.abbr)} ${wpP(wA)}%</span><div class="bar"><i style="--w:${(wA*100).toFixed(1)}%;background:${tvCol(A)}"></i><i style="background:${tvCol(Hm)}"></i></div><span>${100-wpP(wA)}% ${esc(Hm.abbr)}</span><em>Win probability</em></div></div>
       ${half?`<div class="stv-grid"><div class="card stv-card"><div class="eyebrow">Linescore</div>${this.linescore()}</div>
