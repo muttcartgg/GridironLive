@@ -281,10 +281,15 @@ table.box td{font-size:13.5px}
 /* the presnap bar: one floating pill. The play name, two quiet text actions, a prominent SNAP */
 #snapBar{border:0;border-radius:999px;background:var(--hud-bar);box-shadow:0 8px 22px rgba(0,0,0,.36);padding:5px 5px 5px 20px;gap:2px}
 #snapName{font:800 18px/1 var(--f-disp);letter-spacing:.015em;padding:0 10px 0 0;color:#fff}
-#snapBar .btn.sm{min-height:44px;padding:0 14px;border-radius:999px;background:none;box-shadow:none;text-shadow:none;color:rgba(242,241,236,.72);font:600 14.5px/1 var(--f-text);letter-spacing:0;text-transform:none}
+#snapBar .btn.sm{min-height:44px;padding:0 14px;border:0;border-radius:999px;background:none;box-shadow:none;text-shadow:none;color:rgba(242,241,236,.72);font:600 14.5px/1 var(--f-text);letter-spacing:0;text-transform:none}
 #snapBar .btn.sm:active{background:rgba(255,255,255,.08);color:#fff}
 #snapBar #snapAdj[aria-expanded="true"]{background:rgba(255,255,255,.13);color:#fff}
 #snapBar #snapGo{min-height:48px;min-width:118px;margin-left:8px;padding:0 30px;border-radius:999px;font:800 23px/1 var(--f-disp);letter-spacing:.05em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 2px 8px rgba(0,0,0,.3)}
+/* the Adjust popover over the pill: one soft panel, borderless choices, pills for the tools */
+#adjMenu{border:0;border-radius:16px;padding:12px 12px 13px;background:linear-gradient(180deg,rgba(29,30,34,.96),rgba(14,15,17,.96));box-shadow:0 12px 30px rgba(0,0,0,.45)}
+#adjMenu button{border:0;border-radius:10px;background:rgba(255,255,255,.065);box-shadow:none}
+#adjMenu .adj-tools button{border-radius:999px}
+#adjMenu button[aria-pressed="true"]{background:var(--team);color:var(--btn-ink)}
 @media (max-width:540px){#snapBar{padding:5px 5px 5px 8px}#snapBar .btn.sm{padding:0 13px;font-size:14px}#snapBar #snapGo{padding:0 30px;font-size:21px}}
 /* the other bars wear the same pill: AI speed, replay tools, photo mode, hot routes; pressed = a soft filled pill */
 #apBar,#replayBar,#photoBar,#hotBar{border:0;background:var(--hud-bar);box-shadow:0 8px 22px rgba(0,0,0,.36)}

@@ -45,8 +45,9 @@
 #wm .nw-pyl,#wm .nw-chk,#wm .nw-hm{padding-left:5px}
 #wm .wk{font:600 10px/1 var(--f-text);font-style:normal;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;color:rgba(255,255,255,.76)}
 #wm .wk:empty{display:none}
-#wm b{display:flex;align-items:center;gap:4px;padding:0;border-radius:0;background:none;font:700 9.5px/1 var(--f-text);letter-spacing:.07em;color:#fff}
-#wm b::before{content:"";width:6px;height:6px;border-radius:50%;background:#E5484D;box-shadow:0 0 5px rgba(229,72,77,.85)}
+#wm .nwm b{padding:0;border-radius:0;background:none;font:inherit;letter-spacing:inherit;color:inherit}
+#wm>b{display:flex;align-items:center;gap:4px;padding:0;border-radius:0;background:none;font:700 9.5px/1 var(--f-text);letter-spacing:.07em;color:#fff}
+#wm>b::before{content:"";width:6px;height:6px;border-radius:50%;background:#E5484D;box-shadow:0 0 5px rgba(229,72,77,.85)}
 :root{--pkA:#E3263A}
 :root[data-pkg="gln"]{--pk1:#141414;--pk2:#1F1D18;--pkA:#E3263A}
 :root[data-pkg="pyl"]{--pk1:#17130F;--pk2:#241A11;--pkA:#FF6A13}
@@ -59,14 +60,14 @@
 /* =========================================================
    PYLON: one white slab, slanted ends, the orange end
    ========================================================= */
-:root[data-net="pyl"]{--sb-h:44px;--sb-w:clamp(520px,76vw,690px);--sb-lgw:40px;--sb-lg:32px;--sb-sc:38px;--sb-ms:10.5px;--sb-dd:auto;--sb-r:0px;--sb-r2:0px;--py-s:10px;--py-o:#FF6A13}
+:root[data-net="pyl"]{--sb-h:44px;--sb-w:clamp(520px,76vw,690px);--sb-lgw:40px;--sb-lg:32px;--sb-sc:38px;--sb-ms:10.5px;--sb-dd:108px;--sb-r:0px;--sb-r2:0px;--py-s:10px;--py-o:#FF6A13}
 :root[data-net="pyl"] #sb{filter:drop-shadow(0 6px 9px rgba(0,0,0,.34))}
 :root[data-net="pyl"] #sb .sbx{clip-path:polygon(var(--py-s) 0,100% 0,calc(100% - var(--py-s)) 100%,0 100%);background:linear-gradient(180deg,#FFFFFF,#EAE9E4);box-shadow:none;color:#121316}
 :root[data-net="pyl"] #sb .sb-tag{padding:0 4px 0 calc(var(--py-s) + 9px)}
 :root[data-net="pyl"] #sb .sb-net .nwm{font-size:13px;color:#121316}
 /* team: the colour runs out of a slant behind the logo and fades into the white */
 :root[data-net="pyl"] #sb .tm{--tsh:none;color:#121316;
-  background:linear-gradient(103deg,transparent 0 5px,var(--c) 5px calc(var(--sb-lgw) + 4px),color-mix(in srgb,var(--c) 14%,transparent) calc(var(--sb-lgw) + 30px),transparent 66%)}
+  background:linear-gradient(103deg,transparent 0 5px,var(--c) 5px calc(var(--sb-lgw) + 4px),color-mix(in srgb,var(--c) 12%,transparent) calc(var(--sb-lgw) + 17px),color-mix(in srgb,var(--c) 4%,transparent) 100%)}
 :root[data-net="pyl"] #sb .tlg{width:calc(var(--sb-lgw) + 4px);padding-left:4px;box-sizing:border-box}
 :root[data-net="pyl"] #sb .lg{left:calc(50% + 2px);filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
 :root[data-net="pyl"] #sb .mono{width:28px;height:28px;font-size:13px}
@@ -95,7 +96,7 @@
 :root[data-net="pyl"] #sb .pc{min-width:0;height:24px;padding:0 3px;border-radius:0;color:#2A1100;font-size:18px;transform:skewX(-8deg)}
 :root[data-net="pyl"] #sb .pc.off{color:rgba(42,17,0,.38)}
 :root[data-net="pyl"] #sb .pc.low{background:#121316;color:#fff;padding:0 6px}
-:root[data-net="pyl"] #sb .sb-dd{width:auto;min-width:80px;padding:0 0 0 15px;gap:4px}
+:root[data-net="pyl"] #sb .sb-dd{width:auto;min-width:92px;padding:0 0 0 15px;gap:4px}
 :root[data-net="pyl"] #sb .sb-dd::before{left:4px;top:11px;bottom:11px;background:rgba(59,23,0,.24);transform:skewX(-13deg)}
 :root[data-net="pyl"] #sb #dd{font-size:19px;color:#fff;transform:skewX(-8deg);transform-origin:left bottom;text-shadow:0 1px 0 rgba(110,36,0,.25)}
 :root[data-net="pyl"] #sb .sb-dd>small{color:#3B1700}
@@ -104,6 +105,8 @@
 /* takeovers: the slab's own slant clips them */
 :root[data-net="pyl"] #sb .sb-msg{padding:0 12px 0 calc(var(--py-s) + 10px)}
 :root[data-net="pyl"] #sb .sb-msg b{transform:skewX(-8deg);transform-origin:left}
+:root[data-net="pyl"] #sb .sb-msg.dd{padding:0 10px 0 14px}
+:root[data-net="pyl"] #sb .sb-msg.dd b{font-size:19px}
 :root[data-net="pyl"] #sb .sb-td{padding:0 24px 0 18px;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 48%,rgba(0,0,0,.18)),
   linear-gradient(103deg,color-mix(in srgb,var(--c) 80%,#fff),var(--c) 45%,color-mix(in srgb,var(--c) 76%,#000))}
 :root[data-net="pyl"] #sb .sb-td b{transform:skewX(-10deg);font-size:30px;letter-spacing:.05em}
@@ -181,7 +184,7 @@
 :root[data-net="chk"] #sb .sb-msg.on{clip-path:inset(0)}
 :root[data-net="chk"] #sb .sb-msg.off{clip-path:inset(50% 0 50% 0)}
 :root[data-net="chk"] #sb .sb-msg b{font-size:17px}
-:root[data-net="chk"] #sb .sb-msg.dd{top:50%;left:0;width:auto;border-radius:0 0 var(--sb-r) 0}
+:root[data-net="chk"] #sb .sb-msg.dd{left:0;width:auto;flex-direction:column;align-items:flex-start;gap:4px}
 :root[data-net="chk"] #sb .sb-msg .tvl{--s:22px;margin-top:-11px}
 :root[data-net="chk"] #sb .sb-td{clip-path:inset(0 50% 0 50%);justify-content:center;gap:14px;padding:0 14px}
 :root[data-net="chk"] #sb .sb-td.on{clip-path:inset(0)}
@@ -223,7 +226,7 @@
 /* =========================================================
    hashmark+: one smoked pill
    ========================================================= */
-:root[data-net="hm"]{--sb-h:42px;--sb-w:clamp(500px,70vw,640px);--sb-lgw:34px;--sb-lg:26px;--sb-sc:32px;--sb-ms:11px;--sb-dd:auto;--sb-r:21px;--sb-r2:11px;--hm-l:#C8F53C;
+:root[data-net="hm"]{--sb-h:42px;--sb-w:clamp(500px,70vw,640px);--sb-lgw:34px;--sb-lg:26px;--sb-sc:32px;--sb-ms:11px;--sb-dd:100px;--sb-r:21px;--sb-r2:11px;--hm-l:#C8F53C;
   --sbn1:rgba(34,37,38,.95);--sbn2:rgba(12,14,15,.95);--sbacc:var(--hm-l);--sb-sep:rgba(255,255,255,.1)}
 :root[data-net="hm"] #sb .sbx{overflow:hidden}
 :root[data-net="hm"] #sb .sb-tag{padding:0 6px 0 15px}
@@ -257,7 +260,7 @@
 :root[data-net="hm"] #sb .qc:has(#gclk.run)::after{display:none}
 :root[data-net="hm"] #sb .pc{min-width:0;height:20px;padding:0 6px;font-size:15px}
 :root[data-net="hm"] #sb .pc.low{background:none;color:#FF6B6F}
-:root[data-net="hm"] #sb .sb-dd{width:auto;min-width:88px;padding:0 18px 0 12px;gap:3px}
+:root[data-net="hm"] #sb .sb-dd{width:auto;min-width:100px;padding:0 18px 0 12px;gap:3px}
 :root[data-net="hm"] #sb .sb-dd::before{top:12px;bottom:12px}
 :root[data-net="hm"] #sb #dd{font:800 14px/1 var(--f-text);letter-spacing:-.01em;text-transform:none}
 :root[data-net="hm"] #sb #dd .o,:root[data-net="hm"] #sb .sb-msg .o{text-transform:none;font-size:1em;letter-spacing:0;margin:0}
@@ -268,6 +271,7 @@
 :root[data-net="hm"] #sb .sb-msg.on,:root[data-net="hm"] #sb .sb-td.on{opacity:1;transform:none;transition-delay:0s}
 :root[data-net="hm"] #sb .sb-msg.off,:root[data-net="hm"] #sb .sb-td.off{opacity:0;transition-duration:.16s}
 :root[data-net="hm"] #sb .sb-msg{background:var(--mc,#24262B);padding:0 18px 0 14px}
+:root[data-net="hm"] #sb .sb-msg.dd{padding:0 14px 0 13px}
 :root[data-net="hm"] #sb .sb-msg b{font:800 14px/1 var(--f-text);text-transform:none;letter-spacing:-.01em}
 :root[data-net="hm"] #sb .sb-msg>small{font:500 9px/1 var(--f-text);text-transform:none;letter-spacing:0}
 :root[data-net="hm"] #sb .sb-td{background:radial-gradient(120% 160% at 0 50%,color-mix(in srgb,var(--c) 70%,#fff) 0,var(--c) 45%),var(--c);gap:10px;padding:0 20px 0 8px}

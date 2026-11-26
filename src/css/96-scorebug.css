@@ -229,7 +229,7 @@
 :root[data-bug="bottom"] #kmBan{top:calc(env(safe-area-inset-top,0px) + 12px)}
 :root[data-bug="bottom"] #kmOv{padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(var(--sbT) + 8px)}
 body:has(#snapBar:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0px) + 76px)}
-:root[data-bug="bottom"] body:has(#snapBar:not([hidden])) #hint{bottom:calc(var(--sbT) + 66px)}
+:root[data-bug="bottom"] #app:has(#snapBar:not([hidden])) #hint{bottom:calc(var(--sbT) + 70px)}   /* over the presnap pill, not under it */
 :root[data-bug="bottom"] #banner{top:26%}
 @media (min-width:541px){:root[data-bug="top"] #rcard,:root[data-bug="top"] #wpG{top:calc(var(--sbB,72px) + 8px)}}   /* landscape set to top: cards clear the bar */
 :root.photo #sb{display:none!important}
