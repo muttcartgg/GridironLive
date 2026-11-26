@@ -9,7 +9,8 @@
                 the time slot, the conferences (power or not) and the postseason tag, like a real TV contract.
                 Settings › Broadcast › Scorebug (LG.settings.pkg) can force one package for every game.
    netEvent(g)  the postseason dress: 'title' | 'cfp' | 'bowl' | 'ccg' | ''
-   netApply()   at kickoff: data-net / data-ev on <html>, the wordmark in the bug, the corner tag, the event strip
+   netApply()   at kickoff: data-net / data-ev on <html>, the wordmark in the bug, the corner tag (wordmark, the
+                conference and week from 07c sbTag, LIVE), the event tab
    sbFit()      mascot script (and the long names) shrink to fit their cell, never clip; reruns on resize, a new
                 design or new teams (07c sbPlace calls it through BC.hud)
    Wordmarks are set in type (no artwork): GLN white tile + red dot, PYLON italic caps beside an orange goal-line
@@ -78,8 +79,9 @@ function netApply(){
   const g=(typeof S!=='undefined'&&S.game)||null,id=netFor(g),ev=netEvent(g),r=document.documentElement;
   r.dataset.net=id;r.dataset.pkg=id;if(ev)r.dataset.ev=ev;else delete r.dataset.ev;
   const n=$('#sbNet');if(n)n.innerHTML=netWM(id);
-  const wm=$('#wm');if(wm)wm.innerHTML=netWM(id,'sm')+'<b>LIVE</b>';
+  const wm=$('#wm');if(wm)wm.innerHTML=netWM(id,'sm')+'<i class="wk"></i><b>LIVE</b>';
   const e=$('#sbEv');if(e){const [k,l]=netEvLabel(g,ev);e.hidden=!ev;e.innerHTML=ev?`<i class="ek">${esc(k)}</i><b class="el">${esc(l)}</b>`:''}
+  try{if(typeof sbTag==='function')sbTag()}catch(e){}   // the conference and week ride in the corner tag
   sbFit.k='';
   return id;
 }

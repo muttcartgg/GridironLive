@@ -3,7 +3,8 @@
    sbPlace    landscape → bottom centre (Settings › Score bug in landscape: Bottom | Top); portrait → top, always
    sbMeasure  the bug's footprint for everything that stacks against it: --sbB (its bottom edge, top mode) and
               --sbT (viewport bottom → its top edge, bottom mode); the 3D camera reads the rect itself (08t-view)
-   sbTag      the game tag on the far left: conference in text (or CFP / FCS / bowl) over the week
+   sbTag      the game tag: conference in text (or CFP / FCS / bowl) and the week, shown in the corner network
+              tag (#wm .wk); the bar itself carries only the network's wordmark
    sbScore    the score flip (old number turns away, new one turns in) with a flash of the team colour
    SBUG       takeovers inside the bar, each 150-250 ms in, ease-out: msg (over the state + down modules),
               td (team-colour wipe across the bar with the logo), flag (yellow slide-out with the foul)
@@ -35,7 +36,8 @@ function sbTagText(){
 const sbOrd=s=>esc(s).replace(/(\d)(st|nd|rd|th)\b/gi,'$1<small class="o">$2</small>');
 /* set markup only when it changed (hud runs every frame); true when it did */
 function sbSet(el,h){if(!el||el._h===h)return false;el._h=h;el.innerHTML=h;return true}
-function sbTag(){const el=$('#sbTag');if(!el)return;const [a,b]=sbTagText();el.querySelector(':scope>b').textContent=a;el.querySelector(':scope>small').textContent=b}
+function sbTag(){const el=$('#sbTag');if(!el)return;const [a,b]=sbTagText();el.querySelector(':scope>b').textContent=a;el.querySelector(':scope>small').textContent=b;
+  const wk=document.querySelector('#wm .wk');if(wk)wk.textContent=document.documentElement.dataset.ev?'':[a,b].filter(x=>x&&x!=='Live').join(' · ')}
 /* score cell: flip on a new score (anim), else just set it. Under the touchdown wipe the old number stays and flips
    when the wipe leaves. */
 function sbScore(el,v,anim){
