@@ -1746,53 +1746,85 @@ table.box td{font-size:13.5px}
 /* =========================================================
    in-game HUD
    ========================================================= */
-#sit{border-radius:0;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+/* clean pass: soft glass, rounded ends, no outlines; one accent dot or wash instead of a framed edge */
+:root{--hud-glass:rgba(15,16,18,.86);--hud-glass2:rgba(15,16,18,.72);--hud-bar:linear-gradient(180deg,rgba(31,32,36,.9),rgba(13,14,16,.9));--hud-shadow:0 6px 18px rgba(0,0,0,.3)}
+#sit{border-radius:6px;box-shadow:var(--hud-shadow)}
 #sit b{font:800 17px/1 var(--f-disp);letter-spacing:.01em}
-#sit small{background:var(--c-raise);font:600 12.5px/1 var(--f-text);color:var(--c-chalk)}
-#sit.rz,#sit.d4{box-shadow:0 2px 8px rgba(0,0,0,.4)}
-#toast{border-radius:0;background:var(--c-raise);box-shadow:inset 3px 0 0 var(--c-acc),0 2px 8px rgba(0,0,0,.4);font:600 13.5px/1 var(--f-text);padding:8px 14px 8px 15px}
-#flag{border-radius:0;background:var(--c-acc);color:var(--c-acc-ink);font:800 18px/1.1 var(--f-disp);letter-spacing:.01em;box-shadow:0 2px 8px rgba(0,0,0,.4)}
-#rcard{background:var(--c-raise);box-shadow:inset 4px 0 0 var(--rc),0 2px 8px rgba(0,0,0,.4);border-radius:0}
+#sit small{background:var(--hud-glass);font:600 12.5px/1 var(--f-text);color:var(--c-chalk)}
+#sit.rz,#sit.d4{box-shadow:var(--hud-shadow)}
+#toast{border-radius:999px;background:var(--hud-glass);box-shadow:var(--hud-shadow);font:600 13.5px/1 var(--f-text);padding:8px 16px 8px 13px}
+#toast::before{content:"";display:inline-block;width:6px;height:6px;margin-right:8px;border-radius:50%;background:var(--c-acc);vertical-align:2px}
+#flag{border-radius:6px;background:var(--c-acc);color:var(--c-acc-ink);font:800 18px/1.1 var(--f-disp);letter-spacing:.01em;box-shadow:var(--hud-shadow)}
+#rcard{border-radius:8px;background:linear-gradient(90deg,color-mix(in srgb,var(--rc,#8A8F98) 28%,transparent),transparent 72%),var(--hud-glass);box-shadow:var(--hud-shadow)}
 #rcard b{font:800 19px/1.05 var(--f-disp)}
 #rcard .k{font:600 11px/1 var(--f-text)}
-#rcard.flag{background:var(--c-acc);color:var(--c-acc-ink);box-shadow:inset 4px 0 0 var(--c-acc-ink)}
-#lower{border-radius:0;background:var(--c-raise);box-shadow:0 2px 8px rgba(0,0,0,.4)}
+#rcard.flag{background:var(--c-acc);color:var(--c-acc-ink);box-shadow:var(--hud-shadow)}
+#lower{border-radius:8px;overflow:hidden;background:var(--hud-glass);box-shadow:var(--hud-shadow)}
+#wpG{border-radius:10px;padding:8px 11px 7px;background:var(--hud-glass);box-shadow:var(--hud-shadow)}
+#wpG .wh .sw{border-radius:999px;padding:2px 7px;box-shadow:none;background:color-mix(in srgb,var(--g) 80%,#000)}
+#hint{border-radius:999px;padding:7px 14px;background:var(--hud-glass2);box-shadow:none}
 
-/* big moments: one team-colour slab cut at both ends, the word set big and upright, points in a dark block */
+/* big moments: one team-colour slab cut at both ends, top-lit, the word set big and upright; logo and points sit
+   straight on the colour (no dark blocks), a thin secondary-colour line along the foot */
 #banner .bn{border-radius:0;clip-path:polygon(18px 0,100% 0,calc(100% - 18px) 100%,0 100%);min-height:84px}
-#banner .bk{border-radius:0;background:var(--bc);box-shadow:inset 0 -5px 0 var(--b2,rgba(255,255,255,.6))}
-#banner.k-miss .bk{background:#2A2B2E;box-shadow:inset 0 -5px 0 var(--c-loss)}
+#banner .bk{border-radius:0;background:linear-gradient(180deg,rgba(255,255,255,.14),rgba(255,255,255,0) 50%,rgba(0,0,0,.16)),var(--bc);box-shadow:inset 0 -3px 0 var(--b2,rgba(255,255,255,.6))}
+#banner.k-miss .bk{background:linear-gradient(180deg,#34363A,#212225);box-shadow:inset 0 -3px 0 var(--c-loss)}
 #banner .gl{display:none}
-#banner .bl{background:rgba(0,0,0,.2);width:88px;padding-left:12px}
+#banner .bl{background:none;width:88px;padding-left:14px}
 #banner .bl .x{border-radius:0;font:800 30px/1 var(--f-disp)}
 #banner .bt{padding:10px 18px 12px}
 #banner .ki{font:600 13px/1 var(--f-text);letter-spacing:0;text-transform:none;opacity:.9}
 #banner.k-int .ki,#banner.k-fum .ki,#banner.k-downs .ki{border-radius:0;background:var(--c-acc);color:var(--c-acc-ink);padding:3px 6px}
 #banner .ti{font:800 min(clamp(42px,9.4vw,72px),calc((min(600px,100vw - 24px) - 190px) / (var(--n,9) * .52)))/.86 var(--f-disp);letter-spacing:.005em;text-shadow:none}
 #banner .su{font:600 13px/1.15 var(--f-text);letter-spacing:0;text-transform:none}
-#banner .pt{background:rgba(0,0,0,.24);padding:0 26px 0 18px;font:800 clamp(34px,7vw,52px)/1 var(--f-disp)}
+#banner .pt{background:none;padding:0 30px 0 12px;font:800 clamp(34px,7vw,52px)/1 var(--f-disp)}
 @keyframes bnBg{0%{transform:translateX(-102%)}7%,90%{transform:none}100%{transform:translateX(102%)}}
 @keyframes bnTx{0%,5%{opacity:0;transform:translateX(-14px)}12%,86%{opacity:1;transform:none}94%,100%{opacity:0;transform:translateX(14px)}}
 @keyframes bnPt{0%,10%{opacity:0;transform:translateY(8px)}16%,86%{opacity:1;transform:none}94%,100%{opacity:0}}
 @media (max-width:540px){#banner .bn{min-height:74px}#banner .bl{width:64px;padding-left:10px}}
 
 /* pause / timeout buttons, snap bar, action buttons */
-.ibtn{border-radius:0;background:rgba(22,23,24,.9);font:600 12px var(--f-text)}
-#snapBar{border-radius:0;background:rgba(22,23,24,.94);box-shadow:0 2px 8px rgba(0,0,0,.4);padding:6px;gap:6px}
-#snapName{font:800 18px/1 var(--f-disp);letter-spacing:.01em}
-#snapBar .btn{font:700 15px/1 var(--f-text)}
-#snapBar #snapGo{min-width:118px;font:800 24px/1 var(--f-disp);letter-spacing:.02em;text-transform:uppercase}
-#actBar button{border-radius:0;background:rgba(22,23,24,.9);border:1px solid var(--c-rule2);font:600 12.5px/1 var(--f-text);letter-spacing:0}
-#actBar button.big{font:800 18px/1 var(--f-disp);text-transform:uppercase}
-#celebBtn{border-radius:0;background:var(--c-acc);color:var(--c-acc-ink);font:700 15px/1 var(--f-text);text-transform:none;animation:none}
-#replayBtn,#replayBar button,#hotBar button,#photoBar{border-radius:0}
-#replayBar,#hotBar{border-radius:0;background:rgba(22,23,24,.94)}
-#replayBar button,#hotBar button{font:600 12.5px/1 var(--f-text);text-transform:none}
-#hotBar b{font:600 12px/1 var(--f-text);text-transform:none;color:var(--c-acc)}
-#cap{border-radius:0;background:rgba(22,23,24,.9);font:600 13px/1.3 var(--f-text)}
+.ibtn{border:0;border-radius:10px;background:var(--hud-glass2);box-shadow:0 4px 12px rgba(0,0,0,.22);font:600 12px var(--f-text)}
+/* the presnap bar: one floating pill. The play name, two quiet text actions, a prominent SNAP */
+#snapBar{border:0;border-radius:999px;background:var(--hud-bar);box-shadow:0 8px 22px rgba(0,0,0,.36);padding:5px 5px 5px 20px;gap:2px}
+#snapName{font:800 18px/1 var(--f-disp);letter-spacing:.015em;padding:0 10px 0 0;color:#fff}
+#snapBar .btn.sm{min-height:44px;padding:0 14px;border:0;border-radius:999px;background:none;box-shadow:none;text-shadow:none;color:rgba(242,241,236,.72);font:600 14.5px/1 var(--f-text);letter-spacing:0;text-transform:none}
+#snapBar .btn.sm:active{background:rgba(255,255,255,.08);color:#fff}
+#snapBar #snapAdj[aria-expanded="true"]{background:rgba(255,255,255,.13);color:#fff}
+#snapBar #snapGo{min-height:48px;min-width:118px;margin-left:8px;padding:0 30px;border-radius:999px;font:800 23px/1 var(--f-disp);letter-spacing:.05em;text-transform:uppercase;box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 2px 8px rgba(0,0,0,.3)}
+/* the Adjust popover over the pill: one soft panel, borderless choices, pills for the tools */
+#adjMenu{border:0;border-radius:16px;padding:12px 12px 13px;background:linear-gradient(180deg,rgba(29,30,34,.96),rgba(14,15,17,.96));box-shadow:0 12px 30px rgba(0,0,0,.45)}
+#adjMenu button{border:0;border-radius:10px;background:rgba(255,255,255,.065);box-shadow:none}
+#adjMenu .adj-tools button{border-radius:999px}
+#adjMenu button[aria-pressed="true"]{background:var(--team);color:var(--btn-ink)}
+@media (max-width:540px){#snapBar{padding:5px 5px 5px 8px}#snapBar .btn.sm{padding:0 13px;font-size:14px}#snapBar #snapGo{padding:0 30px;font-size:21px}}
+/* the other bars wear the same pill: AI speed, replay tools, photo mode, hot routes; pressed = a soft filled pill */
+#apBar,#replayBar,#photoBar,#hotBar{border:0;background:var(--hud-bar);box-shadow:0 8px 22px rgba(0,0,0,.36)}
+#apBar{border-radius:999px;padding:5px;gap:2px}
+#apBar .ap-lab{font:600 12px/1 var(--f-text);color:rgba(242,241,236,.58);padding:0 8px 0 12px}
+#apBar button,#replayBar button,#hotBar button{border:0;border-radius:999px;background:none;box-shadow:none;color:rgba(242,241,236,.78);font:600 13.5px/1 var(--f-text);letter-spacing:0;text-transform:none}
+#apBar button{min-height:40px;padding:0 15px}
+#apBar button[aria-pressed="true"]{background:var(--team,#4DA3FF);color:var(--btn-ink,#101011);font-weight:700}
+#replayBar{border-radius:24px;padding:5px;gap:2px}
+#replayBar button{min-height:40px;padding:0 14px}
+#replayBar button[aria-pressed="true"]{background:rgba(242,194,48,.16);color:var(--c-acc)}
+#replayBar #rpDone{color:#fff;font-weight:700}
+#hotBar{border-radius:16px;padding:8px 8px 7px}
+#hotBar b{font:600 12px/1 var(--f-text);text-transform:none;color:var(--c-acc);padding:0 6px}
+#hotBar button{min-height:36px;padding:0 13px;background:rgba(255,255,255,.07)}
+#hotBar button[aria-pressed="true"]{background:var(--team);color:var(--btn-ink)}
+#photoBar{border-radius:20px;padding:8px 16px}
+#photoBar label{font:600 12px/1 var(--f-text);color:rgba(242,241,236,.7)}
+#photoBar select{border:0;border-radius:999px;background:rgba(255,255,255,.09);padding:8px 12px}
+#photoBar .btn{border-radius:999px;min-height:36px}
+#photoBar .note{font:500 12px/1.2 var(--f-text);color:rgba(242,241,236,.55)}
+#actBar button{border:0;border-radius:12px;background:var(--hud-glass2);box-shadow:0 4px 12px rgba(0,0,0,.22);font:600 12.5px/1 var(--f-text);letter-spacing:0}
+#actBar button.big{border-radius:14px;background:linear-gradient(180deg,color-mix(in srgb,var(--team) 82%,#fff),var(--team) 55%,color-mix(in srgb,var(--team) 82%,#000));color:var(--btn-ink);font:800 18px/1 var(--f-disp);text-transform:uppercase}
+#celebBtn{border-radius:999px;background:var(--c-acc);color:var(--c-acc-ink);font:700 15px/1 var(--f-text);text-transform:none;animation:none;box-shadow:var(--hud-shadow)}
+#replayBtn{border-radius:999px;background:var(--hud-glass);box-shadow:var(--hud-shadow)}
+#cap{border-radius:8px;background:var(--hud-glass);font:600 13px/1.3 var(--f-text)}
 #cap b{font:700 11.5px/1 var(--f-text);letter-spacing:0;text-transform:none;color:var(--c-acc)}
 #cap.radio{font-family:var(--f-text)}
-#hint{border-radius:0}
 #ctlTip{border-radius:0;background:rgba(22,23,24,.94);font:600 13px/1.35 var(--f-text)}
 #ctlTip b{background:var(--c-acc);color:var(--c-acc-ink)}
 
@@ -1931,14 +1963,14 @@ table.box td{font-size:13.5px}
 .qh .net,.stv-bar .net{border-radius:0;font:800 14px/1 var(--f-disp);background:var(--c-chalk);color:var(--c-base)}
 .stv-head{border-radius:0}
 .stv-mu .sd,.stv-mu .sd.b{background:var(--c);color:var(--k,#fff)}
-.tvb,.tvb i,.stv-wp .bar,.wpbar,#wpG .bar,.wpcard .bar{border-radius:0}
+.tvb,.tvb i,.stv-wp .bar,.wpbar,.wpcard .bar{border-radius:0}
 .tmr .pips i,.stv-card>.eyebrow::before{border-radius:0}
 .key,.perf,.wpcard{border-radius:0}
 .padfocus{box-shadow:none!important;outline-color:var(--c-acc)!important}
 #ticker{background:#111213;box-shadow:inset 0 1px 0 var(--c-rule)}
 #ticker .run{font:600 12.5px/1 var(--f-text);letter-spacing:0}
 #ticker .ua{border-radius:0;font:800 12px/1 var(--f-disp)}
-#dbm,#dbm i,#wpG,.wh .sw,#lower .hw,#wm b,#qcard{border-radius:0}
+#dbm,#dbm i,#lower .hw,#qcard{border-radius:0}
 
 /* leftover gloss: flat fills */
 #kmBan{background:var(--c-raise);box-shadow:inset 0 2px 0 var(--c-acc),0 2px 8px rgba(0,0,0,.4)}
@@ -1967,28 +1999,30 @@ table.box td{font-size:13.5px}
    96 · Score bug: the TV scoreboard bar (markup in index.html #sb, logic in 07c-scorebug.js, networks in 07d).
    This file is the base package, GLN (the flagship); 98-networks.css re-cuts the same markup for PYLON, CHALK and
    hashmark+ and adds the postseason dress (bowl, playoff, title game, conference championship).
+   Clean pass (the user: "less boxy and more clean"): one continuous bar, no tiles, no outlines, no etched rules.
+   The information is grouped by colour, weight and spacing; a single soft hairline sets the clock apart from the down.
    Landscape: one bar along the bottom centre, above the safe area and the ticker, ~72% of the width.
-   Portrait: two tiers across the top: the team panels, then a strip with the network, the clock and the down.
+   Portrait: one card across the top: the team fields, then a quiet strip with the network, the clock and the down.
    Settings › Score bug position (top / bottom) applies to landscape.
-   Left to right: network + game tag · away panel · home panel · state (quarter over game clock, play clock) · down.
-   Team panel: full team colour with a fine diagonal grain, a top-lit gradient and a bright top edge · the logo, large,
-   standing a little proud of the bar (else a monogram chip) · rank + ABBR over the mascot written out in brush
-   script in the team's secondary colour (.ms, fitted by 07d sbFit), record beside it · the score in big heavy
-   tabular numerals on a darker well, the timeout dashes under it.
-   Neutral modules read --sbn1/--sbn2 (state), --sbt1/--sbt2 (tag), --sbacc (play clock), --sbkey (keyline), so the
-   postseason dress can re-colour every package from one place.
+   Left to right: network wordmark · away field · home field · quarter over game clock, play clock · down & distance.
+   The conference and week ride in the corner network tag (#wm .wk, 07d netApply / 07c sbTag), not in the bar.
+   Team field: the team colour as one field, lit from the top and running lighter to darker left to right, so two
+   fields meet without a rule · the logo, large, standing proud of the bar (else a monogram) · rank + ABBR with the
+   record small beside it, the mascot in brush script under them (.ms, fitted by 07d sbFit) · the score in big heavy
+   tabular numerals straight on the field, timeouts as three small pips under it.
+   The bar reads --sbn1/--sbn2 (its base), --sbacc (play clock), so the postseason dress re-colours it from one place.
    Takeovers stay inside the bug, 150-250 ms, ease-out, nothing bounces:
-     .sb-msg  wipes over the state + down modules (first down, timeout, two-minute, end of quarter, turnover, review)
+     .sb-msg  wipes over the clock + down (first down, timeout, two-minute, end of quarter, turnover, review)
      .sb-td   wipes the whole bar in the scoring team's colour with its logo and mascot (touchdown)
      .sb-tab  slides out of the bar's inner edge (the flag with the foul); #drv (drive tracker) shares that rail
    The rail and the event strip are part of the bug, so its footprint (--sbB top mode, --sbT bottom mode, 07c
    sbMeasure) moves everything that stacks against the bug, and the 3D camera reads the same rect (08t-view).
    ========================================================= */
 :root{--sb-h:50px;--sb-w:clamp(500px,72vw,680px);--sb-bot:calc(env(safe-area-inset-bottom,0px) + 8px);--sb-k:1;--sbT:calc(env(safe-area-inset-bottom,0px) + 66px);
-  --sb-ink:#F7F6F2;--sb-base:#0B0C0F;--sb-base2:#1C1E23;--sb-rule:rgba(255,255,255,.13);--sb-cut:rgba(0,0,0,.55);--sb-flag:#FFD100;--sb-flag-ink:#171300;
-  --sb-lgw:52px;--sb-lg:58px;--sb-sc:48px;--sb-qc:58px;--sb-pc:30px;--sb-dd:112px;--sb-ms:17.5px;
-  --sbn1:#25272D;--sbn2:#0B0C0E;--sbt1:#24262B;--sbt2:#0E0F12;--sbacc:var(--c-acc);--sbkey:rgba(0,0,0,.7);
-  --sb-tsh:0 1px 1px rgba(0,0,0,.55),0 0 6px rgba(0,0,0,.18)}
+  --sb-ink:#F7F6F2;--sb-dim:rgba(247,246,242,.6);--sb-r:4px;--sb-r2:4px;--sb-flag:#FFD100;--sb-flag-ink:#171300;--sb-sep:rgba(255,255,255,.13);
+  --sb-lgw:52px;--sb-lg:58px;--sb-sc:46px;--sb-dd:108px;--sb-ms:17.5px;
+  --sbn1:#2A2C31;--sbn2:#0D0E11;--sbacc:var(--c-acc);
+  --sb-shadow:0 10px 24px rgba(0,0,0,.4),0 2px 5px rgba(0,0,0,.25);--sb-tsh:0 1px 2px rgba(0,0,0,.32)}
 :root.ticker{--sb-bot:calc(env(safe-area-inset-bottom,0px) + 30px)}
 :root[data-bugsize="s"]{--sb-k:.88}:root[data-bugsize="l"]{--sb-k:1.1}
 
@@ -2002,172 +2036,164 @@ table.box td{font-size:13.5px}
 /* ordinals and units: smaller caps on the baseline (2ND, 4TH & 2, 12 MPH) */
 #sb .o{font-size:.68em;letter-spacing:.03em;margin-left:.04em;text-transform:uppercase}
 
-/* the bar: square cut, a hard black keyline and a soft drop; the logos may stand proud of it, so no overflow clip */
-#sb .sbx{position:relative;display:flex;align-items:stretch;height:var(--sb-h);background:linear-gradient(180deg,var(--sb-base2),var(--sb-base));
-  box-shadow:0 0 0 1px var(--sbkey),0 10px 24px rgba(0,0,0,.5)}
+/* the bar: one graphite shape, top-lit, a soft drop; the logos may stand proud of it, so no overflow clip */
+#sb .sbx{position:relative;display:flex;align-items:stretch;height:var(--sb-h);border-radius:var(--sb-r);
+  background:linear-gradient(180deg,var(--sbn1),var(--sbn2));box-shadow:var(--sb-shadow)}
 
-/* game tag: the network's wordmark, then the conference in text (or the bowl / playoff), week under it */
-#sb .sb-tag{flex:none;min-width:46px;padding:0 6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;position:relative;
-  background:linear-gradient(180deg,var(--sbt1),var(--sbt2));box-shadow:inset 0 1px 0 rgba(255,255,255,.14),inset -1px 0 0 var(--sb-cut)}
-#sb .sb-tag::before{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:var(--pkA,var(--c-acc))}
+/* the network's wordmark on the bar's end (the conference and week went to the corner tag) */
+#sb .sb-tag{flex:none;display:flex;align-items:center;justify-content:center;padding:0 11px 0 12px;position:relative}
+#sb .sb-tag>b,#sb .sb-tag>small{display:none}
 #sb .sb-net:empty{display:none}
 #sb .sb-net .nwm{font-size:12px}
-#sb .sb-tag>b{font:800 12px/1 var(--f-disp);letter-spacing:.04em;text-transform:uppercase;white-space:nowrap}
-#sb .sb-tag>small{font:700 8px/1 var(--f-text);letter-spacing:.1em;color:#B9B7B1;text-transform:uppercase;white-space:nowrap}
-#sb .sb-tag>small:empty{display:none}
 
-/* team panels (#sb.uv puts the user's away game in TV order: away left, home right) */
+/* team fields (#sb.uv puts the user's away game in TV order: away left, home right) */
 #tmA{order:1}#tmH{order:2}#sb.uv #tmH{order:1}#sb.uv #tmA{order:2}#sb .sb-r{order:3}
 #sb .tm{--k:#fff;--tsh:var(--sb-tsh);position:relative;flex:1 1 0;min-width:0;display:flex;align-items:stretch;color:var(--k);
-  background:linear-gradient(180deg,rgba(255,255,255,.24) 0,rgba(255,255,255,.07) 38%,rgba(255,255,255,0) 52%,rgba(0,0,0,.26) 100%),
-    repeating-linear-gradient(118deg,rgba(255,255,255,.05) 0 1px,rgba(255,255,255,0) 1px 4px),
-    radial-gradient(120% 140% at 0 0,color-mix(in srgb,var(--c) 70%,#fff) 0,var(--c) 55%),var(--c);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 -1px 0 rgba(0,0,0,.4),inset 1px 0 0 rgba(255,255,255,.12),inset -1px 0 0 var(--sb-cut)}
-#sb .tm.lt{--tsh:0 1px 0 rgba(255,255,255,.35)}   /* dark ink on a light team colour */
-/* logo: large, centred on its well, standing a few px proud of the bar top and bottom, lifted by a shadow */
-#sb .tlg{flex:none;width:var(--sb-lgw);display:grid;place-items:center;position:relative;z-index:2;
-  background:linear-gradient(90deg,rgba(0,0,0,.2),rgba(0,0,0,0) 85%)}
+  background:linear-gradient(180deg,rgba(255,255,255,.15) 0,rgba(255,255,255,0) 46%,rgba(0,0,0,.16) 100%),
+    linear-gradient(90deg,color-mix(in srgb,var(--c) 80%,#fff) 0,var(--c) 36%,color-mix(in srgb,var(--c) 76%,#000) 100%)}
+#sb .tm.lt{--tsh:none}   /* dark ink on a light team colour */
+/* logo: large, centred, standing a few px proud of the bar top and bottom, lifted by a soft shadow */
+#sb .tlg{flex:none;width:var(--sb-lgw);display:grid;place-items:center;position:relative;z-index:2}
 #sb .lg{position:absolute;left:50%;top:50%;width:var(--sb-lg);height:var(--sb-lg);margin:calc(var(--sb-lg)/-2) 0 0 calc(var(--sb-lg)/-2);object-fit:contain;
-  filter:drop-shadow(0 2px 2px rgba(0,0,0,.5)) drop-shadow(0 0 1px rgba(0,0,0,.4));transition:opacity .15s}
-#sb .mono{display:grid;place-items:center;width:calc(var(--sb-h) - 12px);height:calc(var(--sb-h) - 12px);border-radius:2px;font:800 calc(var(--sb-h)*.38)/1 var(--f-disp);font-style:normal;letter-spacing:.01em;color:var(--k);text-shadow:var(--tsh);
-  background:linear-gradient(160deg,color-mix(in srgb,var(--c) 75%,#fff),var(--c) 55%,color-mix(in srgb,var(--c) 80%,#000));box-shadow:inset 0 0 0 2px var(--c2),0 2px 4px rgba(0,0,0,.4)}
+  filter:drop-shadow(0 2px 3px rgba(0,0,0,.38));transition:opacity .15s}
+#sb .mono{display:grid;place-items:center;width:calc(var(--sb-h) - 14px);height:calc(var(--sb-h) - 14px);border-radius:50%;font:800 calc(var(--sb-h)*.34)/1 var(--f-disp);font-style:normal;letter-spacing:.01em;color:var(--k);
+  background:color-mix(in srgb,var(--c) 78%,#000);box-shadow:inset 0 0 0 1.5px color-mix(in srgb,var(--c2) 75%,transparent)}
 #sb .tm.haslg .mono{display:none}
 #sb .sbx:has(.sb-td.on) .lg{opacity:0}
-/* name block: rank + ABBR with the record at the right; the mascot in script across the whole line under them */
-#sb .nm{flex:1 1 auto;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-content:center;column-gap:6px;row-gap:2px;padding:1px 4px 0 7px;text-shadow:var(--tsh)}
+/* name: rank + ABBR with the record small at the right; the mascot in script across the whole line under them */
+#sb .nm{flex:1 1 auto;min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto;grid-template-rows:auto auto;align-content:center;column-gap:6px;row-gap:2px;padding:1px 4px 0 6px;text-shadow:var(--tsh)}
 #sb .r1{grid-column:1;grid-row:1;display:flex;align-items:baseline;gap:3px;min-width:0}
-#sb .rk{font:700 12px/1 var(--f-disp);opacity:.88;flex:none}
+#sb .rk{font:600 11.5px/1 var(--f-disp);opacity:.72;flex:none}
 #sb .rk:empty{display:none}
-#sb .ab{font:700 21px/.86 var(--f-disp);letter-spacing:.01em;text-transform:uppercase;white-space:nowrap;overflow:hidden;min-width:0}
+#sb .ab{font:800 21px/.86 var(--f-disp);letter-spacing:.015em;text-transform:uppercase;white-space:nowrap;overflow:hidden;min-width:0}
 #sb .ab[data-n="4"]{font-size:18.5px}#sb .ab[data-n="5"],#sb .ab[data-n="6"]{font-size:16px}
-/* the mascot: brush script, secondary colour, a hard drop so it reads on any team colour; sized down to fit (07d) */
+/* the mascot: brush script in the secondary colour, a short hard drop so it reads on any team colour; fitted (07d) */
 #sb .ms{grid-column:1/3;grid-row:2;min-width:0;display:block;white-space:nowrap;overflow:visible;padding:0 2px 0 1px;margin-top:-1px;
   font:400 calc(var(--sb-ms)*var(--fk,1))/1.12 var(--f-script);letter-spacing:.01em;color:var(--msc,var(--c2));
-  text-shadow:1.5px 1.5px 0 var(--msh,rgba(0,0,0,.6)),0 0 3px rgba(0,0,0,.3);transform:scaleX(var(--fx,1));transform-origin:left center}
-#sb .tm.lt .ms{text-shadow:0 1px 0 rgba(255,255,255,.4)}
+  text-shadow:1px 1px 0 var(--msh,rgba(0,0,0,.5));transform:scaleX(var(--fx,1));transform-origin:left center}
+#sb .tm.lt .ms{text-shadow:none}
 #sb .ms:empty{display:none}
 #sb .r2{display:contents}
-#sb .rec{grid-column:2;grid-row:1;align-self:center;font:700 9.5px/1 var(--f-text);letter-spacing:.04em;opacity:.9;white-space:nowrap}
-/* possession: the football on the logo's lower inner corner, laces up, with a lift (it takes no room from the name) */
-#sb .pos{position:absolute;left:calc(var(--sb-lgw) - 18px);bottom:3px;z-index:3;width:17px;height:10.5px;opacity:0;transform:translateX(-3px);transition:opacity var(--t-med),transform var(--t-med) var(--ease-out);filter:drop-shadow(0 1px 1px rgba(0,0,0,.55))}
+#sb .rec{grid-column:2;grid-row:1;align-self:center;font:600 9.5px/1 var(--f-text);letter-spacing:.03em;opacity:.68;white-space:nowrap}
+/* possession: a small football on the logo's lower inner corner (it takes no room from the name) */
+#sb .pos{position:absolute;left:calc(var(--sb-lgw) - 17px);bottom:3px;z-index:3;width:16px;height:10px;opacity:0;transform:translateX(-3px);transition:opacity var(--t-med),transform var(--t-med) var(--ease-out);filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
 #sb .pos svg{display:block;width:100%;height:100%;overflow:visible}
-#sb .pos ellipse{fill:#8A4A1E;stroke:#fff;stroke-width:1.4}
-#sb .pos path{fill:none;stroke:#fff;stroke-width:1.2}
+#sb .pos ellipse{fill:#8A4A1E;stroke:#fff;stroke-width:1.3}
+#sb .pos path{fill:none;stroke:#fff;stroke-width:1.1}
 #sb .tm.has .pos{opacity:1;transform:none}
-/* score: big heavy tabular numerals on a darker well cut off by an etched rule; the timeout dashes under them */
-#sb .sc{flex:none;width:var(--sb-sc);position:relative;display:grid;place-items:center;overflow:hidden;perspective:120px;padding-bottom:5px;
-  background:linear-gradient(180deg,rgba(0,0,0,.08),rgba(0,0,0,.3));box-shadow:inset 1px 0 0 rgba(0,0,0,.35),inset 2px 0 0 rgba(255,255,255,.1)}
-#sb .sv{grid-area:1/1;display:block;font:800 37px/1 var(--f-num);letter-spacing:-.01em;padding-top:1px;text-shadow:0 2px 2px rgba(0,0,0,.4);backface-visibility:hidden}
-#sb .tm.lt .sv{text-shadow:0 1px 0 rgba(255,255,255,.3)}
-#sb .sc.w3 .sv{font-size:29px;letter-spacing:-.03em}
+/* score: big heavy tabular numerals straight on the team field; timeouts as three small pips under them */
+#sb .sc{flex:none;width:var(--sb-sc);margin-right:5px;position:relative;display:grid;place-items:center;overflow:hidden;perspective:120px;padding-bottom:4px}
+#sb .sv{grid-area:1/1;display:block;font:800 36px/1 var(--f-num);letter-spacing:-.01em;padding-top:1px;text-shadow:0 1px 3px rgba(0,0,0,.28);backface-visibility:hidden}
+#sb .tm.lt .sv{text-shadow:none}
+#sb .sc.w3 .sv{font-size:28px;letter-spacing:-.03em}
 #sb .sv.out{animation:sbFlipOut .11s ease-in forwards}
 #sb .sv.in{animation:sbFlipIn .14s var(--ease-out) .1s both}
 @keyframes sbFlipOut{to{transform:rotateX(90deg);opacity:.2}}
 @keyframes sbFlipIn{from{transform:rotateX(-90deg);opacity:.2}}
-#sb .tm.flash::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;background:color-mix(in srgb,var(--c) 45%,#fff);animation:sbFlash .5s var(--ease-out) forwards}
-@keyframes sbFlash{from{opacity:.9}to{opacity:0}}
-/* timeouts: three short dashes under the score; a used one dims, the one just used flashes out */
-#sb .tos{position:absolute;right:0;bottom:5px;width:var(--sb-sc);z-index:2;display:flex;justify-content:center;gap:3px}
+#sb .tm.flash::before{content:"";position:absolute;inset:0;z-index:3;pointer-events:none;border-radius:inherit;background:color-mix(in srgb,var(--c) 45%,#fff);animation:sbFlash .5s var(--ease-out) forwards}
+@keyframes sbFlash{from{opacity:.85}to{opacity:0}}
+#sb .tos{position:absolute;right:5px;bottom:5px;width:var(--sb-sc);z-index:2;display:flex;justify-content:center;gap:3px}
 #sb .tos:empty{display:none}
-#sb .tos i{width:9px;height:3px;background:currentColor;box-shadow:0 1px 0 rgba(0,0,0,.3);transition:opacity .25s}
-#sb .tos i.u{opacity:.22;box-shadow:none}
+#sb .tos i{width:7px;height:2.5px;border-radius:2px;background:currentColor;opacity:.9;transition:opacity .25s}
+#sb .tos i.u{opacity:.22}
 #sb .tos i.go{animation:sbPip .7s var(--ease-out)}
 @keyframes sbPip{0%,35%{opacity:1;background:var(--sb-flag);box-shadow:0 0 6px var(--sb-flag)}100%{opacity:.22}}
 
-/* state: the dark module. Quarter over the game clock, play clock beside it (yellow; red at 5 or less), crisp
-   etched rules (a black cut beside a light line) between the modules */
-#sb .sb-r{flex:none;position:relative;display:flex;align-items:stretch;
-  background:linear-gradient(180deg,var(--sbn1) 0,color-mix(in srgb,var(--sbn1) 45%,var(--sbn2)) 48%,var(--sbn2) 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.14)}
-#sb .sb-st{flex:none;display:flex;align-items:stretch;box-shadow:inset -1px 0 0 var(--sb-cut)}
-#sb .qc{position:relative;width:var(--sb-qc);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;box-shadow:inset 1px 0 0 var(--sb-rule)}
-#qtr{font:700 13px/1 var(--f-disp);letter-spacing:.02em;color:#C8CAD0;text-transform:uppercase}
+/* clock and down: straight on the bar. Quarter small over the game clock, the play clock beside it in the accent
+   (a red pill at 5 or less), then one soft hairline and the down & distance with the spot under it */
+#sb .sb-r{flex:none;position:relative;display:flex;align-items:stretch;padding-left:4px;border-radius:0 var(--sb-r) var(--sb-r) 0}
+#sb .sb-st{flex:none;display:flex;align-items:center;gap:1px;padding-right:4px}
+#sb .qc{position:relative;min-width:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:0 5px 0 7px}
+#qtr{font:700 11.5px/1 var(--f-disp);letter-spacing:.05em;color:var(--sb-dim);text-transform:uppercase}
 #gclk{font:800 25px/.9 var(--f-num);letter-spacing:0}
-#sb .qc:has(#gclk.run)::after{content:"";position:absolute;top:6px;right:6px;width:4px;height:4px;border-radius:50%;background:var(--c-win);box-shadow:0 0 4px var(--c-win)}
-#sb .pc{flex:none;width:var(--sb-pc);display:grid;place-items:center;font:800 18px/1 var(--f-num);color:var(--sbacc);background:rgba(255,255,255,.04);
-  box-shadow:inset 1px 0 0 var(--sb-cut),inset 2px 0 0 var(--sb-rule);transition:background var(--t-fast),color var(--t-fast)}
-#sb .pc.off{color:#5F5E5A}
+#sb .qc:has(#gclk.run)::after{content:"";position:absolute;top:8px;right:1px;width:4px;height:4px;border-radius:50%;background:var(--c-win);box-shadow:0 0 4px var(--c-win)}
+#sb .pc{flex:none;min-width:30px;height:22px;padding:0 4px;border-radius:11px;display:grid;place-items:center;font:800 17px/1 var(--f-num);color:var(--sbacc);transition:background var(--t-fast),color var(--t-fast)}
+#sb .pc.off{color:rgba(247,246,242,.28)}
 #sb .pc.low{background:var(--c-loss);color:#fff}
-/* down & distance; ball spot, stamina and wind under it */
-#sb .sb-dd{flex:none;width:var(--sb-dd);display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 9px;position:relative;box-shadow:inset 1px 0 0 var(--sb-rule)}
-#dd{font:800 21px/.9 var(--f-disp);letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}
-#dd.long{font-size:17.5px}
+#sb .sb-dd{flex:none;width:var(--sb-dd);display:flex;flex-direction:column;justify-content:center;gap:5px;padding:0 10px 0 13px;position:relative}
+#sb .sb-dd::before{content:"";position:absolute;left:0;top:13px;bottom:13px;width:1px;background:var(--sb-sep)}
+#dd{font:800 20px/.9 var(--f-disp);letter-spacing:.01em;text-transform:uppercase;white-space:nowrap}
+#dd.long{font-size:17px}
 #sb.late #dd{color:var(--c-acc)}
-#sb .sb-dd>small{display:flex;align-items:center;gap:6px;font:700 9.5px/1 var(--f-text);letter-spacing:.05em;color:#A9A7A1;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+#sb .sb-dd>small{display:flex;align-items:center;gap:6px;font:600 9.5px/1 var(--f-text);letter-spacing:.05em;color:var(--sb-dim);text-transform:uppercase;white-space:nowrap;overflow:hidden}
 #spot{color:var(--sb-ink)}
-#sb.rz .sb-dd{box-shadow:inset 3px 0 0 var(--c-loss)}#sb.rz #spot{color:#FF8D91}
+#sb.rz #spot{color:#FF8D91}
+#sb.rz #spot::before{content:"";display:inline-block;width:5px;height:5px;margin-right:5px;border-radius:50%;background:var(--c-loss);vertical-align:1px}
 #wxs:empty,#stam:empty{display:none}#wxs svg{width:10px;height:10px;vertical-align:-1px}#wxs .warr{margin-left:2px}#wxs .warr svg{width:9px;height:9px}
 
-/* message takeover over the state + down modules */
-#sb .sb-msg{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:0 12px;overflow:hidden;
-  background:linear-gradient(180deg,rgba(255,255,255,.2),rgba(255,255,255,0) 50%,rgba(0,0,0,.22)),var(--mc,#24262B);color:var(--mk,#fff);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.4);clip-path:inset(0 0 0 100%);transition:clip-path .2s var(--ease-out);visibility:hidden}
+/* message takeover over the clock + down */
+#sb .sb-msg{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;justify-content:center;gap:4px;padding:0 12px;overflow:hidden;border-radius:inherit;
+  background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 50%,rgba(0,0,0,.14)),var(--mc,#24262B);color:var(--mk,#fff);
+  clip-path:inset(0 0 0 100%);transition:clip-path .2s var(--ease-out);visibility:hidden}
 #sb .sb-msg.on{clip-path:inset(0);visibility:visible}
 #sb .sb-msg.off{clip-path:inset(0 100% 0 0);visibility:visible;transition-duration:.16s}
 #sb .sb-msg.dd{left:auto;width:var(--sb-dd)}
-#sb .sb-msg b{font:800 22px/.9 var(--f-disp);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-shadow:0 1px 1px rgba(0,0,0,.4)}
-#sb .sb-msg.long b{font-size:17.5px}
-#sb .sb-msg>small{font:700 9px/1.1 var(--f-text);letter-spacing:.06em;text-transform:uppercase;opacity:.88;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#sb .sb-msg .tvl{--s:24px;position:absolute;right:9px;top:50%;margin-top:-12px}
+#sb .sb-msg b{font:800 21px/.9 var(--f-disp);letter-spacing:.02em;text-transform:uppercase;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb .sb-msg.long b{font-size:17px}
+#sb .sb-msg>small{font:600 9px/1.1 var(--f-text);letter-spacing:.06em;text-transform:uppercase;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb .sb-msg .tvl{--s:24px;position:absolute;right:10px;top:50%;margin-top:-12px}
 #sb .sb-msg:has(.tvl){padding-right:42px}
 /* touchdown: the scoring team's colour wipes across the whole bar with its logo, the mascot signs it */
-#sb .sb-td{position:absolute;inset:0;z-index:4;display:flex;align-items:center;gap:12px;padding:0 16px 0 6px;color:var(--k,#fff);overflow:hidden;
-  background:linear-gradient(180deg,rgba(255,255,255,.26) 0,rgba(255,255,255,.06) 40%,rgba(255,255,255,0) 52%,rgba(0,0,0,.28) 100%),
-    repeating-linear-gradient(118deg,rgba(255,255,255,.06) 0 1px,rgba(255,255,255,0) 1px 4px),var(--c);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.5);clip-path:inset(0 100% 0 0);transition:clip-path .24s var(--ease-out);visibility:hidden}
+#sb .sb-td{position:absolute;inset:0;z-index:4;display:flex;align-items:center;gap:12px;padding:0 18px 0 8px;color:var(--k,#fff);overflow:hidden;border-radius:inherit;
+  background:linear-gradient(180deg,rgba(255,255,255,.18) 0,rgba(255,255,255,0) 48%,rgba(0,0,0,.2) 100%),
+    linear-gradient(90deg,color-mix(in srgb,var(--c) 78%,#fff),var(--c) 40%,color-mix(in srgb,var(--c) 74%,#000));
+  clip-path:inset(0 100% 0 0);transition:clip-path .24s var(--ease-out);visibility:hidden}
 #sb .sb-td.on{clip-path:inset(0);visibility:visible}
 #sb .sb-td.off{clip-path:inset(0 0 0 100%);visibility:visible;transition-duration:.2s}
-#sb .sb-td .tvl{--s:calc(var(--sb-h) - 4px)}
-#sb .sb-td .tvl.hl{filter:drop-shadow(0 2px 3px rgba(0,0,0,.5))}
+#sb .sb-td .tvl{--s:calc(var(--sb-h) - 6px)}
+#sb .sb-td .tvl.hl{filter:drop-shadow(0 2px 3px rgba(0,0,0,.4))}
 #sb .sb-td .tvl img{inset:0;width:100%;height:100%}
 #sb .sb-td .tt{display:flex;flex-direction:column;gap:4px;min-width:0;flex:none}
-#sb .sb-td b{font:800 33px/.82 var(--f-disp);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;text-shadow:0 2px 2px rgba(0,0,0,.4)}
-#sb .sb-td small{font:700 9.5px/1 var(--f-text);letter-spacing:.1em;text-transform:uppercase;opacity:.9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#sb .sb-td .tms{flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap;font:400 26px/1.25 var(--f-script);font-style:normal;color:var(--msc,#fff);padding:0 4px;text-shadow:0 2px 0 rgba(0,0,0,.45);transform:rotate(-4deg)}
-#sb .sb-td .pts{margin-left:auto;font:800 34px/1 var(--f-num);letter-spacing:0;text-shadow:0 2px 2px rgba(0,0,0,.4)}
-#sb .sb-td::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.22) 50%,transparent 65%);transform:translateX(-100%);pointer-events:none}
+#sb .sb-td b{font:800 32px/.82 var(--f-disp);letter-spacing:.03em;text-transform:uppercase;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+#sb .sb-td small{font:600 9.5px/1 var(--f-text);letter-spacing:.1em;text-transform:uppercase;opacity:.85;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#sb .sb-td .tms{flex:0 1 auto;min-width:0;overflow:hidden;white-space:nowrap;font:400 26px/1.25 var(--f-script);font-style:normal;color:var(--msc,#fff);padding:0 4px;text-shadow:1px 2px 0 rgba(0,0,0,.35);transform:rotate(-4deg)}
+#sb .sb-td .pts{margin-left:auto;font:800 33px/1 var(--f-num);letter-spacing:0;text-shadow:0 1px 3px rgba(0,0,0,.3)}
+#sb .sb-td::after{content:"";position:absolute;inset:0;background:linear-gradient(100deg,transparent 35%,rgba(255,255,255,.2) 50%,transparent 65%);transform:translateX(-100%);pointer-events:none}
 #sb .sb-td.on::after{animation:sbSheen .6s var(--ease-out) .2s}
 @keyframes sbSheen{to{transform:translateX(100%)}}
 
-/* the rail on the bar's inner edge: drive tracker (left), slide-out tab (right) */
+/* the rail on the bar's inner edge: drive tracker (left), slide-out flag (right); soft shapes, no outlines */
 #sb .sb-rail{display:flex;align-items:flex-end;justify-content:space-between;gap:6px;min-height:0;overflow:hidden}
 #sb .sb-rail:has(>:not([hidden])){padding:5px 0}
 :root[data-bug="bottom"] #sb .sb-rail{align-items:flex-start}
-#drv{height:20px;display:flex;align-items:center;gap:6px;padding:0 9px 0 6px;background:linear-gradient(180deg,#1E2025,#0E0F12);box-shadow:0 0 0 1px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.1);font:700 9.5px/1 var(--f-text);letter-spacing:.07em;text-transform:uppercase;color:#D3D1CB;white-space:nowrap;margin:0}
-#sb .sb-tab{margin-left:auto;height:22px;max-width:72%;display:flex;align-items:center;gap:7px;padding:0 10px 0 8px;background:linear-gradient(180deg,#FFE04D,var(--sb-flag) 55%,#E9BC00);color:var(--sb-flag-ink);box-shadow:0 0 0 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.6);white-space:nowrap;overflow:hidden}
+#drv{height:20px;display:flex;align-items:center;gap:6px;padding:0 10px 0 5px;margin:0;border-radius:var(--sb-r2);background:rgba(13,14,17,.78);font:700 9.5px/1 var(--f-text);letter-spacing:.06em;text-transform:uppercase;color:#E2E0DA;white-space:nowrap}
+#sb .sb-tab{margin-left:auto;height:22px;max-width:72%;display:flex;align-items:center;gap:7px;padding:0 11px 0 9px;border-radius:var(--sb-r2);background:linear-gradient(180deg,#FFE04D,var(--sb-flag) 60%,#F2C500);color:var(--sb-flag-ink);white-space:nowrap;overflow:hidden}
 #sb .sb-tab svg{width:13px;height:13px;flex:none}
 #sb .sb-tab b{font:800 16px/1 var(--f-disp);letter-spacing:.04em;text-transform:uppercase}
-#sb .sb-tab span{font:700 10px/1 var(--f-text);letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis}
+#sb .sb-tab span{font:600 10px/1 var(--f-text);letter-spacing:.02em;overflow:hidden;text-overflow:ellipsis}
 #sb .sb-tab.in{animation:sbTabDn .2s var(--ease-out)}
 :root[data-bug="bottom"] #sb .sb-tab.in{animation-name:sbTabUp}
 @keyframes sbTabDn{from{transform:translateY(-110%)}}
 @keyframes sbTabUp{from{transform:translateY(110%)}}
 
-/* ---------- narrow landscape (SE-class phones): the game tag gives its room to the teams ---------- */
-@media (min-width:541px) and (max-width:740px){#sb .sb-tag{display:none}:root{--sb-ms:15px}}
-/* ---------- portrait: two tiers across the top. Tier 1 the team panels; tier 2 a strip with the network and game
-   tag, the quarter and clock, the play clock, and the down & distance with the spot ---------- */
+/* ---------- narrow landscape (SE-class phones): the wordmark gives its room to the teams, the bar runs a little
+   wider and the logo, score and down step down so the names never clip ---------- */
+@media (min-width:541px) and (max-width:740px){#sb .sb-tag{display:none}:root{--sb-ms:15px;--sb-w:clamp(500px,80vw,680px);--sb-lgw:44px;--sb-lg:50px;--sb-sc:40px;--sb-dd:96px}#sb .sv{font-size:32px}}
+/* ---------- portrait: one card across the top. The team fields, then a quiet strip with the network, the quarter
+   and clock, the play clock, and the down & distance with the spot ---------- */
 @media (max-width:540px){
-  :root{--sb-h:66px;--sb-th:44px;--sb-sh:22px;--sb-lgw:36px;--sb-lg:42px;--sb-sc:40px;--sb-qc:auto;--sb-pc:28px;--sb-dd:auto;--sb-ms:15px}
+  :root{--sb-h:66px;--sb-th:44px;--sb-sh:22px;--sb-lgw:36px;--sb-lg:40px;--sb-sc:38px;--sb-dd:auto;--sb-ms:15px;--sb-r:6px}
   #sb{left:max(8px,env(safe-area-inset-left,0px));right:max(8px,env(safe-area-inset-right,0px));width:auto;max-width:none;transform:scale(var(--sb-k))}
-  #sb .sbx{flex-wrap:wrap;height:auto}
+  #sb .sbx{flex-wrap:wrap;height:auto;overflow:hidden}
   #sb .tm{flex:1 1 50%;height:var(--sb-th)}
-  #sb .sb-tag{order:3;height:var(--sb-sh);flex-direction:row;gap:6px;padding:0 8px;min-width:0}
-  #sb .sb-tag::before{display:none}
-  #sb .sb-net .nwm{font-size:11px}
-  #sb .sb-tag>b{font-size:11px}#sb .sb-tag>small{font-size:8px}
-  #sb .sb-r{order:4;flex:1 1 0;height:var(--sb-sh);min-width:0}
-  #sb .sb-st{flex:none}
-  #sb .qc{flex-direction:row;gap:6px;padding:0 9px}
-  #sb .qc:has(#gclk.run)::after{top:3px;right:3px}
-  #sb .sb-dd{flex:1 1 auto;min-width:0;flex-direction:row;align-items:center;justify-content:flex-end;gap:7px;padding:0 9px}
+  #sb .sb-tag{order:3;height:var(--sb-sh);padding:0 8px 0 10px}
+  #sb .sb-net .nwm{font-size:10.5px}
+  #sb .sb-r{order:4;flex:1 1 0;height:var(--sb-sh);min-width:0;padding-left:0;border-radius:0}
+  #sb .sb-st{flex:none;padding-right:2px}
+  #sb .qc{flex-direction:row;align-items:baseline;gap:5px;padding:0 4px 0 6px;min-width:0}
+  #sb .qc:has(#gclk.run)::after{top:3px;right:-2px}
+  #sb .pc{height:16px;min-width:26px;border-radius:8px}
+  #sb .sb-dd{flex:1 1 auto;min-width:0;flex-direction:row;align-items:center;justify-content:flex-end;gap:7px;padding:0 10px}
+  #sb .sb-dd::before{display:none}
   #sb .sb-msg.dd{left:0;width:auto}
-  #sb .mono{width:28px;height:28px;font-size:15px}
+  #sb .mono{width:28px;height:28px;font-size:13px}
   #sb .nm{padding:1px 2px 0 5px;column-gap:4px}
   #sb .pos{left:22px;bottom:3px;width:14px;height:8.5px}
   #sb .ab{font-size:18px}#sb .ab[data-n="4"]{font-size:16px}#sb .ab[data-n="5"],#sb .ab[data-n="6"]{font-size:14px}
   #sb .rk{font-size:10px}
   #sb .rec{font-size:8.5px;letter-spacing:0}
-  #sb .tos{gap:2px;bottom:4px}#sb .tos i{width:7px;height:2.5px}
+  #sb .sc{margin-right:3px}
+  #sb .tos{gap:2px;bottom:4px;right:3px}#sb .tos i{width:6px;height:2px}
   #sb .sv{font-size:30px}
   #sb .sc.w3 .sv{font-size:22px}
   #gclk{font-size:16px;line-height:1}
@@ -2176,9 +2202,9 @@ table.box td{font-size:13.5px}
   #dd{font-size:15px;line-height:1}#dd.long{font-size:13px}
   #sb .sb-dd>small{font-size:8.5px;gap:4px;letter-spacing:.03em}
   #wxs{display:none}
-  #sb .sb-msg{padding:0 8px;flex-direction:row;align-items:center;gap:8px}
+  #sb .sb-msg{padding:0 10px;flex-direction:row;align-items:center;gap:8px}
   #sb .sb-msg b{font-size:15px}#sb .sb-msg.long b{font-size:13px}#sb .sb-msg>small{font-size:8px}
-  #sb .sb-msg .tvl{display:none}#sb .sb-msg:has(.tvl){padding-right:8px}
+  #sb .sb-msg .tvl{display:none}#sb .sb-msg:has(.tvl){padding-right:10px}
   #sb .sb-td{gap:9px;padding:0 12px 0 5px}
   #sb .sb-td b{font-size:25px}
   #sb .sb-td .tms{font-size:21px}
@@ -2191,17 +2217,17 @@ table.box td{font-size:13.5px}
 /* top (portrait, or landscape set to top): chips, toasts and cards stack under the bar via --sbB (07c sbMeasure) */
 /* bottom (landscape): prompts and bars sit above the bug via --sbT; the action buttons clear its height on the right */
 :root[data-bug="bottom"] #snapBar,:root[data-bug="bottom"] #hint,:root[data-bug="bottom"] #apBar,:root[data-bug="bottom"] #replayBar,:root[data-bug="bottom"] #photoBar{bottom:calc(var(--sbT) + 8px);margin-bottom:0}
-:root[data-bug="bottom"] #hotBar,:root[data-bug="bottom"] #adjMenu{bottom:calc(var(--sbT) + 70px);margin-bottom:0}
+:root[data-bug="bottom"] #hotBar,:root[data-bug="bottom"] #adjMenu{bottom:calc(var(--sbT) + 66px);margin-bottom:0}
 :root[data-bug="bottom"] #actBar{bottom:calc(var(--sbT) + 10px);margin-bottom:0}
 :root[data-bug="bottom"] #bulletBtn{bottom:calc(var(--sbT) + 66px)}
 :root[data-bug="bottom"] #celebBtn{top:auto;bottom:calc(var(--sbT) + 14px)}
-:root[data-bug="bottom"] #wm{top:calc(env(safe-area-inset-top,0px) + 14px);bottom:auto}   /* the network tag: top-right corner, clear of the wider packages */
+:root[data-bug="bottom"] #wm{top:calc(env(safe-area-inset-top,0px) + 12px);bottom:auto}   /* the network tag: top-right corner, clear of the wider packages */
 :root[data-bug="bottom"] #opt,:root[data-bug="bottom"] #celebSheet{padding-bottom:calc(var(--sbT) + 10px)}
 :root[data-bug="bottom"] body:has(#kick:not([hidden])) #sb,:root[data-bug="bottom"] body:has(#call:not([hidden])) #sb{visibility:hidden}
 :root[data-bug="bottom"] #kmBan{top:calc(env(safe-area-inset-top,0px) + 12px)}
 :root[data-bug="bottom"] #kmOv{padding-top:calc(env(safe-area-inset-top,0px) + 12px);padding-bottom:calc(var(--sbT) + 8px)}
 body:has(#snapBar:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0px) + 76px)}
-:root[data-bug="bottom"] body:has(#snapBar:not([hidden])) #hint{bottom:calc(var(--sbT) + 68px)}
+:root[data-bug="bottom"] #app:has(#snapBar:not([hidden])) #hint{bottom:calc(var(--sbT) + 70px)}   /* over the presnap pill, not under it */
 :root[data-bug="bottom"] #banner{top:26%}
 @media (min-width:541px){:root[data-bug="top"] #rcard,:root[data-bug="top"] #wpG{top:calc(var(--sbB,72px) + 8px)}}   /* landscape set to top: cards clear the bar */
 :root.photo #sb{display:none!important}
@@ -2440,24 +2466,24 @@ body:has(#snapBar:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0p
 /* =========================================================
    98 · TV networks (07d): wordmarks, the three other score-bug packages and the postseason dress.
    96-scorebug.css is GLN, the flagship. Each package below re-cuts the same #sb markup (every id and class the
-   game and QA use stays) with its own structure, colour, logo and mascot treatment, clock module and takeovers:
-     PYLON      light, angular: separate slanted tiles (black network tile, white team tiles with the logo on a
-                team-colour block, a pylon-orange clock tile, a black down tile); mascot in collegiate block caps;
-                takeovers slide in as slanted slabs
-     CHALK      the conference network, stacked: one team per row in full team colour with the mascot written
-                big in brush script, a slate clock column (play clock standing the full height on the right), chalk
-                dashes between the rows; takeovers open from the centre
-     hashmark+  streaming: one rounded smoked pill (no backdrop blur: it would re-blur the 3D field every frame), no panels, a team-colour underline under each team,
-                lime for possession and the play clock, sentence case; mascot small in script; takeovers fade in
-   Postseason (data-ev on <html>): a strip on the bug's inner edge carries the event, and the neutral modules
-   take the finish: bowl = bronze and gold foil · cfp = black, silver and a gold play clock · title = gold ·
-   ccg = the network's accent with the conference title.
+   game and QA use stays) with its own silhouette, colour, logo and mascot treatment and takeovers. Clean pass:
+   one shape per bug, no tiles, no outlines; colour, weight and spacing do the grouping.
+     PYLON      light, angular: one white slab with slanted ends; each team's colour runs out of a slant behind its
+                logo and fades into the white; the clock and the down ride the pylon-orange end; mascot in
+                collegiate block caps
+     CHALK      the conference network, stacked: one slate card, one team per row, the team colour flowing in from
+                the left and fading into the slate before the score; the mascot written big in brush script
+     hashmark+  streaming: one smoked pill (no backdrop blur: it would re-blur the 3D field every frame); each team's
+                colour glows out from behind its logo; lime for possession and the play clock, sentence case
+   Postseason (data-ev on <html>): a tab on the bug's inner edge carries the event, and the bar takes the finish:
+   bowl = bronze and gold foil · cfp = black, silver and a gold play clock · title = gold · ccg = the network's
+   accent with the conference title.
    ========================================================= */
 
 /* ---------- wordmarks (set in type; no artwork) ---------- */
 .nwm{display:inline-flex;align-items:center;flex:none;line-height:1;white-space:nowrap;vertical-align:middle;font-style:normal;font-size:14px}
 .nwm b,.nwm i{font-style:normal}
-.nw-gln{gap:.22em;padding:.2em .36em .16em;background:#F7F6F2;color:#0E0E0F;font-weight:800;font-family:var(--f-disp);letter-spacing:.03em}
+.nw-gln{gap:.22em;padding:.2em .36em .16em;border-radius:2px;background:#F7F6F2;color:#0E0E0F;font-weight:800;font-family:var(--f-disp);letter-spacing:.03em}
 .nw-gln i{width:.36em;height:.36em;border-radius:50%;background:#E3263A}
 .nw-pyl{gap:.28em;color:#fff;font-weight:800;font-family:var(--f-disp);letter-spacing:.07em}
 .nw-pyl b{display:inline-block;transform:skewX(-11deg)}
@@ -2466,7 +2492,7 @@ body:has(#snapBar:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0p
 .nw-chk i{height:2px;background:repeating-linear-gradient(90deg,#F2F1EC 0 .3em,transparent .3em .52em);opacity:.9}
 .nw-hm{color:#fff;font-weight:800;font-family:var(--f-text);font-size:13px;letter-spacing:-.035em}
 .nw-hm i{color:#C8F53C;margin-left:.04em}
-/* where they sit: card heads, the studio bar, the hub's next-game card, the corner tag */
+/* where they sit: card heads, the studio bar, the hub's next-game card */
 .qh .nwm.net,.stv-bar .nwm.net{padding:.2em .36em .16em;border-radius:0;font-size:14px}
 .qh .nwm.net:not(.nw-gln),.stv-bar .nwm.net:not(.nw-gln){background:none;padding:0}
 .qh .nwm.net.nw-gln,.stv-bar .nwm.net.nw-gln{background:#F7F6F2;color:#0E0E0F}
@@ -2477,8 +2503,16 @@ body:has(#snapBar:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0p
 .qfoot .qlive{display:inline-flex;align-items:center;gap:6px;margin-right:10px;color:#fff}
 .qfoot .qlive .nwm{font-size:11px}
 .ng-bar .nwm{font-size:13px}
-#wm .nwm{font-size:11px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.6))}
+/* the corner network tag: the wordmark, the conference and week (07c sbTag), a red live dot; one soft glass pill */
+#wm{gap:7px;padding:4px 10px 4px 4px;border-radius:999px;background:rgba(10,11,13,.52);box-shadow:0 2px 8px rgba(0,0,0,.18);color:rgba(255,255,255,.8)}
+#wm .nwm{font-size:11px}
 #wm .nw-chk i{display:none}
+#wm .nw-pyl,#wm .nw-chk,#wm .nw-hm{padding-left:5px}
+#wm .wk{font:600 10px/1 var(--f-text);font-style:normal;letter-spacing:.05em;text-transform:uppercase;white-space:nowrap;color:rgba(255,255,255,.76)}
+#wm .wk:empty{display:none}
+#wm .nwm b{padding:0;border-radius:0;background:none;font:inherit;letter-spacing:inherit;color:inherit}
+#wm>b{display:flex;align-items:center;gap:4px;padding:0;border-radius:0;background:none;font:700 9.5px/1 var(--f-text);letter-spacing:.07em;color:#fff}
+#wm>b::before{content:"";width:6px;height:6px;border-radius:50%;background:#E5484D;box-shadow:0 0 5px rgba(229,72,77,.85)}
 :root{--pkA:#E3263A}
 :root[data-pkg="gln"]{--pk1:#141414;--pk2:#1F1D18;--pkA:#E3263A}
 :root[data-pkg="pyl"]{--pk1:#17130F;--pk2:#241A11;--pkA:#FF6A13}
@@ -2489,174 +2523,156 @@ body:has(#snapBar:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0p
 :root[data-net="hm"] #ticker .lab::before{content:"hashmark+";text-transform:none}
 
 /* =========================================================
-   PYLON: slanted tiles
+   PYLON: one white slab, slanted ends, the orange end
    ========================================================= */
-:root[data-net="pyl"]{--sb-h:44px;--sb-w:clamp(520px,77vw,700px);--sb-lgw:42px;--sb-lg:34px;--sb-sc:40px;--sb-ms:11px;--py-s:8px;--py-o:#FF6A13;
-  --sbn1:#FF7A26;--sbn2:#F05A00;--sbt1:#17181B;--sbt2:#060607;--sbacc:#FFD23F;--sbkey:rgba(0,0,0,0)}
-:root[data-net="pyl"] #sb .sbx{background:none;box-shadow:none;gap:0;filter:drop-shadow(0 6px 10px rgba(0,0,0,.45))}
-/* every tile is a parallelogram; neighbours overlap by the slant so a 3px angled gap runs between them */
-:root[data-net="pyl"] #sb .sb-tag,:root[data-net="pyl"] #sb .tm,:root[data-net="pyl"] #sb .sb-st,:root[data-net="pyl"] #sb .sb-dd{
-  clip-path:polygon(var(--py-s) 0,100% 0,calc(100% - var(--py-s)) 100%,0 100%);margin-right:calc(3px - var(--py-s))}
-:root[data-net="pyl"] #sb .sb-tag{padding:0 calc(var(--py-s) + 5px);background:linear-gradient(180deg,var(--sbt1),var(--sbt2));box-shadow:none;min-width:64px;gap:4px}
-:root[data-net="pyl"] #sb .sb-tag::before{left:var(--py-s);right:0;height:3px;background:var(--py-o)}
-:root[data-net="pyl"] #sb .sb-net .nwm{font-size:13px}
-:root[data-net="pyl"] #sb .sb-tag>b{font-size:11px;color:#E9E7E1}
-:root[data-net="pyl"] #sb .sb-tag>small{color:#9C9A94}
-/* team tile: logo on a team-colour block, white body, light-grey score cell */
-:root[data-net="pyl"] #sb .tm{--tsh:none;color:#121316;background:linear-gradient(180deg,#FFFFFF,#ECEBE6);box-shadow:none}
-:root[data-net="pyl"] #sb .tlg{padding-left:var(--py-s);width:calc(var(--sb-lgw) + var(--py-s));box-sizing:border-box;
-  background:linear-gradient(180deg,rgba(255,255,255,.18),rgba(0,0,0,.14)),var(--c);box-shadow:inset -3px 0 0 var(--c2)}
-:root[data-net="pyl"] #sb .lg{left:calc(50% + var(--py-s)/2);filter:drop-shadow(0 1px 1px rgba(0,0,0,.45))}
-:root[data-net="pyl"] #sb .mono{width:30px;height:30px;font-size:15px}
+:root[data-net="pyl"]{--sb-h:44px;--sb-w:clamp(520px,76vw,690px);--sb-lgw:40px;--sb-lg:32px;--sb-sc:38px;--sb-ms:10.5px;--sb-dd:108px;--sb-r:0px;--sb-r2:0px;--py-s:10px;--py-o:#FF6A13}
+:root[data-net="pyl"] #sb{filter:drop-shadow(0 6px 9px rgba(0,0,0,.34))}
+:root[data-net="pyl"] #sb .sbx{clip-path:polygon(var(--py-s) 0,100% 0,calc(100% - var(--py-s)) 100%,0 100%);background:linear-gradient(180deg,#FFFFFF,#EAE9E4);box-shadow:none;color:#121316}
+:root[data-net="pyl"] #sb .sb-tag{padding:0 4px 0 calc(var(--py-s) + 9px)}
+:root[data-net="pyl"] #sb .sb-net .nwm{font-size:13px;color:#121316}
+/* team: the colour runs out of a slant behind the logo and fades into the white */
+:root[data-net="pyl"] #sb .tm{--tsh:none;color:#121316;
+  background:linear-gradient(103deg,transparent 0 5px,var(--c) 5px calc(var(--sb-lgw) + 4px),color-mix(in srgb,var(--c) 12%,transparent) calc(var(--sb-lgw) + 17px),color-mix(in srgb,var(--c) 4%,transparent) 100%)}
+:root[data-net="pyl"] #sb .tlg{width:calc(var(--sb-lgw) + 4px);padding-left:4px;box-sizing:border-box}
+:root[data-net="pyl"] #sb .lg{left:calc(50% + 2px);filter:drop-shadow(0 1px 2px rgba(0,0,0,.35))}
+:root[data-net="pyl"] #sb .mono{width:28px;height:28px;font-size:13px}
 :root[data-net="pyl"] #sb .nm{padding:0 4px 0 8px;row-gap:4px}
-:root[data-net="pyl"] #sb .ab{font-size:21px;transform:skewX(-8deg);transform-origin:left bottom}
-:root[data-net="pyl"] #sb .ab[data-n="4"]{font-size:18.5px}:root[data-net="pyl"] #sb .ab[data-n="5"],:root[data-net="pyl"] #sb .ab[data-n="6"]{font-size:16px}
+:root[data-net="pyl"] #sb .ab{font-size:20px;transform:skewX(-8deg);transform-origin:left bottom}
+:root[data-net="pyl"] #sb .ab[data-n="4"]{font-size:18px}:root[data-net="pyl"] #sb .ab[data-n="5"],:root[data-net="pyl"] #sb .ab[data-n="6"]{font-size:15.5px}
 :root[data-net="pyl"] #sb .rk{color:var(--py-o);opacity:1;font-weight:800}
 :root[data-net="pyl"] #sb .ms{font:400 calc(var(--sb-ms)*var(--fk,1))/1 var(--f-varsity);letter-spacing:.06em;text-transform:uppercase;color:var(--msl);text-shadow:none;margin-top:0}
-:root[data-net="pyl"] #sb .rec{color:#55575C;opacity:1}
-:root[data-net="pyl"] #sb .pos{left:calc(var(--sb-lgw) + var(--py-s) - 17px);bottom:3px;width:15px;height:9px;filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
-:root[data-net="pyl"] #sb .pos ellipse{fill:var(--py-o);stroke:#121316;stroke-width:1.2}
-:root[data-net="pyl"] #sb .pos path{stroke:#121316}
-:root[data-net="pyl"] #sb .sc{width:calc(var(--sb-sc) + var(--py-s));padding-right:var(--py-s);box-sizing:border-box;background:linear-gradient(180deg,#E4E2DB,#D3D1C9);box-shadow:inset 2px 0 0 #fff}
-:root[data-net="pyl"] #sb .sv{font-size:31px;text-shadow:none;color:#0E0F12}
+:root[data-net="pyl"] #sb .rec{color:#5A5C61;opacity:1}
+:root[data-net="pyl"] #sb .pos{left:calc(var(--sb-lgw) - 12px);bottom:3px;width:14px;height:9px}
+:root[data-net="pyl"] #sb .pos ellipse{fill:var(--py-o)}
+:root[data-net="pyl"] #sb .sc{margin-right:calc(var(--py-s) - 1px)}
+:root[data-net="pyl"] #sb .sv{font-size:30px;text-shadow:none;color:#0E0F12}
 :root[data-net="pyl"] #sb .sc.w3 .sv{font-size:24px}
-:root[data-net="pyl"] #sb .tos{right:var(--py-s);width:var(--sb-sc);bottom:5px;color:#0E0F12}
-:root[data-net="pyl"] #sb .tos i{height:2.5px;width:8px;box-shadow:none}
-:root[data-net="pyl"] #sb .tos i.u{opacity:.18}
+:root[data-net="pyl"] #sb .tos{right:calc(var(--py-s) - 1px);bottom:4px;color:#0E0F12}
+:root[data-net="pyl"] #sb .tos i.u{opacity:.16}
 :root[data-net="pyl"] #sb .tm.flash::before{background:var(--py-o)}
-/* clock tile (pylon orange): quarter and clock on one line, the play clock in a black chip; down tile (black) */
-:root[data-net="pyl"] #sb .sb-r{background:none;box-shadow:none}
-:root[data-net="pyl"] #sb .sb-st{background:linear-gradient(180deg,var(--sbn1),var(--sbn2));box-shadow:inset 0 1px 0 rgba(255,255,255,.35);padding:0 calc(var(--py-s) + 2px) 0 var(--py-s);align-items:center;gap:5px}
-:root[data-net="pyl"] #sb .qc{width:auto;flex-direction:row;align-items:baseline;gap:4px;box-shadow:none;padding-left:3px}
-:root[data-net="pyl"] #sb #qtr{color:#2A1300;font-size:14px;font-weight:800}
-:root[data-net="pyl"] #sb #gclk{font-size:24px;color:#fff;text-shadow:0 1px 0 rgba(0,0,0,.25)}
-:root[data-net="pyl"] #sb .qc:has(#gclk.run)::after{top:-8px;right:-4px;background:#fff;box-shadow:none}
-:root[data-net="pyl"] #sb .pc{width:30px;height:26px;background:#121316;color:var(--sbacc);box-shadow:none;transform:skewX(-11deg)}
-:root[data-net="pyl"] #sb .pc.off{color:#77736B}
-:root[data-net="pyl"] #sb .pc.low{background:var(--c-loss);color:#fff}
-:root[data-net="pyl"] #sb .sb-dd{width:auto;min-width:86px;padding:0 calc(var(--py-s) + 5px) 0 calc(var(--py-s) + 3px);background:linear-gradient(180deg,#232428,#0A0A0C);box-shadow:none;margin-right:0;gap:4px}
-:root[data-net="pyl"] #sb #dd{font-size:20px;transform:skewX(-8deg)}
-:root[data-net="pyl"] #sb .sb-dd>small{color:#FF9A5C}
-:root[data-net="pyl"] #sb #spot{color:#fff}
-:root[data-net="pyl"] #sb.rz .sb-dd{box-shadow:inset 0 -3px 0 var(--c-loss)}
-/* takeovers: slanted slabs slide in from the left */
-:root[data-net="pyl"] #sb .sb-msg,:root[data-net="pyl"] #sb .sb-td{clip-path:polygon(0 0,0 0,-16px 100%,-16px 100%);transition:clip-path .22s var(--ease-out)}
-:root[data-net="pyl"] #sb .sb-msg.on,:root[data-net="pyl"] #sb .sb-td.on{clip-path:polygon(var(--py-s) 0,calc(100% + 16px) 0,calc(100% - var(--py-s)) 100%,-16px 100%)}
-:root[data-net="pyl"] #sb .sb-msg.off,:root[data-net="pyl"] #sb .sb-td.off{clip-path:polygon(calc(100% + 16px) 0,calc(100% + 16px) 0,100% 100%,100% 100%);transition-duration:.18s}
-:root[data-net="pyl"] #sb .sb-msg{padding:0 18px;box-shadow:inset 0 3px 0 rgba(0,0,0,.25)}
+/* the orange end: quarter and clock on one line, the play clock in dark ink, then the down; one slanted hairline */
+:root[data-net="pyl"] #sb .sb-r{margin-left:calc(-1*var(--py-s));padding:0 calc(var(--py-s) + 6px) 0 calc(var(--py-s) + 7px);border-radius:0;color:#fff;
+  clip-path:polygon(var(--py-s) 0,100% 0,100% 100%,0 100%);background:linear-gradient(180deg,#FF8438,#F25A00)}
+:root[data-net="pyl"] #sb .sb-st{gap:5px;padding-right:0}
+:root[data-net="pyl"] #sb .qc{min-width:0;flex-direction:row;align-items:baseline;gap:4px;padding:0}
+:root[data-net="pyl"] #sb #qtr{color:#3B1700;font-size:13px;font-weight:800;letter-spacing:.02em}
+:root[data-net="pyl"] #sb #gclk{font-size:24px;color:#fff;text-shadow:0 1px 0 rgba(110,36,0,.25)}
+:root[data-net="pyl"] #sb .qc:has(#gclk.run)::after{top:-7px;right:-5px;background:#fff;box-shadow:none}
+:root[data-net="pyl"] #sb .pc{min-width:0;height:24px;padding:0 3px;border-radius:0;color:#2A1100;font-size:18px;transform:skewX(-8deg)}
+:root[data-net="pyl"] #sb .pc.off{color:rgba(42,17,0,.38)}
+:root[data-net="pyl"] #sb .pc.low{background:#121316;color:#fff;padding:0 6px}
+:root[data-net="pyl"] #sb .sb-dd{width:auto;min-width:92px;padding:0 0 0 15px;gap:4px}
+:root[data-net="pyl"] #sb .sb-dd::before{left:4px;top:11px;bottom:11px;background:rgba(59,23,0,.24);transform:skewX(-13deg)}
+:root[data-net="pyl"] #sb #dd{font-size:19px;color:#fff;transform:skewX(-8deg);transform-origin:left bottom;text-shadow:0 1px 0 rgba(110,36,0,.25)}
+:root[data-net="pyl"] #sb .sb-dd>small{color:#3B1700}
+:root[data-net="pyl"] #sb #spot{color:#1E0B00}
+:root[data-net="pyl"] #sb.rz #spot{color:#fff}
+/* takeovers: the slab's own slant clips them */
+:root[data-net="pyl"] #sb .sb-msg{padding:0 12px 0 calc(var(--py-s) + 10px)}
 :root[data-net="pyl"] #sb .sb-msg b{transform:skewX(-8deg);transform-origin:left}
-:root[data-net="pyl"] #sb .sb-td{background:linear-gradient(100deg,rgba(0,0,0,0) 0 72%,rgba(0,0,0,.18) 72% 74%,rgba(0,0,0,0) 74%),linear-gradient(180deg,rgba(255,255,255,.2),rgba(0,0,0,.2)),var(--c);
-  box-shadow:inset 0 -4px 0 var(--py-o);padding:0 22px 0 14px}
-:root[data-net="pyl"] #sb .sb-td b{transform:skewX(-10deg);font-size:31px;letter-spacing:.05em}
-:root[data-net="pyl"] #sb .sb-td .tms{font:400 13px/1 var(--f-varsity);letter-spacing:.14em;text-transform:uppercase;transform:none;color:var(--msc);align-self:center;padding:4px 8px;background:rgba(0,0,0,.22)}
-:root[data-net="pyl"] #sb .sb-td::after{background:linear-gradient(100deg,transparent 35%,rgba(255,122,38,.35) 50%,transparent 65%)}
-:root[data-net="pyl"] #sb .sb-tab{clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);padding:0 16px;box-shadow:none}
+:root[data-net="pyl"] #sb .sb-msg.dd{padding:0 10px 0 14px}
+:root[data-net="pyl"] #sb .sb-msg.dd b{font-size:19px}
+:root[data-net="pyl"] #sb .sb-td{padding:0 24px 0 18px;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 48%,rgba(0,0,0,.18)),
+  linear-gradient(103deg,color-mix(in srgb,var(--c) 80%,#fff),var(--c) 45%,color-mix(in srgb,var(--c) 76%,#000))}
+:root[data-net="pyl"] #sb .sb-td b{transform:skewX(-10deg);font-size:30px;letter-spacing:.05em}
+:root[data-net="pyl"] #sb .sb-td .tms{font:400 13px/1 var(--f-varsity);letter-spacing:.14em;text-transform:uppercase;transform:none;color:var(--msc);align-self:center;padding:0;text-shadow:none}
+:root[data-net="pyl"] #sb .sb-td::after{background:linear-gradient(100deg,transparent 35%,rgba(255,122,38,.3) 50%,transparent 65%)}
+:root[data-net="pyl"] #sb .sb-tab{clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);padding:0 16px}
 :root[data-net="pyl"] #sb .sb-tab b{transform:skewX(-10deg)}
-:root[data-net="pyl"] #drv{clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);padding:0 14px;background:#121316;box-shadow:inset 0 -2px 0 var(--py-o)}
-@media (min-width:541px) and (max-width:740px){:root[data-net="pyl"] #sb .sb-tag{display:none}}
+:root[data-net="pyl"] #drv{clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);padding:0 14px;background:#FFFFFF;color:#121316}
+@media (min-width:541px) and (max-width:740px){:root[data-net="pyl"]{--sb-w:clamp(520px,84vw,690px);--sb-dd:100px}:root[data-net="pyl"] #sb .sb-dd{min-width:84px}}
 @media (max-width:540px){
-  :root[data-net="pyl"]{--sb-th:40px;--sb-sh:22px;--sb-lgw:34px;--sb-lg:28px;--sb-sc:36px;--sb-ms:9.5px;--py-s:6px}
+  :root[data-net="pyl"]{--sb-th:40px;--sb-sh:22px;--sb-lgw:34px;--sb-lg:28px;--sb-sc:34px;--sb-ms:9.5px;--py-s:7px}
   :root[data-net="pyl"] #sb .sb-td .tms{display:none}
-  :root[data-net="pyl"] #sb .sbx{row-gap:3px}
-  :root[data-net="pyl"] #sb .tm{flex:1 1 calc(50% - 3px)}
-  :root[data-net="pyl"] #sb .sb-tag{min-width:0;padding:0 12px;gap:6px}
-  :root[data-net="pyl"] #sb .sb-tag::before{display:none}
+  :root[data-net="pyl"] #sb .sb-tag{padding:0 8px 0 calc(var(--py-s) + 7px)}
   :root[data-net="pyl"] #sb .sb-net .nwm{font-size:11px}
   :root[data-net="pyl"] #sb .ab{font-size:17px}:root[data-net="pyl"] #sb .ab[data-n="4"]{font-size:15.5px}:root[data-net="pyl"] #sb .ab[data-n="5"],:root[data-net="pyl"] #sb .ab[data-n="6"]{font-size:13.5px}
   :root[data-net="pyl"] #sb .nm{padding:0 3px 0 6px;row-gap:3px}
   :root[data-net="pyl"] #sb .sv{font-size:26px}
-  :root[data-net="pyl"] #sb .sb-r{flex:1 1 0;gap:0}
-  :root[data-net="pyl"] #sb .sb-st{padding:0 10px;gap:6px}
+  :root[data-net="pyl"] #sb .sb-r{margin-left:0;padding:0 calc(var(--py-s) + 9px) 0 calc(var(--py-s) + 8px)}
+  :root[data-net="pyl"] #sb .sb-st{gap:6px}
   :root[data-net="pyl"] #sb #qtr{font-size:11px}:root[data-net="pyl"] #sb #gclk{font-size:16px}
-  :root[data-net="pyl"] #sb .pc{width:24px;height:16px;font-size:12px}
-  :root[data-net="pyl"] #sb .sb-dd{flex:1 1 auto;min-width:0;padding:0 12px 0 10px}
+  :root[data-net="pyl"] #sb .pc{height:16px;font-size:13px}
+  :root[data-net="pyl"] #sb .sb-dd{min-width:0;padding:0 0 0 10px}
   :root[data-net="pyl"] #sb #dd{font-size:15px}
   :root[data-net="pyl"] #sb .sb-td b{font-size:25px}
 }
 
 /* =========================================================
-   CHALK: stacked rows, the mascot as the hero
+   CHALK: one slate card, stacked rows, the mascot as the hero
    ========================================================= */
-:root[data-net="chk"]{--sb-h:58px;--ck-row:29px;--sb-w:clamp(440px,63vw,540px);--sb-lgw:40px;--sb-lg:36px;--sb-sc:40px;--sb-ms:20px;--ck-sl:#141B24;--ck-sl2:#0B1016;--ck-ch:#EEF0EA;
-  --sbn1:#1C2631;--sbn2:#0C1117;--sbt1:#1C2631;--sbt2:#0C1117;--sbacc:#FFD23F;--sbkey:rgba(0,0,0,.75)}
-:root[data-net="chk"] #sb .sbx{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:var(--ck-row) var(--ck-row);height:auto;background:linear-gradient(180deg,var(--ck-sl),var(--ck-sl2))}
-:root[data-net="chk"] #sb .sbx::after{content:"";position:absolute;left:0;right:0;top:-3px;height:2px;z-index:5;pointer-events:none;background:repeating-linear-gradient(90deg,var(--ck-ch) 0 10px,transparent 10px 16px);opacity:.85}
-:root[data-net="chk"][data-bug="top"] #sb .sbx::after{top:auto;bottom:-3px}
-:root[data-net="chk"] #sb .sb-tag{grid-row:1/3;grid-column:1;min-width:60px;padding:0 9px;gap:5px;box-shadow:inset -1px 0 0 rgba(238,240,234,.16)}
-:root[data-net="chk"] #sb .sb-tag::before{display:none}
+:root[data-net="chk"]{--sb-h:58px;--ck-row:29px;--sb-w:clamp(440px,63vw,540px);--sb-lgw:38px;--sb-lg:34px;--sb-sc:34px;--sb-ms:20px;--sb-dd:auto;--sb-r:7px;--sb-r2:6px;--ck-ch:#EEF0EA;
+  --sbn1:#1F2A35;--sbn2:#0D1319;--sbacc:#FFD23F}
+:root[data-net="chk"] #sb .sbx{display:grid;grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:var(--ck-row) var(--ck-row);row-gap:1px;height:auto}
+:root[data-net="chk"] #sb .sb-tag{grid-row:1/3;grid-column:1;padding:0 9px 0 12px}
 :root[data-net="chk"] #sb .sb-net .nwm{font-size:12px}
-:root[data-net="chk"] #sb .sb-tag>b{font-size:12px;color:var(--ck-ch)}
-:root[data-net="chk"] #sb .sb-tag>small{color:#93A2B4}
 :root[data-net="chk"] #tmA,:root[data-net="chk"] #tmH{grid-column:2}
 :root[data-net="chk"] #tmA{grid-row:1}:root[data-net="chk"] #tmH{grid-row:2}
 :root[data-net="chk"] #sb.uv #tmH{grid-row:1}:root[data-net="chk"] #sb.uv #tmA{grid-row:2}
-/* a team row: full team colour, logo, rank + ABBR, the mascot written big, record, timeouts, score on slate */
-:root[data-net="chk"] #sb .tm{align-items:center;background:linear-gradient(180deg,rgba(255,255,255,.16),rgba(255,255,255,0) 50%,rgba(0,0,0,.18)),var(--c);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.22)}
-:root[data-net="chk"] #sb .tm+.tm{box-shadow:inset 0 1px 0 rgba(255,255,255,.22),inset 0 2px 0 rgba(0,0,0,.25)}
-:root[data-net="chk"] #sb .tlg{align-self:stretch;background:none;width:var(--sb-lgw)}
-:root[data-net="chk"] #sb .lg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.6)) drop-shadow(0 0 1px rgba(0,0,0,.5))}
-:root[data-net="chk"] #sb .mono{width:23px;height:23px;font-size:12px}
+/* a team row: the team colour flows in from the left and fades into the slate before the record and the score */
+:root[data-net="chk"] #sb .tm{align-items:center;background:linear-gradient(180deg,rgba(255,255,255,.12),rgba(255,255,255,0) 50%,rgba(0,0,0,.1)),
+  linear-gradient(90deg,color-mix(in srgb,var(--c) 84%,#fff) 0,var(--c) 30%,var(--c) 50%,color-mix(in srgb,var(--c) 0%,transparent) 82%)}
+:root[data-net="chk"] #sb .tlg{align-self:stretch;width:var(--sb-lgw)}
+:root[data-net="chk"] #sb .lg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
+:root[data-net="chk"] #sb .mono{width:23px;height:23px;font-size:11px}
 :root[data-net="chk"] #sb .nm{display:flex;align-items:center;gap:6px;padding:0 6px 0 2px;align-self:stretch}
 :root[data-net="chk"] #sb .r1{flex:none;align-items:baseline}
 :root[data-net="chk"] #sb .ab{font-size:16px;line-height:1;letter-spacing:.03em}
 :root[data-net="chk"] #sb .ab[data-n="4"]{font-size:15px}:root[data-net="chk"] #sb .ab[data-n="5"],:root[data-net="chk"] #sb .ab[data-n="6"]{font-size:13.5px}
 :root[data-net="chk"] #sb .rk{font-size:11px}
-:root[data-net="chk"] #sb .ms{flex:1 1 auto;align-self:center;margin:0;padding:0 3px;line-height:1;transform:scaleX(var(--fx,1)) rotate(-3deg);text-shadow:0 1px 0 rgba(0,0,0,.7),0 0 4px rgba(0,0,0,.35)}
-:root[data-net="chk"] #sb .r2{display:flex;flex:none;align-items:center;gap:6px}
-:root[data-net="chk"] #sb .rec{font-size:9px}
-:root[data-net="chk"] #sb .tos{position:static;width:auto;gap:2px}
-:root[data-net="chk"] #sb .tos i{width:6px;height:2.5px}
-:root[data-net="chk"] #sb .pos{left:auto;right:calc(var(--sb-sc) + 4px);top:2px;bottom:auto;width:12px;height:7.5px}
+:root[data-net="chk"] #sb .ms{flex:1 1 auto;align-self:center;margin:0;padding:0 3px;line-height:1;transform:scaleX(var(--fx,1)) rotate(-3deg);text-shadow:0 1px 0 rgba(0,0,0,.55)}
+:root[data-net="chk"] #sb .tm.lt .ms{text-shadow:none}
+:root[data-net="chk"] #sb .r2{display:flex;flex:none;align-items:center;gap:7px;color:var(--ck-ch);text-shadow:none}
+:root[data-net="chk"] #sb .rec{font-size:9px;opacity:.62}
+:root[data-net="chk"] #sb .tos{position:static;width:auto;gap:3px}
+:root[data-net="chk"] #sb .tos i{width:4px;height:4px;border-radius:50%}
+:root[data-net="chk"] #sb .pos{left:auto;right:calc(var(--sb-sc) + 3px);top:2px;bottom:auto;width:12px;height:7.5px}
 :root[data-net="chk"] #sb .tm.has .nm{padding-right:20px}
-:root[data-net="chk"] #sb .sc{align-self:stretch;padding:0;background:linear-gradient(180deg,#1F2934,#0E141B);box-shadow:inset 1px 0 0 rgba(0,0,0,.5);color:var(--ck-ch)}
+:root[data-net="chk"] #sb .sc{align-self:stretch;margin-right:2px;padding:0;color:var(--ck-ch)}
 :root[data-net="chk"] #sb .sv{font-size:24px;text-shadow:none}
 :root[data-net="chk"] #sb .sc.w3 .sv{font-size:19px}
 :root[data-net="chk"] #sb .tm.flash::before{background:color-mix(in srgb,var(--c) 30%,#fff)}
-/* the slate clock column: quarter and clock over the down, the play clock standing the full height */
-:root[data-net="chk"] #sb .sb-r{grid-row:1/3;grid-column:3;display:grid;grid-template-columns:auto 34px;grid-template-rows:1fr 1fr;box-shadow:inset 1px 0 0 rgba(238,240,234,.16)}
+/* the clock column on the slate: quarter, clock and the play clock over the down; no cells */
+:root[data-net="chk"] #sb .sb-r{grid-row:1/3;grid-column:3;display:grid;grid-template-columns:auto auto;grid-template-rows:var(--ck-row) var(--ck-row);row-gap:1px;align-items:center;column-gap:10px;padding:0 11px 0 12px}
 :root[data-net="chk"] #sb .sb-st{display:contents}
-:root[data-net="chk"] #sb .qc{grid-row:1;grid-column:1;width:auto;flex-direction:row;align-items:baseline;justify-content:flex-start;gap:6px;padding:0 10px;box-shadow:inset 0 -1px 0 rgba(238,240,234,.12)}
+:root[data-net="chk"] #sb .qc{grid-row:1;grid-column:1;min-width:0;flex-direction:row;align-items:baseline;justify-content:flex-start;gap:6px;padding:0}
 :root[data-net="chk"] #sb #qtr{color:#9FB0C3;font-size:12px}
 :root[data-net="chk"] #sb #gclk{font-size:19px;line-height:1}
-:root[data-net="chk"] #sb .qc:has(#gclk.run)::after{top:5px;right:3px}
-:root[data-net="chk"] #sb .pc{grid-row:1/3;grid-column:2;width:auto;font-size:19px;background:rgba(0,0,0,.25);box-shadow:inset 1px 0 0 rgba(238,240,234,.16)}
-:root[data-net="chk"] #sb .sb-dd{grid-row:2;grid-column:1;width:auto;min-width:96px;flex-direction:row;align-items:baseline;gap:7px;padding:0 10px;box-shadow:none}
+:root[data-net="chk"] #sb .qc:has(#gclk.run)::after{top:-2px;right:-7px}
+:root[data-net="chk"] #sb .pc{grid-row:1;grid-column:2;justify-self:end;height:20px;font-size:17px}
+:root[data-net="chk"] #sb .sb-dd{grid-row:2;grid-column:1/3;width:auto;min-width:96px;flex-direction:row;align-items:baseline;gap:7px;padding:0}
+:root[data-net="chk"] #sb .sb-dd::before{display:none}
 :root[data-net="chk"] #sb #dd{font-size:16px;line-height:1}
 :root[data-net="chk"] #sb .sb-dd>small{font-size:8.5px;color:#93A2B4}
 :root[data-net="chk"] #wxs{display:none}
-:root[data-net="chk"] #sb.rz .sb-dd{box-shadow:inset 3px 0 0 var(--c-loss)}
 /* takeovers open from the centre; the touchdown writes the mascot big */
-:root[data-net="chk"] #sb .sb-msg{clip-path:inset(0 50% 0 50%);flex-direction:row;align-items:center;gap:8px;padding:0 10px}
+:root[data-net="chk"] #sb .sb-msg{clip-path:inset(0 50% 0 50%);flex-direction:row;align-items:center;gap:8px;padding:0 12px}
 :root[data-net="chk"] #sb .sb-msg.on{clip-path:inset(0)}
 :root[data-net="chk"] #sb .sb-msg.off{clip-path:inset(50% 0 50% 0)}
 :root[data-net="chk"] #sb .sb-msg b{font-size:17px}
-:root[data-net="chk"] #sb .sb-msg.dd{top:50%;left:0;width:auto}
+:root[data-net="chk"] #sb .sb-msg.dd{left:0;width:auto;flex-direction:column;align-items:flex-start;gap:4px}
 :root[data-net="chk"] #sb .sb-msg .tvl{--s:22px;margin-top:-11px}
-:root[data-net="chk"] #sb .sb-td{clip-path:inset(0 50% 0 50%);justify-content:center;gap:14px;padding:0 14px;
-  background:repeating-linear-gradient(90deg,rgba(255,255,255,.07) 0 10px,transparent 10px 16px) 0 4px/100% 2px no-repeat,linear-gradient(180deg,rgba(255,255,255,.18),rgba(0,0,0,.25)),var(--c)}
+:root[data-net="chk"] #sb .sb-td{clip-path:inset(0 50% 0 50%);justify-content:center;gap:14px;padding:0 14px}
 :root[data-net="chk"] #sb .sb-td.on{clip-path:inset(0)}
 :root[data-net="chk"] #sb .sb-td.off{clip-path:inset(0 50% 0 50%)}
-:root[data-net="chk"] #sb .sb-td .tvl{--s:48px}
+:root[data-net="chk"] #sb .sb-td .tvl{--s:46px}
 :root[data-net="chk"] #sb .sb-td .tt{order:2;align-items:flex-start}
 :root[data-net="chk"] #sb .sb-td b{font-size:16px;letter-spacing:.32em;line-height:1}
 :root[data-net="chk"] #sb .sb-td .tms{order:1;font-size:38px;line-height:1.2;transform:rotate(-4deg);flex:0 1 auto;max-width:60%}
 :root[data-net="chk"] #sb .sb-td .pts{order:3;margin-left:0;font-size:30px}
-:root[data-net="chk"] #sb .sb-tab{box-shadow:0 0 0 1px rgba(0,0,0,.5),inset 0 0 0 2px #FFE04D,inset 0 0 0 3px rgba(23,19,0,.45)}
-:root[data-net="chk"] #drv{background:linear-gradient(180deg,var(--ck-sl),var(--ck-sl2));color:var(--ck-ch)}
+:root[data-net="chk"] #drv{background:linear-gradient(180deg,var(--sbn1),var(--sbn2));color:var(--ck-ch)}
 @media (min-width:541px) and (max-width:740px){:root[data-net="chk"] #sb .sb-tag{display:flex}:root[data-net="chk"]{--sb-w:clamp(420px,70vw,500px)}}
 @media (max-width:540px){
-  :root[data-net="chk"]{--sb-h:56px;--ck-row:28px;--sb-lgw:32px;--sb-lg:30px;--sb-sc:34px;--sb-ms:17px}
+  :root[data-net="chk"]{--sb-h:56px;--ck-row:28px;--sb-lgw:30px;--sb-lg:28px;--sb-sc:30px;--sb-ms:17px}
   :root[data-net="chk"] #sb .sbx{flex-wrap:nowrap}
   :root[data-net="chk"] #sb .tm{height:auto}
-  :root[data-net="chk"] #sb .sb-tag{order:0;height:auto;flex-direction:column;gap:5px;padding:0 6px;min-width:44px}
+  :root[data-net="chk"] #sb .sb-tag{order:0;height:auto;padding:0 6px 0 9px}
   :root[data-net="chk"] #sb .sb-net .nwm{font-size:9.5px}
-  :root[data-net="chk"] #sb .sb-tag>b{font-size:10px}
-  :root[data-net="chk"] #sb .sb-r{order:0;height:auto;grid-template-columns:auto 26px}
-  :root[data-net="chk"] #sb .qc{padding:0 7px;gap:4px}
+  :root[data-net="chk"] #sb .sb-r{order:0;height:auto;padding:0 9px 0 8px;column-gap:6px}
+  :root[data-net="chk"] #sb .qc{gap:4px}
   :root[data-net="chk"] #sb #gclk{font-size:16px}:root[data-net="chk"] #sb #qtr{font-size:10.5px}
-  :root[data-net="chk"] #sb .pc{font-size:14px}
-  :root[data-net="chk"] #sb .sb-dd{min-width:0;padding:0 7px;justify-content:flex-start}
+  :root[data-net="chk"] #sb .pc{height:16px;min-width:22px;font-size:14px}
+  :root[data-net="chk"] #sb .sb-dd{min-width:0;justify-content:flex-start}
   :root[data-net="chk"] #sb #dd{font-size:14px}
   :root[data-net="chk"] #sb .sb-dd>small{display:none}
   :root[data-net="chk"] #sb .nm{gap:4px;padding:0 4px 0 1px}
@@ -2674,132 +2690,120 @@ body:has(#snapBar:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0p
 }
 
 /* =========================================================
-   hashmark+: one smoked-glass pill
+   hashmark+: one smoked pill
    ========================================================= */
-:root[data-net="hm"]{--sb-h:42px;--sb-w:clamp(500px,70vw,640px);--sb-lgw:36px;--sb-lg:28px;--sb-sc:34px;--sb-ms:11.5px;--hm-l:#C8F53C;
-  --sbn1:rgba(255,255,255,.09);--sbn2:rgba(255,255,255,.04);--sbt1:transparent;--sbt2:transparent;--sbacc:var(--hm-l);--sbkey:rgba(255,255,255,.12)}
-:root[data-net="hm"] #sb .sbx{border-radius:14px;padding:0 4px;background:linear-gradient(180deg,rgba(30,33,34,.94),rgba(12,14,15,.94));
-  box-shadow:0 0 0 1px var(--sbkey),0 8px 22px rgba(0,0,0,.45)}
-:root[data-net="hm"] #sb .sb-tag{background:none;box-shadow:none;min-width:0;padding:0 8px 0 10px;gap:3px;align-items:flex-start}
-:root[data-net="hm"] #sb .sb-tag::before{display:none}
+:root[data-net="hm"]{--sb-h:42px;--sb-w:clamp(500px,70vw,640px);--sb-lgw:34px;--sb-lg:26px;--sb-sc:32px;--sb-ms:11px;--sb-dd:100px;--sb-r:21px;--sb-r2:11px;--hm-l:#C8F53C;
+  --sbn1:rgba(34,37,38,.95);--sbn2:rgba(12,14,15,.95);--sbacc:var(--hm-l);--sb-sep:rgba(255,255,255,.1)}
+:root[data-net="hm"] #sb .sbx{overflow:hidden}
+:root[data-net="hm"] #sb .sb-tag{padding:0 6px 0 15px}
 :root[data-net="hm"] #sb .sb-net .nwm{font-size:12.5px}
-:root[data-net="hm"] #sb .sb-tag>b{font:600 9.5px/1 var(--f-text);letter-spacing:0;text-transform:none;color:#B5B9B6}
-:root[data-net="hm"] #sb .sb-tag>small{font:500 8.5px/1 var(--f-text);letter-spacing:0;text-transform:none;color:#7F8481}
-/* team: no panel; logo, name over the mascot, score; a rounded team-colour underline */
-:root[data-net="hm"] #sb .tm{--tsh:none;color:#F4F5F2;background:none;box-shadow:none;margin:0 2px}
-:root[data-net="hm"] #sb .tm::after{content:"";position:absolute;left:8px;right:6px;bottom:5px;height:3px;border-radius:2px;background:color-mix(in srgb,var(--c) 85%,#fff);box-shadow:0 0 8px color-mix(in srgb,var(--c) 60%,transparent)}
-:root[data-net="hm"] #sb .tlg{background:none}
-:root[data-net="hm"] #sb .lg{filter:drop-shadow(0 1px 1px rgba(0,0,0,.5))}
-:root[data-net="hm"] #sb .mono{width:24px;height:24px;border-radius:50%;font-size:11px;box-shadow:0 0 0 1.5px var(--c2)}
-:root[data-net="hm"] #sb .nm{padding:0 4px 4px 4px;row-gap:1px}
+/* team: no panel; the team colour glows out from behind the logo */
+:root[data-net="hm"] #sb .tm{--tsh:none;color:#F4F5F2;background:radial-gradient(90% 130% at 12% 50%,color-mix(in srgb,var(--c) 64%,transparent) 0,color-mix(in srgb,var(--c) 22%,transparent) 52%,transparent 78%)}
+:root[data-net="hm"] #sb .lg{filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+:root[data-net="hm"] #sb .mono{width:24px;height:24px;font-size:10px}
+:root[data-net="hm"] #sb .nm{padding:0 4px;row-gap:1px}
 :root[data-net="hm"] #sb .ab{font:800 15px/1 var(--f-text);letter-spacing:-.01em}
 :root[data-net="hm"] #sb .ab[data-n="4"]{font-size:14px}:root[data-net="hm"] #sb .ab[data-n="5"],:root[data-net="hm"] #sb .ab[data-n="6"]{font-size:12.5px}
-:root[data-net="hm"] #sb .rk{font:600 10px/1 var(--f-text);color:#A9ADAA;opacity:1}
-:root[data-net="hm"] #sb .ms{color:var(--msd);opacity:.92;text-shadow:none;line-height:1.15}
-:root[data-net="hm"] #sb .rec{font:500 9px/1 var(--f-text);letter-spacing:0;color:#9DA19E;opacity:1}
+:root[data-net="hm"] #sb .rk{font:600 10px/1 var(--f-text);color:#B4B8B5;opacity:1}
+:root[data-net="hm"] #sb .ms{grid-column:1;color:var(--msd);opacity:.95;text-shadow:none;line-height:1.15}
+:root[data-net="hm"] #sb .rec{font:500 9px/1 var(--f-text);letter-spacing:0;color:#A3A7A4;opacity:1}
 /* possession: a lime dot before the name instead of the ball */
 :root[data-net="hm"] #sb .pos{position:static;order:-1;align-self:center;width:6px;height:6px;margin-right:1px;border-radius:50%;background:var(--hm-l);box-shadow:0 0 6px var(--hm-l);filter:none;transform:scale(.4);display:block}
 :root[data-net="hm"] #sb .tm:not(.has) .pos{display:none}
 :root[data-net="hm"] #sb .pos svg{display:none}
 :root[data-net="hm"] #sb .tm.has .pos{transform:none}
-:root[data-net="hm"] #sb .sc{background:none;box-shadow:none;padding-bottom:6px}
-:root[data-net="hm"] #sb .sv{font-size:27px;text-shadow:none}
-:root[data-net="hm"] #sb .sc.w3 .sv{font-size:21px}
-:root[data-net="hm"] #sb .ms{grid-column:1}
+:root[data-net="hm"] #sb .sc{margin-right:2px;padding-bottom:0}
+:root[data-net="hm"] #sb .sv{font-size:26px;text-shadow:none}
+:root[data-net="hm"] #sb .sc.w3 .sv{font-size:20px}
 :root[data-net="hm"] #sb .tos{position:static;grid-column:2;grid-row:2;align-self:center;justify-self:end;width:auto;gap:3px}
-:root[data-net="hm"] #sb .tos i{width:4px;height:4px;border-radius:50%;box-shadow:none}
-:root[data-net="hm"] #sb .tm.flash::before{border-radius:8px;background:color-mix(in srgb,var(--c) 50%,transparent)}
-/* clock pill: lighter glass inside the pill; the down in sentence case */
-:root[data-net="hm"] #sb .sb-r{margin:5px 0 5px 4px;border-radius:9px;background:linear-gradient(180deg,var(--sbn1),var(--sbn2));box-shadow:inset 0 0 0 1px rgba(255,255,255,.07);overflow:hidden}
-:root[data-net="hm"] #sb .sb-st{box-shadow:none}
-:root[data-net="hm"] #sb .qc{width:auto;flex-direction:row;align-items:baseline;gap:5px;padding:0 4px 0 10px;box-shadow:none}
-:root[data-net="hm"] #sb #qtr{font:600 11px/1 var(--f-text);color:#A9ADAA;text-transform:none}
+:root[data-net="hm"] #sb .tos i{width:4px;height:4px;border-radius:50%}
+:root[data-net="hm"] #sb .tm.flash::before{border-radius:14px;background:color-mix(in srgb,var(--c) 50%,transparent)}
+/* clock: no inner pill, set apart by space and one faint hairline; the down in sentence case */
+:root[data-net="hm"] #sb .sb-r{padding-left:6px}
+:root[data-net="hm"] #sb .qc{min-width:0;flex-direction:row;align-items:baseline;gap:5px;padding:0 2px 0 6px}
+:root[data-net="hm"] #sb #qtr{font:600 11px/1 var(--f-text);color:#A9ADAA;text-transform:none;letter-spacing:0}
 :root[data-net="hm"] #sb #gclk{font-size:20px;line-height:1}
 :root[data-net="hm"] #sb .qc:has(#gclk.run)::after{display:none}
-:root[data-net="hm"] #sb .pc{width:auto;padding:0 8px 0 4px;background:none;box-shadow:none;font-size:15px}
+:root[data-net="hm"] #sb .pc{min-width:0;height:20px;padding:0 6px;font-size:15px}
 :root[data-net="hm"] #sb .pc.low{background:none;color:#FF6B6F}
-:root[data-net="hm"] #sb .sb-dd{width:auto;min-width:88px;padding:0 11px 0 9px;gap:3px;box-shadow:inset 1px 0 0 rgba(255,255,255,.1)}
+:root[data-net="hm"] #sb .sb-dd{width:auto;min-width:100px;padding:0 18px 0 12px;gap:3px}
+:root[data-net="hm"] #sb .sb-dd::before{top:12px;bottom:12px}
 :root[data-net="hm"] #sb #dd{font:800 14px/1 var(--f-text);letter-spacing:-.01em;text-transform:none}
 :root[data-net="hm"] #sb #dd .o,:root[data-net="hm"] #sb .sb-msg .o{text-transform:none;font-size:1em;letter-spacing:0;margin:0}
-:root[data-net="hm"] #sb .sb-dd>small{font:500 9px/1 var(--f-text);letter-spacing:0;text-transform:none;color:#9DA19E}
+:root[data-net="hm"] #sb .sb-dd>small{font:500 9px/1 var(--f-text);letter-spacing:0;text-transform:none;color:#A3A7A4}
 :root[data-net="hm"] #sb.late #dd{color:var(--hm-l)}
-:root[data-net="hm"] #sb.rz .sb-dd{box-shadow:inset 1px 0 0 rgba(255,255,255,.1)}:root[data-net="hm"] #sb.rz #spot{color:#FF8D91}
 /* takeovers fade and settle; everything stays rounded */
 :root[data-net="hm"] #sb .sb-msg,:root[data-net="hm"] #sb .sb-td{clip-path:none;opacity:0;transform:scale(.97);transition:opacity .2s var(--ease-out),transform .2s var(--ease-out),visibility 0s .2s}
 :root[data-net="hm"] #sb .sb-msg.on,:root[data-net="hm"] #sb .sb-td.on{opacity:1;transform:none;transition-delay:0s}
 :root[data-net="hm"] #sb .sb-msg.off,:root[data-net="hm"] #sb .sb-td.off{opacity:0;transition-duration:.16s}
-:root[data-net="hm"] #sb .sb-msg{border-radius:9px;box-shadow:none;background:var(--mc,#24262B);padding:0 12px}
-:root[data-net="hm"] #sb .sb-msg b{font:800 14px/1 var(--f-text);text-transform:none;letter-spacing:-.01em;text-shadow:none}
+:root[data-net="hm"] #sb .sb-msg{background:var(--mc,#24262B);padding:0 18px 0 14px}
+:root[data-net="hm"] #sb .sb-msg.dd{padding:0 14px 0 13px}
+:root[data-net="hm"] #sb .sb-msg b{font:800 14px/1 var(--f-text);text-transform:none;letter-spacing:-.01em}
 :root[data-net="hm"] #sb .sb-msg>small{font:500 9px/1 var(--f-text);text-transform:none;letter-spacing:0}
-:root[data-net="hm"] #sb .sb-td{border-radius:14px;background:radial-gradient(120% 160% at 0 50%,color-mix(in srgb,var(--c) 70%,#fff) 0,var(--c) 45%),var(--c);box-shadow:inset 0 0 0 1px rgba(255,255,255,.25);gap:10px;padding:0 16px 0 8px}
+:root[data-net="hm"] #sb .sb-td{background:radial-gradient(120% 160% at 0 50%,color-mix(in srgb,var(--c) 70%,#fff) 0,var(--c) 45%),var(--c);gap:10px;padding:0 20px 0 8px}
 :root[data-net="hm"] #sb .sb-td::after{display:none}
-:root[data-net="hm"] #sb .sb-td .tvl{--s:34px}
+:root[data-net="hm"] #sb .sb-td .tvl{--s:32px}
 :root[data-net="hm"] #sb .sb-td b{font:800 21px/1 var(--f-text);letter-spacing:-.02em;text-transform:none;text-shadow:none}
 :root[data-net="hm"] #sb .sb-td small{font:500 9.5px/1 var(--f-text);letter-spacing:0;text-transform:none}
 :root[data-net="hm"] #sb .sb-td .tms{font-size:18px;transform:none;text-shadow:none}
 :root[data-net="hm"] #sb .sb-td .pts{font:800 24px/1 var(--f-text)}
-:root[data-net="hm"] #sb .sb-tab{border-radius:11px;box-shadow:none;background:var(--sb-flag);padding:0 12px}
+:root[data-net="hm"] #sb .sb-tab{background:var(--sb-flag);padding:0 12px}
 :root[data-net="hm"] #sb .sb-tab b{font:800 13px/1 var(--f-text);text-transform:none;letter-spacing:0}
-:root[data-net="hm"] #drv{border-radius:10px;background:rgba(14,16,17,.86);box-shadow:0 0 0 1px rgba(255,255,255,.12);text-transform:none;letter-spacing:0;font-weight:600}
-@media (min-width:541px) and (max-width:740px){:root[data-net="hm"] #sb .sb-tag{display:none}}
+:root[data-net="hm"] #drv{background:rgba(14,16,17,.82);text-transform:none;letter-spacing:0;font-weight:600}
 @media (max-width:540px){
-  :root[data-net="hm"]{--sb-th:40px;--sb-sh:24px;--sb-lgw:30px;--sb-lg:24px;--sb-sc:30px;--sb-ms:10.5px}
-  :root[data-net="hm"] #sb .sbx{border-radius:12px;padding:0 3px 3px}
-  :root[data-net="hm"] #sb .tm{flex:1 1 calc(50% - 4px)}
-  :root[data-net="hm"] #sb .sb-tag{padding:0 6px 0 8px;align-items:center}
-  :root[data-net="hm"] #sb .sb-r{margin:0;height:var(--sb-sh)}
+  :root[data-net="hm"]{--sb-th:40px;--sb-sh:24px;--sb-lgw:30px;--sb-lg:24px;--sb-sc:30px;--sb-ms:10.5px;--sb-r:16px}
+  :root[data-net="hm"] #sb .sb-tag{padding:0 6px 0 12px}
+  :root[data-net="hm"] #sb .sb-r{padding-left:0}
   :root[data-net="hm"] #sb .ab{font-size:13.5px}:root[data-net="hm"] #sb .ab[data-n="4"]{font-size:12.5px}:root[data-net="hm"] #sb .ab[data-n="5"],:root[data-net="hm"] #sb .ab[data-n="6"]{font-size:11.5px}
   :root[data-net="hm"] #sb .sv{font-size:23px}
   :root[data-net="hm"] #sb #gclk{font-size:15px}
-  :root[data-net="hm"] #sb .pc{font-size:12px}
+  :root[data-net="hm"] #sb .pc{height:16px;font-size:12px}
   :root[data-net="hm"] #sb #dd{font-size:12.5px}
-  :root[data-net="hm"] #sb .sb-dd{min-width:0}
-  :root[data-net="hm"] #sb .sb-td{border-radius:12px}
+  :root[data-net="hm"] #sb .sb-dd{min-width:0;padding:0 14px 0 10px}
   :root[data-net="hm"] #sb .sb-td b{font-size:18px}
 }
 
 /* =========================================================
-   Postseason dress: the event strip on the bug's inner edge, and the finish on the neutral modules
+   Postseason dress: a tab on the bug's inner edge, the finish on the bar
    ========================================================= */
-#sb .sb-ev{display:flex;align-items:center;justify-content:center;gap:8px;height:17px;padding:0 10px;overflow:hidden;position:relative;
-  background:linear-gradient(180deg,#26282D,#101114);box-shadow:0 0 0 1px var(--sbkey);color:#ECE9E2}
+#sb .sb-ev{display:flex;align-items:center;justify-content:center;gap:7px;align-self:center;max-width:calc(100% - 24px);height:18px;padding:0 16px;overflow:hidden;position:relative;
+  border-radius:5px 5px 0 0;background:linear-gradient(180deg,var(--ev1,#3A3C42),var(--sbn1));color:#ECE9E2}
+:root[data-bug="top"] #sb .sb-ev{border-radius:0 0 5px 5px;background:linear-gradient(0deg,var(--ev1,#3A3C42),var(--sbn2))}
 #sb .sb-ev[hidden]{display:none}
-:root[data-ev] #sb .sb-tag>small{display:none}
-#sb .sb-ev .ek{flex:none;font:800 9px/1 var(--f-disp);font-style:normal;letter-spacing:.14em;text-transform:uppercase;padding:2px 5px 1px;box-shadow:inset 0 0 0 1px currentColor}
-#sb .sb-ev .el{min-width:0;white-space:nowrap;overflow:visible;font:800 calc(12px*var(--fk,1))/1 var(--f-disp);letter-spacing:.14em;text-transform:uppercase;transform:scaleX(var(--fx,1))}
-:root[data-ev] #sb .sb-ev{margin:0}
-:root[data-bug="bottom"][data-ev] #sb .sb-ev{margin-bottom:2px}
-:root[data-bug="top"][data-ev] #sb .sb-ev{margin-top:-2px;margin-bottom:2px}
+#sb .sb-ev .ek{flex:none;font:800 9.5px/1 var(--f-disp);font-style:normal;letter-spacing:.16em;text-transform:uppercase;color:var(--evk,var(--pkA))}
+#sb .sb-ev .ek::after{content:"";display:inline-block;width:3px;height:3px;margin-left:7px;border-radius:50%;background:currentColor;opacity:.75;vertical-align:2px}
+#sb .sb-ev .el{min-width:0;white-space:nowrap;overflow:visible;font:800 calc(11.5px*var(--fk,1))/1 var(--f-disp);letter-spacing:.14em;text-transform:uppercase;transform:scaleX(var(--fx,1))}
 /* bowl: bronze and gold foil, stars either side */
-:root[data-ev="bowl"]{--sbkey:#C9A54C;--sbt1:#3B2C12;--sbt2:#1A1307;--pkA:#D9B45A}
-:root[data-ev="bowl"] #sb .sb-ev{background:linear-gradient(90deg,#2B1F0B,#6E5222 22%,#B58D3E 50%,#6E5222 78%,#2B1F0B);color:#FFF3CF;text-shadow:0 1px 0 rgba(0,0,0,.45)}
+:root[data-ev="bowl"]{--pkA:#D9B45A}
+:root[data-ev="bowl"] #sb .sb-ev{background:linear-gradient(90deg,#4A3612,#9A7631 28%,#C9A04C 50%,#9A7631 72%,#4A3612);color:#FFF5D6;text-shadow:0 1px 0 rgba(0,0,0,.35)}
 :root[data-ev="bowl"] #sb .sb-ev .ek{display:none}
-:root[data-ev="bowl"] #sb .sb-ev::before,:root[data-ev="bowl"] #sb .sb-ev::after{content:"★";font-size:9px;color:#FFE08A}
-:root[data-ev="bowl"] #sb .sbx{box-shadow:0 0 0 1px #C9A54C,0 0 0 2px rgba(0,0,0,.6),0 10px 24px rgba(0,0,0,.5)}
+:root[data-ev="bowl"] #sb .sb-ev::before,:root[data-ev="bowl"] #sb .sb-ev::after{content:"★";font-size:8px;color:#FFE08A}
 /* playoff: black, silver chrome lettering, a gold play clock */
-:root[data-ev="cfp"]{--sbkey:#A9AFB7;--sbn1:#2C2D31;--sbn2:#030304;--sbt1:#1B1C1F;--sbt2:#000;--sbacc:#E6C45E;--pkA:#C9CED5}
-:root[data-ev="cfp"] #sb .sb-ev{background:linear-gradient(180deg,#141416,#000);box-shadow:0 0 0 1px #A9AFB7,inset 0 1px 0 rgba(255,255,255,.18)}
-:root[data-ev="cfp"] #sb .sb-ev .el{background:linear-gradient(180deg,#FFFFFF 0,#C9CED5 48%,#8D939B 52%,#E4E7EB 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
-:root[data-ev="cfp"] #sb .sb-ev .ek{color:#E6C45E;box-shadow:inset 0 0 0 1px #E6C45E}
-:root[data-ev="cfp"] #sb .sbx{box-shadow:0 0 0 1px #A9AFB7,0 0 0 2px #000,0 10px 24px rgba(0,0,0,.55)}
+:root[data-ev="cfp"]{--sbn1:#26272B;--sbn2:#030304;--sbacc:#E6C45E;--pkA:#C9CED5}
+:root[data-ev="cfp"] #sb .sb-ev{--evk:#E6C45E;--ev1:#2E2F34}
+:root[data-ev="cfp"] #sb .sb-ev .el{background:linear-gradient(180deg,#FFFFFF 0,#D3D7DC 48%,#9EA4AC 52%,#E9EBEE 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 /* title game: gold */
-:root[data-ev="title"]{--sbkey:#D4AF37;--sbn1:#2B2412;--sbn2:#070602;--sbt1:#2B2412;--sbt2:#070602;--sbacc:#F5D77A;--pkA:#E2BF57}
-:root[data-ev="title"] #sb .sb-ev{height:19px;background:linear-gradient(180deg,#F8E39A 0,#E2BF57 45%,#B88A23 55%,#E9CB6F 100%);color:#1D1606;box-shadow:0 0 0 1px #7A5A14,0 0 10px rgba(226,191,87,.35)}
-:root[data-ev="title"] #sb .sb-ev .ek{background:#1D1606;color:#F5D77A;box-shadow:none}
-:root[data-ev="title"] #sb .sb-ev .el{font-size:calc(13px*var(--fk,1));letter-spacing:.2em}
-:root[data-ev="title"] #sb .sbx{box-shadow:0 0 0 1px #D4AF37,0 0 0 2px #2B2108,0 0 18px rgba(212,175,55,.3),0 10px 24px rgba(0,0,0,.55)}
-:root[data-ev="title"] #sb .qc #gclk{color:#FBE7A6}
+:root[data-ev="title"]{--sbn1:#2E2714;--sbn2:#080703;--sbacc:#F5D77A;--pkA:#E2BF57}
+:root[data-ev="title"] #sb .sb-ev{height:19px;background:linear-gradient(180deg,#F6E19A,#E2BF57 50%,#C99A33);color:#1D1606}
+:root[data-bug="top"][data-ev="title"] #sb .sb-ev{background:linear-gradient(0deg,#F6E19A,#E2BF57 50%,#C99A33)}
+:root[data-ev="title"] #sb .sb-ev .ek{color:#6A4F12}
+:root[data-ev="title"] #sb .sb-ev .el{font-size:calc(12.5px*var(--fk,1));letter-spacing:.2em}
+:root[data-ev="title"] #sb .sbx{box-shadow:var(--sb-shadow),0 0 22px rgba(226,191,87,.22)}
+:root[data-ev="title"] #sb #gclk{color:#FBE7A6}
 /* conference championship: the network's accent and the conference's title */
-:root[data-ev="ccg"] #sb .sb-ev{background:linear-gradient(90deg,var(--pk1),var(--pk2) 50%,var(--pk1));box-shadow:0 0 0 1px var(--sbkey),inset 0 -2px 0 var(--pkA)}
+:root[data-ev="ccg"] #sb .sb-ev{background:linear-gradient(180deg,var(--pk2),var(--pk1))}
 :root[data-ev="ccg"] #sb .sb-ev .ek{display:none}
-:root[data-ev="ccg"] #sb .sb-ev::before,:root[data-ev="ccg"] #sb .sb-ev::after{content:"";width:5px;height:5px;transform:rotate(45deg);background:var(--pkA);flex:none}
-/* the packages wear it in their own shape */
-:root[data-net="pyl"] #sb .sb-ev{clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);box-shadow:none;margin-left:12px;margin-right:12px}
-:root[data-net="chk"] #sb .sb-ev{box-shadow:0 0 0 1px var(--sbkey);background-size:auto}
-:root[data-net="chk"][data-bug="bottom"] #sb .sb-ev{margin-bottom:6px}
-:root[data-net="hm"] #sb .sb-ev{border-radius:9px;margin-left:auto;margin-right:auto;padding:0 12px;box-shadow:0 0 0 1px rgba(255,255,255,.14)}
-:root[data-net="hm"][data-ev] #sb .sbx{box-shadow:0 0 0 1px var(--sbkey),0 8px 22px rgba(0,0,0,.45)}
-:root[data-net="pyl"][data-ev] #sb .sbx{box-shadow:none}
+:root[data-ev="ccg"] #sb .sb-ev::before,:root[data-ev="ccg"] #sb .sb-ev::after{content:"";width:4px;height:4px;transform:rotate(45deg);background:var(--pkA);flex:none}
+/* the packages wear it in their own shape: PYLON a slanted plate on the white slab, hashmark+ a floating pill */
+:root[data-net="pyl"] #sb .sb-ev{border-radius:0;padding:0 20px;clip-path:polygon(8px 0,calc(100% - 8px) 0,100% 100%,0 100%);background:linear-gradient(180deg,#26272B,#121316)}
+:root[data-net="pyl"][data-bug="top"] #sb .sb-ev{clip-path:polygon(0 0,100% 0,calc(100% - 8px) 100%,8px 100%)}
+:root[data-net="pyl"][data-ev="title"] #sb .sb-ev{background:linear-gradient(180deg,#F6E19A,#E2BF57 50%,#C99A33)}
+:root[data-net="pyl"][data-ev="bowl"] #sb .sb-ev{background:linear-gradient(90deg,#4A3612,#9A7631 28%,#C9A04C 50%,#9A7631 72%,#4A3612)}
+:root[data-net="pyl"][data-ev="ccg"] #sb .sb-ev{background:linear-gradient(180deg,var(--pk2),var(--pk1))}
+:root[data-net="hm"] #sb .sb-ev{border-radius:10px;padding:0 13px;background:linear-gradient(180deg,rgba(40,43,44,.95),rgba(16,18,19,.95))}
+:root[data-net="hm"][data-bug="bottom"] #sb .sb-ev{margin-bottom:4px}
+:root[data-net="hm"][data-bug="top"] #sb .sb-ev{margin-top:4px}
+:root[data-net="hm"][data-ev="title"] #sb .sb-ev{background:linear-gradient(180deg,#F6E19A,#E2BF57 50%,#C99A33)}
 @media (max-width:540px){#sb .sb-ev{height:16px}#sb .sb-ev .el{font-size:calc(10.5px*var(--fk,1));letter-spacing:.1em}:root[data-ev="title"] #sb .sb-ev .el{font-size:calc(11px*var(--fk,1))}}
 @media (prefers-reduced-motion:reduce){:root[data-net] #sb .sb-msg,:root[data-net] #sb .sb-td{transition:none}}
 /* portrait: the network tag lives bottom-right, so it steps aside while the presnap bar or the action buttons sit there */
@@ -14943,7 +14947,8 @@ if(typeof SETTINGS_EXTRA!=='undefined')SETTINGS_EXTRA.unshift(
    sbPlace    landscape → bottom centre (Settings › Score bug in landscape: Bottom | Top); portrait → top, always
    sbMeasure  the bug's footprint for everything that stacks against it: --sbB (its bottom edge, top mode) and
               --sbT (viewport bottom → its top edge, bottom mode); the 3D camera reads the rect itself (08t-view)
-   sbTag      the game tag on the far left: conference in text (or CFP / FCS / bowl) over the week
+   sbTag      the game tag: conference in text (or CFP / FCS / bowl) and the week, shown in the corner network
+              tag (#wm .wk); the bar itself carries only the network's wordmark
    sbScore    the score flip (old number turns away, new one turns in) with a flash of the team colour
    SBUG       takeovers inside the bar, each 150-250 ms in, ease-out: msg (over the state + down modules),
               td (team-colour wipe across the bar with the logo), flag (yellow slide-out with the foul)
@@ -14975,7 +14980,8 @@ function sbTagText(){
 const sbOrd=s=>esc(s).replace(/(\d)(st|nd|rd|th)\b/gi,'$1<small class="o">$2</small>');
 /* set markup only when it changed (hud runs every frame); true when it did */
 function sbSet(el,h){if(!el||el._h===h)return false;el._h=h;el.innerHTML=h;return true}
-function sbTag(){const el=$('#sbTag');if(!el)return;const [a,b]=sbTagText();el.querySelector(':scope>b').textContent=a;el.querySelector(':scope>small').textContent=b}
+function sbTag(){const el=$('#sbTag');if(!el)return;const [a,b]=sbTagText();el.querySelector(':scope>b').textContent=a;el.querySelector(':scope>small').textContent=b;
+  const wk=document.querySelector('#wm .wk');if(wk)wk.textContent=document.documentElement.dataset.ev?'':[a,b].filter(x=>x&&x!=='Live').join(' · ')}
 /* score cell: flip on a new score (anim), else just set it. Under the touchdown wipe the old number stays and flips
    when the wipe leaves. */
 function sbScore(el,v,anim){
@@ -15048,7 +15054,8 @@ const SBUG={
                 the time slot, the conferences (power or not) and the postseason tag, like a real TV contract.
                 Settings › Broadcast › Scorebug (LG.settings.pkg) can force one package for every game.
    netEvent(g)  the postseason dress: 'title' | 'cfp' | 'bowl' | 'ccg' | ''
-   netApply()   at kickoff: data-net / data-ev on <html>, the wordmark in the bug, the corner tag, the event strip
+   netApply()   at kickoff: data-net / data-ev on <html>, the wordmark in the bug, the corner tag (wordmark, the
+                conference and week from 07c sbTag, LIVE), the event tab
    sbFit()      mascot script (and the long names) shrink to fit their cell, never clip; reruns on resize, a new
                 design or new teams (07c sbPlace calls it through BC.hud)
    Wordmarks are set in type (no artwork): GLN white tile + red dot, PYLON italic caps beside an orange goal-line
@@ -15117,8 +15124,9 @@ function netApply(){
   const g=(typeof S!=='undefined'&&S.game)||null,id=netFor(g),ev=netEvent(g),r=document.documentElement;
   r.dataset.net=id;r.dataset.pkg=id;if(ev)r.dataset.ev=ev;else delete r.dataset.ev;
   const n=$('#sbNet');if(n)n.innerHTML=netWM(id);
-  const wm=$('#wm');if(wm)wm.innerHTML=netWM(id,'sm')+'<b>LIVE</b>';
+  const wm=$('#wm');if(wm)wm.innerHTML=netWM(id,'sm')+'<i class="wk"></i><b>LIVE</b>';
   const e=$('#sbEv');if(e){const [k,l]=netEvLabel(g,ev);e.hidden=!ev;e.innerHTML=ev?`<i class="ek">${esc(k)}</i><b class="el">${esc(l)}</b>`:''}
+  try{if(typeof sbTag==='function')sbTag()}catch(e){}   // the conference and week ride in the corner tag
   sbFit.k='';
   return id;
 }
