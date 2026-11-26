@@ -115,6 +115,7 @@
 :root[data-net="pyl"] #sb .sb-tab{clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);padding:0 16px}
 :root[data-net="pyl"] #sb .sb-tab b{transform:skewX(-10deg)}
 :root[data-net="pyl"] #drv{clip-path:polygon(7px 0,100% 0,calc(100% - 7px) 100%,0 100%);padding:0 14px;background:#FFFFFF;color:#121316}
+@media (min-width:541px) and (max-width:740px){:root[data-net="pyl"]{--sb-w:clamp(520px,84vw,690px);--sb-dd:100px}:root[data-net="pyl"] #sb .sb-dd{min-width:84px}}
 @media (max-width:540px){
   :root[data-net="pyl"]{--sb-th:40px;--sb-sh:22px;--sb-lgw:34px;--sb-lg:28px;--sb-sc:34px;--sb-ms:9.5px;--py-s:7px}
   :root[data-net="pyl"] #sb .sb-td .tms{display:none}

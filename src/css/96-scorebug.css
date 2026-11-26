@@ -169,8 +169,9 @@
 @keyframes sbTabDn{from{transform:translateY(-110%)}}
 @keyframes sbTabUp{from{transform:translateY(110%)}}
 
-/* ---------- narrow landscape (SE-class phones): the wordmark gives its room to the teams ---------- */
-@media (min-width:541px) and (max-width:740px){#sb .sb-tag{display:none}:root{--sb-ms:15px}}
+/* ---------- narrow landscape (SE-class phones): the wordmark gives its room to the teams, the bar runs a little
+   wider and the logo, score and down step down so the names never clip ---------- */
+@media (min-width:541px) and (max-width:740px){#sb .sb-tag{display:none}:root{--sb-ms:15px;--sb-w:clamp(500px,80vw,680px);--sb-lgw:44px;--sb-lg:50px;--sb-sc:40px;--sb-dd:96px}#sb .sv{font-size:32px}}
 /* ---------- portrait: one card across the top. The team fields, then a quiet strip with the network, the quarter
    and clock, the play clock, and the down & distance with the spot ---------- */
 @media (max-width:540px){
