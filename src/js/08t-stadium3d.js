@@ -15,14 +15,29 @@
    Draw calls: one vertex-coloured structure mesh (concrete, facades, press box, hills, hedges, towers, trees, arches,
    canopies, light poles, ground), one each for seats, ribbon boards, glass, light panels, light glows (billboards),
    the instanced crowd, the backdrop ring, water, dome, the board and the two signs; pyro only while it burns.
+   v:3 (t.std.mk names a schema-v3 model kept in KV, 02c; 08t-stadium3m normalises and lays it out): every side is lofted
+   from its real tiers (rows, rake, bands, overhangs, suite levels, the press box on the press side), corners full / lower /
+   none, ends stand / open / hill / building / plaza, boards on the stands that have them, ribbons, lights, canopies or a
+   (retractable) dome, the outer walls in the model's facade style and colours (one more draw call, a canvas texture),
+   seats in its colours and pattern (letters: one more), the turf and end zones, a track, surroundings and landmarks.
    ========================================================= */
 const S3={cache:new Map(),max:3,ms:0,pyro:0,clipA:null,clipB:null};
 const S3RK={L:3,M:2,S:1};
-function s3Design(h,o){if(!h||o.neutral||typeof stdOf!=='function')return null;const sd=stdOf(h);return sd?s3Norm(sd):null}
-function s3Norm(sd){const v2=sd.v===2,d=clamp(sd.d|0||2,1,3),ft=Array.isArray(sd.ft)?sd.ft.slice():[];
-  return {sh:['bowl','horse','u','side'].includes(sd.sh)?sd.sh:'bowl',dF:d,dN:v2?clamp(sd.d2|0||1,1,3):d===3?3:Math.max(1,d-1),L:sd.L||'M',R:sd.R||'M',
+function s3Design(h,o){if(!h||o.neutral||typeof stdOf!=='function')return null;const sd=stdOf(h);if(!sd)return null;
+  let m=null;if(sd.v===3&&sd.mk&&typeof stdModelGet==='function')try{m=s3NormM(stdModelGet(sd.mk))}catch(e){console.warn('stadium model',e);m=null}
+  const n=s3Norm(sd,m);if(m)n.hl=S3HL[h.abbr]||String(h.city||h.abbr||'U').trim().charAt(0).toUpperCase();return n}
+/* the letter on the hill behind the stadium (hill-letter): the known ones, else the school's initial */
+const S3HL={BYU:'Y',UTAH:'U',ARIZ:'A',ASU:'A',NEV:'N',CSU:'A',NMSU:'A',USU:'A',BOIS:'B',UTEP:'M',SDSU:'S',CAL:'C',MIZ:'M',LIB:'LU'};
+function s3Norm(sd,m){const v2=sd.v>=2,d=clamp(sd.d|0||2,1,3),ft=Array.isArray(sd.ft)?sd.ft.slice():[];
+  const n={sh:['bowl','horse','u','side'].includes(sd.sh)?sd.sh:'bowl',dF:d,dN:v2?clamp(sd.d2|0||1,1,3):d===3?3:Math.max(1,d-1),L:sd.L||'M',R:sd.R||'M',
     bd:sd.bd||'',bs:sd.bs||'',ft,sc:sd.sc||null,tf:sd.tf||'',gr:!!sd.gr,rf:!!sd.rf||ft.includes('dome'),cap:clamp(+sd.cap||40000,5000,120000),el:+sd.el||0,ct:sd.ct||'',op:+sd.op||0,
-    has(f){return this.ft.indexOf(f)>=0}}}
+    has(f){return this.ft.indexOf(f)>=0}};
+  if(m){const S=m.sd,F=new Set(n.ft.filter(f=>f==='cards'||f==='pyro'));n.m=m;n.mh=sd.mh||'';n.L=s3Code3(S.L);n.R=s3Code3(S.R);n.dF=clamp(S.F.T.length||1,1,3);n.dN=clamp(S.N.T.length||1,1,3);
+    n.rf=m.roof==='dome'?1:m.roof==='retractable'?2:0;n.sh=S.L.type==='stand'&&S.R.type==='stand'?'bowl':S.L.type==='stand'||S.R.type==='stand'?'horse':'side';
+    for(const [c,f] of [[m.lm.includes('hedges'),'hedges'],[m.lm.includes('tower'),'tower'],[m.lm.includes('arch')&&(S.L.type==='open'||S.R.type==='open'),'arches'],[m.sur.includes('mountains'),'mountains'],[m.sur.includes('trees'),'trees'],
+      [m.sur.includes('city')||m.lm.includes('skyline'),'skyline'],[m.sur.includes('lake')||m.sur.includes('river')||m.sur.includes('ocean'),'water'],[m.field.ez==='checker','checker']])if(c)F.add(f);
+    n.ft=[...F];if(m.field.c)n.tf=m.field.c;if(m.field.gr>=0)n.gr=!!m.field.gr;n.ez=m.field.ez;n.ezc=m.field.ezc}
+  return n}
 /* ---------- geometry accumulators: one per material, flat-shaded triangles ---------- */
 function s3Acc(uv){return {p:[],n:[],c:[],u:uv?[]:null}}
 function s3Tri(A,a,b,c,col,ua,ub,uc,want){
@@ -65,12 +80,14 @@ function s3Segs(suites,cl){const g=suites?['glass',null,S3IN]:['st',cl.dark,S3IN
 /* loft a section along a piece: prof(u) → {P, R}; segs per segment; caps close an end of the piece that has no neighbour */
 function s3Loft(B,pc,prof,segs,capA,capB,capCol){const N=pc.N,st=[];for(let i=0;i<=N;i++)st.push(prof(i/N));
   const W=(q,h)=>[q[0],h,q[1]];
-  for(let k=0;k<segs.length;k++){const [key,cv,f]=segs[k];if(!key)continue;const A=B[key],col=key==='st'?cv:B.white;
+  for(let k=0;k<segs.length;k++){const [key,cv,f]=segs[k];if(!key)continue;const A=B[key]||B.st,col=key==='st'||!B[key]?cv||B.white:B.white;
     for(let i=0;i<N;i++){const u0=i/N,u1=(i+1)/N,p0=st[i],p1=st[i+1],a0=p0.P[k],b0=p0.P[k+1],a1=p1.P[k],b1=p1.P[k+1];
       if(Math.abs(b0[0]-a0[0])+Math.abs(b0[1]-a0[1])<.02&&Math.abs(b1[0]-a1[0])+Math.abs(b1[1]-a1[1])<.02)continue;
       const qa0=pc.at(u0,a0[0]),qb0=pc.at(u0,b0[0]),qa1=pc.at(u1,a1[0]),qb1=pc.at(u1,b1[0]);
       const dm=(a0[0]+b0[0])/2,s0=pc.L(dm)*u0,s1=pc.L(dm)*u1,nx=(qa0[2]+qa1[2])/2,nz=(qa0[3]+qa1[3])/2,want=[-nx*f[0],f[1],-nz*f[0]];
-      let U=null;if(A.u){const sc=key==='seat'?24:key==='rib'?22:8,v0=key==='seat'?Math.max(1,Math.round(p0.R[cv])):1,v1=key==='seat'?Math.max(1,Math.round(p1.R[cv])):1;U=[[s0/sc,0],[s1/sc,0],[s1/sc,v1],[s0/sc,v0]]}
+      let U=null;if(A.u){if(key==='fac'){const tw=S3FT.w,th=S3FT.h;U=[[s0/tw,a0[1]/th],[s1/tw,a1[1]/th],[s1/tw,b1[1]/th],[s0/tw,b0[1]/th]]}else if(key==='seatL')U=[[u0,0],[u1,0],[u1,1],[u0,1]];
+        else{const sc=key==='seat'?B.ssc||24:key==='rib'?22:8,rv=B.srv||1,vv=(p,a,b)=>key==='seat'?Math.max(1,Math.round(p.R[cv]))/rv:key==='glass'&&B.gl3?Math.max(1,Math.round(Math.abs(b[1]-a[1])/4.2)):1,v0=vv(p0,a0,b0),v1=vv(p1,a1,b1),o=key==='seat'&&B.gl3?cv*.37:0;
+          U=[[s0/sc+o,0],[s1/sc+o,0],[s1/sc+o,v1],[s0/sc+o,v0]]}}
       s3Quad(A,W(qa0,a0[1]),W(qa1,a1[1]),W(qb1,b1[1]),W(qb0,b0[1]),col,U&&U[0],U&&U[1],U&&U[2],U&&U[3],want)}}
   for(const [on,u] of [[capA,0],[capB,1]]){if(!on)continue;const pr=st[u?N:0],pts=[];for(const p of pr.P){const l=pts[pts.length-1];if(!l||Math.abs(l.x-p[0])+Math.abs(l.y-p[1])>.01)pts.push(new THREE.Vector2(p[0],p[1]))}
     if(pts.length>2&&pts[0].distanceTo(pts[pts.length-1])<.01)pts.pop();if(pts.length<3)continue;let tri;try{tri=THREE.ShapeUtils.triangulateShape(pts,[])}catch(e){continue}
@@ -111,13 +128,18 @@ function s3Backdrop(cv,n,stg,p){const W=2048,H=256;cv.width=W;cv.height=H;const 
   const ridge=(base,amp,col,seed,cut,snow)=>{const q=t3Rng(seed),pts=[];let y=0,v=0;for(let x=0;x<=W;x+=8){v+=(q()-.5)*cut;v*=.92;y=Math.max(-1,Math.min(1,y*.96+v));pts.push([x,H-base-amp*(.55+.45*Math.sin(x/W*Math.PI*6+seed)*.6+y*.5)])}
     pts[pts.length-1][1]=pts[0][1];g.fillStyle=col;g.beginPath();g.moveTo(0,H);for(const [x,yy] of pts)g.lineTo(x,yy);g.lineTo(W,H);g.closePath();g.fill();
     if(snow&&!N){g.save();g.clip();g.fillStyle='rgba(245,248,252,.75)';for(const [x,yy] of pts)if(yy<H-base-amp*.82)g.fillRect(x-5,yy,10,6+r()*5);g.restore()}};
-  if(n.has('mountains')){const tall=n.el>4000?1.25:.85;ridge(40,150*tall,N?'#0b1018':mix(hz,'#6e7f9a',.45),3,.5,n.el>4000);ridge(24,95*tall,N?'#070a10':mix(hz,'#4d5f6c',.62),9,.7,false)}
-  else ridge(10,26,N?'#06080c':mix(hz,'#6b7a72',.5),5,.4,false);
+  const M3=n.m,sur=k=>!!(M3&&M3.sur.includes(k)),des=sur('desert');
+  if(n.has('mountains')){const tall=n.el>4000?1.25:.85;ridge(40,150*tall,N?'#0b1018':mix(hz,des?'#9a8a78':'#6e7f9a',.45),3,.5,n.el>4000);ridge(24,95*tall,N?'#070a10':mix(hz,des?'#8a6f55':'#4d5f6c',.62),9,.7,false)}
+  else if(sur('hills'))ridge(16,70,N?'#070a0c':mix(hz,des?'#9c8366':'#557052',.6),4,.55,false);
+  else ridge(10,26,N?'#06080c':mix(hz,des?'#a08c70':'#6b7a72',.5),5,.4,false);
+  /* the letter on the mountainside, behind the far side and a little right (behind the near side when the flyover comes from the press side) */
+  if(M3&&M3.lm.includes('hill-letter')&&n.hl){const x=M3.seats.p==='letters'&&M3.seats.l&&M3.sd.N.type==='stand'?W*.96:W*.43,y=H-(n.has('mountains')?120:62);g.save();g.font=`700 ${n.has('mountains')?64:40}px "League Gothic",Impact,sans-serif`;g.textAlign='center';
+    g.fillStyle=N?'rgba(255,255,255,.55)':'rgba(250,250,246,.95)';g.setTransform(1,0,0,1.25,0,-y*.25);g.fillText(n.hl,x,y);g.restore()}
   if(n.has('skyline')){const x0=W*.36,x1=W*.64;for(let i=0;i<90;i++){const x=x0+r()*(x1-x0),c=1-Math.abs((x-W/2)/(x1-x0))*1.6,bw=14+r()*26,bh=(30+r()*110)*Math.max(.25,c);
       g.fillStyle=N?'#0a0d14':mix(hz,r()<.5?'#5a6a80':'#76869a',.5);g.fillRect(x,H-18-bh,bw,bh+18);
       if(N){g.fillStyle='rgba(255,214,140,.85)';for(let wy=H-14-bh;wy<H-22;wy+=6)for(let wx=x+3;wx<x+bw-3;wx+=5)if(r()<.3)g.fillRect(wx,wy,2,3)}}}
   /* treeline: everywhere a little, thick with the trees feature */
-  const tr=n.has('trees')?1:.45;g.fillStyle=N?'#030504':mix(hz,'#2e4429',.78);g.beginPath();for(let x=0;x<W;x+=6){const hh=(10+r()*14+(r()<.15?r()*16:0))*tr+4;g.moveTo(x+7,H-4-hh*.4);g.ellipse(x,H-4-hh*.4,7,hh*.6,0,0,6.2832)}g.fill();
+  const tr=n.has('trees')?1:des?.18:.45;g.fillStyle=N?'#030504':mix(hz,'#2e4429',.78);g.beginPath();for(let x=0;x<W;x+=6){const hh=(10+r()*14+(r()<.15?r()*16:0))*tr+4;g.moveTo(x+7,H-4-hh*.4);g.ellipse(x,H-4-hh*.4,7,hh*.6,0,0,6.2832)}g.fill();
   g.fillRect(0,H-6,W,6);
   /* haze toward the horizon colour by day */
   if(!N){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,D?'rgba(240,170,110,.18)':'rgba(220,232,245,.18)');g.globalCompositeOperation='source-atop';g.fillStyle=gr;g.fillRect(0,0,W,H);g.globalCompositeOperation='source-over'}
@@ -136,13 +158,15 @@ function s3Billboards(list,tex,fire){const n=list.length/7,G=new THREE.Instanced
   const m=new THREE.Mesh(G,M);m.frustumCulled=false;m.renderOrder=5;return m}
 /* ---------- build one stadium ---------- */
 function s3Build(n,o,tx){
-  const h=o.host,P=s3Plan(n),pf=P.pf,own=[],keep=x=>{own.push(x);return x},grp=new THREE.Group(),r=t3Rng(h.id*13+7);grp.name='stadium3d';
+  const h=o.host,V3=!!n.m,M3=n.m,P=V3?s3Plan3(n):s3Plan(n),pf=P.pf,own=[],keep=x=>{own.push(x);return x},grp=new THREE.Group(),r=t3Rng(h.id*13+7);grp.name='stadium3d';
   const cl={conc:t3Col('#9a9ea5'),dark:t3Col('#2e333b'),under:t3Col('#3b4048'),fac:t3Col(n.cap>=60000?'#a3a7ad':'#999ea5'),fac2:t3Col('#5d636b'),grass:t3Col('#4b7f3a'),hedge:t3Col('#2c5b24'),stone:t3Col('#cfc3a6'),roof:t3Col('#dfe3e8'),pole:t3Col('#7d838c'),trk:t3Col('#2c4f2a')};
-  const towers=[],B={st:s3Acc(false),near:s3Acc(false),seat:s3Acc(true),rib:s3Acc(true),glass:s3Acc(true),lp:s3Acc(true),white:t3Col('#ffffff')},tm={t0:performance.now()},glows=[],pyro=[],ext={x:0,z:0,h:0};
+  if(V3){const e=M3.ext;Object.assign(cl,{fac:t3Col(shade(e.c,-.12)),trim:t3Col(e.t),band:t3Col('#2c3138'),fas:t3Col(shade(e.c,-.45)),berm:t3Col('#507f3d'),berm2:t3Col('#46743a')})}
+  const towers=[],B={st:s3Acc(false),near:s3Acc(false),seat:s3Acc(true),rib:s3Acc(true),glass:s3Acc(true),lp:s3Acc(true),fac:s3Acc(true),seatL:s3Acc(true),board:s3Acc(true),white:t3Col('#ffffff'),srv:V3?8:1,gl3:V3,ssc:V3?(M3.seats.p==='sections'?48:32):24},tm={t0:performance.now()},glows=[],pyro=[],ext={x:0,z:0,h:0};
   const clip=[S3.clipA||(S3.clipA=new THREE.Plane(new THREE.Vector3(0,0,-1),1e6)),S3.clipB||(S3.clipB=new THREE.Plane(new THREE.Vector3(0,-1,.5).normalize(),1e6))];
   const mat=(M,cut)=>{if(cut!==false){M.clippingPlanes=clip;M.clipIntersection=true}return keep(M)};
   const M={st:mat(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9,metalness:0,side:THREE.DoubleSide}))};
-  const seatT=keep(t3Tex(s3SeatCv(n,h),true,true));M.seat=mat(new THREE.MeshStandardMaterial({map:seatT,roughness:n.sc==='metal'?.45:.85,metalness:n.sc==='metal'?.35:0,side:THREE.DoubleSide}));
+  const seatT=keep(t3Tex(V3?s3SeatCv3(M3,h):s3SeatCv(n,h),true,true));M.seat=mat(new THREE.MeshStandardMaterial({map:seatT,roughness:n.sc==='metal'?.45:.85,metalness:n.sc==='metal'?.35:0,side:THREE.DoubleSide}));
+  if(V3){const fT=keep(t3Tex(s3FacCv(M3),true,true)),gl=M3.ext.st==='glass';fT.generateMipmaps=true;fT.minFilter=THREE.LinearMipmapLinearFilter;M.fac=mat(new THREE.MeshStandardMaterial({map:fT,roughness:gl?.3:.88,metalness:gl?.35:0,side:THREE.DoubleSide}))}
   M.rib=mat(new THREE.MeshStandardMaterial({map:tx.rib,emissiveMap:tx.rib,emissive:'#ffffff',emissiveIntensity:.45,roughness:.6,side:THREE.DoubleSide}));
   M.rib.onBeforeCompile=sh=>{sh.fragmentShader=sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n\tif(!gl_FrontFacing)diffuseColor.rgb=vec3(.05,.055,.065);').replace('#include <emissivemap_fragment>','#include <emissivemap_fragment>\n\tif(!gl_FrontFacing)totalEmissiveRadiance=vec3(0.);')};M.rib.customProgramCacheKey=()=>'s3ribFront';
   const suT=keep(t3Tex(t3Suites(),true,true));M.glass=mat(new THREE.MeshStandardMaterial({map:suT,emissiveMap:suT,emissive:'#ffffff',emissiveIntensity:.15,roughness:.35,side:THREE.DoubleSide}));
@@ -152,22 +176,24 @@ function s3Build(n,o,tx){
      side), visitors high in the right corner, card stunts on the far side */
   const c1=t3Col(h.c1),c2=t3Col(h.c2||'#ffffff'),wh=t3Col('#f2f2f2'),awt=o.away,a1=t3Col(awt.c1),a2=t3Col(awt.c2||'#ffffff'),misc=['#2b2f36','#6b7280','#9aa3ad','#1f3b70','#5a3a22','#c9c2b0'].map(t3Col),skins=TONES.map(t3Col);
   const studL=(S3RK[n.L]||0)>=1,lastF=n.dF-1,cards=n.has('cards'),FP=[],FA=[],FC=[],FS=[],FH=[],FK=[];
-  const fan=(x,y,z,ang,k,id,row,nr)=>{let kind=0;
+  let LT=null;const fan=(x,y,z,ang,k,id,row,nr,u)=>{let kind=0;
     if(k===0&&(studL?(id==='L'||id==='FL'):(id==='F'&&x<30)))kind=1;else if((k===lastF&&k>0&&(id==='FR'||id==='F'&&x>92))||(lastF===0&&(id==='R'||id==='FR'||id==='F'&&x>98)&&row>nr*.5))kind=2;
     const q=r();let col=kind===1?(q<.82?c1:wh):kind===2?(q<.7?a1:q<.85?a2:misc[r()*6|0]):(q<.5?c1:q<.64?c2:q<.74?wh:misc[r()*6|0]);
     if(cards&&id==='F'&&k===0&&row>1&&Math.abs(x-60)<26){const v=(Math.floor(Math.abs(x-60)/4.5)+Math.floor(row/3))%3;col=v===0?c1:v===1?c2:wh;kind=0}
+    if(LT&&id===LT.id&&k===LT.k){col=LT.at(u,row,nr)?LT.c1:LT.c0;kind=0;LT.rec.push(FA.length,u,row,nr)}
     const sk=skins[r()*4|0];FP.push(x,y,z);FA.push(ang);FC.push(col.r,col.g,col.b);FS.push(sk.r,sk.g,sk.b);FH.push(r());FK.push(kind)};
   /* ---- pieces ---- */
   const {aL,aR,zF,zN,r:rc,hz}=P,cz=CEN,PI=Math.PI,rk=c=>S3RK[c]||0;
   const pcs=[];const add=(id,pc,prof,segs,ca,cb,deckProf)=>{if(pc.L(0)<.4&&!(pc.N>1))return;pcs.push({id,pc,prof,segs,ca,cb});s3Loft(B,pc,prof,segs,ca,cb,cl.fac)};
   const cF=pf.F,cN=pf.N,lerpP=(a,b)=>u=>s3Lerp(a,b,s3Smooth(u));
+  const endInfo={},X3={B,P,n,cl,add,lerpP,endInfo,fan,r,h,segs:{},pcs};
+  tm.pre=performance.now();if(V3){s3Pieces3(X3);LT=X3.lt||null;if(LT){const lT=keep(t3Tex(LT.cv));lT.generateMipmaps=true;lT.minFilter=THREE.LinearMipmapLinearFilter;LT.tex=lT;M.seatL=mat(new THREE.MeshStandardMaterial({map:lT,roughness:.85,side:THREE.DoubleSide}))}}else{
   add('F',s3Line(P.fx[0],zF,P.fx[1],zF,0,-1),()=>cF,segF,!rc.FL,!rc.FR);
   add('N',s3Line(P.nx[1],zN,P.nx[0],zN,0,1),()=>cN,segO,!rc.NR,!rc.NL);
   if(rc.FR)add('FR',s3Arc(aR-rc.FR,zF+rc.FR,rc.FR,-PI/2,0),lerpP(cF,pf.R),segF,0,0);
   if(rc.NR)add('NR',s3Arc(aR-rc.NR,zN-rc.NR,rc.NR,0,PI/2),lerpP(pf.R,cN),segO,0,0);
   if(rc.NL)add('NL',s3Arc(aL+rc.NL,zN-rc.NL,rc.NL,PI/2,PI),lerpP(cN,pf.L),segO,0,0);
   if(rc.FL)add('FL',s3Arc(aL+rc.FL,zF+rc.FL,rc.FL,PI,PI*1.5),lerpP(pf.L,cF),segF,0,0);
-  const endInfo={};
   for(const e of ['L','R']){const c=n[e],s=e==='L'?-1:1,x=e==='L'?aL:aR,[z0,z1]=e==='L'?P.lz:P.rz,pc=e==='L'?s3Line(x,z1,x,z0,-1,0):s3Line(x,z0,x,z1,1,0),
       ca=e==='L'?!rc.NL:!rc.FR,cb=e==='L'?!rc.FL:!rc.NR;endInfo[e]={x,s,c,D:0,H:2,z0,z1};
     if(rk(c)){if(Math.abs(z1-z0)>.4)add(e,pc,()=>pf[e],segO,ca,cb);endInfo[e].D=pf[e].D;endInfo[e].H=pf[e].H}
@@ -181,36 +207,39 @@ function s3Build(n,o,tx){
       s3Geo(B.st,new THREE.BoxGeometry(bd,bh,wz),t3M(bx,bh/2,cz),t3Col('#8e939b'));s3Geo(B.st,new THREE.BoxGeometry(bd+1.5,1,wz+1.5),t3M(bx,bh+.5,cz),cl.roof);
       const gx=x+s*(lp.D+1-.05),gl=new THREE.PlaneGeometry(wz-2,bh-4);s3Geo(B.glass,gl,t3M(gx,bh/2+1,cz,0,-s*PI/2,0),B.white,(wz-2)/8,2);endInfo[e].D=lp.D+bd+1;endInfo[e].H=bh}
     else{/* open: a low wall across the end */
-      const wp={P:[[0,0],[0,1.4],[.6,1.4],[.6,0]],R:[0,0,0]};s3Loft(B,pc,()=>wp,[['rib',null,S3IN],['st',cl.conc,S3UP],['st',cl.dark,S3OUT]],1,1,cl.dark);endInfo[e].D=1;endInfo[e].H=1.4}}
+      const wp={P:[[0,0],[0,1.4],[.6,1.4],[.6,0]],R:[0,0,0]};s3Loft(B,pc,()=>wp,[['rib',null,S3IN],['st',cl.conc,S3UP],['st',cl.dark,S3OUT]],1,1,cl.dark);endInfo[e].D=1;endInfo[e].H=1.4}}}
+  if(V3&&M3.track)s3Track3(B);
   /* ---- extents (for the establishing shot) ---- */
-  ext.x=Math.max(P.xL+endInfo.L.D,P.xR+endInfo.R.D,Math.abs(P.fx[0]-60)+4,Math.abs(P.fx[1]-60)+4);ext.z=hz+Math.max(cF.D,cN.D);ext.h=Math.max(cF.H,cN.H);
+  ext.x=Math.max(P.xL+endInfo.L.D,P.xR+endInfo.R.D,Math.abs(P.fx[0]-60)+4,Math.abs(P.fx[1]-60)+4,V3?Math.abs(P.nx[0]-60)+4:0,V3?Math.abs(P.nx[1]-60)+4:0);ext.z=hz+Math.max(cF.D,cN.D);ext.h=Math.max(cF.H,cN.H);
   /* ---- hedges along the wall, all the way round ---- */
   if(n.has('hedges'))for(const p of pcs){if(p.id==='X')continue;const hp={P:[[-1.9,0],[-1.9,1.35],[-1.5,1.75],[-.5,1.75],[-.15,1.35],[-.15,0]],R:[0,0,0]};
     s3Loft(B,p.pc,()=>hp,[['st',cl.hedge,S3IN],['st',t3Col('#336a2a'),S3IU],['st',t3Col('#3a7430'),S3UP],['st',t3Col('#336a2a'),[-1,1]],['st',cl.hedge,S3OUT]],p.ca,p.cb,cl.hedge)}
   /* ---- the crowd: every seat row of every deck, fans every sp yards (rows skipped in huge bowls to hold ~36k) ---- */
-  const tot=n.cap*.55/.82,stride=tot>50000?2:1,sp=stride===2?Math.max(.82,.82*tot/72000):Math.max(.82,.82*tot/36000);
+  tm.pcs=performance.now();const tot=n.cap*.55/.82,stride=tot>50000?2:1,sp=stride===2?Math.max(.82,.82*tot/72000):Math.max(.82,.82*tot/36000);
   for(const p of pcs){
     for(let k=0;k<3;k++){const pr0=p.prof(0),pr1=p.prof(1),Rm=Math.ceil(Math.max(pr0.R[k],pr1.R[k],p.prof(.5).R[k]));if(Rm<1)continue;const si=2+4*k;
       const dmid=(pr0.P[si][0]+pr0.P[si+1][0])/2,L=p.pc.L(dmid),nf=Math.max(1,Math.floor(L/sp)),nc=p.pc.N===1?1:Math.max(8,Math.ceil(nf/6)),cols=[];
       for(let c=0;c<=nc;c++)cols.push(p.pc.N===1?pr0:p.prof(c/nc));
       for(let j=0;j<nf;j++){const u0=Math.min(1,Math.max(0,(j+.5)/nf)),pr=cols[Math.round(u0*nc)],nr=pr.R[k],a=pr.P[si],b=pr.P[si+1],R1=Math.max(1,Math.round(nr)),q=p.pc.at(u0,0),nx=q[2],nz=q[3],ang=Math.atan2(nx,-nz),js=sp*.3;
         for(let i=0;i<Rm;i+=stride){if(i>=nr-.3)break;if(r()<.08)continue;const t=(i+.5)/R1,d=a[0]+(b[0]-a[0])*t,hh=a[1]+(b[1]-a[1])*t,jt=(r()-.5)*js;
-          fan(q[0]+nx*d-nz*jt,hh,q[1]+nz*d+nx*jt,ang,k,p.id,i,nr)}}}}
+          fan(q[0]+nx*d-nz*jt,hh,q[1]+nz*d+nx*jt,ang,k,p.id,i,nr,u0)}}}}
   tm.crowd=performance.now();
   /* ---- press box with suites on the far side ---- */
-  const pw=clamp(n.cap/1500+22,34,86),ph=n.rf?5:n.cap<30000?6:n.cap<60000?8.5:n.cap<90000?11:14,pbF=zF-(cF.D-(n.rf?9:5.5)),pbB=zF-(cF.D+(n.rf?-1:3.5)),pbz=(pbF+pbB)/2,pby=n.rf?cF.H-ph-3:cF.H-1;
-  s3Geo(B.st,new THREE.BoxGeometry(pw,ph+1,pbF-pbB),t3M(60,pby+(ph+1)/2,pbz),t3Col('#3a3f47'));s3Geo(B.st,new THREE.BoxGeometry(pw+3,1,pbF-pbB+3),t3M(60,pby+ph+1.5,pbz+.5),cl.roof);
+  const noPB=V3&&!M3.sd.F.press;const pw=clamp(n.cap/1500+22,34,86),ph=n.rf?5:n.cap<30000?6:n.cap<60000?8.5:n.cap<90000?11:14,pbF=zF-(cF.D-(n.rf?9:5.5)),pbB=zF-(cF.D+(n.rf?-1:3.5)),pbz=(pbF+pbB)/2,pby=n.rf?cF.H-ph-3:cF.H-1;
+  if(!noPB){s3Geo(V3?B.fac:B.st,new THREE.BoxGeometry(pw,ph+1,pbF-pbB),t3M(60,pby+(ph+1)/2,pbz),V3?B.white:t3Col('#3a3f47'),pw/S3FT.w,(ph+1)/S3FT.h);s3Geo(B.st,new THREE.BoxGeometry(pw+3,1,pbF-pbB+3),t3M(60,pby+ph+1.5,pbz+.5),V3?cl.trim:cl.roof);
   s3Geo(B.glass,new THREE.PlaneGeometry(pw-2,ph-1.5),t3M(60,pby+.5+ph/2,pbF+.06),B.white,(pw-2)/7,ph>=11?2:1);
-  ext.h=Math.max(ext.h,pby+ph+2);
+  ext.h=Math.max(ext.h,pby+ph+2)}
   const vn=t3Venue(),signs=[];
-  if(vn){const sw=Math.min(pw*.86,66),sT=keep(t3Tex(t3Sign(vn,h.c1))),sm=keep(new THREE.MeshBasicMaterial({map:sT,toneMapped:false})),sg=new THREE.Mesh(keep(new THREE.PlaneGeometry(sw,sw*112/1024)),sm);
+  if(vn&&!noPB){const sw=Math.min(pw*.86,66),sT=keep(t3Tex(t3Sign(vn,h.c1))),sm=keep(new THREE.MeshBasicMaterial({map:sT,toneMapped:false})),sg=new THREE.Mesh(keep(new THREE.PlaneGeometry(sw,sw*112/1024)),sm);
     sg.position.set(60,pby+ph+2+sw*112/2048,pbF+1.6);grp.add(sg);signs.push(sT);
     if(!n.has('hedges')){const wT=keep(t3Tex(t3WallSign(vn,h.c1)));M.ws=keep(new THREE.MeshStandardMaterial({map:wT,emissiveMap:wT,emissive:'#ffffff',emissiveIntensity:.45,roughness:.6}));
       const ws=new THREE.Mesh(keep(new THREE.PlaneGeometry(24,24*96/1024)),M.ws);ws.position.set(60,1.15,zF+.06);grp.add(ws);signs.push(wT)}}
   /* ---- video board ---- */
   let bw=clamp(n.cap/2600,15,40)*(n.has('board')?1.45:1),bh=bw/2,board=null;
-  const bdE=n.bd==='L'||n.bd==='R'?endInfo[n.bd]:null;
-  if(bdE||n.bs==='N'){let x,y,z,ry;
+  const bdE=!V3&&(n.bd==='L'||n.bd==='R')?endInfo[n.bd]:null;
+  if(V3){const tops=s3Boards3({B,n,P,endInfo,cl,pb:noPB?null:{top:pby+ph+2}});for(const y of tops)ext.h=Math.max(ext.h,y);
+    if(B.board.p.length){M.board=keep(new THREE.MeshBasicMaterial({map:tx.board,toneMapped:false}));board=s3Mesh(B.board,M.board);keep(board.geometry);grp.add(board)}}
+  else if(bdE||(n.bs==='N')){let x,y,z,ry;
     if(bdE){const sx=bdE.s,free=!rk(bdE.c);x=bdE.x+sx*(free?(bdE.c==='O'?9:bdE.D+4):bdE.D+1.5);y=(free?(bdE.c==='X'?bdE.H+2:7):bdE.H+1)+bh/2;z=cz;ry=-sx*PI/2;
       for(const dz of [-bw*.3,bw*.3])s3Geo(B.st,new THREE.BoxGeometry(1.2,y-bh/2,1.2),t3M(x+sx*.8,(y-bh/2)/2,cz+dz),cl.pole)}
     else{x=60;z=zN+cN.D+1.5;y=cN.H+1+bh/2;ry=PI}
@@ -218,24 +247,30 @@ function s3Build(n,o,tx){
     const fr=new THREE.BoxGeometry(bw+2,bh+2,1.4);s3Geo(B.st,fr,new THREE.Matrix4().compose(new THREE.Vector3(x-Math.sin(ry)*.8,y,z-Math.cos(ry)*.8),new THREE.Quaternion().setFromEuler(new THREE.Euler(0,ry,0)),new THREE.Vector3(1,1,1)),t3Col('#1b1f26'));
     ext.h=Math.max(ext.h,y+bh/2)}
   /* ---- canopy roofs over the stands ---- */
-  if(n.has('canopy'))for(const p of pcs){if(!(p.id[0]==='F'||p.id[0]==='N'||n.sh==='bowl'))continue;if((p.id==='L'||p.id==='R')&&!rk(n[p.id]))continue;
-    const cp=u=>{const s=p.prof(u),cw=Math.min(s.D*.4,19),y=s.H+5.5;return {P:[[s.D-1,y],[s.D-cw,y+cw*.14],[s.D-cw,y+cw*.14-.7],[s.D-1,y-.6]],R:[0,0,0]}};
+  const cnp=p=>{if(!V3)return n.has('canopy')&&(p.id[0]==='F'||p.id[0]==='N'||n.sh==='bowl')&&!((p.id==='L'||p.id==='R')&&!rk(n[p.id]));const S=M3.sd;if(!S[p.id[0]]||S[p.id[0]].type!=='stand')return false;
+    return p.id.length===1?S[p.id].canopy&&(p.id!=='L'&&p.id!=='R'||S[p.id].type==='stand'):S[p.id[0]].canopy&&S[p.id[1]].canopy};
+  for(const p of pcs){if(!cnp(p))continue;
+    const cp=u=>{const s=p.prof(u),cw=Math.min(s.D*(V3?.7:.4),V3?52:19),y=s.H+5.5;const k=V3?.05:.14;return {P:[[s.D-1,y],[s.D-cw,y+cw*k],[s.D-cw,y+cw*k-.7],[s.D-1,y-.6]],R:[0,0,0]}};
     s3Loft(B,p.pc,cp,[['st',t3Col('#b9bfc8'),S3UP],['st',t3Col('#e8ebef'),S3IN],['st',t3Col('#3b4048'),S3DN]],0,0,cl.dark);
     const L=p.pc.L(0),nc=Math.max(1,Math.round(L/30));for(let i=0;i<=nc;i++){const u=i/nc,s=p.prof(u),q=p.pc.at(u,s.D-1.2);s3Geo(B.st,s3Tpl('box'),s3MS(q[0],s.H+3.5,q[1],1,8,1),cl.pole)}
-    const nl=Math.max(2,Math.round(L/20));for(let i=0;i<nl;i++){const u=(i+.5)/nl,s=p.prof(u),cw=Math.min(s.D*.4,19),q=p.pc.at(u,s.D-cw+.5);glows.push(q[0],s.H+5.5+cw*.14-1,q[1],26,1,1,.96)}
+    const nl=Math.max(2,Math.round(L/20));for(let i=0;i<nl;i++){const u=(i+.5)/nl,s=p.prof(u),cw=Math.min(s.D*(V3?.7:.4),V3?52:19),q=p.pc.at(u,s.D-cw+.5);glows.push(q[0],s.H+5.5+cw*(V3?.05:.14)-1,q[1],26,1,1,.96)}
     ext.h=Math.max(ext.h,p.prof(.5).H+12)}
   /* ---- lights: a ring on the rim of big bowls, towers at the corners of the rest, under the roof in a dome ---- */
-  const ring=!n.rf&&!n.has('canopy')&&((n.sh==='bowl'&&n.cap>=50000)||n.dF>=3);
+  const lt3=V3?M3.lights||(n.rf?'dome':Object.values(M3.sd).some(s=>s.canopy)?'canopy':n.cap>=50000?'rim':'towers'):'';
+  const ring=V3?lt3==='rim'||lt3==='canopy'&&!Object.values(M3.sd).some(s=>s.canopy):!n.rf&&!n.has('canopy')&&((n.sh==='bowl'&&n.cap>=50000)||n.dF>=3);
   const bank=(x,y,z,w,hh,gs)=>{const pl=new THREE.PlaneGeometry(w,hh),m=new THREE.Matrix4().lookAt(new THREE.Vector3(x,y,z),new THREE.Vector3(60,0,cz),new THREE.Vector3(0,1,0));m.setPosition(x,y,z);
-    const f=new THREE.Matrix4().makeRotationY(PI);s3Geo(B.lp,pl,m.clone().multiply(f),B.white);s3Geo(z>cz+hz?B.near:B.st,s3Tpl('box'),m.clone().multiply(new THREE.Matrix4().compose(new THREE.Vector3(0,0,.5),new THREE.Quaternion(),new THREE.Vector3(w+.6,hh+.6,.8))),t3Col('#4a5059'));glows.push(x,y,z,gs,1,1,.97)};
-  if(n.rf){}else if(ring){for(const [p,cnt] of [['F',6],['N',6]]){const pr=p==='F'?cF:cN,z=p==='F'?zF-pr.D+.8:zN+pr.D-.8;for(let i=0;i<cnt;i++){const x=60+(i-(cnt-1)/2)*(Math.min(P.fx[1]-P.fx[0],130)/cnt);
+    const f=new THREE.Matrix4().makeRotationY(PI);s3Geo(B.lp,pl,m.clone().multiply(f),B.white);s3Geo(z>cz+hz?B.near:B.st,s3Tpl('box'),m.clone().multiply(new THREE.Matrix4().compose(new THREE.Vector3(0,0,.5),new THREE.Quaternion(),new THREE.Vector3(w+.6,hh+.6,.8))),t3Col(V3?'#8b9199':'#4a5059'));glows.push(x,y,z,gs,1,1,.97)};
+  if(n.rf||lt3==='dome'||lt3==='canopy'&&!ring){}else if(lt3==='poles'){const pH=Math.max(cF.H,cN.H)+16;for(const [z,pr] of [[zF-cF.D-4,cF],[zN+cN.D+4,cN]])for(const dx of [-48,-16,16,48]){const x=60+dx;
+      if(z<cz&&!noPB&&Math.abs(dx)<pw/2+3)continue;s3Geo(z>cz?B.near:B.st,new THREE.CylinderGeometry(.45,.8,pH,6),t3M(x,pH/2,z),cl.pole);bank(x,pH+2,z,8,4,34)}towers.push([60-48,zF-cF.D-4],[60+48,zF-cF.D-4],[60-48,zN+cN.D+4],[60+48,zN+cN.D+4]);ext.h=Math.max(ext.h,pH+5)}
+  else if(ring){for(const [p,cnt] of [['F',6],['N',6]]){const pr=p==='F'?cF:cN,z=p==='F'?zF-pr.D+.8:zN+pr.D-.8;for(let i=0;i<cnt;i++){const x=60+(i-(cnt-1)/2)*(Math.min(P.fx[1]-P.fx[0],130)/cnt);
         if(p==='F'&&Math.abs(x-60)<pw/2+3)continue;s3Geo(B.st,s3Tpl('box'),s3MS(x,pr.H+2.5,z,.6,5,.6),cl.pole);bank(x,pr.H+6,z,9,4,32)}}
-    for(const e of ['L','R'])if(rk(n[e])>=2){const E=endInfo[e];for(const dz of [-18,18]){const x=E.x+E.s*(E.D-.8);s3Geo(B.st,s3Tpl('box'),s3MS(x,E.H+2.5,cz+dz,.6,5,.6),cl.pole);bank(x,E.H+6,cz+dz,9,4,32)}}}
+    for(const e of ['L','R'])if(V3?endInfo[e].type==='stand'&&endInfo[e].H>14:rk(n[e])>=2){const E=endInfo[e];for(const dz of [-18,18]){const x=E.x+E.s*(E.D-.8);s3Geo(B.st,s3Tpl('box'),s3MS(x,E.H+2.5,cz+dz,.6,5,.6),cl.pole);bank(x,E.H+6,cz+dz,9,4,32)}}}
   else{const tH=Math.max(cF.H,cN.H)+24,tx0=Math.max(n.sh==='side'?P.fx[1]-60-6:P.xR-2,40),pos=[[60-tx0,zF-cF.D-5],[60+tx0,zF-cF.D-5],[60-tx0,zN+cN.D+5],[60+tx0,zN+cN.D+5]];
     towers.push(...pos);for(const [x,z] of pos){s3Geo(z>cz?B.near:B.st,new THREE.CylinderGeometry(.7,1.3,tH,8),t3M(x,tH/2,z),cl.pole);bank(x,tH+4,z,14,8,60)}ext.h=Math.max(ext.h,tH+8)}
   /* ---- dome: a superelliptic roof over the rim, lit from inside ---- */
   if(n.rf){const Rx=ext.x+3,Rz=ext.z+3,H0=Math.max(cF.H,cN.H,endInfo.L.H,endInfo.R.H)+1,Hd=Math.max(26,Rx*.24),A=s3Acc(false),NS=56,NR=9,pt=(i,j)=>{const th=i/NS*PI*2,ph=j/NR*PI/2,c=Math.cos(th),s=Math.sin(th),rr=Math.pow(Math.pow(Math.abs(c)/Rx,4)+Math.pow(Math.abs(s)/Rz,4),-.25)*Math.sin(PI/2-ph);return [60+c*rr,H0+Hd*Math.sin(ph),cz+s*rr]};
-    for(let i=0;i<NS;i++)for(let j=0;j<NR;j++){const col=t3Col(i%2?'#e3e6ea':'#d2d6dc');s3Quad(A,pt(i,j),pt(i+1,j),pt(i+1,j+1),pt(i,j+1),col,null,null,null,null,[0,1,0])}
+    for(let i=0;i<NS;i++)for(let j=0;j<NR;j++){const col=t3Col(i%2?'#e3e6ea':'#d2d6dc'),a=pt(i,j),c=pt(i+1,j+1);if(n.rf===2&&Math.abs((a[0]+c[0])/2-60)<66&&Math.abs((a[2]+c[2])/2-cz)<34)continue;s3Quad(A,a,pt(i+1,j),c,pt(i,j+1),col,null,null,null,null,[0,1,0])}
+    if(n.rf===2)for(const s of [-1,1])s3Geo(B.st,new THREE.BoxGeometry(16,3,72),t3M(60+s*74,H0+Hd*.62,cz),t3Col('#c9ced5'));
     for(let i=0;i<NS;i++)s3Quad(A,pt(i,0),pt(i+1,0),[pt(i+1,0)[0],0,pt(i+1,0)[2]],[pt(i,0)[0],0,pt(i,0)[2]],cl.fac,null,null,null,null,null);
     M.dome=mat(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.85,side:THREE.DoubleSide,emissive:'#9aa1ab',emissiveIntensity:.32}));const dm=s3Mesh(A,M.dome);if(dm){keep(dm.geometry);grp.add(dm)}
     for(let i=0;i<20;i++){const th=i/20*PI*2,c=Math.cos(th),s=Math.sin(th),rr=Math.pow(Math.pow(Math.abs(c)/Rx,4)+Math.pow(Math.abs(s)/Rz,4),-.25)*.62;glows.push(60+c*rr,H0+Hd*.72,cz+s*rr,22,1,.98,.93)}
@@ -252,7 +287,8 @@ function s3Build(n,o,tx){
     s3Geo(B.st,new THREE.ConeGeometry(8.5,10,4),t3M(x,th+17,z,0,PI/4,0),t3Col('#a99b7d'));for(const [dx,dz,ry] of [[0,6.05,0],[6.05,0,PI/2]])s3Geo(B.st,new THREE.CircleGeometry(3.2,16),t3M(x+dx,th+6.5,z+dz,0,ry,0),t3Col('#f4f1e8'));
     glows.push(x,th+6,z,30,t3Col(h.c1).r*.6+.4,t3Col(h.c1).g*.6+.3,t3Col(h.c1).b*.6+.2)}
   /* ---- the ground around: a plaza, lawns, parking, trees, a skyline and water by the features ---- */
-  {const A=B.st,NS=64,cols=[t3Col('#7f838a'),t3Col('#55823f'),t3Col('#4a7139')];
+  tm.lt=performance.now();if(V3)s3Ground3({B,n,ext,r,endInfo,grp,keep,mats:M,fan});
+  else{const A=B.st,NS=64,cols=[t3Col('#7f838a'),t3Col('#55823f'),t3Col('#4a7139')];
     const f=th=>{const c=Math.cos(th),s=Math.sin(th);return Math.pow(Math.pow(Math.abs(c)/(ext.x+14),4)+Math.pow(Math.abs(s)/(ext.z+14),4),-.25)};
     for(let i=0;i<NS;i++){const t0=i/NS*PI*2,t1=(i+1)/NS*PI*2;for(let j=0;j<3;j++){const p=(t,k)=>{const rr=k===0?0:k===1?f(t):k===2?f(t)*1.35:900;return [60+Math.cos(t)*rr,-.04,cz+Math.sin(t)*rr]};
       s3Quad(A,p(t0,j),p(t1,j),p(t1,j+1),p(t0,j+1),cols[j],null,null,null,null,[0,1,0])}}
@@ -265,25 +301,25 @@ function s3Build(n,o,tx){
     if(water){const wm=keep(new THREE.MeshStandardMaterial({color:'#2c5872',roughness:.16,metalness:.25}));M.water=wm;const pg=new THREE.PlaneGeometry(900,1300);pg.rotateX(-PI/2);
       const wx=60+wd*(ext.x+42+450);const w=new THREE.Mesh(keep(pg),wm);w.position.set(wx,-.02,cz);grp.add(w)}}
   /* ---- backdrop ring ---- */
-  const bkCv=document.createElement('canvas');s3Backdrop(bkCv,n,o.night?'night':o.dusk?'sunset':'day',P);const bkT=keep(t3Tex(bkCv,true,true));M.bk=keep(new THREE.MeshBasicMaterial({map:bkT,transparent:true,side:THREE.BackSide,depthWrite:false,fog:false}));
+  tm.gr=performance.now();const bkCv=document.createElement('canvas');s3Backdrop(bkCv,n,o.night?'night':o.dusk?'sunset':'day',P);const bkT=keep(t3Tex(bkCv,true,true));M.bk=keep(new THREE.MeshBasicMaterial({map:bkT,transparent:true,side:THREE.BackSide,depthWrite:false,fog:false}));
   const bg=new THREE.CylinderGeometry(560,560,170,64,1,true);bg.translate(60,83,cz);const bk=new THREE.Mesh(keep(bg),M.bk);bk.renderOrder=-5;bk.frustumCulled=false;grp.add(bk);
   /* ---- pyro along the end-stand rims (or the far rim) ---- */
   if(n.has('pyro')){const spots=[];for(const e of ['L','R'])if(rk(n[e])){const E=endInfo[e];for(const dz of [-22,-8,8,22])spots.push([E.x+E.s*(E.D-1),E.H+1,cz+dz])}
     if(!spots.length)for(const dx of [-40,-20,0,20,40])spots.push([60+dx,cF.H+1,zF-cF.D+1]);
     for(const [x,y,z] of spots)for(let k=0;k<9;k++)pyro.push(x+(r()-.5)*1.5,y,z+(r()-.5)*1.5,4.5,r(),r(),0)}
   /* ---- meshes ---- */
-  tm.geo=performance.now();for(const k of ['st','seat','rib','glass','lp']){const m=s3Mesh(B[k],M[k]);if(!m)continue;keep(m.geometry);m.matrixAutoUpdate=false;grp.add(m)}
+  tm.geo=performance.now();for(const k of ['st','seat','rib','glass','lp','fac','seatL']){if(!M[k])continue;const m=s3Mesh(B[k],M[k]);if(!m)continue;keep(m.geometry);m.matrixAutoUpdate=false;grp.add(m)}
   const near=s3Mesh(B.near,M.st);if(near){keep(near.geometry);grp.add(near)}
   const glowT=keep(t3Tex(t3Glow(),false));let glow=null,fire=null;
   if(glows.length){glow=s3Billboards(glows,glowT,false);keep(glow.geometry);keep(glow.material);grp.add(glow)}
   if(pyro.length){fire=s3Billboards(pyro,glowT,true);keep(fire.geometry);keep(fire.material);fire.visible=false;grp.add(fire)}
   const nF=FA.length,fw=.62*Math.max(1,sp/.82)*(stride===2?1.12:1),cm=t3CrowdMesh({n:nF,pos:new Float32Array(FP),ang:new Float32Array(FA),col:new Float32Array(FC),skin:new Float32Array(FS),ph:new Float32Array(FH),kind:new Float32Array(FK)},t3Fan(),Math.min(.95,fw),stride===2?1.22:1);keep(cm.geometry);keep(cm.material);keep(cm.material.uniforms.uTex.value);grp.add(cm);
   tm.end=performance.now();
-  return {group:grp,own,mats:M,crowd:cm,glow,fire,board,bk,bkCv,bkT,near,tm:{crowd:+(tm.crowd-tm.t0).toFixed(1),geo:+(tm.geo-tm.crowd).toFixed(1),mesh:+(tm.end-tm.geo).toFixed(1)},bkStage:o.night?'night':o.dusk?'sunset':'day',signs,n,P,ext,towers,z0:zN,mir:null,fans:nF}}
+  return {group:grp,own,mats:M,crowd:cm,glow,fire,board,bk,bkCv,bkT,near,tm:{pre:+(tm.pre-tm.t0).toFixed(1),pcs:+(tm.pcs-tm.pre).toFixed(1),fans:+(tm.crowd-tm.pcs).toFixed(1),lt:+(tm.lt-tm.crowd).toFixed(1),gr:+(tm.gr-tm.lt).toFixed(1),bk:+(tm.geo-tm.gr).toFixed(1),crowd:+(tm.crowd-tm.t0).toFixed(1),geo:+(tm.geo-tm.crowd).toFixed(1),mesh:+(tm.end-tm.geo).toFixed(1)},bkStage:o.night?'night':o.dusk?'sunset':'day',signs,n,P,ext,towers,z0:zN,mir:null,fans:nF,lt:LT,pcs:pcs.map(p=>p.id)}}
 function s3Free(st){if(!st)return;st.group.parent&&st.group.parent.remove(st.group);const seen=new Set();for(const x of st.own){if(!x||seen.has(x))continue;seen.add(x);if(x.dispose)x.dispose()}st.own.length=0}
 /* ---------- the cache: get or build, attach to the env's group, set the light-stage look ---------- */
 function s3Attach(n,o,E,tx){if(G3.R&&!G3.R.localClippingEnabled)G3.R.localClippingEnabled=true;
-  const h=o.host,key=[h.id,h.c1,h.c2,h.name,h.city,t3Venue(),o.away.c1,o.away.c2,n.sh,n.dF,n.dN,n.L,n.R,n.bd,n.bs,n.ft.join(','),JSON.stringify(n.sc),n.cap,n.rf?1:0,n.el,G3.fontOk?1:0].join('|');
+  const h=o.host,key=[h.id,h.c1,h.c2,h.name,h.city,t3Venue(),o.away.c1,o.away.c2,n.sh,n.dF,n.dN,n.L,n.R,n.bd,n.bs,n.ft.join(','),JSON.stringify(n.sc),n.cap,n.rf|0,n.el,n.mh||'',G3.fontOk?1:0].join('|');
   let st=S3.cache.get(key);
   if(st){S3.cache.delete(key);S3.cache.set(key,st);st.hit=(st.hit||0)+1}
   else{const t0=performance.now();st=s3Build(n,o,tx);st.ms=+(performance.now()-t0).toFixed(1);S3.ms=st.ms;S3.cache.set(key,st);
@@ -292,14 +328,17 @@ function s3Attach(n,o,E,tx){if(G3.R&&!G3.R.localClippingEnabled)G3.R.localClippi
 function s3Light(st,o,tx){const M=st.mats,N=o.night,D=o.dusk,stg=N?'night':D?'sunset':'day';
   if(M.rib.map!==tx.rib){M.rib.map=M.rib.emissiveMap=tx.rib;M.rib.needsUpdate=true}if(M.board&&M.board.map!==tx.board){M.board.map=tx.board;M.board.needsUpdate=true}
   M.rib.emissiveIntensity=N?1.25:.45;M.st.color.setScalar(N?.28:1);M.seat.color.setScalar(N?.24:1);M.glass.emissiveIntensity=N?.85:.15;M.lp.emissiveIntensity=N||D?2.2:.05;
+  if(M.fac)M.fac.color.setScalar(N?.3:1);if(M.seatL)M.seatL.color.setScalar(N?.24:1);
   if(M.ws)M.ws.emissiveIntensity=N?1.25:.45;if(M.water)M.water.color.set(N?'#08121c':D?'#4a5a70':'#2c5872');if(M.dome)M.dome.emissiveIntensity=N?.12:.32;
   if(st.glow){const op=st.n.rf?.6:N?.95:D?.45:0;st.glow.material.uniforms.uOp.value=op;st.glow.visible=op>0}
-  if(st.bkStage!==stg){s3Backdrop(st.bkCv,st.n,stg,st.P);st.bkT.needsUpdate=true;st.bkStage=stg}st.flip=[tx.rib,tx.board,...st.signs]}
+  if(st.bkStage!==stg){s3Backdrop(st.bkCv,st.n,stg,st.P);st.bkT.needsUpdate=true;st.bkStage=stg}st.flip=[tx.rib,tx.board,...st.signs,st.lt&&st.lt.tex]}
 /* every frame: mirror with possession (the ends stay with their teams' goals, as in 2D), cut the near stands away in the TV
    shots, burn the pyro */
 function s3Frame(env){const st=env&&env.std3;if(!st)return;const now=performance.now();
   const m=typeof uOff==='function'&&!uOff();if(m!==st.mir){st.mir=m;st.group.scale.x=m?-1:1;st.group.position.x=m?120:0;
-    for(const t of st.flip){if(!t)continue;t.repeat.x=m?-Math.abs(t.repeat.x||1):Math.abs(t.repeat.x||1);t.offset.x=m&&t.wrapS!==THREE.RepeatWrapping?1:0}}
+    for(const t of st.flip){if(!t)continue;t.repeat.x=m?-Math.abs(t.repeat.x||1):Math.abs(t.repeat.x||1);t.offset.x=m&&t.wrapS!==THREE.RepeatWrapping?1:0}
+    /* letters in the seats: the fans on them follow the mirror too */
+    const L=st.lt;if(L&&L.rec.length){const a=st.crowd.geometry.attributes.iCol,R=L.rec;for(let i=0;i<R.length;i+=4){const c=L.at(m?1-R[i+1]:R[i+1],R[i+2],R[i+3])?L.c1:L.c0;a.array[R[i]*3]=c.r;a.array[R[i]*3+1]=c.g;a.array[R[i]*3+2]=c.b}a.needsUpdate=true}}
   /* the cut: beyond the near wall (z > z0), everything above the line from the wall top to just under the camera goes */
   const tv=(G3.mode==='tv'||G3.mode==='st')&&!G3.est,z0=st.z0+.2,c=G3.cam.position,dz=Math.max(5,c.z-z0),dh=c.y-7,L=Math.hypot(dz,dh)||1,sl=dh/dz;if(st.near)st.near.visible=!tv;
   S3.clipA.constant=tv?z0:1e6;if(tv){S3.clipB.normal.set(0,-dz/L,dh/L);S3.clipB.constant=(dz*4-dh*z0)/L}else S3.clipB.constant=1e6;
@@ -308,5 +347,5 @@ function s3Frame(env){const st=env&&env.std3;if(!st)return;const now=performance
 function s3Pyro(ms){const st=G3.env&&G3.env.std3;if(st&&st.fire)S3.pyro=performance.now()+(ms||2600)}
 if(typeof onFx==='function'){onFx('td',e=>{if(e&&e.team&&typeof hostT==='function'&&e.team===hostT())s3Pyro(2800)});onFx('kickoff',e=>{if(e&&e.why==='Opening kickoff')s3Pyro(2200)})}
 /* QA / Settings readout */
-function s3Info(){const st=G3.env&&G3.env.std3;return st?{ms:st.ms,fans:st.fans,cached:S3.cache.size,hit:st.hit||0,sh:st.n.sh,rows:Math.round(st.P.Rs),tm:st.tm,ext:{x:Math.round(st.ext.x),z:Math.round(st.ext.z),h:Math.round(st.ext.h)}}:null}
+function s3Info(){const st=G3.env&&G3.env.std3;return st?{ms:st.ms,fans:st.fans,cached:S3.cache.size,hit:st.hit||0,sh:st.n.sh,rows:+(+st.P.Rs).toFixed(2),seats:st.P.seats||0,v3:!!st.n.m,tm:st.tm,ext:{x:Math.round(st.ext.x),z:Math.round(st.ext.z),h:Math.round(st.ext.h)}}:null}
 SETTINGS_EXTRA.push({card:'Broadcast',key:'estShot',label:'Stadium flyover',opts:[[1,'On'],[0,'Off']],def:1,bool:true,note:'3D: an aerial shot of the stadium with its name before kickoff, and a short beauty shot at halftime and after the final whistle. Tap to skip.'});

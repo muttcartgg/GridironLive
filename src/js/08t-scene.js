@@ -18,6 +18,7 @@ function t3Rng(seed){let a=seed>>>0||1;return()=>{a=a+0x6D2B79F5|0;let t=Math.im
 function t3Tex(cv,srgb,rep){const t=new THREE.CanvasTexture(cv);if(srgb!==false)t.colorSpace=THREE.SRGBColorSpace;if(rep){t.wrapS=t.wrapT=THREE.RepeatWrapping}t.anisotropy=G3.aniso||4;return t}
 const t3Col=h=>new THREE.Color(h);
 const t3Dark=h=>lum(h)<.06;
+const t3Green=c=>{const n=parseInt(String(c).slice(1),16)||0,r=n>>16,g=n>>8&255,b=n&255;return g>90&&g>r*1.3&&g>b*1.3};   /* grass-like (a painted team green such as #154733 is not) */
 /* ---------- turf: stripes, end zones, border, wear and grain (one 1.8k canvas) ---------- */
 function t3Turf(o){
   const p=T3F.ppy,w=Math.round((T3F.x1-T3F.x0)*p),h=Math.round((T3F.y1-T3F.y0)*p),cv=document.createElement('canvas');cv.width=w;cv.height=h;
@@ -28,8 +29,12 @@ function t3Turf(o){
   for(let i=0;i<20;i++){g.fillStyle=A[i%2];g.fillRect(X(10+i*5),Y(0),5*p+1,FW*p)}
   /* sideline apron stripes continue faintly past the border (the mower does not stop at the paint) */
   g.globalAlpha=.35;for(let i=-3;i<27;i++){g.fillStyle=A[(i+40)%2];g.fillRect(X(-5+i*5),0,5*p+1,Y(-2));g.fillRect(X(-5+i*5),Y(FW+2),5*p+1,h-Y(FW+2))}g.globalAlpha=1;
-  const ez=o.host.c1;g.fillStyle=ez;g.fillRect(X(0),Y(0),10*p,FW*p);g.fillRect(X(110),Y(0),10*p,FW*p);
-  if(sd&&sd.has('checker')){const q=10/3;g.fillStyle='#F4F2EA';for(const x0 of [0,110])for(let i=0;i<3;i++)for(let j=0;j<16;j++)if((i+j)%2)g.fillRect(X(x0+i*q),Y(j*q),q*p+1,Math.min(q,FW-j*q)*p+1)}
+  /* end zones: the host colour, or a v:3 model's colour and style (a green colour leaves the turf showing) */
+  const ezs=sd&&sd.ez||'',ezc=sd&&sd.ezc||'',grn=!!ezc&&t3Green(ezc),ez=ezc&&!grn?ezc:o.host.c1;
+  if(!grn){g.fillStyle=ez;g.fillRect(X(0),Y(0),10*p,FW*p);g.fillRect(X(110),Y(0),10*p,FW*p)}
+  if(ezs==='diagonal')for(const x0 of [0,110]){g.save();g.beginPath();g.rect(X(x0),Y(0),10*p,FW*p);g.clip();g.strokeStyle=lum(ez)>.7?shade(o.host.c1,-.1):'rgba(244,242,234,.9)';g.lineWidth=.45*p;
+    for(let k=-12;k<FW+12;k+=3.2){g.beginPath();g.moveTo(X(x0),Y(k));g.lineTo(X(x0+10),Y(k+(x0?-10:10)));g.stroke()}g.restore()}
+  if(sd&&(ezs==='checker'||!ezs&&sd.has('checker'))){const q=10/3;g.fillStyle='#F4F2EA';for(const x0 of [0,110])for(let i=0;i<3;i++)for(let j=0;j<16;j++)if((i+j)%2)g.fillRect(X(x0+i*q),Y(j*q),q*p+1,Math.min(q,FW-j*q)*p+1)}
   /* team area (between the 25s) on both sidelines, a shade darker */
   g.fillStyle='rgba(0,0,0,.12)';g.fillRect(X(35),Y(-12),50*p,8*p);g.fillRect(X(35),Y(FW+4),50*p,8*p);
   /* soft wear and colour variation: worn between the hashes, a little everywhere else */
@@ -70,7 +75,9 @@ function t3Atlas(o){
     if(s[1]){const ax=cx+s[1]*205,ay=cy+58;g.beginPath();g.moveTo(ax+s[1]*30,ay);g.lineTo(ax-s[1]*22,ay-26);g.lineTo(ax-s[1]*22,ay+26);g.closePath();g.fill()}
     cells.push({n:s[0],arrow:s[1],u0:(k%4)*512/T3A.w,v0:1-(cy+200)/T3A.h,u1:((k%4)*512+512)/T3A.w,v1:1-cy/T3A.h});k++}
   /* end-zone words: the school (left end zone) and the nickname (right), fitted to the width, outlined */
-  const ink=t3Dark(o.host.c1)||lum(o.host.c1)<.45?'#FFFFFF':'#0B0E14',edge=o.host.c2&&Math.abs(lum(o.host.c2)-lum(ink))>.25?o.host.c2:shade(o.host.c1,-.5);
+  const ezc=o.sd&&o.sd.ezc||'',onG=!!ezc&&t3Green(ezc),zb=ezc&&!onG?ezc:o.host.c1;
+  let ink=t3Dark(zb)||lum(zb)<.45?'#FFFFFF':'#0B0E14',edge=o.host.c2&&Math.abs(lum(o.host.c2)-lum(ink))>.25?o.host.c2:shade(zb,-.5);
+  if(onG||lum(zb)>.8&&lum(o.host.c1)<.6){ink=t3Green(o.host.c1)?o.host.c2||'#FFFFFF':o.host.c1;edge=onG?'#FFFFFF':shade(o.host.c1,-.45)}
   const words=[String(o.host.city||o.host.name||'HOME').toUpperCase(),String(o.host.name||o.host.city||'').toUpperCase()];
   words.forEach((wd,i)=>{const y0=T3A.words+i*T3A.wordH;g.save();g.font='400 260px "League Gothic",'+FFONT;const mw=g.measureText(wd).width||1000,asc2=g.measureText('H').actualBoundingBoxAscent||190;
     g.translate(1024,y0+T3A.wordH/2+asc2*.5*Math.min(1.08,236/asc2));g.scale(Math.min(1880/mw,1.15),Math.min(1.08,236/asc2));g.textAlign='center';g.lineJoin='round';g.lineWidth=22;g.strokeStyle=edge;g.strokeText(wd,0,0);g.fillStyle=ink;g.fillText(wd,0,0);g.restore();

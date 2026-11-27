@@ -351,8 +351,8 @@ function g3EstCam(){const e=G3.est,now=performance.now();if(!e)return false;
   const p=e.t0?clamp((now-e.t0)/e.dur,0,1):0;if(p>=1){e.end();return false}
   const st=G3.env&&G3.env.std3,X=st?st.ext:{x:118,z:88,h:86},R=Math.max(X.x,X.z*1.3)*1.25+38,port=G3.h>G3.w*1.2,c=G3.cam,q=p*p*(3-2*p),PI=Math.PI;
   /* the sweep keeps clear of the light towers (they would stand between the camera and the field) */
-  if(e.c==null){const tw=st?st.towers:[[-53,-53],[173,-53],[-53,FW+53],[173,FW+53]],az=tw.map(([x,z])=>Math.atan2(z-CEN,x-60)),hw=e.kind==='open'?.6:.3;let best=PI/2,bs=-1;
-    for(const c of [PI/2+.3,PI/2-.3,PI/2,PI/2+.8,PI/2-.8,PI/2+1.2,PI/2-1.2]){let m=9;for(const t of az){let d=Math.abs(Math.atan2(Math.sin(t-c),Math.cos(t-c)))-hw;m=Math.min(m,d)}if(m>.22){best=c;bs=m;break}if(m>bs){bs=m;best=c}}e.c=best}
+  if(e.c==null){const tw=st?st.towers:[[-53,-53],[173,-53],[-53,FW+53],[173,FW+53]],az=tw.map(([x,z])=>Math.atan2(z-CEN,x-60)),hw=e.kind==='open'?.6:.3,b0=st&&st.lt&&st.lt.id==='N'?-PI/2:PI/2;let best=b0,bs=-1;   /* letters spelled in the seats across from the press box: fly over from the press side so they show */
+    for(const c of [b0+.3,b0-.3,b0,b0+.8,b0-.8,b0+1.2,b0-1.2]){let m=9;for(const t of az){let d=Math.abs(Math.atan2(Math.sin(t-c),Math.cos(t-c)))-hw;m=Math.min(m,d)}if(m>.22){best=c;bs=m;break}if(m>bs){bs=m;best=c}}e.c=best}
   let a,rr,hh;if(e.kind==='open'){a=e.c+.6-q*1.2;rr=R*(1.16-.2*q);hh=Math.max(R*(.5-.12*q),X.h*1.3+24)}else{a=e.c-.3+q*.6;rr=R*1.08;hh=Math.max(R*.66,X.h*1.5+30)}
   if(port){rr*=1.25;hh*=1.15}
   c.position.set(60+Math.cos(a)*rr,hh,CEN+Math.sin(a)*rr);c.lookAt(60,X.h*.12,CEN);c.fov=port?62:36;c.aspect=G3.w/Math.max(1,G3.h);c.updateProjectionMatrix();G3.cs.x=60;G3.cs.z=CEN;return true}
