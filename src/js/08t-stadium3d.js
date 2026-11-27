@@ -48,20 +48,20 @@ function s3Mesh(A,mat){if(!A.p.length)return null;const G=new THREE.BufferGeomet
 /* ---------- pieces of the inner edge: at(u,d) → [x, z, nx, nz] (d yards outward), L(d) the length at depth d ---------- */
 function s3Line(ax,az,bx,bz,nx,nz){const L=Math.hypot(bx-ax,bz-az);return {L:()=>L,at:(u,d)=>[ax+(bx-ax)*u+nx*d,az+(bz-az)*u+nz*d,nx,nz],N:1}}
 function s3Arc(cx,cz,r,a0,a1){return {L:d=>(r+d)*Math.abs(a1-a0),at:(u,d)=>{const a=a0+(a1-a0)*u,c=Math.cos(a),s=Math.sin(a);return [cx+(r+d)*c,cz+(r+d)*s,c,s]},N:Math.max(5,Math.ceil(Math.abs(a1-a0)*(r+25)/7))}}
-/* ---------- the cross-section: 15 points (d, h), 14 segments; a missing deck collapses to a point ----------
-   0 wall · 1 walkway · 2 deck 1 · 3 suites / back · 4 overhang · 5 fascia · 6 deck 2 · 7 · 8 · 9 · 10 deck 3 · 11 back wall · 12 rim · 13 facade */
+/* ---------- the cross-section: 16 points (d, h), 15 segments; a missing deck collapses to a point ----------
+   0 wall · 1 walkway · 2 deck 1 · 3 suites / back · 4 overhang · 5 fascia · 6 deck 2 · 7 · 8 · 9 · 10 deck 3 · 11 back wall · 12 rim · 13–14 facade */
 const S3RISE=[.42,.55,.64],S3RD=.95;
 function s3Prof(rows,suites){const P=[[0,0],[0,2.2],[1.2,2.2]];let d=1.2,h=2.2;
   for(let k=0;k<3;k++){const n=rows[k]||0;
     if(k>0){if(n>0){const gH=suites?(k===1?4.4:3.4):2.4,oh=Math.min(6,(rows[k-1]||0)*S3RD*.2);P.push([d,h+gH],[d-oh,h+gH]);d-=oh;h+=gH;P.push([d,h+1.2]);h+=1.2}else P.push([d,h],[d,h],[d,h])}
     if(n>0){d+=n*S3RD;h+=n*S3RISE[k]}P.push([d,h])}
-  P.push([d,h+2.4]);h+=2.4;P.push([d+1.6,h]);d+=1.6;P.push([d,0]);return {P,R:rows.slice(0,3).map(x=>x||0),D:d,H:h}}
+  P.push([d,h+2.4]);h+=2.4;P.push([d+1.6,h]);d+=1.6;P.push([d,h*.42]);P.push([d,0]);return {P,R:rows.slice(0,3).map(x=>x||0),D:d,H:h}}
 function s3Lerp(A,B,t){if(t<=0)return A;if(t>=1)return B;return {P:A.P.map((p,i)=>[p[0]+(B.P[i][0]-p[0])*t,p[1]+(B.P[i][1]-p[1])*t]),R:A.R.map((r,i)=>r+(B.R[i]-r)*t),D:A.D+(B.D-A.D)*t,H:A.H+(B.H-A.H)*t}}
 const s3Smooth=u=>u*u*(3-2*u);
 /* segment roles: [material, colour key, facing (in/up weights)] */
 const S3IN=[1,0],S3UP=[0,1],S3IU=[1,1],S3DN=[0,-1],S3OUT=[-1,0];
 function s3Segs(suites,cl){const g=suites?['glass',null,S3IN]:['st',cl.dark,S3IN];
-  return [['rib',null,S3IN],['st',cl.conc,S3UP],['seat',0,S3IU],g,['st',cl.under,S3DN],['rib',null,S3IN],['seat',1,S3IU],g,['st',cl.under,S3DN],['rib',null,S3IN],['seat',2,S3IU],['st',cl.dark,S3IN],['st',cl.conc,S3UP],['st',cl.fac,S3OUT]]}
+  return [['rib',null,S3IN],['st',cl.conc,S3UP],['seat',0,S3IU],g,['st',cl.under,S3DN],['rib',null,S3IN],['seat',1,S3IU],g,['st',cl.under,S3DN],['rib',null,S3IN],['seat',2,S3IU],['st',cl.dark,S3IN],['st',cl.conc,S3UP],['st',cl.fac,S3OUT],['st',cl.fac2,S3OUT]]}
 /* loft a section along a piece: prof(u) → {P, R}; segs per segment; caps close an end of the piece that has no neighbour */
 function s3Loft(B,pc,prof,segs,capA,capB,capCol){const N=pc.N,st=[];for(let i=0;i<=N;i++)st.push(prof(i/N));
   const W=(q,h)=>[q[0],h,q[1]];
@@ -137,7 +137,7 @@ function s3Billboards(list,tex,fire){const n=list.length/7,G=new THREE.Instanced
 /* ---------- build one stadium ---------- */
 function s3Build(n,o,tx){
   const h=o.host,P=s3Plan(n),pf=P.pf,own=[],keep=x=>{own.push(x);return x},grp=new THREE.Group(),r=t3Rng(h.id*13+7);grp.name='stadium3d';
-  const cl={conc:t3Col('#9a9ea5'),dark:t3Col('#2e333b'),under:t3Col('#3b4048'),fac:t3Col(n.cap>=60000?'#8b8f96':'#7f848b'),grass:t3Col('#4b7f3a'),hedge:t3Col('#2c5b24'),stone:t3Col('#cfc3a6'),roof:t3Col('#dfe3e8'),pole:t3Col('#7d838c'),trk:t3Col('#2c4f2a')};
+  const cl={conc:t3Col('#9a9ea5'),dark:t3Col('#2e333b'),under:t3Col('#3b4048'),fac:t3Col(n.cap>=60000?'#a3a7ad':'#999ea5'),fac2:t3Col('#5d636b'),grass:t3Col('#4b7f3a'),hedge:t3Col('#2c5b24'),stone:t3Col('#cfc3a6'),roof:t3Col('#dfe3e8'),pole:t3Col('#7d838c'),trk:t3Col('#2c4f2a')};
   const B={st:s3Acc(false),near:s3Acc(false),seat:s3Acc(true),rib:s3Acc(true),glass:s3Acc(true),lp:s3Acc(true),white:t3Col('#ffffff')},tm={t0:performance.now()},glows=[],pyro=[],ext={x:0,z:0,h:0};
   const clip=[S3.clipA||(S3.clipA=new THREE.Plane(new THREE.Vector3(0,0,-1),1e6)),S3.clipB||(S3.clipB=new THREE.Plane(new THREE.Vector3(0,-1,.5).normalize(),1e6))];
   const mat=(M,cut)=>{if(cut!==false){M.clippingPlanes=clip;M.clipIntersection=true}return keep(M)};
