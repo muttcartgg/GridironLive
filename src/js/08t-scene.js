@@ -18,7 +18,7 @@ function t3Rng(seed){let a=seed>>>0||1;return()=>{a=a+0x6D2B79F5|0;let t=Math.im
 function t3Tex(cv,srgb,rep){const t=new THREE.CanvasTexture(cv);if(srgb!==false)t.colorSpace=THREE.SRGBColorSpace;if(rep){t.wrapS=t.wrapT=THREE.RepeatWrapping}t.anisotropy=G3.aniso||4;return t}
 const t3Col=h=>new THREE.Color(h);
 const t3Dark=h=>lum(h)<.06;
-const t3Green=c=>{const n=parseInt(String(c).slice(1),16)||0,r=n>>16,g=n>>8&255,b=n&255;return g>60&&g>r*1.15&&g>b*1.05};
+const t3Green=c=>{const n=parseInt(String(c).slice(1),16)||0,r=n>>16,g=n>>8&255,b=n&255;return g>90&&g>r*1.3&&g>b*1.3};   /* grass-like (a painted team green such as #154733 is not) */
 /* ---------- turf: stripes, end zones, border, wear and grain (one 1.8k canvas) ---------- */
 function t3Turf(o){
   const p=T3F.ppy,w=Math.round((T3F.x1-T3F.x0)*p),h=Math.round((T3F.y1-T3F.y0)*p),cv=document.createElement('canvas');cv.width=w;cv.height=h;

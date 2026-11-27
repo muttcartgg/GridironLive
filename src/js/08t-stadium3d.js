@@ -132,8 +132,8 @@ function s3Backdrop(cv,n,stg,p){const W=2048,H=256;cv.width=W;cv.height=H;const 
   if(n.has('mountains')){const tall=n.el>4000?1.25:.85;ridge(40,150*tall,N?'#0b1018':mix(hz,des?'#9a8a78':'#6e7f9a',.45),3,.5,n.el>4000);ridge(24,95*tall,N?'#070a10':mix(hz,des?'#8a6f55':'#4d5f6c',.62),9,.7,false)}
   else if(sur('hills'))ridge(16,70,N?'#070a0c':mix(hz,des?'#9c8366':'#557052',.6),4,.55,false);
   else ridge(10,26,N?'#06080c':mix(hz,des?'#a08c70':'#6b7a72',.5),5,.4,false);
-  /* the letter on the mountainside, behind the far side and a little right */
-  if(M3&&M3.lm.includes('hill-letter')&&n.hl){const x=W*.43,y=H-(n.has('mountains')?120:62);g.save();g.font=`700 ${n.has('mountains')?64:40}px "League Gothic",Impact,sans-serif`;g.textAlign='center';
+  /* the letter on the mountainside, behind the far side and a little right (behind the near side when the flyover comes from the press side) */
+  if(M3&&M3.lm.includes('hill-letter')&&n.hl){const x=M3.seats.p==='letters'&&M3.seats.l&&M3.sd.N.type==='stand'?W*.96:W*.43,y=H-(n.has('mountains')?120:62);g.save();g.font=`700 ${n.has('mountains')?64:40}px "League Gothic",Impact,sans-serif`;g.textAlign='center';
     g.fillStyle=N?'rgba(255,255,255,.55)':'rgba(250,250,246,.95)';g.setTransform(1,0,0,1.25,0,-y*.25);g.fillText(n.hl,x,y);g.restore()}
   if(n.has('skyline')){const x0=W*.36,x1=W*.64;for(let i=0;i<90;i++){const x=x0+r()*(x1-x0),c=1-Math.abs((x-W/2)/(x1-x0))*1.6,bw=14+r()*26,bh=(30+r()*110)*Math.max(.25,c);
       g.fillStyle=N?'#0a0d14':mix(hz,r()<.5?'#5a6a80':'#76869a',.5);g.fillRect(x,H-18-bh,bw,bh+18);
