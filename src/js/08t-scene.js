@@ -170,17 +170,18 @@ function t3Crowd(o){
       inst.push(a[0],h,a[1],Math.atan2(a[5],a[4]),col.r,col.g,col.b,skins[r()*4|0].r,skins[r()*4|0].g,skins[r()*4|0].b,r(),stud?1:away?2:0)}}}};
   tier(SEG_ALL,T3P.low[0],T3P.low[1],1.05,'low');tier(SEG_UP,T3P.up[0],T3P.up[1],1.12,'up');
   return t3CrowdMesh(inst,t3Fan(),.62,1)}
-function t3CrowdMesh(inst,tex,sx,sy){const n=inst.length/12,G=new THREE.InstancedBufferGeometry(),q=new Float32Array([-.5,0,0,.5,0,0,.5,1,0,-.5,0,0,.5,1,0,-.5,1,0]);
+/* inst: 12 floats per fan, or (08t-stadium3d) {n, pos, ang, col, skin, ph, kind} typed arrays used as they are */
+function t3CrowdMesh(inst,tex,sx,sy){const T=inst.pos?inst:null,n=T?T.n:inst.length/12,G=new THREE.InstancedBufferGeometry(),q=new Float32Array([-.5,0,0,.5,0,0,.5,1,0,-.5,0,0,.5,1,0,-.5,1,0]);
   G.setAttribute('position',new THREE.BufferAttribute(q,3));G.instanceCount=n;
-  const f=(off,sz)=>{const a=new Float32Array(n*sz);for(let i=0;i<n;i++)for(let k=0;k<sz;k++)a[i*sz+k]=inst[i*12+off+k];return new THREE.InstancedBufferAttribute(a,sz)};
-  G.setAttribute('iPos',f(0,3));G.setAttribute('iAng',f(3,1));G.setAttribute('iCol',f(4,3));G.setAttribute('iSkin',f(7,3));G.setAttribute('iPh',f(10,1));G.setAttribute('iKind',f(11,1));
+  const f=(off,sz,key)=>{if(T)return new THREE.InstancedBufferAttribute(T[key],sz);const a=new Float32Array(n*sz);for(let i=0;i<n;i++)for(let k=0;k<sz;k++)a[i*sz+k]=inst[i*12+off+k];return new THREE.InstancedBufferAttribute(a,sz)};
+  G.setAttribute('iPos',f(0,3,'pos'));G.setAttribute('iAng',f(3,1,'ang'));G.setAttribute('iCol',f(4,3,'col'));G.setAttribute('iSkin',f(7,3,'skin'));G.setAttribute('iPh',f(10,1,'ph'));G.setAttribute('iKind',f(11,1,'kind'));
   G.boundingSphere=new THREE.Sphere(new THREE.Vector3(60,20,CEN),220);
   const M=new THREE.ShaderMaterial({uniforms:{uT:{value:0},uJ:{value:0},uL:{value:1},uN:{value:0},uTex:{value:t3Tex(tex,false)},uSz:{value:new THREE.Vector2(sx,sy)},uCut:{value:new THREE.Vector3()}},side:THREE.DoubleSide,
     vertexShader:`attribute vec3 iPos;attribute float iAng,iPh,iKind;attribute vec3 iCol,iSkin;uniform float uT,uJ;uniform vec2 uSz;uniform vec3 uCut;varying vec2 vUv;varying vec3 vC,vS;varying float vH,vF;
       void main(){float j=iKind>.5&&iKind<1.5?max(uJ,.22):uJ*(iKind>1.5?.25:1.);float hop=j*max(0.,sin(uT*(7.+iPh*2.)+iPh*6.283))*.42+sin(uT*1.1+iPh*40.)*.025;
         vec2 t=vec2(cos(iAng),sin(iAng));vec3 p=iPos+vec3(t.x*position.x*uSz.x,position.y*uSz.y*(.92+iPh*.16)+hop,t.y*position.x*uSz.x);
         vUv=vec2(position.x+.5,position.y);vC=iCol;vS=iSkin;vH=iPos.y;vF=fract(sin(iPh*913.7+floor(uT*2.3+iPh*7.))*4375.5);gl_Position=projectionMatrix*viewMatrix*modelMatrix*vec4(p,1.);
-        vec4 wb=modelMatrix*vec4(iPos,1.);if(uCut.x>.5&&wb.z>uCut.y&&wb.y>uCut.z+.5*(wb.z-uCut.y))gl_Position=vec4(0.,0.,2.,1.);}`,
+        vec4 wb=modelMatrix*vec4(iPos,1.);if(uCut.x>.5&&wb.z>uCut.y&&wb.y>4.+uCut.z*(wb.z-uCut.y))gl_Position=vec4(0.,0.,2.,1.);}`,
     fragmentShader:`uniform sampler2D uTex;uniform float uL,uN;varying vec2 vUv;varying vec3 vC,vS;varying float vH,vF;
       void main(){vec4 t=texture2D(uTex,vUv);if(t.a<.5)discard;vec3 c=mix(vC*(.55+.45*t.r),vS,step(.5,t.g))*uL;
         /* under the lights the lower bowl catches the spill and the upper deck falls into shadow; phones flash at night */

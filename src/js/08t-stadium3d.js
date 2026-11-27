@@ -32,9 +32,17 @@ function s3Tri(A,a,b,c,col,ua,ub,uc,want){
   if(A.u)A.u.push(ua?ua[0]:0,ua?ua[1]:0,ub?ub[0]:0,ub?ub[1]:0,uc?uc[0]:0,uc?uc[1]:0)}
 function s3Quad(A,a,b,c,d,col,ua,ub,uc,ud,want){s3Tri(A,a,b,c,col,ua,ub,uc,want);s3Tri(A,a,c,d,col,ua,uc,ud,want)}
 /* a three.js geometry (transformed by m) into an accumulator; us/vs scale its uvs */
-function s3Geo(A,g,m,col,us,vs){const G=g.index?g.toNonIndexed():g;if(m)G.applyMatrix4(m);const P=G.attributes.position.array,Nn=G.attributes.normal.array,U=G.attributes.uv?G.attributes.uv.array:null,n=P.length/3;
-  for(let i=0;i<P.length;i++){A.p.push(P[i]);A.n.push(Nn[i])}for(let i=0;i<n;i++)A.c.push(col.r,col.g,col.b);
-  if(A.u)for(let i=0;i<n;i++)A.u.push(U?U[i*2]*(us||1):0,U?U[i*2+1]*(vs||1):0);if(G!==g)G.dispose();g.dispose()}
+const S3T={},S3NM=new THREE.Matrix3();
+/* cached unit shapes (non-indexed): s3Geo(A, S3Tpl('box'), matrix with the size as its scale, ...) is the cheap path */
+function s3Tpl(k){if(S3T[k])return S3T[k];const g=k==='box'?new THREE.BoxGeometry(1,1,1):k==='ico'?new THREE.IcosahedronGeometry(1,0):k==='cyl'?new THREE.CylinderGeometry(1,1,1,8):new THREE.ConeGeometry(1,1,4);
+  const G=g.index?g.toNonIndexed():g;G.tpl=true;return S3T[k]=G}
+function s3Geo(A,g,m,col,us,vs){const tpl=g.tpl,G=tpl?g:g.index?g.toNonIndexed():g;if(m&&!tpl)G.applyMatrix4(m);const P=G.attributes.position.array,Nn=G.attributes.normal.array,U=G.attributes.uv?G.attributes.uv.array:null,n=P.length/3;
+  if(tpl&&m){const e=m.elements;S3NM.getNormalMatrix(m);const f=S3NM.elements;for(let i=0;i<n;i++){const x=P[i*3],y=P[i*3+1],z=P[i*3+2],a=Nn[i*3],b=Nn[i*3+1],c=Nn[i*3+2];
+      A.p.push(e[0]*x+e[4]*y+e[8]*z+e[12],e[1]*x+e[5]*y+e[9]*z+e[13],e[2]*x+e[6]*y+e[10]*z+e[14]);let nx=f[0]*a+f[3]*b+f[6]*c,ny=f[1]*a+f[4]*b+f[7]*c,nz=f[2]*a+f[5]*b+f[8]*c;const l=Math.hypot(nx,ny,nz)||1;A.n.push(nx/l,ny/l,nz/l)}}
+  else for(let i=0;i<P.length;i++){A.p.push(P[i]);A.n.push(Nn[i])}
+  for(let i=0;i<n;i++)A.c.push(col.r,col.g,col.b);
+  if(A.u)for(let i=0;i<n;i++)A.u.push(U?U[i*2]*(us||1):0,U?U[i*2+1]*(vs||1):0);if(!tpl){if(G!==g)G.dispose();g.dispose()}}
+const s3MS=(x,y,z,sx,sy,sz,ry)=>new THREE.Matrix4().compose(new THREE.Vector3(x,y,z),new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0,1,0),ry||0),new THREE.Vector3(sx,sy,sz));
 function s3Mesh(A,mat){if(!A.p.length)return null;const G=new THREE.BufferGeometry();G.setAttribute('position',new THREE.Float32BufferAttribute(A.p,3));G.setAttribute('normal',new THREE.Float32BufferAttribute(A.n,3));
   if(mat.vertexColors)G.setAttribute('color',new THREE.Float32BufferAttribute(A.c,3));if(A.u)G.setAttribute('uv',new THREE.Float32BufferAttribute(A.u,2));G.computeBoundingSphere();return new THREE.Mesh(G,mat)}
 /* ---------- pieces of the inner edge: at(u,d) → [x, z, nx, nz] (d yards outward), L(d) the length at depth d ---------- */
@@ -109,7 +117,7 @@ function s3Backdrop(cv,n,stg,p){const W=2048,H=256;cv.width=W;cv.height=H;const 
       g.fillStyle=N?'#0a0d14':mix(hz,r()<.5?'#5a6a80':'#76869a',.5);g.fillRect(x,H-18-bh,bw,bh+18);
       if(N){g.fillStyle='rgba(255,214,140,.85)';for(let wy=H-14-bh;wy<H-22;wy+=6)for(let wx=x+3;wx<x+bw-3;wx+=5)if(r()<.3)g.fillRect(wx,wy,2,3)}}}
   /* treeline: everywhere a little, thick with the trees feature */
-  const tr=n.has('trees')?1:.45;g.fillStyle=N?'#030504':mix(hz,'#2e4429',.78);for(let x=0;x<W;x+=6){const hh=(10+r()*14+(r()<.15?r()*16:0))*tr+4;g.beginPath();g.ellipse(x,H-4-hh*.4,7,hh*.6,0,0,7);g.fill()}
+  const tr=n.has('trees')?1:.45;g.fillStyle=N?'#030504':mix(hz,'#2e4429',.78);g.beginPath();for(let x=0;x<W;x+=6){const hh=(10+r()*14+(r()<.15?r()*16:0))*tr+4;g.moveTo(x+7,H-4-hh*.4);g.ellipse(x,H-4-hh*.4,7,hh*.6,0,0,6.2832)}g.fill();
   g.fillRect(0,H-6,W,6);
   /* haze toward the horizon colour by day */
   if(!N){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,'rgba(0,0,0,0)');gr.addColorStop(1,D?'rgba(240,170,110,.18)':'rgba(220,232,245,.18)');g.globalCompositeOperation='source-atop';g.fillStyle=gr;g.fillRect(0,0,W,H);g.globalCompositeOperation='source-over'}
@@ -123,14 +131,14 @@ function s3Billboards(list,tex,fire){const n=list.length/7,G=new THREE.Instanced
     vertexShader:`attribute vec4 iP;attribute vec3 iC;uniform float uT;uniform vec3 uCut;varying vec2 vU;varying vec3 vC;varying float vA;
       void main(){vec3 c=iP.xyz;float s=iP.w,a=1.;${fire?'float ph=fract(uT*1.7+iC.r*7.1),k=iC.g;c.y+=ph*(9.+k*7.);s*=(1.15-ph*.7);a=(1.-ph)*(.55+.45*sin(uT*31.+k*20.));':''}
         vec4 w=modelMatrix*vec4(c,1.);vec4 mv=viewMatrix*w;mv.xy+=position.xy*s;gl_Position=projectionMatrix*mv;vU=position.xy+.5;vC=${fire?'mix(vec3(1.,.82,.35),vec3(1.,.28,.05),ph)':'iC'};vA=a;
-        if(uCut.x>.5&&w.z>uCut.y&&w.y>uCut.z+.5*(w.z-uCut.y))gl_Position=vec4(0.,0.,2.,1.);}`,
+        if(uCut.x>.5&&w.z>uCut.y&&w.y>4.+uCut.z*(w.z-uCut.y))gl_Position=vec4(0.,0.,2.,1.);}`,
     fragmentShader:`uniform sampler2D uTex;uniform float uOp;varying vec2 vU;varying vec3 vC;varying float vA;void main(){float t=texture2D(uTex,vU).a;gl_FragColor=vec4(vC*t*uOp*vA,1.);}`});
   const m=new THREE.Mesh(G,M);m.frustumCulled=false;m.renderOrder=5;return m}
 /* ---------- build one stadium ---------- */
 function s3Build(n,o,tx){
   const h=o.host,P=s3Plan(n),pf=P.pf,own=[],keep=x=>{own.push(x);return x},grp=new THREE.Group(),r=t3Rng(h.id*13+7);grp.name='stadium3d';
   const cl={conc:t3Col('#9a9ea5'),dark:t3Col('#2e333b'),under:t3Col('#3b4048'),fac:t3Col(n.cap>=60000?'#8b8f96':'#7f848b'),grass:t3Col('#4b7f3a'),hedge:t3Col('#2c5b24'),stone:t3Col('#cfc3a6'),roof:t3Col('#dfe3e8'),pole:t3Col('#7d838c'),trk:t3Col('#2c4f2a')};
-  const B={st:s3Acc(false),near:s3Acc(false),seat:s3Acc(true),rib:s3Acc(true),glass:s3Acc(true),lp:s3Acc(true),white:t3Col('#ffffff')},tm={t0:performance.now()},glows=[],pyro=[],crowd=[],ext={x:0,z:0,h:0};
+  const B={st:s3Acc(false),near:s3Acc(false),seat:s3Acc(true),rib:s3Acc(true),glass:s3Acc(true),lp:s3Acc(true),white:t3Col('#ffffff')},tm={t0:performance.now()},glows=[],pyro=[],ext={x:0,z:0,h:0};
   const clip=[S3.clipA||(S3.clipA=new THREE.Plane(new THREE.Vector3(0,0,-1),1e6)),S3.clipB||(S3.clipB=new THREE.Plane(new THREE.Vector3(0,-1,.5).normalize(),1e6))];
   const mat=(M,cut)=>{if(cut!==false){M.clippingPlanes=clip;M.clipIntersection=true}return keep(M)};
   const M={st:mat(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9,metalness:0,side:THREE.DoubleSide}))};
@@ -140,6 +148,15 @@ function s3Build(n,o,tx){
   const suT=keep(t3Tex(t3Suites(),true,true));M.glass=mat(new THREE.MeshStandardMaterial({map:suT,emissiveMap:suT,emissive:'#ffffff',emissiveIntensity:.15,roughness:.35,side:THREE.DoubleSide}));
   const lpT=keep(t3Tex(t3LightPanel()));M.lp=mat(new THREE.MeshStandardMaterial({map:lpT,emissiveMap:lpT,emissive:'#ffffff',emissiveIntensity:.05,roughness:.5,side:THREE.DoubleSide}));
   const segF=s3Segs(true,cl),segO=s3Segs(false,cl);
+  /* the crowd, written straight into the instance arrays: home colours, students in the left end (or the left of the far
+     side), visitors high in the right corner, card stunts on the far side */
+  const c1=t3Col(h.c1),c2=t3Col(h.c2||'#ffffff'),wh=t3Col('#f2f2f2'),awt=o.away,a1=t3Col(awt.c1),a2=t3Col(awt.c2||'#ffffff'),misc=['#2b2f36','#6b7280','#9aa3ad','#1f3b70','#5a3a22','#c9c2b0'].map(t3Col),skins=TONES.map(t3Col);
+  const studL=(S3RK[n.L]||0)>=1,lastF=n.dF-1,cards=n.has('cards'),FP=[],FA=[],FC=[],FS=[],FH=[],FK=[];
+  const fan=(x,y,z,ang,k,id,row,nr)=>{let kind=0;
+    if(k===0&&(studL?(id==='L'||id==='FL'):(id==='F'&&x<30)))kind=1;else if((k===lastF&&k>0&&(id==='FR'||id==='F'&&x>92))||(lastF===0&&(id==='R'||id==='FR'||id==='F'&&x>98)&&row>nr*.5))kind=2;
+    const q=r();let col=kind===1?(q<.82?c1:wh):kind===2?(q<.7?a1:q<.85?a2:misc[r()*6|0]):(q<.5?c1:q<.64?c2:q<.74?wh:misc[r()*6|0]);
+    if(cards&&id==='F'&&k===0&&row>1&&Math.abs(x-60)<26){const v=(Math.floor(Math.abs(x-60)/4.5)+Math.floor(row/3))%3;col=v===0?c1:v===1?c2:wh;kind=0}
+    const sk=skins[r()*4|0];FP.push(x,y,z);FA.push(ang);FC.push(col.r,col.g,col.b);FS.push(sk.r,sk.g,sk.b);FH.push(r());FK.push(kind)};
   /* ---- pieces ---- */
   const {aL,aR,zF,zN,r:rc,hz}=P,cz=CEN,PI=Math.PI,rk=c=>S3RK[c]||0;
   const pcs=[];const add=(id,pc,prof,segs,ca,cb,deckProf)=>{if(pc.L(0)<.4&&!(pc.N>1))return;pcs.push({id,pc,prof,segs,ca,cb});s3Loft(B,pc,prof,segs,ca,cb,cl.fac)};
@@ -157,7 +174,7 @@ function s3Build(n,o,tx){
     else if(c==='B'){/* grass hill: a low wall, then a long green slope people sit on */
       const hp={P:[[0,0],[0,1.1],[1.2,1.1],[27,9.5],[32,10.2],[42,0]],R:[0,0,0]},hs=[['st',cl.conc,S3IN],['st',cl.conc,S3UP],['st',cl.grass,S3IU],['st',cl.grass,S3UP],['st',t3Col('#3f6f31'),[-1,1]]];
       s3Loft(B,pc,()=>hp,hs,1,1,cl.grass);endInfo[e].D=42;endInfo[e].H=10.2;
-      const L=pc.L(0);for(let d=3;d<26;d+=1.5)for(let j=0;j<L/1.15;j++){if(r()>.5)continue;const u=(j+r())/(L/1.15),q=pc.at(Math.min(1,u),d),hh=1.1+(d-1.2)/(27-1.2)*8.4;crowd.push([q[0],hh-.25,q[1],Math.atan2(q[2],-q[3]),0,e])}}
+      const L=pc.L(0);for(let d=3;d<26;d+=1.5)for(let j=0;j<L/1.15;j++){if(r()>.5)continue;const u=(j+r())/(L/1.15),q=pc.at(Math.min(1,u),d),hh=1.1+(d-1.2)/(27-1.2)*8.4;fan(q[0],hh-.25,q[1],Math.atan2(q[2],-q[3]),0,e,0,0)}}
     else if(c==='X'){/* a building: a few rows in front, a facility with a glass face behind */
       const lp=s3Prof([6,0,0],0);s3Loft(B,pc,()=>lp,segO,1,1,cl.fac);pcs.push({id:e,pc,prof:()=>lp,segs:segO});
       const bh=n.cap>=60000?24:16,bd=16,wz=Math.abs(z1-z0)+6,bx=x+s*(lp.D+bd/2+1);
@@ -176,9 +193,9 @@ function s3Build(n,o,tx){
     for(let k=0;k<3;k++){const pr0=p.prof(0),pr1=p.prof(1),Rm=Math.ceil(Math.max(pr0.R[k],pr1.R[k],p.prof(.5).R[k]));if(Rm<1)continue;const si=2+4*k;
       const dmid=(pr0.P[si][0]+pr0.P[si+1][0])/2,L=p.pc.L(dmid),nf=Math.max(1,Math.floor(L/sp)),nc=p.pc.N===1?1:Math.max(8,Math.ceil(nf/6)),cols=[];
       for(let c=0;c<=nc;c++)cols.push(p.pc.N===1?pr0:p.prof(c/nc));
-      for(let j=0;j<nf;j++){const u0=Math.min(1,Math.max(0,(j+.5)/nf)),pr=cols[Math.round(u0*nc)],nr=pr.R[k],a=pr.P[si],b=pr.P[si+1],R1=Math.max(1,Math.round(nr));
-        for(let i=0;i<Rm;i+=stride){if(i>=nr-.3)break;if(r()<.08)continue;const u=Math.min(1,Math.max(0,u0+(r()-.5)*.3/nf)),t=(i+.5)/R1,d=a[0]+(b[0]-a[0])*t,hh=a[1]+(b[1]-a[1])*t,q=p.pc.at(u,d);
-          crowd.push([q[0],hh,q[1],Math.atan2(q[2],-q[3]),k,p.id,i,nr])}}}}
+      for(let j=0;j<nf;j++){const u0=Math.min(1,Math.max(0,(j+.5)/nf)),pr=cols[Math.round(u0*nc)],nr=pr.R[k],a=pr.P[si],b=pr.P[si+1],R1=Math.max(1,Math.round(nr)),q=p.pc.at(u0,0),nx=q[2],nz=q[3],ang=Math.atan2(nx,-nz),js=sp*.3;
+        for(let i=0;i<Rm;i+=stride){if(i>=nr-.3)break;if(r()<.08)continue;const t=(i+.5)/R1,d=a[0]+(b[0]-a[0])*t,hh=a[1]+(b[1]-a[1])*t,jt=(r()-.5)*js;
+          fan(q[0]+nx*d-nz*jt,hh,q[1]+nz*d+nx*jt,ang,k,p.id,i,nr)}}}}
   tm.crowd=performance.now();
   /* ---- press box with suites on the far side ---- */
   const pw=clamp(n.cap/1500+22,34,86),ph=n.rf?5:n.cap<30000?6:n.cap<60000?8.5:n.cap<90000?11:14,pbF=zF-(cF.D-(n.rf?9:5.5)),pbB=zF-(cF.D+(n.rf?-1:3.5)),pbz=(pbF+pbB)/2,pby=n.rf?cF.H-ph-3:cF.H-1;
@@ -202,18 +219,18 @@ function s3Build(n,o,tx){
     ext.h=Math.max(ext.h,y+bh/2)}
   /* ---- canopy roofs over the stands ---- */
   if(n.has('canopy'))for(const p of pcs){if(!(p.id[0]==='F'||p.id[0]==='N'||n.sh==='bowl'))continue;if((p.id==='L'||p.id==='R')&&!rk(n[p.id]))continue;
-    const cp=u=>{const s=p.prof(u),cw=Math.min(s.D*.46,24),y=s.H+6.5;return {P:[[s.D-1,y],[s.D-cw,y+cw*.1],[s.D-cw,y+cw*.1-.9],[s.D-1,y-.8]],R:[0,0,0]}};
-    s3Loft(B,p.pc,cp,[['st',cl.roof,S3UP],['st',t3Col('#4a5058'),S3IN],['st',t3Col('#3b4048'),S3DN]],0,0,cl.dark);
-    const L=p.pc.L(0),nc=Math.max(1,Math.round(L/30));for(let i=0;i<=nc;i++){const u=i/nc,s=p.prof(u),q=p.pc.at(u,s.D-1.2);s3Geo(B.st,new THREE.BoxGeometry(1,8,1),t3M(q[0],s.H+3.5,q[1]),cl.pole)}
-    const nl=Math.max(2,Math.round(L/20));for(let i=0;i<nl;i++){const u=(i+.5)/nl,s=p.prof(u),cw=Math.min(s.D*.46,24),q=p.pc.at(u,s.D-cw+.5);glows.push(q[0],s.H+6.5+cw*.1-1.2,q[1],26,1,1,.96)}
+    const cp=u=>{const s=p.prof(u),cw=Math.min(s.D*.4,19),y=s.H+5.5;return {P:[[s.D-1,y],[s.D-cw,y+cw*.14],[s.D-cw,y+cw*.14-.7],[s.D-1,y-.6]],R:[0,0,0]}};
+    s3Loft(B,p.pc,cp,[['st',t3Col('#b9bfc8'),S3UP],['st',t3Col('#e8ebef'),S3IN],['st',t3Col('#3b4048'),S3DN]],0,0,cl.dark);
+    const L=p.pc.L(0),nc=Math.max(1,Math.round(L/30));for(let i=0;i<=nc;i++){const u=i/nc,s=p.prof(u),q=p.pc.at(u,s.D-1.2);s3Geo(B.st,s3Tpl('box'),s3MS(q[0],s.H+3.5,q[1],1,8,1),cl.pole)}
+    const nl=Math.max(2,Math.round(L/20));for(let i=0;i<nl;i++){const u=(i+.5)/nl,s=p.prof(u),cw=Math.min(s.D*.4,19),q=p.pc.at(u,s.D-cw+.5);glows.push(q[0],s.H+5.5+cw*.14-1,q[1],26,1,1,.96)}
     ext.h=Math.max(ext.h,p.prof(.5).H+12)}
   /* ---- lights: a ring on the rim of big bowls, towers at the corners of the rest, under the roof in a dome ---- */
   const ring=!n.rf&&!n.has('canopy')&&((n.sh==='bowl'&&n.cap>=50000)||n.dF>=3);
   const bank=(x,y,z,w,hh,gs)=>{const pl=new THREE.PlaneGeometry(w,hh),m=new THREE.Matrix4().lookAt(new THREE.Vector3(x,y,z),new THREE.Vector3(60,0,cz),new THREE.Vector3(0,1,0));m.setPosition(x,y,z);
-    const f=new THREE.Matrix4().makeRotationY(PI);s3Geo(B.lp,pl,m.clone().multiply(f),B.white);s3Geo(B.st,new THREE.BoxGeometry(w+.6,hh+.6,.8),m.clone().multiply(new THREE.Matrix4().makeTranslation(0,0,.5)),t3Col('#23272e'));glows.push(x,y,z,gs,1,1,.97)};
+    const f=new THREE.Matrix4().makeRotationY(PI);s3Geo(B.lp,pl,m.clone().multiply(f),B.white);s3Geo(z>cz+hz?B.near:B.st,s3Tpl('box'),m.clone().multiply(new THREE.Matrix4().compose(new THREE.Vector3(0,0,.5),new THREE.Quaternion(),new THREE.Vector3(w+.6,hh+.6,.8))),t3Col('#23272e'));glows.push(x,y,z,gs,1,1,.97)};
   if(n.rf){}else if(ring){for(const [p,cnt] of [['F',6],['N',6]]){const pr=p==='F'?cF:cN,z=p==='F'?zF-pr.D+.8:zN+pr.D-.8;for(let i=0;i<cnt;i++){const x=60+(i-(cnt-1)/2)*(Math.min(P.fx[1]-P.fx[0],130)/cnt);
-        if(p==='F'&&Math.abs(x-60)<pw/2+3)continue;s3Geo(B.st,new THREE.BoxGeometry(.6,5,.6),t3M(x,pr.H+2.5,z),cl.pole);bank(x,pr.H+6,z,9,4,32)}}
-    for(const e of ['L','R'])if(rk(n[e])>=2){const E=endInfo[e];for(const dz of [-18,18]){const x=E.x+E.s*(E.D-.8);s3Geo(B.st,new THREE.BoxGeometry(.6,5,.6),t3M(x,E.H+2.5,cz+dz),cl.pole);bank(x,E.H+6,cz+dz,9,4,32)}}}
+        if(p==='F'&&Math.abs(x-60)<pw/2+3)continue;s3Geo(B.st,s3Tpl('box'),s3MS(x,pr.H+2.5,z,.6,5,.6),cl.pole);bank(x,pr.H+6,z,9,4,32)}}
+    for(const e of ['L','R'])if(rk(n[e])>=2){const E=endInfo[e];for(const dz of [-18,18]){const x=E.x+E.s*(E.D-.8);s3Geo(B.st,s3Tpl('box'),s3MS(x,E.H+2.5,cz+dz,.6,5,.6),cl.pole);bank(x,E.H+6,cz+dz,9,4,32)}}}
   else{const tH=Math.max(cF.H,cN.H)+24,tx0=Math.max(n.sh==='side'?P.fx[1]-60-6:P.xR-2,40),pos=[[60-tx0,zF-cF.D-5],[60+tx0,zF-cF.D-5],[60-tx0,zN+cN.D+5],[60+tx0,zN+cN.D+5]];
     for(const [x,z] of pos){s3Geo(z>cz?B.near:B.st,new THREE.CylinderGeometry(.7,1.3,tH,8),t3M(x,tH/2,z),cl.pole);bank(x,tH+4,z,14,8,60)}ext.h=Math.max(ext.h,tH+8)}
   /* ---- dome: a superelliptic roof over the rim, lit from inside ---- */
@@ -239,12 +256,12 @@ function s3Build(n,o,tx){
     const f=th=>{const c=Math.cos(th),s=Math.sin(th);return Math.pow(Math.pow(Math.abs(c)/(ext.x+14),4)+Math.pow(Math.abs(s)/(ext.z+14),4),-.25)};
     for(let i=0;i<NS;i++){const t0=i/NS*PI*2,t1=(i+1)/NS*PI*2;for(let j=0;j<3;j++){const p=(t,k)=>{const rr=k===0?0:k===1?f(t):k===2?f(t)*1.35:900;return [60+Math.cos(t)*rr,-.04,cz+Math.sin(t)*rr]};
       s3Quad(A,p(t0,j),p(t1,j),p(t1,j+1),p(t0,j+1),cols[j],null,null,null,null,[0,1,0])}}
-    const lots=4+(r()*3|0);for(let i=0;i<lots;i++){const th=r()*PI*2,d=f(th)*1.55+30+r()*60,x=60+Math.cos(th)*d,z=cz+Math.sin(th)*d;s3Geo(A,new THREE.BoxGeometry(50+r()*40,.05,30+r()*20),t3M(x,-.01,z,0,-th,0),t3Col('#55595f'))}
+    const lots=4+(r()*3|0);for(let i=0;i<lots;i++){const th=r()*PI*2,d=f(th)*1.55+30+r()*60,x=60+Math.cos(th)*d,z=cz+Math.sin(th)*d;s3Geo(A,s3Tpl('box'),s3MS(x,-.01,z,50+r()*40,.05,30+r()*20,-th),t3Col('#55595f'))}
     const water=n.has('water');let wd=null;if(water){const e=n.L==='O'?'L':n.R==='O'?'R':rk(n.L)<rk(n.R)?'L':'R';wd=e==='L'?-1:1}
-    const ntr=n.has('trees')?150:55;for(let i=0;i<ntr;i++){const th=r()*PI*2,d=f(th)*(1.4+r()*(n.has('trees')?1.6:2.6))+12,x=60+Math.cos(th)*d,z=cz+Math.sin(th)*d;if(wd&&(x-60)*wd>ext.x+30)continue;
-      const tr=2.5+r()*3.5;s3Geo(A,new THREE.IcosahedronGeometry(tr,0),t3M(x,tr*1.1,z,r(),r(),0),t3Col(r()<.5?'#2f5a2a':'#3b6a30'))}
+    const ntr=n.has('trees')?110:45,treeA=t3Col('#2f5a2a'),treeB=t3Col('#3b6a30');for(let i=0;i<ntr;i++){const th=r()*PI*2,d=f(th)*(1.4+r()*(n.has('trees')?1.6:2.6))+12,x=60+Math.cos(th)*d,z=cz+Math.sin(th)*d;if(wd&&(x-60)*wd>ext.x+30)continue;
+      const tr=2.5+r()*3.5;s3Geo(A,s3Tpl('ico'),s3MS(x,tr*1.1,z,tr,tr*1.15,tr,r()*6),r()<.5?treeA:treeB)}
     if(n.has('skyline'))for(let i=0;i<34;i++){const th=-PI/2+(r()-.5)*1.1,d=260+r()*170,x=60+Math.cos(th)*d,z=cz+Math.sin(th)*d,bh=20+r()*r()*95,bw=10+r()*16;
-      s3Geo(B.glass,new THREE.BoxGeometry(bw,bh,bw),t3M(x,bh/2,z,0,r()*PI,0),B.white,bw/6,bh/5)}
+      s3Geo(B.glass,s3Tpl('box'),s3MS(x,bh/2,z,bw,bh,bw,r()*PI),B.white,bw/6,bh/5)}
     if(water){const wm=keep(new THREE.MeshStandardMaterial({color:'#2c5872',roughness:.16,metalness:.25}));M.water=wm;const pg=new THREE.PlaneGeometry(900,1300);pg.rotateX(-PI/2);
       const wx=60+wd*(ext.x+42+450);const w=new THREE.Mesh(keep(pg),wm);w.position.set(wx,-.02,cz);grp.add(w)}}
   /* ---- backdrop ring ---- */
@@ -260,17 +277,9 @@ function s3Build(n,o,tx){
   const glowT=keep(t3Tex(t3Glow(),false));let glow=null,fire=null;
   if(glows.length){glow=s3Billboards(glows,glowT,false);keep(glow.geometry);keep(glow.material);grp.add(glow)}
   if(pyro.length){fire=s3Billboards(pyro,glowT,true);keep(fire.geometry);keep(fire.material);fire.visible=false;grp.add(fire)}
-  /* crowd colours: home colours, students in the left end (or the left of the far side), visitors high in the right corner, card stunts on the far side */
-  const c1=t3Col(h.c1),c2=t3Col(h.c2||'#ffffff'),wh=t3Col('#f2f2f2'),aw=o.away,a1=t3Col(aw.c1),a2=t3Col(aw.c2||'#ffffff'),misc=['#2b2f36','#6b7280','#9aa3ad','#1f3b70','#5a3a22','#c9c2b0'].map(t3Col),skins=TONES.map(t3Col);
-  const studL=rk(n.L)>=1,inst=[],lastF=n.dF-1;
-  for(const f of crowd){const [x,y,z,ang,k,id,row,nr]=f;let kind=0;
-    if(k===0&&(studL?(id==='L'||id==='FL'):(id==='F'&&x<30)))kind=1;else if((k===lastF&&k>0&&(id==='FR'||id==='F'&&x>92))||(lastF===0&&(id==='R'||id==='FR'||id==='F'&&x>98)&&row>(nr||0)*.5))kind=2;
-    const q=r();let col=kind===1?(q<.82?c1:wh):kind===2?(q<.7?a1:q<.85?a2:misc[r()*6|0]):(q<.5?c1:q<.64?c2:q<.74?wh:misc[r()*6|0]);
-    if(n.has('cards')&&id==='F'&&k===0&&Math.abs(x-60)<26&&row>1){const v=(Math.floor(Math.abs(x-60)/4.5)+Math.floor(row/3))%3;col=v===0?c1:v===1?c2:wh;kind=0}
-    const sk=skins[r()*4|0];inst.push(x,y,z,ang,col.r,col.g,col.b,sk.r,sk.g,sk.b,r(),kind)}
-  const fw=.62*Math.max(1,sp/.82)*(stride===2?1.12:1),cm=t3CrowdMesh(inst,t3Fan(),Math.min(.95,fw),stride===2?1.22:1);keep(cm.geometry);keep(cm.material);keep(cm.material.uniforms.uTex.value);grp.add(cm);
+  const nF=FA.length,fw=.62*Math.max(1,sp/.82)*(stride===2?1.12:1),cm=t3CrowdMesh({n:nF,pos:new Float32Array(FP),ang:new Float32Array(FA),col:new Float32Array(FC),skin:new Float32Array(FS),ph:new Float32Array(FH),kind:new Float32Array(FK)},t3Fan(),Math.min(.95,fw),stride===2?1.22:1);keep(cm.geometry);keep(cm.material);keep(cm.material.uniforms.uTex.value);grp.add(cm);
   tm.end=performance.now();
-  return {group:grp,own,mats:M,crowd:cm,glow,fire,board,bk,bkCv,bkT,near,tm:{crowd:+(tm.crowd-tm.t0).toFixed(1),geo:+(tm.geo-tm.crowd).toFixed(1),mesh:+(tm.end-tm.geo).toFixed(1)},bkStage:o.night?'night':o.dusk?'sunset':'day',signs,n,P,ext,z0:zN,mir:null,fans:inst.length/12}}
+  return {group:grp,own,mats:M,crowd:cm,glow,fire,board,bk,bkCv,bkT,near,tm:{crowd:+(tm.crowd-tm.t0).toFixed(1),geo:+(tm.geo-tm.crowd).toFixed(1),mesh:+(tm.end-tm.geo).toFixed(1)},bkStage:o.night?'night':o.dusk?'sunset':'day',signs,n,P,ext,z0:zN,mir:null,fans:nF}}
 function s3Free(st){if(!st)return;st.group.parent&&st.group.parent.remove(st.group);const seen=new Set();for(const x of st.own){if(!x||seen.has(x))continue;seen.add(x);if(x.dispose)x.dispose()}st.own.length=0}
 /* ---------- the cache: get or build, attach to the env's group, set the light-stage look ---------- */
 function s3Attach(n,o,E,tx){if(G3.R&&!G3.R.localClippingEnabled)G3.R.localClippingEnabled=true;
@@ -291,8 +300,10 @@ function s3Light(st,o,tx){const M=st.mats,N=o.night,D=o.dusk,stg=N?'night':D?'su
 function s3Frame(env){const st=env&&env.std3;if(!st)return;const now=performance.now();
   const m=typeof uOff==='function'&&!uOff();if(m!==st.mir){st.mir=m;st.group.scale.x=m?-1:1;st.group.position.x=m?120:0;
     for(const t of st.flip){if(!t)continue;t.repeat.x=m?-Math.abs(t.repeat.x||1):Math.abs(t.repeat.x||1);t.offset.x=m&&t.wrapS!==THREE.RepeatWrapping?1:0}}
-  const tv=(G3.mode==='tv'||G3.mode==='st')&&!G3.est,z0=st.z0+.2;if(st.near)st.near.visible=!tv;S3.clipA.constant=tv?z0:1e6;S3.clipB.constant=tv?(4-.5*z0)/Math.hypot(1,.5):1e6;
-  const cut=st.crowd.material.uniforms.uCut;if(cut)cut.value.set(tv?1:0,z0,4);if(st.glow)st.glow.material.uniforms.uCut.value.set(tv?1:0,z0,4);
+  /* the cut: beyond the near wall (z > z0), everything above the line from the wall top to just under the camera goes */
+  const tv=(G3.mode==='tv'||G3.mode==='st')&&!G3.est,z0=st.z0+.2,c=G3.cam.position,dz=Math.max(5,c.z-z0),dh=c.y-7,L=Math.hypot(dz,dh)||1,sl=dh/dz;if(st.near)st.near.visible=!tv;
+  S3.clipA.constant=tv?z0:1e6;if(tv){S3.clipB.normal.set(0,-dz/L,dh/L);S3.clipB.constant=(dz*4-dh*z0)/L}else S3.clipB.constant=1e6;
+  const cut=st.crowd.material.uniforms.uCut;if(cut)cut.value.set(tv?1:0,z0,sl);if(st.glow)st.glow.material.uniforms.uCut.value.set(tv?1:0,z0,sl);
   if(st.fire){const on=S3.pyro>now;st.fire.visible=on;if(on){const u=st.fire.material.uniforms;u.uT.value=now/1000;u.uOp.value=Math.min(1,(S3.pyro-now)/600)}}}
 function s3Pyro(ms){const st=G3.env&&G3.env.std3;if(st&&st.fire)S3.pyro=performance.now()+(ms||2600)}
 if(typeof onFx==='function'){onFx('td',e=>{if(e&&e.team&&typeof hostT==='function'&&e.team===hostT())s3Pyro(2800)});onFx('kickoff',e=>{if(e&&e.why==='Opening kickoff')s3Pyro(2200)})}
