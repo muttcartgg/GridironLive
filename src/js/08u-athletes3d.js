@@ -22,7 +22,20 @@
    ========================================================= */
 const A3_H0=2.056,A3_TAU=Math.PI*2,A3_AT=512;
 const A3_PEL=0,A3_WST=1,A3_CHE=2,A3_NCK=3,A3_HED=4,A3_UAL=5,A3_FAL=6,A3_UAR=7,A3_FAR=8,A3_THL=9,A3_SHL=10,A3_FTL=11,A3_THR=12,A3_SHR=13,A3_FTR=14,A3_NB=15;
-const A3={dp:null,da:0,g:null,figs:new Map(),teams:new Map(),geo:new Map(),res:new Set(),ref:null,ball:null,flag:null,fr:0,now:-1,bp:null,bv:null,spin:0,carH:null};
+const A3={dp:null,da:0,g:null,figs:new Map(),teams:new Map(),geo:new Map(),res:new Set(),ref:null,ball:null,flag:null,fr:0,now:-1,bp:null,bv:null,spin:0,carH:null,det:0,an:4,aa:false};
+/* DETAIL LEVEL (08v Settings › Quality: Performance 0, Balanced 1, Ultra 2; ath3dDetail): segments around every loft and
+   tube × A3_DN, Catmull-Rom rings between the sculpted profile rows × A3_DR (smoother silhouettes and normals at the
+   knees, calves, shoulders and helmet), 2× texture atlases and a cloth sheen on the uniforms at 2; jersey numbers use
+   alpha-to-coverage under MSAA; textures take the preset's anisotropy */
+const A3_DN=[1,1.34,1.5],A3_DR=[1,1,2];
+function ath3dDetail(det,an,aa){det=Math.max(0,Math.min(2,det|0));an=an||4;aa=!!aa;if(A3.det===det&&A3.an===an&&A3.aa===aa)return false;A3.det=det;A3.an=an;A3.aa=aa;ath3dReset();return true}
+const a3TK=()=>A3.det>=2?2:1;
+function a3Sub(R,k){if(k<2||R.length<2)return R;const L=Math.max(...R.map(q=>q.length)),row=i=>R[Math.max(0,Math.min(R.length-1,i))],out=[];
+  for(let i=0;i<R.length-1;i++){out.push(R[i]);const p0=row(i-1),p1=row(i),p2=row(i+1),p3=row(i+2);
+    for(let s=1;s<k;s++){const t=s/k,t2=t*t,t3=t2*t,q=[];
+      for(let j=0;j<L;j++){const a=p0[j]||0,b=p1[j]||0,c=p2[j]||0,d=p3[j]||0;q.push(.5*(2*b+(c-a)*t+(2*a-5*b+4*c-d)*t2+(3*b-a-3*c+d)*t3))}   // missing offsets are 0, as in a3Loft
+      q[1]=Math.max(q[1],0);q[2]=Math.max(q[2],0);out.push(q)}}
+  out.push(R[R.length-1]);return out}
 const A3_RG={JER:[0,0,256,192],SLV:[256,0,128,64],CAP:[384,0,128,64],SHO:[256,64,256,128],PAN:[0,192,256,128],SOK:[256,192,128,128],CLT:[384,192,128,64],GLV:[384,256,128,64],
   HTW:[384,256,64,64],HTB:[448,256,64,64],SHL:[0,0,256,192],FM:[0,192,64,64],VIS:[64,192,64,64],CS:[128,192,64,64],BL:[0,0,256,128]};
 const a3SKA=i=>[i*128+4,324,56,56],a3SKF=i=>[i*128+64,320,64,64];
@@ -34,7 +47,7 @@ const a3w=(b0,b1,t)=>{A3WS[0]=b0;A3WS[1]=b1;A3WS[2]=t;return A3WS};
 /* ---------- geometry builder: lofted elliptical rings and tubes, smooth normals, auto winding, 2-bone weights ---------- */
 function a3Buf(){return {p:[],n:[],u:[],si:[],sw:[],ix:[]}}
 function a3Loft(B,o){
-  const R=o.r,nr=R.length,n=o.n||12,c=o.c||[0,0,0],X=o.ax==='x',mir=o.mir?-1:1,rg=o.uv,AT=o.at||A3_AT,AH=o.ah||AT,b0=B.p.length/3,N1=n+1;
+  const dl=A3.det|0,R=a3Sub(o.r,A3_DR[dl]),nr=R.length,n=Math.max(3,Math.round((o.n||12)*A3_DN[dl])),c=o.c||[0,0,0],X=o.ax==='x',mir=o.mir?-1:1,rg=o.uv,AT=o.at||A3_AT,AH=o.ah||AT,b0=B.p.length/3,N1=n+1;
   const P=new Float64Array(nr*N1*3),C=new Float64Array(nr*3),UV=new Float64Array(nr*N1*2),h0=o.vr?o.vr[0]:R[0][0],h1=o.vr?o.vr[1]:R[nr-1][0];
   const full=!(o.a1!=null||R[0].length>5);
   for(let i=0;i<nr;i++){const q=R[i],h=q[0],ra=q[1],rb=q[2],oa=q[3]||0,ob=(q[4]||0)*mir,a0=q.length>5?q[5]:(o.a0||0),a1=q.length>6?q[6]:(o.a1!=null?o.a1:a0+A3_TAU);
@@ -60,7 +73,7 @@ function a3Loft(B,o){
   for(let i=0;i<nr-1;i++)for(let j=0;j<n;j++){const a=b0+i*N1+j,b=a+1,cc=a+N1,d=cc+1;if(ccw)B.ix.push(a,b,cc,b,d,cc);else B.ix.push(a,cc,b,b,cc,d)}
 }
 function a3Tube(B,pts,r,n,rg,w,AT){
-  const b0=B.p.length/3,N1=n+1,m=pts.length;AT=AT||256;
+  n=Math.max(3,Math.round(n*A3_DN[A3.det|0]));const b0=B.p.length/3,N1=n+1,m=pts.length;AT=AT||256;
   for(let i=0;i<m;i++){const P0=pts[Math.max(0,i-1)],P1=pts[Math.min(m-1,i+1)],p=pts[i];let tx=P1[0]-P0[0],ty=P1[1]-P0[1],tz=P1[2]-P0[2];const tl=Math.hypot(tx,ty,tz)||1;tx/=tl;ty/=tl;tz/=tl;
     let ux=0,uy=1,uz=0;if(Math.abs(ty)>.9){ux=1;uy=0}let sx=ty*uz-tz*uy,sy=tz*ux-tx*uz,sz=tx*uy-ty*ux;const sl=Math.hypot(sx,sy,sz)||1;sx/=sl;sy/=sl;sz/=sl;
     ux=sy*tz-sz*ty;uy=sz*tx-sx*tz;uz=sx*ty-sy*tx;
@@ -181,9 +194,9 @@ function a3FlagGeo(){const B=a3Buf(),W=()=>a3w(0,0,0);
   a3Loft(B,{ax:'x',r:[[.01,.004,.05],[.08,.014,.075,0,.01],[.16,.012,.07,-.005,-.01],[.22,.008,.05,-.01,0],[.24,.002,.02,-.01,0]],n:8,uv:[0,0,64,64],at:64,w:W});return a3Geo(B,false)}
 
 /* ---------- textures (generated once per team / uniform) ---------- */
-function a3Cv(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;return [c,c.getContext('2d')]}
+function a3Cv(w,h,k){k=k||1;const c=document.createElement('canvas');c.width=w*k;c.height=h*k;const g=c.getContext('2d');if(k!==1)g.setTransform(k,0,0,k,0,0);return [c,g]}   // k: atlas scale (drawn in 1× units)
 function a3Grain(g,r,a,n){const [x,y,w,h]=r;for(let i=0;i<n;i++){g.fillStyle=(i&1)?`rgba(0,0,0,${a})`:`rgba(255,255,255,${a})`;g.fillRect(x+Math.random()*w,y+Math.random()*h,1,1)}}
-function a3Tex(cv){const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=4;A3.res.add(t);return t}
+function a3Tex(cv){const t=new THREE.CanvasTexture(cv);t.colorSpace=THREE.SRGBColorSpace;t.anisotropy=A3.an||4;A3.res.add(t);return t}
 const a3Fill=(g,c,r)=>{g.fillStyle=c;g.fillRect(r[0],r[1],r[2],r[3])};
 function a3Skin(g){for(let i=0;i<4;i++){const t=athHex((typeof TONES!=='undefined'&&TONES[i])||'#A8693A'),a=[i*128,320,64,64],f=a3SKF(i),dk=shade(t,-.3);
   const gr=g.createLinearGradient(0,320,0,384);gr.addColorStop(0,shade(t,.06));gr.addColorStop(1,shade(t,-.08));g.fillStyle=gr;g.fillRect(a[0],a[1],a[2],a[3]);a3Grain(g,a,.05,260);
@@ -199,7 +212,7 @@ function a3Skin(g){for(let i=0;i<4;i++){const t=athHex((typeof TONES!=='undefine
   g.fillStyle='rgba(10,8,6,.85)';for(const u of [.425,.575]){g.fillRect(X(u)-4,Y(.5),8,2.2)}/* eye black */
   g.fillStyle=shade(t,-.42);g.fillRect(X(.455),Y(.715),X(.545)-X(.455),1.4);g.fillStyle=shade(t,-.16);g.fillRect(X(.465),Y(.735),X(.535)-X(.465),1.4)}}
 function a3TeamTex(team,U){
-  const [cv,g]=a3Cv(512,512),RG=A3_RG,J=athHex(U.j),N=athHex(U.n),Pn=athHex(U.p),PC=athHex(U.pc),K=athHex(U.k),SC=athHex(U.sc||U.n),jl=lum(J);
+  const tk=a3TK(),[cv,g]=a3Cv(512,512,tk),RG=A3_RG,J=athHex(U.j),N=athHex(U.n),Pn=athHex(U.p),PC=athHex(U.pc),K=athHex(U.k),SC=athHex(U.sc||U.n),jl=lum(J);
   const trim=contrasty(SC,J)?SC:contrasty(N,J)?N:inkOn(J),gl=athHex(jl>.8?team.c1:contrasty(N,J)?N:inkOn(J)),tape=lum(K)<.45?'#f1f1ee':'#1c1d21';
   /* jersey: side panels, V-neck collar, fabric mesh */
   const R=RG.JER;a3Fill(g,J,R);g.fillStyle=shade(J,jl>.7?-.07:-.13);for(const u of [.25,.75])g.fillRect(R[0]+(u-.055)*256,R[1]+30,.11*256,R[3]-30);
@@ -220,13 +233,13 @@ function a3TeamTex(team,U){
   const Gv=RG.GLV;a3Fill(g,gl,Gv);g.fillStyle='rgba(255,255,255,.18)';g.fillRect(Gv[0],Gv[1]+52,128,12);
   a3Skin(g);
   /* digits (transparent background) */
-  const [dc,dg]=a3Cv(512,128),ol=U.no||(lum(N)>.55?shade(J,-.45):'rgba(255,255,255,.75)');dg.textAlign='center';dg.textBaseline='middle';dg.lineJoin='round';
+  const [dc,dg]=a3Cv(512,128,tk),ol=U.no||(lum(N)>.55?shade(J,-.45):'rgba(255,255,255,.75)');dg.textAlign='center';dg.textBaseline='middle';dg.lineJoin='round';
   for(let i=0;i<10;i++){dg.save();dg.translate(i*51+25.5,66);dg.scale(.62,1);dg.font='900 118px "Futura-CondensedExtraBold","Arial Black","Helvetica Neue",Arial,sans-serif';
     dg.lineWidth=12;dg.strokeStyle=ol;dg.strokeText(String(i),0,0);dg.fillStyle=N;dg.fillText(String(i),0,0);dg.restore()}
   /* helmet: shell + stripes + side decals, facemask, visor, chin strap */
-  const [hc,hg]=a3Cv(256,256),Hh=athHex(U.h),hs=U.hs|0,hcol=athHex(U.hc||'#ffffff');a3Fill(hg,Hh,RG.SHL);
+  const [hc,hg]=a3Cv(256,256,tk),Hh=athHex(U.h),hs=U.hs|0,hcol=athHex(U.hc||'#ffffff');a3Fill(hg,Hh,RG.SHL);
   if(hs){const w=hs===1?12:hs===2?6:5,us=hs===1?[.5]:hs===2?[.47,.53]:[.455,.5,.545];hg.fillStyle=hcol;for(const u of us)hg.fillRect(u*256-w/2,0,w,192);if(hs===1){hg.fillStyle=shade(hcol,-.35);hg.fillRect(128-8,0,2,192);hg.fillRect(128+6,0,2,192)}}
-  const dk=U.d||'L';if(dk!=='X'){const dcol=athHex(U.dc||hcol);let bd=null;if(dk==='M'&&typeof bdgCanvas==='function'){try{bd=bdgCanvas(team,64,true)}catch(e){bd=null}}
+  const dk=U.d||'L';if(dk!=='X'){const dcol=athHex(U.dc||hcol);let bd=null;if(dk==='M'&&typeof bdgCanvas==='function'){try{bd=bdgCanvas(team,64*tk,true)}catch(e){bd=null}}
     for(const side of [1,-1]){hg.save();hg.translate((side>0?.2:.8)*256,.47*192);hg.rotate(side*Math.PI/2);
       if(bd)hg.drawImage(bd,-24,-27,48,54);
       else{hg.fillStyle=dcol;hg.strokeStyle=shade(Hh,-.45);hg.lineWidth=4;hg.lineJoin='round';
@@ -241,16 +254,17 @@ function a3TeamTex(team,U){
 function a3Rough(){if(A3.rough)return A3.rough;const [cv,g]=a3Cv(128,128),RG=A3_RG,q=r=>[r[0]/4,r[1]/4,r[2]/4,r[3]/4];g.fillStyle='rgb(200,200,200)';g.fillRect(0,0,128,128);
   for(const r of [RG.SHO,RG.PAN])a3Fill(g,'rgb(140,140,140)',q(r));a3Fill(g,'rgb(170,170,170)',q(RG.CLT));a3Fill(g,'rgb(160,160,160)',q(RG.GLV));
   for(let i=0;i<4;i++){a3Fill(g,'rgb(118,118,118)',q(a3SKA(i)));a3Fill(g,'rgb(112,112,112)',q(a3SKF(i)))}
-  const t=new THREE.CanvasTexture(cv);A3.rough=t;A3.res.add(t);return t}
+  const t=new THREE.CanvasTexture(cv);t.anisotropy=A3.an||4;A3.rough=t;A3.res.add(t);return t}
 function a3Team(team){
   const U=uniColorsC(team);let e=A3.teams.get(team);if(e&&e.U===U)return e;if(e)for(const k of ['mb','mn','mh'])e[k].dispose();
-  const T=a3TeamTex(team,U),hf=U.hf||'g';
-  e={U,mb:new THREE.MeshStandardMaterial({map:T.body,roughness:.74,metalness:0}),
-    mn:new THREE.MeshStandardMaterial({map:T.dig,alphaTest:.5,roughness:.6,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2}),
-    mh:new THREE.MeshPhysicalMaterial({map:T.helm,roughness:hf==='m'?.52:hf==='c'?.18:.26,metalness:hf==='c'?.75:.04,clearcoat:hf==='m'?0:1,clearcoatRoughness:.05,side:THREE.DoubleSide,envMap:typeof g3EnvTex==='function'?g3EnvTex():null,envMapIntensity:hf==='m'?.5:1.1})};
+  const T=a3TeamTex(team,U),hf=U.hf||'g',hi=A3.det>=2;
+  /* detail 2: a soft cloth sheen on jersey mesh and pants (skin keeps its own roughness from the atlas), crisper helmet clearcoat */
+  e={U,mb:hi?new THREE.MeshPhysicalMaterial({map:T.body,roughness:.74,metalness:0,sheen:.3,sheenRoughness:.6,sheenColor:new THREE.Color(.75,.75,.75)}):new THREE.MeshStandardMaterial({map:T.body,roughness:.74,metalness:0}),
+    mn:new THREE.MeshStandardMaterial({map:T.dig,alphaTest:.5,alphaToCoverage:A3.aa,roughness:.6,metalness:0,polygonOffset:true,polygonOffsetFactor:-1,polygonOffsetUnits:-2}),
+    mh:new THREE.MeshPhysicalMaterial({map:T.helm,roughness:hf==='m'?.52:hf==='c'?.18:.26,metalness:hf==='c'?.75:.04,clearcoat:hf==='m'?0:1,clearcoatRoughness:hi?.03:.05,side:THREE.DoubleSide,envMap:typeof g3EnvTex==='function'?g3EnvTex():null,envMapIntensity:(hf==='m'?.5:1.1)*(hi?1.12:1)})};
   e.mb.roughnessMap=a3Rough();e.mb.roughness=1;
   for(const k of ['mb','mn','mh'])A3.res.add(e[k]);A3.teams.set(team,e);return e}
-function a3RefMat(){if(A3.ref)return A3.ref;const [cv,g]=a3Cv(512,512),RG=A3_RG;
+function a3RefMat(){if(A3.ref)return A3.ref;const [cv,g]=a3Cv(512,512,a3TK()),RG=A3_RG;
   const stripe=(r,w)=>{a3Fill(g,'#f4f4f2',r);g.fillStyle='#121214';for(let x=0;x<r[2];x+=w*2)g.fillRect(r[0]+x,r[1],w,r[3])};
   stripe(RG.JER,8);g.fillStyle='#121214';g.fillRect(0,0,256,10);stripe(RG.SLV,8);g.fillStyle='#121214';g.fillRect(256,56,128,8);
   a3Fill(g,'#141416',RG.SHO);g.fillStyle='#050506';g.fillRect(256,64,256,14);a3Fill(g,'#18181b',RG.PAN);a3Grain(g,RG.PAN,.04,500);a3Fill(g,'#0d0d0f',RG.CLT);a3Fill(g,'#f6f6f4',RG.HTW);a3Fill(g,'#141416',RG.HTB);

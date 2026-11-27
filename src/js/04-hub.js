@@ -517,6 +517,9 @@ function hubLeague(){
    SETTINGS_EXTRA.push({card:'Rosters & data',button:'Import rosters (JSON)',id:'impRosters',note:'optional help text',onClick:()=>openRosterImport(LG)})
    Entries render in the order pushed, in the Settings section their card maps to (SET_CARD); `when` hides an entry. */
 const SETTINGS_EXTRA=[];
+/* 3D picture quality (08v-quality applies it live) */
+SETTINGS_EXTRA.push({card:'Graphics',key:'gq3d',label:'Quality',opts:[['auto','Auto'],['perf','Performance'],['bal','Balanced'],['ultra','Ultra']],def:'auto',when:()=>G2D!=='nogl',
+  note:'Auto picks for this phone and steps down to stay smooth. Ultra: full Retina resolution, sharper shadows, bloom and ambient occlusion.',after:()=>{if(typeof g3qSet==='function')g3qSet()}});
 function bindSettingsExtra(seg){
   for(const e of SETTINGS_EXTRA){
     if(e.button){on('sx-'+e.id,()=>{try{e.onClick()}catch(err){console.error(err);toast('Something went wrong')}});continue}
