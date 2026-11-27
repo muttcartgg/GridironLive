@@ -36,7 +36,7 @@ function frame(now){
     /* camera cut (08 camCut): a short dip from dark so the new shot reads as a cut, not a jump */
     if(S.cutA>0){ctx.setTransform(DPR,0,0,DPR,0,0);ctx.fillStyle=`rgba(5,8,13,${(.5*S.cutA*S.cutA).toFixed(3)})`;ctx.fillRect(0,0,W,H);S.cutA=Math.max(0,S.cutA-real*4.5)}
     hudAcc+=real;if(hudAcc>.1){hudAcc=0;hud();apBarTick()}
-  }else if(S.phase==='over'&&S.stormT>0){S.stormT-=real;updateParticles(real);draw(now)}
+  }else if(S.phase==='over'&&(S.stormT>0||typeof G3!=='undefined'&&G3.est)){if(S.stormT>0)S.stormT-=real;updateParticles(real);draw(now)}   // 08t: the final beauty shot keeps drawing
   requestAnimationFrame(frame);
 }
 addEventListener('pagehide',()=>flushSave());

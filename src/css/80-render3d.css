@@ -9,3 +9,5 @@
 :root[data-render="3d"] #app:has(#kick:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0px) + 98px)}
 @media (max-height:480px){:root[data-render="3d"] #app:has(#kick:not([hidden])) #hint{bottom:calc(env(safe-area-inset-bottom,0px) + 86px)}}
 :root[data-render="3d"] #kickHead{text-shadow:0 1px 3px rgba(0,0,0,.8)}
+/* the stadium flyover / beauty shot (08t-view g3Establish): the score bug and the toast step aside for the lower third */
+:root[data-est] #sb,:root[data-est] #toast,:root[data-est] #ticker{opacity:0!important;visibility:hidden!important;transition:opacity .25s}

@@ -164,6 +164,7 @@ function g3Damp(o,k,tgt,st,dt){const v=k+'v',w=2/st,x=w*dt,e=1/(1+x+.48*x*x+.235
 function g3Rig(tx,tz,wid,pitch,dist,lift){const a=G3.w/Math.max(1,G3.h),p=pitch*Math.PI/180,c=G3.cam;c.position.set(tx,dist*Math.sin(p),tz+dist*Math.cos(p));c.lookAt(tx,lift||0,tz);
   const hf=2*Math.atan(wid/2/dist);c.fov=clamp(2*Math.atan(Math.tan(hf/2)/a)*180/Math.PI,5,75);c.aspect=a;c.updateProjectionMatrix()}
 function g3CamMode(){
+  if(G3.est)return 'est';
   if(S.phase==='kick'&&(kick||G3.mode==='kick'))return 'kick';
   if(S.phase==='replay')return 'cine';
   if(S.phase==='dead'&&S.celebrate)return 'cine';
@@ -185,9 +186,10 @@ function g3Photo(cs,P){const p=G3.pho||(G3.pho={cx:cam.x,cy:cam.y,z:cam.z||1,w:c
   p.x=clamp(p.x,-20,140);p.tz=clamp(p.tz,-12,FW+10);cs.x=p.x;cs.z=p.tz;cs.w=clamp(p.w/Math.max(.3,(cam.z||1)/p.z),6,120);cs.xv=cs.zv=cs.wv=0}
 function g3Camera(dt){
   const port=G3.h>G3.w*1.2,mode=g3CamMode(),cs=G3.cs;let cut=false;
-  if(mode!==G3.mode){if(G3.mode&&(mode==='cine'||G3.mode==='cine'||mode==='kick'||G3.mode==='kick'))S.cutA=Math.max(S.cutA||0,.8);cut=true;G3.mode=mode;cs.t0=G3.t}
+  if(mode!==G3.mode){if(G3.mode&&(mode==='cine'||G3.mode==='cine'||mode==='kick'||G3.mode==='kick'||G3.mode==='est'))S.cutA=Math.max(S.cutA||0,.8);cut=true;G3.mode=mode;cs.t0=G3.t}
   if((S.cutN||0)!==G3.cutN){G3.cutN=S.cutN||0;cut=true;cs.t0=G3.t}
   if(!S.photo)G3.pho=null;
+  if(mode==='est'&&!S.photo&&g3EstCam())return;
   if(mode==='kick'&&!S.photo){const [x0,y0]=g3KickSpot(),c=G3.cam,k=kick||G3.lastKick,fl=!k||k.stage==='flight'?Math.min(1,k?k.flight:1):0;c.position.set(x0-13.5,5.6+fl*1.5,y0+(CEN-y0)*.25);
     const lx=lerp(120,Math.max(ball.x,x0+20),fl*.25),ly=lerp(2.4,Math.min(9,ball.z||4),fl*.35);c.lookAt(lx,ly,CEN+(y0-CEN)*.15);c.fov=port?50:28;c.aspect=G3.w/G3.h;c.updateProjectionMatrix();cs.x=x0+20;cs.z=CEN;return}
   /* replays ride the ball low and close; a touchdown pushes in on the scorer and drifts round him */
@@ -300,7 +302,7 @@ function draw3D(now){
   if(G3.fr%30===1){const sb=$('#sb'),bb=document.documentElement.dataset.bug==='bottom';let t=Math.max(14,SAFE.t||0)+6,bt=0;
     if(sb&&!sb.hidden){const r=sb.getBoundingClientRect();if(r.height>0){if(bb)bt=(H||innerHeight)-r.top+4;else t=Math.max(t,r.bottom+4)}}G3.bugY=t;G3.bugB=bt}
   const dt=Math.min(.1,Math.max(0,(now-(G3.last||now))/1000));G3.last=now;G3.t+=dt;
-  g3Size();const rb=G3.key;g3EnsureEnv();const rebuilt=rb!==G3.key;if(rebuilt&&typeof g3qEnv==='function')g3qEnv(G3.env);g3Camera(dt);g3Light();g3Crowd(dt,now);g3Board(now);g3Weather(dt);g3KickBall();g3Overlays(now);
+  g3Size();const rb=G3.key;g3EnsureEnv();const rebuilt=rb!==G3.key;if(rebuilt&&typeof g3qEnv==='function')g3qEnv(G3.env);g3Camera(dt);if(typeof s3Frame==='function')s3Frame(G3.env);g3Light();g3Crowd(dt,now);g3Board(now);g3Weather(dt);g3KickBall();g3Overlays(now);
   if(typeof ath3dFrame==='function'){if(G3.ph)g3DropPlaceholders();try{ath3dFrame(G3.actors,now,dt)}catch(e){if(!G3.athErr){G3.athErr=1;console.warn('ath3dFrame',e)}}}else g3Placeholders();
   const tj=performance.now();if(!rebuilt)G3.js=G3.js?G3.js*.9+(tj-t0)*.1:tj-t0;
   g3Chains();
@@ -327,7 +329,44 @@ function g3Overlay2D(c,now){
     if(!gr){gr=c.createRadialGradient(W/2,H*.55,Math.min(W,H)*.35,W/2,H*.55,Math.hypot(W,H)*.62);gr.addColorStop(0,'rgba(0,0,8,0)');gr.addColorStop(.55,G3.env.stage==='night'?'rgba(0,2,12,.12)':'rgba(30,10,0,.05)');gr.addColorStop(1,G3.env.stage==='night'?'rgba(0,2,12,.8)':'rgba(30,10,0,.3)');G3.vig={w:W,h:H,st:G3.env.stage,g:gr}}
     c.fillStyle=gr;c.fillRect(0,0,W,H)}
   if(S.ts<.9){const a=(1-S.ts)*.9,bh=H*.07;c.fillStyle=`rgba(0,0,0,${a})`;c.fillRect(0,0,W,bh);c.fillRect(0,H-bh,W,bh)}
+  if(G3.est&&G3.est.t0&&G3.est.kind!=='final'){const e=G3.est,p=(performance.now()-e.t0)/e.dur,a=clamp(Math.min((p-.06)/.14,(1-p)/.1),0,1);if(a>0)g3Lower3(c,e,a)}
 }
+/* ---------- the establishing shot (before the opening kickoff) and the beauty shot (halftime, the final whistle) ----------
+   an aerial orbit round the stadium (08t-stadium3d's extents; the generic bowl's otherwise) with a lower third: the venue,
+   its city, capacity and year opened. Tap anywhere to skip. Settings › Broadcast › Stadium flyover turns it off; it never
+   runs while simming or in the 2D fallback. g3Establish(kind, cb): cb runs when the shot ends (at once when it is off). */
+function g3EstOn(){return !!(G3.ok!==false&&typeof THREE!=='undefined'&&!window.__QA2D__&&is3D()&&LG&&LG.settings&&LG.settings.estShot!==false&&!S.ff&&!document.hidden)}
+function g3Establish(kind,cb){if(G3.est)G3.est.end();
+  if(!g3EstOn()){if(cb)cb();return false}
+  const e={kind,cb,t0:0,dur:kind==='open'?3800:2700,a:Math.random(),done:false};
+  e.end=()=>{if(e.done)return;e.done=true;clearTimeout(e.to);if(G3.est===e)G3.est=null;delete document.documentElement.dataset.est;if(e.cb)try{e.cb()}catch(err){console.error(err)}};
+  /* the main loop (09) only draws in game phases: with the pregame show off, kickoff comes straight from the hub */
+  if(kind==='open'&&(S.phase==='hub'||S.phase==='boot'))S.phase='wait';
+  e.to=setTimeout(e.end,e.dur+6000);G3.est=e;document.documentElement.dataset.est=kind;return true}
+addEventListener('pointerdown',ev=>{const e=G3.est;if(e&&e.t0&&performance.now()-e.t0>150){ev.stopPropagation();ev.preventDefault();e.end()}},true);
+function g3EstCam(){const e=G3.est,now=performance.now();if(!e)return false;
+  /* the first frame may carry the stadium build and the shader compile: it holds the opening pose and the clock starts on
+     the next one; a stalled frame (over 100 ms) does not eat into the shot */
+  if(!e.t0&&!e.f)e.f=1;else if(!e.t0){e.t0=now;e.last=now;clearTimeout(e.to);e.to=setTimeout(e.end,e.dur+1500)}else{const gap=now-(e.last||now);if(gap>100)e.t0+=gap-16;e.last=now}
+  const p=e.t0?clamp((now-e.t0)/e.dur,0,1):0;if(p>=1){e.end();return false}
+  const st=G3.env&&G3.env.std3,X=st?st.ext:{x:118,z:88,h:86},R=Math.max(X.x,X.z*1.3)*1.25+38,port=G3.h>G3.w*1.2,c=G3.cam,q=p*p*(3-2*p),PI=Math.PI;
+  /* the sweep keeps clear of the light towers (they would stand between the camera and the field) */
+  if(e.c==null){const tw=st?st.towers:[[-53,-53],[173,-53],[-53,FW+53],[173,FW+53]],az=tw.map(([x,z])=>Math.atan2(z-CEN,x-60)),hw=e.kind==='open'?.6:.3;let best=PI/2,bs=-1;
+    for(const c of [PI/2+.3,PI/2-.3,PI/2,PI/2+.8,PI/2-.8,PI/2+1.2,PI/2-1.2]){let m=9;for(const t of az){let d=Math.abs(Math.atan2(Math.sin(t-c),Math.cos(t-c)))-hw;m=Math.min(m,d)}if(m>.22){best=c;bs=m;break}if(m>bs){bs=m;best=c}}e.c=best}
+  let a,rr,hh;if(e.kind==='open'){a=e.c+.6-q*1.2;rr=R*(1.16-.2*q);hh=Math.max(R*(.5-.12*q),X.h*1.3+24)}else{a=e.c-.3+q*.6;rr=R*1.08;hh=Math.max(R*.66,X.h*1.5+30)}
+  if(port){rr*=1.25;hh*=1.15}
+  c.position.set(60+Math.cos(a)*rr,hh,CEN+Math.sin(a)*rr);c.lookAt(60,X.h*.12,CEN);c.fov=port?62:36;c.aspect=G3.w/Math.max(1,G3.h);c.updateProjectionMatrix();G3.cs.x=60;G3.cs.z=CEN;return true}
+function g3Lower3(c,e,a){const h=hostT(),sd=typeof stdOf==='function'&&!S.neutral?stdOf(h):null,vn=(typeof t3Venue==='function'?t3Venue():'')||'';if(!vn)return;
+  const port=H>W*1.2,s=port?.9:1,x0=(SAFE.l||0)+(port?14:22)-(1-a)*26,yb=H-Math.max(SAFE.b||0,10)-(port?96:22);
+  const site=S.neutral&&S.game&&S.game.site?String(S.game.site).split(',').slice(1).join(',').trim():'';
+  const bits=[sd&&sd.ct?sd.ct:site,!S.neutral&&h.cap?'Capacity '+h.cap.toLocaleString():'',sd&&sd.op?'Opened '+sd.op:''].filter(Boolean);
+  const tag=e.kind==='open'?'LIVE FROM':e.kind==='half'?'HALFTIME FROM':'FINAL FROM',name=vn.toUpperCase(),sub=bits.join('  ·  ');
+  c.save();c.globalAlpha=a;c.textBaseline='alphabetic';c.font=`400 ${Math.round(34*s)}px "League Gothic",${FFONT}`;const nw=c.measureText(name).width;c.font=`600 ${Math.round(12*s)}px "Libre Franklin",${FFONT}`;const sw=c.measureText(sub).width;
+  const w=Math.min(W-x0-12,Math.max(nw,sw,120)+34),ht=Math.round(70*s);
+  c.fillStyle='rgba(8,10,14,.8)';c.fillRect(x0,yb-ht,w,ht);c.fillStyle=h.c1;c.fillRect(x0,yb-ht,5,ht);c.fillStyle=h.c2&&contrasty(h.c1,h.c2)?h.c2:'#F4F2EA';c.fillRect(x0+5,yb-ht,2,ht);
+  c.fillStyle='#FFD23F';c.font=`700 ${Math.round(10*s)}px "Libre Franklin",${FFONT}`;c.fillText(tag,x0+18,yb-ht+16*s);
+  c.fillStyle='#F4F2EA';c.font=`400 ${Math.round(34*s)}px "League Gothic",${FFONT}`;c.fillText(name,x0+18,yb-ht+47*s,w-28);
+  c.fillStyle='rgba(235,238,244,.82)';c.font=`600 ${Math.round(12*s)}px "Libre Franklin",${FFONT}`;c.fillText(sub,x0+18,yb-10*s,w-28);c.restore()}
 /* adaptive quality: 08v's ladder (render scale first, then the expensive passes; see 08v-quality). Without 08v, the
    real frame interval (smoothed) steps the pixel ratio down when frames run long and back up with steady headroom;
    never above the device ratio (cap 2), never below 1. Pauses and tab switches are ignored. */
@@ -337,7 +376,7 @@ function g3Adapt(t0,skip){if(typeof g3qAdapt==='function')return g3qAdapt(t0,ski
   const lo=Math.min(1,A.hi);let nx=A.px;if(A.t>1500&&A.ema>22&&A.px>lo)nx=Math.max(lo,A.px-.25);else if(A.t>4000&&A.ema<13.5&&A.px<A.hi)nx=Math.min(A.hi,A.px+.25);
   if(nx!==A.px){A.px=nx;A.t=0;G3.R.setPixelRatio(nx);G3.R.setSize(G3.w,G3.h,true)}else if(A.t>4000)A.t=0}
 /* frame-cost readout for QA / Settings: CPU ms per frame (smoothed), draw calls and triangles of the last frame */
-function g3Stats(){const i=G3.R?G3.R.info.render:{calls:0,triangles:0};return Object.assign({cpu:+(G3.cpu||0).toFixed(2),js:+(G3.js||0).toFixed(2),calls:i.calls,tris:i.triangles,crowd:G3.env&&G3.env.crowd?G3.env.crowd.userData.count:0,px:G3.R?G3.R.getPixelRatio():0},
+function g3Stats(){const i=G3.R?G3.R.info.render:{calls:0,triangles:0};return Object.assign({cpu:+(G3.cpu||0).toFixed(2),js:+(G3.js||0).toFixed(2),calls:i.calls,tris:i.triangles,crowd:G3.env&&G3.env.crowd?G3.env.crowd.userData.count:0,px:G3.R?G3.R.getPixelRatio():0,std:typeof s3Info==='function'?s3Info():null},
   typeof g3qStats==='function'?g3qStats():{})}
 
 /* stadium reflection for glossy helmets, one per light stage: sky, the ring of stands, the turf and the light banks
