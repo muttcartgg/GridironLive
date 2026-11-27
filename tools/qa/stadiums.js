@@ -32,10 +32,23 @@ const rep=await p.evaluate(()=>{const fbs=LG.teams.filter(t=>t.div==='FBS');retu
   newDynasty:(()=>{const L=genNCAALeague();packAutoApply(L);return L.teams.filter(t=>t.std).length})(),
   savesStd:(()=>{const u=JSON.parse(JSON.stringify(LG.teams.find(t=>t.abbr==='MICH')));return !!u.std})(),
   sample:['MICH','UW','SYR','UTAH','KENN','UGA','BOIS','CLEM','TENN','OSU'].map(a=>{const t=LG.teams.find(x=>x.abbr===a);return `${a} ${t.stadium} (${t.cap}) ${JSON.stringify(t.std)}`})}});
+/* v:3 models (schema v3 "model"): kept in KV, never in the save (t.std v:3 + mk/mh); a v:2 save upgrades when it loads; the 3D build reads it */
+const v3=await p.evaluate(()=>{const list=stdLoadSaved()||[],e0=list.find(x=>x.team==='MICH');if(!e0)return {err:'no saved MICH entry'};const e=JSON.parse(JSON.stringify(e0));
+  e.model={v:3,axis:'NS',pressSide:'W',plan:'oval',stands:{W:{type:'stand',tiers:[{rows:90,rake:.4}],suites:[{afterTier:1,levels:3}],pressBox:true},E:{type:'stand',tiers:[{rows:88,rake:.4}],suites:[{afterTier:1,levels:2}]},
+    N:{type:'stand',tiers:[{rows:85,rake:.4}],board:{w:30,h:15}},S:{type:'stand',tiers:[{rows:85,rake:.4}],board:{w:30,h:15}}},corners:{NE:'full',NW:'full',SE:'full',SW:'full'},ribbons:0,lights:'rim',
+    exterior:{style:'berm',color:'#7a4a36',trim:'#d9cfb8'},seats:{colors:['#1f3a63'],pattern:'solid'},field:{surface:'turf',endzones:'name',ezColor:'#00274c'},surround:['campus','trees','parking'],landmarks:[],notes:'QA'};
+  const t=LG.teams.find(x=>x.abbr==='MICH'),old=JSON.parse(JSON.stringify(t.std));applyStadiums(LG,[e]);const sd=t.std,kv=KV.get('gl.s3.'+sd.mk)||'';
+  t.std=old;const up=stdRefresh(LG),after=t.std.v;
+  return {v:sd.v,mk:sd.mk,kv:kv.length,notes:kv.includes('QA'),size:JSON.stringify(sd).length,up,after}});
+console.log('V3',JSON.stringify(v3));if(v3.err||v3.v!==3||!v3.kv||v3.notes||v3.size>400||v3.after!==3)errs.push('v3 model import '+JSON.stringify(v3));
 /* to a presnap snap in the user's game */
 await p.evaluate(()=>showHub('home'));await p.waitForTimeout(200);await Q.toUserGame(p);const kb=await p.$('#kickoff');if(kb)await kb.click();await p.waitForTimeout(1200);
 if(await toCall(p)!=='call')throw new Error('no play call');
 await p.evaluate(()=>pickPlay(PLAYBOOK.find(x=>x.cat==='pass'&&!x.hail)||PLAYBOOK[0]));await p.waitForTimeout(600);
+/* the 3D build of that v:3 model (in a game, so the venue and the teams are set) */
+const v3b=await p.evaluate(()=>{const t=LG.teams.find(x=>x.abbr==='MICH');try{const n=s3Design(t,{neutral:false}),o={host:t,away:LG.teams.find(x=>x!==t),night:false,dusk:false,neutral:false},st=s3Build(n,o,{rib:null,board:null});
+  const r=n.m?`v3 ${st.P.seats} seats for ${t.cap}, ${st.fans} fans, ${st.pcs.join(' ')}`:'no model';s3Free(st);return r}catch(err){return 'ERR '+err.message}});
+console.log('V3 build',v3b);if(!/^v3 /.test(v3b))errs.push('v3 build '+v3b);
 /* QA camera: freeze the spring and frame the far stands (top of the allowed view) at a given yard line */
 const PINF=()=>{window.__pin=null;const orig=camDamp;camDamp=function(k,t,st,dt){if(window.__pin&&k in window.__pin){cam[k]=window.__pin[k];cam[k+'v']=0;return}return orig(k,t,st,dt)};
   window.pinCam=(x,z,wide)=>{cam.z=z;const s=sc*z*zoomMul(),vh=(H-topY)/(s*VY),y=wide?-6-(H*.6-midY())/(s*VY):-11+vh/2;window.__pin={x,y,z};cam.x=x;cam.y=y}};

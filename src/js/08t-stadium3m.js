@@ -33,7 +33,8 @@ function s3NormM(m){if(!m||typeof m!=='object')return null;
   const ex=m.exterior||{},se=m.seats||{},fe=m.field||{},arr=(x,ok)=>Array.isArray(x)?[...new Set(x.filter(v=>ok.includes(v)))]:[];
   const roof=['open','canopy','dome','retractable'].includes(m.roof)?m.roof:'open';
   if(roof==='canopy'&&!Object.values(sd).some(s=>s.canopy))for(const k of ['F','N'])if(sd[k].type==='stand')sd[k].canopy=true;
-  return {ps,map,sd,cor,plan:['oval','rect','rounded'].includes(m.plan)?m.plan:'rounded',rib:num(m.ribbons,1,0,2)|0,
+  const st4=['F','N','L','R'].filter(k=>sd[k].type==='stand'),sunk=st4.length===4&&st4.every(k=>sd[k].T.length===1)&&Math.max(...st4.map(k=>sd[k].T[0].rows))>=85&&Object.values(cor).every(v=>v==='full');
+  return {ps,map,sd,cor,berm:ex.style==='berm'?.14:sunk?.4:0,plan:['oval','rect','rounded'].includes(m.plan)?m.plan:'rounded',rib:num(m.ribbons,1,0,2)|0,
     lights:['towers','rim','canopy','poles','dome'].includes(m.lights)?m.lights:'',roof,
     ext:{st:S3FAC.includes(ex.style)?ex.style:'concrete',c:col(ex.color,'#a4a7ab'),t:col(ex.trim,'#e6e4de')},
     seats:{c:(Array.isArray(se.colors)?se.colors:[]).filter(c=>typeof c==='string'&&hx.test(c)).slice(0,4),p:['solid','stripes','sections','checker','letters'].includes(se.pattern)?se.pattern:'solid',
@@ -43,19 +44,20 @@ function s3NormM(m){if(!m||typeof m!=='object')return null;
 /* v:2 end codes for the code paths shared with v:2 (students, pyro, the tower) */
 function s3Code3(s){if(s.type==='hill')return 'B';if(s.type==='building')return 'X';if(s.type!=='stand')return 'O';const r=s.T.reduce((a,t)=>a+t.rows,0);return r>=45?'L':r>=20?'M':'S'}
 /* ---------- the section of one side: v:2's 16 points from the real tiers (lo: the first tier only) ---------- */
-function s3Prof3(s,f,lo,berm){const T=s.T,P=[[0,0],[0,2.2],[1.2,2.2]];let d=1.2,h=2.2;const R=[0,0,0],nt=lo?Math.min(1,T.length):T.length;
+function s3Prof3(s,f,lo,berm){/* berm: 0, or the share of the height that stays a wall above the earth */const T=s.T,P=[[0,0],[0,2.2],[1.2,2.2]];let d=1.2,h=2.2;const R=[0,0,0],nt=lo?Math.min(1,T.length):T.length;
   for(let k=0;k<3;k++){const t=k<nt?T[k]:null,nr=t?t.rows*f:0;
     if(k>0){if(nr>0){const su=s.su[k],gH=su?Math.max(t.gap>0?t.gap:0,su*4.2):t.gap>=0?Math.max(1,t.gap):2.6,oh=Math.min(t.oh,R[k-1]*S3RD*.7);
         P.push([d,h+gH],[d-oh,h+gH]);d-=oh;h+=gH;P.push([d,h+1.2]);h+=1.2}else P.push([d,h],[d,h],[d,h])}
     if(nr>0){d+=nr*S3RD;h+=nr*S3RD*t.rake}P.push([d,h]);R[k]=nr}
   const top=lo?0:s.su[nt]||0,bh=top?top*4.2:2.4;P.push([d,h+bh]);h+=bh;P.push([d+1.6,h]);d+=1.6;
-  if(berm){P.push([d+h*.7,h*.45]);P.push([d+h*1.45,0]);d+=h*1.45}else{P.push([d,h*.42]);P.push([d,0])}
+  /* a berm: a short wall in the facade under the rim, then the earth slopes down to the ground */
+  if(berm){const hw=h*(1-berm);P.push([d+.5,hw]);P.push([d+.5+hw*1.1,0]);d+=.5+hw*1.1}else{P.push([d,h*.42]);P.push([d,0])}
   return {P,R,D:d,H:h}}
-function s3Segs3(s,cl,M,lo){const g=k=>s.su[k]?['glass',null,S3IN]:['st',cl.band,S3IN],rb=i=>M.rib>=i?['rib',null,S3IN]:['st',cl.fas,S3IN],berm=M.ext.st==='berm';
-  const top=!lo&&s.su[s.T.length]?['glass',null,S3IN]:['st',cl.dark,S3IN],fa=berm?['st',cl.berm,[-1,1]]:['fac',null,S3OUT];
-  return [['rib',null,S3IN],['st',cl.conc,S3UP],['seat',0,S3IU],g(1),['st',cl.under,S3DN],rb(1),['seat',1,S3IU],g(2),['st',cl.under,S3DN],rb(2),['seat',2,S3IU],top,['st',cl.trim,S3UP],fa,berm?['st',cl.berm2,[-1,1]]:fa]}
+function s3Segs3(s,cl,M,lo){const g=k=>s.su[k]?['glass',null,S3IN]:['st',cl.band,S3IN],rb=i=>M.rib>=i?['rib',null,S3IN]:['st',cl.fas,S3IN],berm=M.berm>0;
+  const top=!lo&&s.su[s.T.length]?['glass',null,S3IN]:['st',cl.dark,S3IN],fa=['fac',null,S3OUT];
+  return [['rib',null,S3IN],['st',cl.conc,S3UP],['seat',0,S3IU],g(1),['st',cl.under,S3DN],rb(1),['seat',1,S3IU],g(2),['st',cl.under,S3DN],rb(2),['seat',2,S3IU],top,['st',cl.trim,S3UP],fa,berm?['st',cl.berm,[-1,1]]:fa]}
 /* ---------- the plan ---------- */
-function s3Plan3(n){const M=n.m,S=M.sd,cap=n.cap,cz=CEN,stand=k=>S[k].type==='stand',trk=M.track,berm=M.ext.st==='berm';
+function s3Plan3(n){const M=n.m,S=M.sd,cap=n.cap,cz=CEN,stand=k=>S[k].type==='stand',trk=M.track,berm=M.berm;
   let hz=CEN+(cap<25000?10.5:cap<50000?12:13.5);const e0=k=>S[k].type==='open'?14:S[k].type==='plaza'?12:S[k].type==='hill'?11:cap<25000?9:10.5;
   let xL=60+e0('L'),xR=60+e0('R');if(trk){hz=Math.max(hz,CEN+25);xL=Math.max(xL,97);xR=Math.max(xR,97)}
   const aL=60-xL,aR=60+xR,zF=cz-hz,zN=cz+hz,R0=trk||M.plan==='oval'?hz*.94:M.plan==='rect'?6:cap<40000?12:cap<70000?16:20,r={};
@@ -78,10 +80,12 @@ const S3FT={w:18,h:12};
 function s3FacCv(M){const W=512,H=256,cv=document.createElement('canvas');cv.width=W;cv.height=H;const g=cv.getContext('2d'),e=M.ext,st=e.st,c=e.c,t=e.t,r=t3Rng(st.length*31+parseInt(c.slice(1),16)%997),bw=W/3,sh=H/2;
   const dark='#1b1f25',glass='#33414f',rect=(x,y,w,h,f)=>{g.fillStyle=f;g.fillRect(x,y,w,h)};
   const arch=(cx,yb,w,h,f)=>{g.fillStyle=f;g.beginPath();g.moveTo(cx-w/2,yb);g.lineTo(cx-w/2,yb-h+w/2);g.arc(cx,yb-h+w/2,w/2,Math.PI,0);g.lineTo(cx+w/2,yb);g.closePath();g.fill()};
-  const bricks=(base)=>{rect(0,0,W,H,base);for(let y=0;y<H;y+=6){const o=(y/6)%2*7;for(let x=-o;x<W;x+=14){g.fillStyle=`rgba(${r()<.5?'255,240,220':'40,20,10'},${(.03+r()*.07).toFixed(3)})`;g.fillRect(x+1,y+1,12,4)}}
-    g.fillStyle='rgba(235,225,210,.16)';for(let y=0;y<H;y+=6)g.fillRect(0,y,W,1)};
-  const noise=(n,a)=>{for(let i=0;i<n;i++){g.fillStyle=`rgba(${r()<.5?'255,255,255':'0,0,0'},${(a*r()).toFixed(3)})`;g.fillRect(r()*W|0,r()*H|0,2+r()*6|0,1+r()*3|0)}};
-  if(st==='brick-arches'||st==='brick'){bricks(c);
+  /* brickwork from one small tile (a pattern fill), then a few darker and lighter bricks */
+  const bricks=(base)=>{const tc=document.createElement('canvas');tc.width=28;tc.height=12;const q=tc.getContext('2d');q.fillStyle=base;q.fillRect(0,0,28,12);q.fillStyle='rgba(40,20,10,.1)';q.fillRect(1,1,13,5);q.fillStyle='rgba(255,240,220,.07)';q.fillRect(8,7,13,5);
+    q.fillStyle='rgba(235,225,210,.24)';q.fillRect(0,0,28,1);q.fillRect(0,6,28,1);q.fillRect(0,0,1,6);q.fillRect(14,0,1,6);q.fillRect(7,6,1,6);q.fillRect(21,6,1,6);g.fillStyle=g.createPattern(tc,'repeat');g.fillRect(0,0,W,H);
+    g.fillStyle='rgba(40,18,8,.12)';for(let i=0;i<90;i++)g.fillRect((r()*36|0)*14+((r()*2|0)*7),(r()*43|0)*6+1,12,4)};
+  const noise=(n,a)=>{for(const f of ['rgba(255,255,255,','rgba(0,0,0,']){g.fillStyle=f+a+')';for(let i=0;i<n/2;i++)g.fillRect(r()*W|0,r()*H|0,2+r()*6|0,1+r()*3|0)}};
+  if(st==='brick-arches'||st==='brick'||st==='berm'){bricks(c);
     for(let i=0;i<3;i++){const x0=i*bw,cx=x0+bw/2;rect(x0,0,7,H,shade(c,-.14));rect(x0+bw-7,0,7,H,shade(c,-.14));
       if(st==='brick-arches'){arch(cx,H-6,bw*.56+8,sh*.86+6,t);arch(cx,H-6,bw*.56,sh*.86,dark);arch(cx,sh-14,bw*.44+6,sh*.66+5,t);arch(cx,sh-14,bw*.44,sh*.66,glass);
         g.fillStyle='rgba(200,215,230,.25)';g.fillRect(cx-1,sh-14-sh*.66,2,sh*.66)}
@@ -92,9 +96,11 @@ function s3FacCv(M){const W=512,H=256,cv=document.createElement('canvas');cv.wid
   else if(st==='glass'){const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,shade(c,.25));gr.addColorStop(.55,c);gr.addColorStop(1,shade(c,-.35));rect(0,0,W,H,gr);
     for(let i=0;i<14;i++){g.fillStyle=`rgba(255,255,255,${(.03+r()*.08).toFixed(3)})`;g.fillRect(r()*W,0,10+r()*40,H)}
     g.fillStyle=t;for(let x=0;x<W;x+=W/12)g.fillRect(x,0,3,H);for(let y=0;y<H;y+=H/4)g.fillRect(0,y,W,y%sh?3:9)}
-  else if(st==='steel'){rect(0,0,W,H,'#2a2f37');for(let y=0;y<H;y+=H/4){rect(0,y,W,10,shade(c,-.05))}g.strokeStyle=c;g.lineWidth=5;
-    for(let i=0;i<3;i++){const x0=i*bw;rect(x0,0,12,H,c);for(const s of [0,1]){g.beginPath();g.moveTo(x0+12,s*sh+10);g.lineTo(x0+bw,s*sh+sh);g.moveTo(x0+bw,s*sh+10);g.lineTo(x0+12,s*sh+sh);g.stroke()}}
-    g.fillStyle='rgba(120,130,140,.5)';for(let i=0;i<6;i++){const x=r()*W,y=r()*H;g.fillRect(x,y,30,3)}rect(0,0,W,8,t)}
+  else if(st==='steel'){/* the exposed frame: raker beams under the seats, columns, floor slabs, ramps and bracing */
+    const gr=g.createLinearGradient(0,0,0,H);gr.addColorStop(0,shade(c,-.42));gr.addColorStop(1,shade(c,-.25));rect(0,0,W,H,gr);g.lineCap='butt';
+    for(let i=0;i<3;i++){const x0=i*bw;g.strokeStyle=shade(c,-.05);g.lineWidth=18;g.beginPath();g.moveTo(x0,H);g.lineTo(x0+bw,0);g.stroke();
+      g.strokeStyle=shade(c,.1);g.lineWidth=4;g.beginPath();g.moveTo(x0+16,sh+10);g.lineTo(x0+bw,H-6);g.moveTo(x0+bw,sh+10);g.lineTo(x0+16,H-6);g.stroke();rect(x0,0,16,H,c)}
+    rect(0,sh-6,W,12,shade(c,.12));rect(0,H-8,W,8,shade(c,.05));rect(0,0,W,7,t)}
   else{/* concrete, precast (and the berm's retaining band) */const pc=st==='precast';rect(0,0,W,H,c);noise(900,.05);
     if(pc){g.fillStyle='rgba(0,0,0,.13)';for(let x=0;x<W;x+=W/6)g.fillRect(x,0,3,H);for(const s of [0,1]){rect(0,s*sh+sh*.3,W,sh*.26,'#2b333c');g.fillStyle='rgba(190,205,220,.22)';g.fillRect(0,s*sh+sh*.3,W,5)}rect(0,0,W,10,t);rect(0,sh-3,W,6,t)}
     else{for(let i=0;i<3;i++){rect(i*bw,0,14,H,shade(c,-.1));for(const s of [0,1])rect(i*bw+30,s*sh+sh*.36,bw-60,sh*.2,'#22272e')}rect(0,0,W,8,shade(c,.08));rect(0,sh-3,W,6,shade(c,-.15))}}
@@ -169,17 +175,17 @@ function s3Ground3(X){const {B,n,ext,r,endInfo,grp,keep,mats}=X,M=n.m,A=B.st,cz=
   const wEnd=S.L.type==='open'?'L':S.R.type==='open'?'R':small,wd=wEnd==='L'?-1:1,wat=has('lake')||has('ocean'),riv=has('river');
   const free=(x,z)=>!(wat&&(x-60)*wd>ext.x+20)&&!(riv&&z<cz-ext.z-62&&z>cz-ext.z-135);
   /* parking: lots with cars */
-  const lots=(has('parking')?9:3)+(r()*3|0),carC=['#d9d9d9','#2b2f36','#7d828a','#9b1c1c','#1f3b70','#efefef','#4a4f57'].map(t3Col);
+  let cars=0;const lots=(has('parking')?9:3)+(r()*3|0),carC=['#d9d9d9','#2b2f36','#7d828a','#9b1c1c','#1f3b70','#efefef','#4a4f57'].map(t3Col);
   for(let i=0;i<lots;i++){const th=r()*PI*2,d=f(th)*1.5+28+r()*70,x=60+Math.cos(th)*d,z=cz+Math.sin(th)*d;if(!free(x,z))continue;const lw=46+r()*40,ld=28+r()*20;
-    s3Geo(A,s3Tpl('box'),s3MS(x,-.01,z,lw,.05,ld,-th),t3Col('#4f5359'));
-    if(has('parking'))for(let a=-lw/2+2;a<lw/2-2;a+=2.6)for(const b of [-ld/2+3,-ld/2+6,ld/2-6,ld/2-3])if(r()<.7){const c=Math.cos(-th),s=Math.sin(-th);s3Geo(A,s3Tpl('box'),s3MS(x+a*c+b*s,.4,z-a*s+b*c,1.9,.8,1.1,-th),carC[r()*carC.length|0])}}
+    s3Box(A,x,-.01,z,lw,.05,ld,-th,t3Col('#4f5359'),1);
+    if(has('parking')&&cars<420){const c=Math.cos(-th),s=Math.sin(-th);for(let a=-lw/2+2;a<lw/2-2;a+=2.6)for(const b of [-ld/2+3,-ld/2+6,ld/2-6,ld/2-3])if(r()<.7){cars++;s3Box(A,x+a*c+b*s,.6,z-a*s+b*c,1.9,.8,1.1,-th,carC[r()*carC.length|0],1)}}}
   /* campus: low buildings in brick and limestone with window bands */
   if(has('campus')){const bc=['#8a4a35','#9b5a40','#c9bea6','#b9a98a','#7a3f30','#d4cdbd'].map(t3Col),roofC=t3Col('#4b4f55'),win=t3Col('#2a3038');
     for(let i=0;i<22;i++){const th=r()*PI*2,d=f(th)*1.45+22+r()*90,x=60+Math.cos(th)*d,z=cz+Math.sin(th)*d;if(!free(x,z))continue;const w=22+r()*30,dp=14+r()*14,hh=8+r()*10,ry=-th+(r()<.5?0:PI/2);
-      s3Geo(A,s3Tpl('box'),s3MS(x,hh/2,z,w,hh,dp,ry),bc[r()*bc.length|0]);s3Geo(A,s3Tpl('box'),s3MS(x,hh+.4,z,w+.8,.8,dp+.8,ry),roofC);
-      for(let fl=1;fl<hh/4;fl++)s3Geo(A,s3Tpl('box'),s3MS(x,fl*4-1.6,z,w+.2,1.4,dp+.2,ry),win)}}
+      s3Box(A,x,hh/2,z,w,hh,dp,ry,bc[r()*bc.length|0]);s3Box(A,x,hh+.4,z,w+.8,.8,dp+.8,ry,roofC);
+      for(let fl=1;fl<hh/4;fl++)s3Box(A,x,fl*4-1.6,z,w+.2,1.4,dp+.2,ry,win,2)}}
   /* trees (desert: low scrub) */
-  const ntr=des?40:has('trees')?150:has('campus')?80:45,tA=t3Col(des?'#6f7a4a':'#2f5a2a'),tB=t3Col(des?'#857f52':'#3b6a30');
+  const ntr=des?40:has('trees')?120:has('campus')?70:45,tA=t3Col(des?'#6f7a4a':'#2f5a2a'),tB=t3Col(des?'#857f52':'#3b6a30');
   for(let i=0;i<ntr;i++){const th=r()*PI*2,d=f(th)*(1.38+r()*(has('trees')?1.7:2.6))+12,x=60+Math.cos(th)*d,z=cz+Math.sin(th)*d;if(!free(x,z))continue;const tr=des?1+r()*1.4:2.5+r()*3.5;s3Geo(A,s3Tpl('ico'),s3MS(x,tr*1.1,z,tr,tr*(des?.7:1.15),tr,r()*6),r()<.5?tA:tB)}
   /* a city: towers behind the far side */
   if(has('city')||lm('skyline'))for(let i=0;i<40;i++){const th=-PI/2+(r()-.5)*1.2,d=240+r()*190,x=60+Math.cos(th)*d,z=cz+Math.sin(th)*d,bh=24+r()*r()*120,bw=10+r()*18;s3Geo(B.glass,s3Tpl('box'),s3MS(x,bh/2,z,bw,bh,bw,r()*PI),B.white,bw/6,bh/5)}
@@ -201,6 +207,10 @@ function s3Ground3(X){const {B,n,ext,r,endInfo,grp,keep,mats}=X,M=n.m,A=B.st,cz=
   if(lm('boathouse')){const x=60+wd*(ext.x+22),z=cz+(riv&&!wat?-ext.z-64:30);s3Geo(B.fac,new THREE.BoxGeometry(14,9,34),t3M(x,4.5,z),B.white,2,.75);s3Geo(A,new THREE.ConeGeometry(25,7,4),t3M(x,12.5,z,0,PI/4,0).multiply(new THREE.Matrix4().makeScale(.42,1,1)),t3Col('#3f4a52'));
     for(let i=0;i<5;i++)s3Geo(A,s3Tpl('box'),s3MS(x+wd*(12+i*3.4),.15,z-10+i*5,1,.35,20,0),t3Col(i%2?'#e8e2d0':'#b33a2a'))}
   if(lm('arch')&&!n.has('arches')){const x=60+E.s*(ext.x+18);s3Geo(A,new THREE.TorusGeometry(10,1.6,6,14,PI),t3M(x,0,cz,0,PI/2,0),stone)}}
+/* a box straight into an accumulator, no bottom (k 1: the top only, 2: the sides only), turned ry about y like three.js */
+function s3Box(A,x,y,z,sx,sy,sz,ry,col,k){const c=Math.cos(ry||0),s=Math.sin(ry||0),hx=sx/2,hz=sz/2,y0=y-sy/2,y1=y+sy/2,q=[[-hx,-hz],[hx,-hz],[hx,hz],[-hx,hz]].map(([a,b])=>[x+a*c+b*s,z-a*s+b*c]);
+  if(k!==2)s3Quad(A,[q[0][0],y1,q[0][1]],[q[1][0],y1,q[1][1]],[q[2][0],y1,q[2][1]],[q[3][0],y1,q[3][1]],col,null,null,null,null,[0,1,0]);
+  if(k!==1)for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];s3Quad(A,[a[0],y0,a[1]],[b[0],y0,b[1]],[b[0],y1,b[1]],[a[0],y1,a[1]],col,null,null,null,null,[(a[0]+b[0])/2-x,0,(a[1]+b[1])/2-z])}}
 /* ---------- a running track round the field (and the grass inside it) ---------- */
 function s3Track3(B){const A=B.st,cz=CEN,PI=Math.PI,red=t3Col('#a4523d'),wl=t3Col('#e9e2d6'),gr=t3Col('#3f7432'),S=46,N=24;
   const at=(t,rr)=>{/* t 0..1 round a stadium shape: straights x 60±S, half circles of radius rr */const L=4*S+2*PI*rr,s=t*L;
