@@ -20,13 +20,17 @@ function g3Init(){
   if(G3.R)return true;if(G3.ok===false)return false;
   try{
     if(typeof THREE==='undefined')throw new Error('three.js missing');
-    const c=document.createElement('canvas');c.id='gl3d';c.setAttribute('aria-hidden','true');
-    const R=new THREE.WebGLRenderer({canvas:c,antialias:true,powerPreference:'high-performance',stencil:false});
-    if(!R.capabilities.isWebGL2)throw new Error('WebGL 2 unavailable');
+    /* 08v renders through its own 4× MSAA target, so the canvas needs no antialiasing of its own (it gets it back
+       if the post-processing pipeline cannot start) */
+    const post=!!(THREE.Addons&&THREE.Addons.EffectComposer&&typeof g3qInit==='function');
+    const mk=aa=>{const c=document.createElement('canvas');c.id='gl3d';c.setAttribute('aria-hidden','true');
+      const R=new THREE.WebGLRenderer({canvas:c,antialias:aa,powerPreference:'high-performance',stencil:false});
+      if(!R.capabilities.isWebGL2)throw new Error('WebGL 2 unavailable');
+      R.setPixelRatio(Math.min(window.devicePixelRatio||1,2));R.outputColorSpace=THREE.SRGBColorSpace;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1;
+      R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;R.info.autoReset=true;
+      G3.R=R;G3.cv=c;G3.aniso=Math.min(8,R.capabilities.getMaxAnisotropy()||1);return [c,R]};
+    let [c,R]=mk(!post);
     $('#app').insertBefore(c,$('#field'));
-    R.setPixelRatio(Math.min(window.devicePixelRatio||1,2));R.outputColorSpace=THREE.SRGBColorSpace;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1;
-    R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFShadowMap;R.info.autoReset=true;
-    G3.R=R;G3.cv=c;G3.aniso=Math.min(8,R.capabilities.getMaxAnisotropy()||1);
     const sc=new THREE.Scene();G3.scene=sc;G3.cam=new THREE.PerspectiveCamera(20,1,1.5,4200);
     G3.hemi=new THREE.HemisphereLight('#bcd4ff','#35502a',1.1);sc.add(G3.hemi);
     const sun=new THREE.DirectionalLight('#fff4e0',2.6);sun.castShadow=true;sun.shadow.mapSize.set(2048,2048);
@@ -37,11 +41,13 @@ function g3Init(){
     G3.actors=new THREE.Group();G3.actors.name='actors';sc.add(G3.actors);
     G3.ov=g3MakeOverlays();sc.add(G3.ov.group);
     if(document.fonts&&document.fonts.load)Promise.all([document.fonts.load('400 80px "League Gothic"'),document.fonts.load('700 20px "Libre Franklin"')]).then(()=>{G3.fontOk=true}).catch(()=>{G3.fontOk=true});else G3.fontOk=true;
+    /* Settings › Graphics › Quality (08v): pixel ratio, MSAA + post passes, shadows, anisotropy, athlete detail */
+    if(post&&!g3qInit()){const old=c;R.dispose();[c,R]=mk(true);old.replaceWith(c);g3qSet()}
     G3.ok=true;return true;
   }catch(e){console.warn('3D broadcast unavailable:',e&&e.message);G3.ok=false;return false}
 }
 function g3Show(on){if(G3.cv)G3.cv.style.display=on?'block':'none';if(!on&&G3.R){G3.cover=false}}
-function g3Size(){const w=W||innerWidth,h=H||innerHeight;if(w!==G3.w||h!==G3.h){G3.w=w;G3.h=h;G3.R.setSize(w,h,true)}}
+function g3Size(){const w=W||innerWidth,h=H||innerHeight;if(w!==G3.w||h!==G3.h){G3.w=w;G3.h=h;G3.R.setSize(w,h,true);if(typeof g3qResize==='function')g3qResize()}}
 /* ---------- screen ↔ field ---------- */
 const G3V=[0,0,0].map(()=>null);
 function fieldToScreen(x,y,z){if(!G3.cam||!G3.w)return [0,0,false];const v=G3V[0]||(G3V[0]=new THREE.Vector3());v.set(x,z||0,y).project(G3.cam);return [(v.x+1)/2*G3.w,(1-v.y)/2*G3.h,v.z>-1&&v.z<1]}
@@ -236,7 +242,9 @@ const G3SH={half:42,map:2048};
 function g3Light(){const st=G3.env?G3.env.stage:'day',L=G3L[st]||G3L.day,wk=G3.env?G3.env.wk:'dry',dim=wk!=='dry'&&st!=='night'?.62:1,hm=wk!=='dry'?1.2:1;
   G3.hemi.color.set(L.h[0]);G3.hemi.groundColor.set(L.h[1]);G3.hemi.intensity=L.h[2]*hm;G3.sun.color.set(L.s[0]);G3.sun.intensity=L.s[1]*dim;G3.R.toneMappingExposure=L.ex;G3.fill.intensity=L.f*dim;
   const e=L.el*Math.PI/180,ce=Math.cos(e),dx=L.dx*ce,dy=Math.sin(e),dz=L.dz*ce,rl=Math.hypot(dz,dx)||1,rx=dz/rl,rz=-dx/rl,ux=dy*rz,uy=dz*rx-dx*rz,uz=-dy*rx,tx=G3.cs.x,tz=G3.cs.z;
-  const q=2*G3SH.half/G3SH.map,a=tx*rx+tz*rz,b=tx*ux+tz*uz,da=Math.round(a/q)*q-a,db=Math.round(b/q)*q-b,X=tx+da*rx+db*ux,Y=db*uy,Z=tz+da*rz+db*uz;
+  /* 08v fits the box to the visible field (light-space footprint of the camera, texel-snapped); fallback: a fixed box on the shot */
+  const T=typeof g3qShadowFit==='function'?g3qShadowFit(dx,dy,dz,rx,rz,ux,uy,uz):null;let X,Y,Z;
+  if(T){X=T[0];Y=T[1];Z=T[2]}else{const q=2*G3SH.half/G3SH.map,a=tx*rx+tz*rz,b=tx*ux+tz*uz,da=Math.round(a/q)*q-a,db=Math.round(b/q)*q-b;X=tx+da*rx+db*ux;Y=db*uy;Z=tz+da*rz+db*uz}
   G3.sun.target.position.set(X,Y,Z);G3.sun.position.set(X+dx*160,Y+dy*160,Z+dz*160);G3.sun.target.updateMatrixWorld();
   /* fill: opposite the key by day; at night a low back light from the far banks (turf sheen toward the camera, rim light) */
   const fd=L.fd;G3.fill.target.position.set(tx,0,tz);if(fd)G3.fill.position.set(tx+fd[0]*120,fd[1]*120,tz+fd[2]*120);else G3.fill.position.set(tx-dx*100,60,tz-dz*100+40);G3.fill.target.updateMatrixWorld();
@@ -292,14 +300,14 @@ function draw3D(now){
   if(G3.fr%30===1){const sb=$('#sb'),bb=document.documentElement.dataset.bug==='bottom';let t=Math.max(14,SAFE.t||0)+6,bt=0;
     if(sb&&!sb.hidden){const r=sb.getBoundingClientRect();if(r.height>0){if(bb)bt=(H||innerHeight)-r.top+4;else t=Math.max(t,r.bottom+4)}}G3.bugY=t;G3.bugB=bt}
   const dt=Math.min(.1,Math.max(0,(now-(G3.last||now))/1000));G3.last=now;G3.t+=dt;
-  g3Size();const rb=G3.key;g3EnsureEnv();const rebuilt=rb!==G3.key;g3Camera(dt);g3Light();g3Crowd(dt,now);g3Board(now);g3Weather(dt);g3KickBall();g3Overlays(now);
+  g3Size();const rb=G3.key;g3EnsureEnv();const rebuilt=rb!==G3.key;if(rebuilt&&typeof g3qEnv==='function')g3qEnv(G3.env);g3Camera(dt);g3Light();g3Crowd(dt,now);g3Board(now);g3Weather(dt);g3KickBall();g3Overlays(now);
   if(typeof ath3dFrame==='function'){if(G3.ph)g3DropPlaceholders();try{ath3dFrame(G3.actors,now,dt)}catch(e){if(!G3.athErr){G3.athErr=1;console.warn('ath3dFrame',e)}}}else g3Placeholders();
   const tj=performance.now();if(!rebuilt)G3.js=G3.js?G3.js*.9+(tj-t0)*.1:tj-t0;
   g3Chains();
   /* first frame of a new stadium / new teams: compile every program now (no hitch at the first flag, kick or weather) */
-  const nt=typeof A3!=='undefined'?A3.teams.size:0;if(rebuilt||G3.warm!==nt){G3.warm=nt;if(typeof ath3dWarm==='function')ath3dWarm();try{G3.R.compile(G3.scene,G3.cam)}catch(e){}}
-  G3.R.render(G3.scene,G3.cam);
-  g3Overlay2D(c,now);g3Adapt(t0);
+  const nt=typeof A3!=='undefined'?A3.teams.size:0,warm=rebuilt||G3.warm!==nt;if(warm){G3.warm=nt;if(typeof ath3dWarm==='function')ath3dWarm();if(typeof g3qCompile==='function')g3qCompile();else try{G3.R.compile(G3.scene,G3.cam)}catch(e){}}
+  if(typeof g3qRender==='function')g3qRender();else G3.R.render(G3.scene,G3.cam);   // 08v: MSAA target → GTAO / bloom → OutputPass + grade
+  g3Overlay2D(c,now);g3Adapt(t0,warm);
   const ms=performance.now()-t0;if(!rebuilt)G3.cpu=G3.cpu?G3.cpu*.9+ms*.1:ms;
 }
 /* no stale toast at the snap: toast() is wrapped (here, so 07 is untouched) to remember the phase it fired in; when a
@@ -320,14 +328,17 @@ function g3Overlay2D(c,now){
     c.fillStyle=gr;c.fillRect(0,0,W,H)}
   if(S.ts<.9){const a=(1-S.ts)*.9,bh=H*.07;c.fillStyle=`rgba(0,0,0,${a})`;c.fillRect(0,0,W,bh);c.fillRect(0,H-bh,W,bh)}
 }
-/* adaptive resolution: the real frame interval (smoothed) steps the pixel ratio down when frames run long and back up
-   with steady headroom; never above the device ratio (cap 2), never below 1. Pauses and tab switches are ignored. */
-function g3Adapt(t0){const A=G3.ad||(G3.ad={pt:0,ema:16,t:0,hi:Math.min(window.devicePixelRatio||1,2),px:0});if(!A.px)A.px=G3.R.getPixelRatio();
+/* adaptive quality: 08v's ladder (render scale first, then the expensive passes; see 08v-quality). Without 08v, the
+   real frame interval (smoothed) steps the pixel ratio down when frames run long and back up with steady headroom;
+   never above the device ratio (cap 2), never below 1. Pauses and tab switches are ignored. */
+function g3Adapt(t0,skip){if(typeof g3qAdapt==='function')return g3qAdapt(t0,skip);
+  const A=G3.ad||(G3.ad={pt:0,ema:16,t:0,hi:Math.min(window.devicePixelRatio||1,2),px:0});if(!A.px)A.px=G3.R.getPixelRatio();
   const d=A.pt?t0-A.pt:0;A.pt=t0;if(!(d>0&&d<250))return;A.ema+=(d-A.ema)*.06;A.t+=d;
   const lo=Math.min(1,A.hi);let nx=A.px;if(A.t>1500&&A.ema>22&&A.px>lo)nx=Math.max(lo,A.px-.25);else if(A.t>4000&&A.ema<13.5&&A.px<A.hi)nx=Math.min(A.hi,A.px+.25);
   if(nx!==A.px){A.px=nx;A.t=0;G3.R.setPixelRatio(nx);G3.R.setSize(G3.w,G3.h,true)}else if(A.t>4000)A.t=0}
 /* frame-cost readout for QA / Settings: CPU ms per frame (smoothed), draw calls and triangles of the last frame */
-function g3Stats(){const i=G3.R?G3.R.info.render:{calls:0,triangles:0};return {cpu:+(G3.cpu||0).toFixed(2),js:+(G3.js||0).toFixed(2),calls:i.calls,tris:i.triangles,crowd:G3.env&&G3.env.crowd?G3.env.crowd.userData.count:0,px:G3.R?G3.R.getPixelRatio():0}}
+function g3Stats(){const i=G3.R?G3.R.info.render:{calls:0,triangles:0};return Object.assign({cpu:+(G3.cpu||0).toFixed(2),js:+(G3.js||0).toFixed(2),calls:i.calls,tris:i.triangles,crowd:G3.env&&G3.env.crowd?G3.env.crowd.userData.count:0,px:G3.R?G3.R.getPixelRatio():0},
+  typeof g3qStats==='function'?g3qStats():{})}
 
 /* stadium reflection for glossy helmets, one per light stage: sky, the ring of stands, the turf and the light banks
    (blazing at night), prefiltered once each (PMREM). Only the helmet materials use it, so the tuned lighting is unchanged. */

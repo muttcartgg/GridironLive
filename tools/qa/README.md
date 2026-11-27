@@ -21,4 +21,6 @@ Each takes an optional path to the built page (default `web/index.html`) and a t
 Pages from `_boot.js` get the QA flag `window.__QA2D__`: the game draws with its 2D fallback renderer, because headless
 Chromium renders WebGL in software (slow). `threed.js` and `shots.js` open their pages with `{gl3d:true}` to test the real
 3D broadcast view, the only art style players see.
+3D graphics quality (08v): Auto picks a preset from the device and adapts to frame time; in a 3D page, `g3Quality('ultra',{hold:true})`
+(or 'perf' / 'bal') pins a preset with adaptation off, `g3Quality()` returns to the setting, and `g3Stats()` lists the preset, rung, passes and draw calls.
 Exit code is 1 when a page error was thrown. Look at screenshots with an image viewer (or the Read tool).
