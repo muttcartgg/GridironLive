@@ -34,10 +34,10 @@ const GQPRE={
 const GQ={P:null,id:'',auto:true,tier:'',L:[],i:0,cur:null,hold:false,ad:null,fail:{},px:0,fit:{ha:0,hb:0,v:null},stage:''};
 /* broadcast grade per light stage, in display space: white balance, S-curve amount, saturation, black lift, vignette,
    bloom threshold (display luminance) and bloom amount */
-const GQGR={day:{wb:[1.012,1,.986],con:.16,sat:1.08,lift:.004,vig:.1,th:.86,bs:.05},
-  late:{wb:[1.026,1,.968],con:.16,sat:1.09,lift:.004,vig:.12,th:.84,bs:.06},
-  sunset:{wb:[1.035,.996,.955],con:.17,sat:1.1,lift:.006,vig:.06,th:.8,bs:.09},
-  night:{wb:[.99,1,1.022],con:.2,sat:1.07,lift:0,vig:0,th:.72,bs:.13}};
+const GQGR={day:{wb:[1.012,1,.986],con:.16,sat:1.08,lift:.004,vig:.1,th:.93,bs:.06},   // white jerseys and lines sit at .86-.92: only clipped highlights bloom
+  late:{wb:[1.026,1,.968],con:.16,sat:1.09,lift:.004,vig:.12,th:.92,bs:.07},
+  sunset:{wb:[1.035,.996,.955],con:.17,sat:1.1,lift:.006,vig:.06,th:.89,bs:.1},
+  night:{wb:[.99,1,1.022],con:.2,sat:1.07,lift:0,vig:0,th:.84,bs:.15}};
 
 /* ---------- presets ---------- */
 function g3qTier(){
@@ -57,7 +57,7 @@ function g3qLadder(P){
 /* (re)apply the chosen preset: Settings, startup, QA */
 function g3qSet(){
   const want=g3qWant(),auto=want==='auto',id=auto?(GQ.tier||(GQ.tier=g3qTier())):want,P=GQPRE[id];
-  GQ.auto=auto;if(!G3.R){GQ.P=P;GQ.id=id;return}
+  GQ.auto=auto;GQ.want=want;if(!G3.R){GQ.P=P;GQ.id=id;return}
   const R=G3.R,an=Math.min(P.aniso,R.capabilities.getMaxAnisotropy()||1),soft=P.soft?THREE.PCFSoftShadowMap:THREE.PCFShadowMap,first=!GQ.P;
   const re=first||GQ.P.id!==id;GQ.P=P;GQ.id=id;GQ.L=g3qLadder(P);GQ.fail={};GQ.ad=null;G3.aniso=an;
   if(R.shadowMap.type!==soft){R.shadowMap.type=soft;if(!first)G3.scene.traverse(o=>{const ms=o.material?[].concat(o.material):[];for(const m of ms)if(m)m.needsUpdate=true})}
@@ -108,7 +108,7 @@ function g3pInit(){
     ao.updateGtaoMaterial({radius:.45,distanceExponent:1.2,thickness:1.5,scale:1,samples:12,distanceFallOff:1,screenSpaceRadius:false});
     ao.updatePdMaterial({lumaPhi:10,depthPhi:2,normalPhi:3,radius:4,radiusExponent:1,rings:2,samples:12});
     comp.addPass(ao);
-    const bl=new A.UnrealBloomPass(new THREE.Vector2(8,8),1,.55,.86);bl.highPassUniforms.smoothWidth.value=.12;
+    const bl=new A.UnrealBloomPass(new THREE.Vector2(8,8),1,.55,.86);bl.highPassUniforms.smoothWidth.value=.07;
     if(!fl)for(const t of [bl.renderTargetBright,...bl.renderTargetsHorizontal,...bl.renderTargetsVertical,ao.gtaoRenderTarget,ao.pdRenderTarget])t.texture.type=THREE.UnsignedByteType;
     const bf={enabled:false,needsSwap:false,clear:false,renderToScreen:false,k:1,w:8,h:8,setSize(w,h){this.w=w;this.h=h;bl.setSize(Math.max(8,Math.round(w*this.k)),Math.max(8,Math.round(h*this.k)))},render:(r,w,rb)=>g3pBloom(r,bl,rb),dispose(){}};
     comp.addPass(bf);
@@ -157,10 +157,14 @@ function g3pUniforms(){
 function g3qInit(){const ok=g3pInit();GQ.P=null;g3qSet();return ok}
 function g3qResize(){if(GQPP.ok)GQPP.comp.setSize(G3.w,G3.h)}
 function g3qRender(){
-  const R=G3.R;R.info.reset();
+  const R=G3.R;R.info.reset();if(g3qWant()!==GQ.want)g3qSet();   // another save (or Settings) changed the preset
   if(GQPP.ok&&GQ.cur){g3pUniforms();g3pLock(GQPP.out);const c=GQPP.comp;c.readBuffer=GQPP.rt;c.writeBuffer=c.renderTarget2;
     try{c.render(0);return}catch(e){console.warn('3D post-processing failed, drawing direct:',e&&e.message);GQPP.ok=false;GQPP.err='render: '+(e&&e.message);R.setRenderTarget(null)}}
   R.render(G3.scene,G3.cam)}
+/* QA: what each pass of one frame costs (gl.finish() around every pass; under software WebGL read it as ratios) */
+function g3qProfile(){if(!GQPP.ok||!GQ.cur)return null;const gl=G3.R.getContext(),c=GQPP.comp,out={},nm=['scene+shadows','gtao½+denoise','bloom','output+grade'],rs=c.passes.map(p=>p.render);
+  c.passes.forEach((p,i)=>{p.render=function(){gl.finish();const t=performance.now();rs[i].apply(this,arguments);gl.finish();out[nm[i]]=+(performance.now()-t).toFixed(1)}});
+  try{g3qRender()}finally{c.passes.forEach((p,i)=>{p.render=rs[i]})}return out}
 /* compile every program for the target the scene really renders into (same tone mapping / colour-space keys) */
 function g3qCompile(){const R=G3.R;try{if(GQPP.ok){R.setRenderTarget(GQPP.rt);R.compile(G3.scene,G3.cam);R.setRenderTarget(null)}else R.compile(G3.scene,G3.cam)}catch(e){R.setRenderTarget(null)}}
 /* a new stadium: its textures get this preset's anisotropy before their first upload */
