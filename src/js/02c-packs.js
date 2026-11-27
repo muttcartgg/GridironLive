@@ -111,12 +111,48 @@ function applyRosterPack(L,pk,opts){
    and, when chosen, in KV for new dynasties. LG.settings.realStadiums===false draws the generic stadium instead.
    v:2 (what stdCompact writes now; v:1 still reads everywhere) adds d2 the decks across from the press box, bs a video board
    on a sideline ('N' behind the TV camera, 'F' over the press box), every feature in ft, ct "City, ST" and op the year opened.
-   stdRefresh recomputes a saved dynasty's v:1 designs from the copy kept in KV when it loads (08t-stadium3d builds the 3D model). */
+   stdRefresh recomputes a saved dynasty's v:1 designs from the copy kept in KV when it loads (08t-stadium3d builds the 3D model).
+   v:3: an entry with "model" (schema v3: per-side tiers, corners, facade, seats, field, surroundings, landmarks) keeps the
+   model OUT of the dynasty save: each one sits in KV under gl.s3.<key> (one small key per stadium, so iOS injects it at
+   launch) with an index (gl.s3i: key → espnId, abbr, school). t.std becomes {v:3, the v:2 fields, mk the key, mh a hash of the
+   model}; 08t-stadium3d reads the model when it builds and falls back to the v:2 build without it. Saving or applying a pack
+   with models upgrades the dynasty in play, and stdRefresh upgrades any saved dynasty when it loads (matched by the index). */
 const STD_KEY='gl.std',STD_ON='gl.stdOn',STD_FT=['hedges','hill','turf','checker','mountains','water','skyline','trees','tower','arches','cards','pyro','dome','board','canopy'];
 const stdList=pk=>pk&&!Array.isArray(pk)&&Array.isArray(pk.stadiums)&&pk.stadiums.length?pk.stadiums:null;
 const stdIsFile=pk=>!!(stdList(pk)&&!(Array.isArray(pk.teams)&&pk.teams.length)&&!(Array.isArray(pk.players)&&pk.players.length));
+const S3M_IDX='gl.s3i',S3M_PRE='gl.s3.',S3MC=new Map();
+const s3mKey=e=>{const id=parseInt(e&&e.espnId);return id>0?'e'+id:e&&(e.team||e.abbr)?'a'+String(e.team||e.abbr).replace(/[^A-Za-z0-9]/g,'').slice(0,12):'s'+packNorm(e&&e.school||'').replace(/[^a-z0-9]/g,'').slice(0,24)};
+const s3mHash=s=>{let h=5381;for(let i=0;i<s.length;i++)h=Math.imul(h,33)^s.charCodeAt(i);return (h>>>0).toString(36)};
+const s3mOk=m=>!!(m&&typeof m==='object'&&!Array.isArray(m)&&m.v===3&&m.stands&&typeof m.stands==='object');
+function stdModelIdx(){try{const j=JSON.parse(KV.get(S3M_IDX)||'null');return j&&typeof j==='object'&&!Array.isArray(j)?j:{}}catch(e){return {}}}
+/* the raw JSON of a kept model ('' when none) and the parsed model (cached for the session) */
+function stdModelRaw(k){return k?KV.get(S3M_PRE+k)||'':''}
+function stdModelGet(k){if(!k)return null;if(S3MC.has(k))return S3MC.get(k);let m=null;try{m=JSON.parse(stdModelRaw(k)||'null')}catch(e){m=null}if(!s3mOk(m))m=null;S3MC.set(k,m);return m}
+/* keep every v:3 model of a stadiums list (notes dropped); returns how many */
+function stdModels(list){const idx=stdModelIdx();let n=0;
+  for(const e of list||[]){if(!e||!s3mOk(e.model))continue;const k=s3mKey(e),{notes,...m}=e.model,s=JSON.stringify(m);if(s.length>12000)continue;
+    if(KV.get(S3M_PRE+k)!==s)KV.set(S3M_PRE+k,s);S3MC.delete(k);idx[k]=[parseInt(e.espnId)||0,String(e.team||e.abbr||'').slice(0,12),String(e.school||'').slice(0,40)];n++}
+  if(n)KV.set(S3M_IDX,JSON.stringify(idx));return n}
+function stdModelsClear(){for(const k of Object.keys(stdModelIdx()))KV.set(S3M_PRE+k,null);KV.set(S3M_IDX,null);S3MC.clear()}
+/* the v:2 fields from a model alone (an entry without "architecture") */
+function stdFromModel(e,m){const st=m.stands||{},ps=['N','E','S','W'].includes(m.pressSide)?m.pressSide:'W',opp={N:'S',S:'N',E:'W',W:'E'}[ps],cw={N:'E',E:'S',S:'W',W:'N'}[ps],ccw={N:'W',W:'S',S:'E',E:'N'}[ps];
+  const rows=s=>(Array.isArray(s&&s.tiers)?s.tiers:[]).reduce((a,t)=>a+(+(t&&t.rows)||0),0),code=s=>{const ty=s&&s.type;if(ty==='hill')return 'B';if(ty==='building')return 'X';if(ty==='open'||ty==='plaza'||!s)return 'O';const r=rows(s);return r>=45?'L':r>=20?'M':'S'};
+  const C=m.corners||{},full=Object.values(C).filter(x=>x==='full').length,L=code(st[ccw]),R=code(st[cw]),ends=[L,R].filter(c=>'LMS'.includes(c)).length;
+  const sh=!ends?'side':ends===2&&full>=3?'bowl':ends===1&&full>=2?'horse':ends===2?'bowl':'u';
+  const tiers=s=>clamp((Array.isArray(s&&s.tiers)?s.tiers.length:0)||1,1,3),bdOn=s=>!!(s&&s.board);
+  const lm=Array.isArray(m.landmarks)?m.landmarks:[],su=Array.isArray(m.surround)?m.surround:[],fe=m.field||{},se=m.seats||{},hx=/^#[0-9a-f]{6}$/i;
+  const ft=[...new Set([lm.includes('hedges')&&'hedges',lm.includes('tower')&&'tower',lm.includes('arch')&&'arches',su.includes('mountains')&&'mountains',(su.includes('lake')||su.includes('river')||su.includes('ocean'))&&'water',
+    (su.includes('city')||lm.includes('skyline'))&&'skyline',su.includes('trees')&&'trees',(m.roof==='dome'||m.roof==='retractable')&&'dome',fe.endzones==='checker'&&'checker',L==='B'||R==='B'?'hill':''].filter(Boolean))];
+  const sc=Array.isArray(se.colors)&&se.colors.length>=2&&se.colors.slice(0,2).every(c=>hx.test(c))?se.colors.slice(0,2):null;
+  return {v:2,sh,d:tiers(st[ps]),d2:tiers(st[opp]),L,R,bd:bdOn(st[ccw])?'L':bdOn(st[cw])?'R':'',bs:!bdOn(st[ccw])&&!bdOn(st[cw])?(bdOn(st[ps])?'F':bdOn(st[opp])?'N':''):'',ft,sc,
+    tf:hx.test(fe.color||'')?fe.color:hx.test(e.turf||'')?e.turf:'',gr:(fe.surface||e.surface)==='grass'?1:0,rf:m.roof==='dome'||m.roof==='retractable'?1:0,
+    cap:clamp(parseInt(e.capacity)||40000,5000,120000),el:clamp(parseInt(e.elevation_ft)||0,0,12000),ct:[e.city,e.state].filter(x=>typeof x==='string'&&x.trim()).map(x=>x.trim().slice(0,28)).join(', '),op:clamp(parseInt(e.opened)||0,0,2100)}}
+/* v:3 when a model is kept for this entry (from this import or an earlier one) */
+function stdV3(s,k){const raw=stdModelRaw(k);if(!s||!raw||!stdModelGet(k))return s;return Object.assign(s,{v:3,mk:k,mh:s3mHash(raw)})}
 function stdCompact(e){
-  const a=e&&e.architecture;if(!a||typeof a!=='object')return null;const v=a.view||{},ends=a.ends||{},hx=/^#[0-9a-f]{6}$/i;
+  const a=e&&e.architecture;if(!a||typeof a!=='object'){const m=e&&s3mOk(e.model)?e.model:e?stdModelGet(s3mKey(e)):null;return m?stdV3(stdFromModel(e,m),s3mKey(e)):null}
+  return stdV3(stdCompact2(e,a),s3mKey(e))}
+function stdCompact2(e,a){const v=a.view||{},ends=a.ends||{},hx=/^#[0-9a-f]{6}$/i;
   const code=x=>({large:'L',medium:'M',small:'S',hill:'B',building:'X',open:'O'})[x]||'M';
   const ft=[...new Set((Array.isArray(a.features)?a.features:[]).filter(f=>STD_FT.includes(f)))];
   const sc=Array.isArray(a.seats)&&a.seats.length===2&&a.seats.every(c=>hx.test(c))?a.seats.slice():a.seats==='metal'||a.seats==='primary'?a.seats:null;
@@ -129,19 +165,25 @@ function stdCompact(e){
 }
 const stdMatch=(L,list)=>packMatch(L,{teams:list.filter(e=>e&&typeof e==='object').map(e=>({...e,abbr:e.abbr||e.team}))});
 function applyStadiums(L,list){
-  const {pairs,miss}=stdMatch(L,list);let n=0;
+  stdModels(list);const {pairs,miss}=stdMatch(L,list);let n=0;
   for(const [t,e] of pairs){const s=stdCompact(e);if(!s)continue;t.std=s;n++;if(e.name)t.stadium=String(e.name).slice(0,40);const c=parseInt(e.capacity);if(c>=1000&&c<=200000)t.cap=c}
   if(typeof STAD!=='undefined')STAD.key='';if(typeof FLD!=='undefined')FLD.key='';
   return {teams:n,miss};
 }
 /* kept for new dynasties: only what applyStadiums needs (about 20 KB) */
-function stdSave(list){const c=list.filter(e=>e&&e.architecture).map(e=>({team:e.team||e.abbr,school:e.school,espnId:e.espnId,name:e.name,city:e.city,state:e.state,opened:e.opened,capacity:e.capacity,turf:e.turf,surface:e.surface,roof:e.roof,elevation_ft:e.elevation_ft,architecture:e.architecture}));
+function stdSave(list){stdModels(list);const c=list.filter(e=>e&&(e.architecture||s3mOk(e.model))).map(e=>({team:e.team||e.abbr,school:e.school,espnId:e.espnId,name:e.name,city:e.city,state:e.state,opened:e.opened,capacity:e.capacity,turf:e.turf,surface:e.surface,roof:e.roof,elevation_ft:e.elevation_ft,architecture:e.architecture}));
   KV.set(STD_KEY,JSON.stringify(c));KV.set(STD_ON,'1');return c.length}
 function stdLoadSaved(){try{const raw=KV.get(STD_KEY);const c=raw?JSON.parse(raw):null;return Array.isArray(c)?c:null}catch(e){console.error(e);return null}}
 const stdSavedOn=()=>KV.has(STD_KEY)&&KV.get(STD_ON)!=='0';
 /* a dynasty saved before v:2: its designs are recomputed from the saved copy (names and capacities stay as they are) */
-function stdRefresh(L){if(!L||L.kind!=='ncaa'||!Array.isArray(L.teams)||!L.teams.some(t=>t.std&&t.std.v!==2))return 0;const c=KV.has(STD_KEY)?stdLoadSaved():null;if(!c)return 0;let n=0;
-  try{for(const [t,e] of stdMatch(L,c).pairs){if(!t.std||t.std.v===2)continue;const s=stdCompact(e);if(s){t.std=s;n++}}}catch(e){console.error(e)}return n}
+function stdRefresh(L){if(!L||L.kind!=='ncaa'||!Array.isArray(L.teams))return 0;let n=0;
+  if(L.teams.some(t=>t.std&&t.std.v===1)){const c=KV.has(STD_KEY)?stdLoadSaved():null;
+    if(c)try{for(const [t,e] of stdMatch(L,c).pairs){if(!t.std||t.std.v!==1)continue;const s=stdCompact(e);if(s){t.std=s;n++}}}catch(e){console.error(e)}}
+  /* v:3 models kept in KV (matched through the index, no big copy needed): upgrade a v:1/v:2 design, follow a re-imported model */
+  const idx=stdModelIdx(),ks=Object.keys(idx);if(!ks.length||!L.teams.some(t=>t.std))return n;
+  try{for(const [t,e] of packMatch(L,{teams:ks.map(k=>({mk:k,espnId:idx[k][0]||undefined,abbr:idx[k][1],school:idx[k][2]}))}).pairs){const sd=t.std;if(!sd)continue;
+    const raw=stdModelRaw(e.mk);if(!raw||!stdModelGet(e.mk))continue;const mh=s3mHash(raw);if(sd.v===3&&sd.mk===e.mk&&sd.mh===mh)continue;t.std=Object.assign({},sd,{v:3,mk:e.mk,mh});n++}}catch(e){console.error(e)}
+  return n}
 function stdAutoApply(L){if(!L||L.kind!=='ncaa'||!stdSavedOn())return false;const c=stdLoadSaved();if(!c)return false;try{applyStadiums(L,c);return true}catch(e){console.error(e);return false}}
 /* summary for the preview, without touching the league */
 function packPreview(L,pk){
@@ -219,6 +261,7 @@ function openRosterImport(L,done,opt){
       else if(cur&&pv.stdOnly){const s=applyStadiums(L,stdList(pk));msg.push(`${s.teams} stadiums`)}
       else if(cur){const s=applyRosterPack(L,pk,{keepUser:keep});msg.push(`${s.teams} teams updated`+(s.coaches?`, ${s.coaches} coaches`:'')+(s.custom?`, ${s.custom} custom players`:'')+(s.std?`, ${s.std} stadiums`:'')+(s.fs?`, ${s.fs} fight songs`:''))}
       if(save&&!pv.fsOnly){try{if(pv.stdOnly)stdSave(stdList(pk));else packSave(pk);saved=true;msg.push('saved for new dynasties')}catch(e){msg.push(e.message)}}
+      if(saved&&!cur&&live&&stdList(pk)){const u=stdRefresh(L);if(u){if(typeof STAD!=='undefined')STAD.key='';msg.push(`${u} stadiums upgraded`)}}
       /* installed but not applied: this dynasty still gets the logos and stadium names (nothing else) */
       if(live&&!pv.fsOnly&&!pv.stdOnly&&Array.isArray(pk.teams)){if(cur){if(L.settings)L.settings.packMeta=1}else if(saved){const n=packFillMeta(L,pk);if(n)msg.push(`logos and stadium names for ${n} teams`)}}
       closeModal();toast(msg.join(' · ')||'Nothing to import');done&&done({saved,applied:cur})}catch(e){console.error(e);b.disabled=false;b.textContent='Import';err('Import failed: '+e.message)}},30)});
@@ -326,7 +369,7 @@ SETTINGS_EXTRA.push({card:'Rosters & data',key:'realStadiums',label:'Use real st
   note:'Teams with an imported stadium design play in a drawn version of their real stadium (import a stadiums file above). Off: everyone gets the standard stadium.',after:()=>{STAD.key='';FLD.key=''}});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Your roster',button:'Export my roster (JSON)',id:'expRoster',onClick:()=>openRosterExport()});
 SETTINGS_EXTRA.push({card:'Rosters & data',label:'Imported data',button:'Remove imported data',id:'rmPack',note:'New dynasties go back to generated rosters and the standard stadium; this dynasty keeps its players and drops the imported logos and stadium designs.',
-  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);KV.set(REAL_KEY,null);KV.set(STD_KEY,null);KV.set(STD_ON,null);if(typeof fsClear==='function')fsClear();for(const t of LG.teams){delete t.logo;delete t.logoDark;delete t.std}delete LG.pack;STAD.key='';FLD.key='';saveNow();showHub('settings');toast('Imported data removed')}});
+  onClick:()=>{KV.set(PACK_KEY,null);KV.set(PACK_ON,null);KV.set(REAL_KEY,null);KV.set(STD_KEY,null);KV.set(STD_ON,null);stdModelsClear();if(typeof fsClear==='function')fsClear();for(const t of LG.teams){delete t.logo;delete t.logoDark;delete t.std}delete LG.pack;STAD.key='';FLD.key='';saveNow();showHub('settings');toast('Imported data removed')}});
 });
 
 /* ---------- v1 team packs (moved from 02-data.js) ---------- */

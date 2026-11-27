@@ -29,7 +29,7 @@ const stadAlt=t=>contrasty(t.c1,t.c2)?t.c2:lum(t.c1)>.5?'#1d2129':'#F2F3F5';
 const stadCv=(w,h)=>{const c=document.createElement('canvas');c.width=Math.max(1,Math.ceil(w));c.height=Math.max(1,Math.ceil(h));return c};
 const stadH01=i=>{const v=Math.sin(i*127.1+311.7)*43758.5453;return v-Math.floor(v)};
 /* ---------- real stadium designs ---------- */
-function stdOf(t){t=t||(S.home?hostT():null);return t&&t.std&&(t.std.v===1||t.std.v===2)&&!S.neutral&&!(typeof LG!=='undefined'&&LG&&LG.settings&&LG.settings.realStadiums===false)?t.std:null}
+function stdOf(t){t=t||(S.home?hostT():null);return t&&t.std&&(t.std.v===1||t.std.v===2||t.std.v===3)&&!S.neutral&&!(typeof LG!=='undefined'&&LG&&LG.settings&&LG.settings.realStadiums===false)?t.std:null}
 function stdHas(sd,f){return !!(sd&&sd.ft&&sd.ft.indexOf(f)>=0)}
 function stdIndoor(){const sd=S.home?stdOf():null;return !!(sd&&sd.rf)}
 /* end code on screen side -1 (left) / 1 (right): the picture is mirrored while the user defends */
