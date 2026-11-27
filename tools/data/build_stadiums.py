@@ -3,18 +3,22 @@
 
   python3 -I tools/data/build_stadiums.py [outdir]      (default outdir: /home/claude/packs)
 
-Output: gridiron-live-2026-stadiums.json (format "gridiron-live-stadiums", version 1): one entry per FBS program's
+Output: gridiron-live-2026-stadiums.json (format "gridiron-live-stadiums", version 2): one entry per FBS program's
 2026 home stadium, matched to game teams by abbr/espnId/school exactly like a roster pack (see docs/PACKS.md).
 Facts: 2026 home venues from the CFBD 2026 schedules (most-used non-neutral venue), city/state/elevation/roof from the
 CFBD team-info file, capacity/opened/surface from Wikipedia "List of NCAA Division I FBS football stadiums" (Nov 2026).
 Architecture (shape, decks, ends, press box, video board, seats, signature features) is a stylized description written
 for the game's renderer from general knowledge; entries we are not sure about carry "approx": true.
+Version 2 adds "model" (stadium model schema v3: per-side tiers, suites, press box, boards, corners, lights, roof,
+exterior, seats, field, surroundings) from tools/data/stadium_models.json, keyed by team abbr; "architecture" stays
+for older game versions. Check the result with tools/data/validate_stadiums.py.
 """
 import os, sys, json, collections
 import pandas as pd
 
 DATA = os.environ.get('CFBD_DIR', '/home/claude/data/cfbd')
-EXTRA = os.environ.get('CFBD_EXTRA', '/tmp/claude-0/-home-claude/aa463a5f-8d8d-586a-b50d-7e483b2bac12/scratchpad/pk-dl')
+EXTRA = os.environ.get('CFBD_EXTRA', os.path.join(DATA, 'team_info', 'parquet'))   # cfb_team_info_2026.parquet
+MODELS = os.environ.get('MODELS', os.path.join(os.path.dirname(os.path.abspath(__file__)), 'stadium_models.json'))
 PACK = os.environ.get('PACK', '/home/claude/packs/gridiron-live-2026-rosters.json')
 OUT = sys.argv[1] if len(sys.argv) > 1 else '/home/claude/packs'
 
@@ -178,6 +182,7 @@ ENDS = {'L': 'large', 'M': 'medium', 'S': 'small', 'B': 'hill', 'X': 'building',
 
 def main():
     pk = json.load(open(PACK))
+    models = json.load(open(MODELS))
     teams = {t['abbr']: t for t in pk['teams'] if t.get('division') == 'FBS'}
     inf = pd.read_parquet(os.path.join(EXTRA, 'cfb_team_info_2026.parquet')).set_index('team_id')
     sch = pd.read_parquet(os.path.join(DATA, 'schedules', 'parquet', 'cfb_schedules_2026.parquet'))
@@ -231,13 +236,19 @@ def main():
             'view': {'far': press, 'left': left, 'right': right}}
         if sure != '1':
             e['approx'] = True
+        assert ab in models, f'no model for {ab} in {MODELS}'
+        e['model'] = models[ab]
         out.append(e)
     missing = sorted(set(teams) - seen)
     assert not missing, missing
-    doc = {'format': 'gridiron-live-stadiums', 'version': 1, 'season': 2026, 'name': 'FBS stadiums 2026',
+    extra = sorted(set(models) - seen)
+    assert not extra, f'models for teams not in the pack: {extra}'
+    doc = {'format': 'gridiron-live-stadiums', 'version': 2, 'season': 2026, 'name': 'FBS stadiums 2026',
            'notes': 'Personal file, not part of the app. Facts: CFBD 2026 schedules + team info, Wikipedia FBS stadium list (Nov 2026). '
                     'Architecture is a stylized description for the game renderer; "approx": true marks guesses. '
-                    'ends L/M/S = stand size, hill = grass berm, building = facility, open = no stands (backdrop shows).',
+                    'ends L/M/S = stand size, hill = grass berm, building = facility, open = no stands (backdrop shows). '
+                    'Version 2: "model" = stadium model schema v3 (distances in yards, compass sides N/E/S/W) describing the '
+                    'real stadium per side; "model.approx": true marks educated guesses.',
            'features': FEATURES, 'stadiums': out}
     os.makedirs(OUT, exist_ok=True)
     path = os.path.join(OUT, 'gridiron-live-2026-stadiums.json')
