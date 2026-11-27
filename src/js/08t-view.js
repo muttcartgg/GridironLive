@@ -332,11 +332,20 @@ function g3Establish(kind,cb){if(G3.est)G3.est.end();
   if(!g3EstOn()){if(cb)cb();return false}
   const e={kind,cb,t0:0,dur:kind==='open'?3800:2700,a:Math.random(),done:false};
   e.end=()=>{if(e.done)return;e.done=true;clearTimeout(e.to);if(G3.est===e)G3.est=null;delete document.documentElement.dataset.est;if(e.cb)try{e.cb()}catch(err){console.error(err)}};
-  e.to=setTimeout(e.end,e.dur+1800);G3.est=e;document.documentElement.dataset.est=kind;return true}
+  /* the main loop (09) only draws in game phases: with the pregame show off, kickoff comes straight from the hub */
+  if(kind==='open'&&(S.phase==='hub'||S.phase==='boot'))S.phase='wait';
+  e.to=setTimeout(e.end,e.dur+6000);G3.est=e;document.documentElement.dataset.est=kind;return true}
 addEventListener('pointerdown',ev=>{const e=G3.est;if(e&&e.t0&&performance.now()-e.t0>150){ev.stopPropagation();ev.preventDefault();e.end()}},true);
-function g3EstCam(){const e=G3.est,now=performance.now();if(!e)return false;if(!e.t0)e.t0=now;const p=clamp((now-e.t0)/e.dur,0,1);if(p>=1){e.end();return false}
-  const st=G3.env&&G3.env.std3,X=st?st.ext:{x:93,z:70,h:42},R=Math.max(X.x,X.z*1.3)*1.25+38,port=G3.h>G3.w*1.2,c=G3.cam,q=p*p*(3-2*p),PI=Math.PI;
-  let a,rr,hh;if(e.kind==='open'){a=PI*.5+1.0-q*1.2;rr=R*(1.16-.2*q);hh=Math.max(R*(.5-.12*q),X.h*1.3+24)}else{a=PI*.5+(e.a-.5)*2.2+q*.55;rr=R*1.08;hh=Math.max(R*.66,X.h*1.5+30)}
+function g3EstCam(){const e=G3.est,now=performance.now();if(!e)return false;
+  /* the first frame may carry the stadium build and the shader compile: it holds the opening pose and the clock starts on
+     the next one; a stalled frame (over 100 ms) does not eat into the shot */
+  if(!e.t0&&!e.f)e.f=1;else if(!e.t0){e.t0=now;e.last=now;clearTimeout(e.to);e.to=setTimeout(e.end,e.dur+1500)}else{const gap=now-(e.last||now);if(gap>100)e.t0+=gap-16;e.last=now}
+  const p=e.t0?clamp((now-e.t0)/e.dur,0,1):0;if(p>=1){e.end();return false}
+  const st=G3.env&&G3.env.std3,X=st?st.ext:{x:118,z:88,h:86},R=Math.max(X.x,X.z*1.3)*1.25+38,port=G3.h>G3.w*1.2,c=G3.cam,q=p*p*(3-2*p),PI=Math.PI;
+  /* the sweep keeps clear of the light towers (they would stand between the camera and the field) */
+  if(e.c==null){const tw=st?st.towers:[[-53,-53],[173,-53],[-53,FW+53],[173,FW+53]],az=tw.map(([x,z])=>Math.atan2(z-CEN,x-60)),hw=e.kind==='open'?.6:.3;let best=PI/2,bs=-1;
+    for(const c of [PI/2+.3,PI/2-.3,PI/2,PI/2+.8,PI/2-.8,PI/2+1.2,PI/2-1.2]){let m=9;for(const t of az){let d=Math.abs(Math.atan2(Math.sin(t-c),Math.cos(t-c)))-hw;m=Math.min(m,d)}if(m>.22){best=c;bs=m;break}if(m>bs){bs=m;best=c}}e.c=best}
+  let a,rr,hh;if(e.kind==='open'){a=e.c+.6-q*1.2;rr=R*(1.16-.2*q);hh=Math.max(R*(.5-.12*q),X.h*1.3+24)}else{a=e.c-.3+q*.6;rr=R*1.08;hh=Math.max(R*.66,X.h*1.5+30)}
   if(port){rr*=1.25;hh*=1.15}
   c.position.set(60+Math.cos(a)*rr,hh,CEN+Math.sin(a)*rr);c.lookAt(60,X.h*.12,CEN);c.fov=port?62:36;c.aspect=G3.w/Math.max(1,G3.h);c.updateProjectionMatrix();G3.cs.x=60;G3.cs.z=CEN;return true}
 function g3Lower3(c,e,a){const h=hostT(),sd=typeof stdOf==='function'&&!S.neutral?stdOf(h):null,vn=(typeof t3Venue==='function'?t3Venue():'')||'';if(!vn)return;
