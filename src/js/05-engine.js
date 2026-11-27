@@ -50,7 +50,7 @@ function startUserGame(g,snap){
   if(typeof BC!=='undefined')BC.gameStart(!!snap);
   styleInit();   // play style (05h): Full control, Coach mode (autopilot) or Key moments (simming from the start)
   if(snap){if(snap.pat){S.phase='pat';showPAT()}else toPresnap();toast('Game resumed');return}
-  const kickoff=()=>{if(typeof BC!=='undefined')BC.intro();setTimeout(()=>coinToss(u,opp),1800)};
+  const kickoff=()=>{const go=()=>{if(typeof BC!=='undefined')BC.intro();setTimeout(()=>coinToss(u,opp),1800)};if(typeof g3Establish==='function')g3Establish('open',go);else go()};   // 08t: the stadium flyover first
   if(typeof BC!=='undefined'&&LG.settings.pregame!==false){S.phase='wait';BC.pregame(kickoff)}else kickoff();
 }
 function resumeGame(simRest){const g=userGameThisWeek();if(!g||!LG.live){LG.live=null;return showHub('home')}startUserGame(g,LG.live);if(simRest)setTimeout(simToFinal,50)}
@@ -92,8 +92,8 @@ function boundary(cont){
 }
 function halftime(){if(typeof suspHalf==="function")suspHalf();   /* half-game targeting suspensions end (04d) */
   S.phase='wait';S.q=3;S.clock=S.qlen;S.to=[3,3];fatRest(30);S.clockRun=false;hideActs();['#call','#opt','#snapBar'].forEach(s=>$(s).hidden=true);
-  const go=()=>kickoffTo(S.recv2||'away','Second-half kickoff');
-  if(typeof BC!=='undefined'&&LG.settings.halftime!==false)BC.halftime(go);else go();
+  const go=()=>kickoffTo(S.recv2||'away','Second-half kickoff'),show=()=>{if(typeof BC!=='undefined'&&LG.settings.halftime!==false)BC.halftime(go);else go()};
+  if(typeof g3Establish==='function')g3Establish('half',show);else show();   // 08t: a beauty shot of the stadium first
 }
 function presnapExpire(){['#call','#opt','#snapBar'].forEach(s=>$(s).hidden=true);S.phase='wait';boundary(()=>toPresnap())}
 
@@ -943,6 +943,7 @@ function gameOver(){
   if(S.phase==='over')return;S.phase='over';if(S.ff)kmStopFF();hint('');clearInterval(tickTimer);hideActs();['#sb','#pauseBtn','#toBtn','#bulletBtn','#call','#opt','#kick','#card','#snapBar','#celebSheet','#celebBtn'].forEach(s=>$(s).hidden=true);   // a game that ends while simming stops the fast-forward right away (no frame race); the HUD comes down at the final whistle
   if(typeof BC!=='undefined')BC.stop();
   fx('final',{won:S.score[0]>S.score[1]});   // 07b: the winner's fight song
+  if(typeof g3Establish==='function')g3Establish('final',null);   // 08t: a beauty shot behind the final graphic
   const g=S.game,[us,them]=S.score,won=us>them,s=S.stats,os=S.ostats||newGameStats(),rate=ncaaRating(s),u=S.home,opp=S.away;
   const storm=won&&S.userHome&&rankOf(opp.id)&&rankOf(opp.id)<=10&&(!rankOf(u.id)||rankOf(u.id)>rankOf(opp.id)+5);
   /* the user is listed first (g.h) in many neutral-site games (conference title games, bowls, playoffs), so map by g.h, not by who has home field */

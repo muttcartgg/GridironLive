@@ -108,18 +108,24 @@ function applyRosterPack(L,pk,opts){
    design 08g draws: {v:1, sh bowl|horse|u|side, d far-side decks 1–3, L/R end codes (L large, M medium, S small, B hill, X building,
    O open) as seen from across the press box, bd video-board end 'L'|'R'|'', ft signature features, sc seats ['#s1','#s2']|'metal'|
    'primary'|null, tf special turf color, gr 1 natural grass, rf 1 dome, cap, el elevation ft}. Saved with the dynasty (team field)
-   and, when chosen, in KV for new dynasties. LG.settings.realStadiums===false draws the generic stadium instead. */
+   and, when chosen, in KV for new dynasties. LG.settings.realStadiums===false draws the generic stadium instead.
+   v:2 (what stdCompact writes now; v:1 still reads everywhere) adds d2 the decks across from the press box, bs a video board
+   on a sideline ('N' behind the TV camera, 'F' over the press box), every feature in ft, ct "City, ST" and op the year opened.
+   stdRefresh recomputes a saved dynasty's v:1 designs from the copy kept in KV when it loads (08t-stadium3d builds the 3D model). */
 const STD_KEY='gl.std',STD_ON='gl.stdOn',STD_FT=['hedges','hill','turf','checker','mountains','water','skyline','trees','tower','arches','cards','pyro','dome','board','canopy'];
 const stdList=pk=>pk&&!Array.isArray(pk)&&Array.isArray(pk.stadiums)&&pk.stadiums.length?pk.stadiums:null;
 const stdIsFile=pk=>!!(stdList(pk)&&!(Array.isArray(pk.teams)&&pk.teams.length)&&!(Array.isArray(pk.players)&&pk.players.length));
 function stdCompact(e){
   const a=e&&e.architecture;if(!a||typeof a!=='object')return null;const v=a.view||{},ends=a.ends||{},hx=/^#[0-9a-f]{6}$/i;
   const code=x=>({large:'L',medium:'M',small:'S',hill:'B',building:'X',open:'O'})[x]||'M';
-  const ft=(Array.isArray(a.features)?a.features:[]).filter(f=>STD_FT.includes(f)).slice(0,3);
+  const ft=[...new Set((Array.isArray(a.features)?a.features:[]).filter(f=>STD_FT.includes(f)))];
   const sc=Array.isArray(a.seats)&&a.seats.length===2&&a.seats.every(c=>hx.test(c))?a.seats.slice():a.seats==='metal'||a.seats==='primary'?a.seats:null;
-  return {v:1,sh:['bowl','horse','u','side'].includes(a.shape)?a.shape:'bowl',d:clamp(parseInt(a.decks&&a.decks.pressSide)||2,1,3),L:code(ends[v.left]),R:code(ends[v.right]),
-    bd:a.videoBoard&&a.videoBoard===v.left?'L':a.videoBoard&&a.videoBoard===v.right?'R':'',ft,sc,tf:hx.test(e.turf||'')?e.turf:'',gr:e.surface==='grass'?1:0,
-    rf:e.roof==='dome'||ft.includes('dome')?1:0,cap:clamp(parseInt(e.capacity)||40000,5000,120000),el:clamp(parseInt(e.elevation_ft)||0,0,12000)};
+  const vb=a.videoBoard,dk=a.decks||{},far=v.far||a.pressBox,opp={N:'S',S:'N',E:'W',W:'E'}[far];
+  const ct=[e.city,e.state].filter(x=>typeof x==='string'&&x.trim()).map(x=>x.trim().slice(0,28)).join(', ');
+  return {v:2,sh:['bowl','horse','u','side'].includes(a.shape)?a.shape:'bowl',d:clamp(parseInt(dk.pressSide)||2,1,3),d2:clamp(parseInt(dk.otherSide)||1,1,3),L:code(ends[v.left]),R:code(ends[v.right]),
+    bd:vb&&vb===v.left?'L':vb&&vb===v.right?'R':'',bs:vb&&vb!==v.left&&vb!==v.right?(vb===far?'F':vb===opp?'N':''):'',ft,sc,tf:hx.test(e.turf||'')?e.turf:'',gr:e.surface==='grass'?1:0,
+    rf:e.roof==='dome'||ft.includes('dome')?1:0,cap:clamp(parseInt(e.capacity)||40000,5000,120000),el:clamp(parseInt(e.elevation_ft)||0,0,12000),
+    ct,op:clamp(parseInt(e.opened)||0,0,2100)};
 }
 const stdMatch=(L,list)=>packMatch(L,{teams:list.filter(e=>e&&typeof e==='object').map(e=>({...e,abbr:e.abbr||e.team}))});
 function applyStadiums(L,list){
@@ -129,10 +135,13 @@ function applyStadiums(L,list){
   return {teams:n,miss};
 }
 /* kept for new dynasties: only what applyStadiums needs (about 20 KB) */
-function stdSave(list){const c=list.filter(e=>e&&e.architecture).map(e=>({team:e.team||e.abbr,school:e.school,espnId:e.espnId,name:e.name,capacity:e.capacity,turf:e.turf,surface:e.surface,roof:e.roof,elevation_ft:e.elevation_ft,architecture:e.architecture}));
+function stdSave(list){const c=list.filter(e=>e&&e.architecture).map(e=>({team:e.team||e.abbr,school:e.school,espnId:e.espnId,name:e.name,city:e.city,state:e.state,opened:e.opened,capacity:e.capacity,turf:e.turf,surface:e.surface,roof:e.roof,elevation_ft:e.elevation_ft,architecture:e.architecture}));
   KV.set(STD_KEY,JSON.stringify(c));KV.set(STD_ON,'1');return c.length}
 function stdLoadSaved(){try{const raw=KV.get(STD_KEY);const c=raw?JSON.parse(raw):null;return Array.isArray(c)?c:null}catch(e){console.error(e);return null}}
 const stdSavedOn=()=>KV.has(STD_KEY)&&KV.get(STD_ON)!=='0';
+/* a dynasty saved before v:2: its designs are recomputed from the saved copy (names and capacities stay as they are) */
+function stdRefresh(L){if(!L||L.kind!=='ncaa'||!Array.isArray(L.teams)||!L.teams.some(t=>t.std&&t.std.v!==2))return 0;const c=KV.has(STD_KEY)?stdLoadSaved():null;if(!c)return 0;let n=0;
+  try{for(const [t,e] of stdMatch(L,c).pairs){if(!t.std||t.std.v===2)continue;const s=stdCompact(e);if(s){t.std=s;n++}}}catch(e){console.error(e)}return n}
 function stdAutoApply(L){if(!L||L.kind!=='ncaa'||!stdSavedOn())return false;const c=stdLoadSaved();if(!c)return false;try{applyStadiums(L,c);return true}catch(e){console.error(e);return false}}
 /* summary for the preview, without touching the league */
 function packPreview(L,pk){

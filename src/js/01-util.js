@@ -177,7 +177,7 @@ const Saves={
   keys(slot){return ['gl3.slot'+slot,'gl3.live'+slot]},
   loadAsync(slot){return KV.need(this.keys(slot).concat([...KV.lazy].filter(k=>k.startsWith('gl.aud.')))).then(()=>this.load(slot))},
   load(slot){
-    try{const L=migrate(unpack(KV.get('gl3.slot'+slot)));if(!L)return null;let live=null;try{live=JSON.parse(KV.get('gl3.live'+slot)||'null')}catch(e){}L.live=live&&live.wk===L.week&&L.phase==='regular'?live:null;return L}
+    try{const L=migrate(unpack(KV.get('gl3.slot'+slot)));if(!L)return null;if(typeof stdRefresh==='function')stdRefresh(L);let live=null;try{live=JSON.parse(KV.get('gl3.live'+slot)||'null')}catch(e){}L.live=live&&live.wk===L.week&&L.phase==='regular'?live:null;return L}
     catch(e){console.error(e);return null}
   },
   save(slot,L){

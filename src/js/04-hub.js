@@ -526,7 +526,7 @@ function bindSettingsExtra(seg){
 /* Settings: eight sections, most-used first; the rest of each section folds under "More".
    Registry entries (SETTINGS_EXTRA) land in the section their card maps to; unknown cards get their own section before About. */
 const SET_OPEN=new Set();
-const SET_CARD={'Controls & camera':'ctl','Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Fight songs':'fs','Rosters & data':'data'};
+const SET_CARD={'Broadcast':'bc','Controls & camera':'ctl','Gameplay':'play','Realism':'play','Recruiting':'play','Graphics':'gfx','Fight songs':'fs','Rosters & data':'data'};
 const SET_MORE=new Set(['penalties','recAuto','officials','showLogos','expRoster','rmPack']);
 const SET_NOTE={playStyle:'Coach mode: you call the plays and the AI runs them. Key moments: drives are simmed and you take over when it counts.',
   penalties:'',recAuto:'Your staff spends the weekly recruiting hours for you.',gfxQ:'Battery saver keeps the crowd still and skips stadium extras.',
@@ -586,7 +586,7 @@ function hubSettings(){
      row('Pregame show',tg('setPre',s.pregame!==false))
     +row('Halftime show',tg('setHalf',s.halftime!==false))
     +row('Broadcast graphics',tg('setGfx',s.gfx!==false))
-    +row('Replays',seg('setRp',[['ask','Button'],['auto','Automatic'],['off','Off']],s.replay||'ask')),
+    +row('Replays',seg('setRp',[['ask','Button'],['auto','Automatic'],['off','Off']],s.replay||'ask'))+regs('bc','main'),
      row('Scorebug',seg('setPkg',[['auto','Auto'],...NET_IDS.map(k=>[k,esc(NETS[k].name)])],netForced()||'auto'),'Auto: each game wears the package of the network that carries it')
     +row('Win probability',seg('setWP',[['key','Key moments'],['always','Always'],[0,'Off']],s.wp===false?0:s.wp==='always'?'always':'key'))
     +row('Score ticker',tg('setTk',s.ticker!==false))
