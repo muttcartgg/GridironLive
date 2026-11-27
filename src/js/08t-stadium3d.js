@@ -27,7 +27,7 @@ function s3Design(h,o){if(!h||o.neutral||typeof stdOf!=='function')return null;c
   let m=null;if(sd.v===3&&sd.mk&&typeof stdModelGet==='function')try{m=s3NormM(stdModelGet(sd.mk))}catch(e){console.warn('stadium model',e);m=null}
   const n=s3Norm(sd,m);if(m)n.hl=S3HL[h.abbr]||String(h.city||h.abbr||'U').trim().charAt(0).toUpperCase();return n}
 /* the letter on the hill behind the stadium (hill-letter): the known ones, else the school's initial */
-const S3HL={BYU:'Y',UTAH:'U',ARIZ:'A',ASU:'A',NEV:'N',CSU:'A',NMSU:'A',USU:'A',BOIS:'B',UTEP:'M',SDSU:'S',CAL:'C'};
+const S3HL={BYU:'Y',UTAH:'U',ARIZ:'A',ASU:'A',NEV:'N',CSU:'A',NMSU:'A',USU:'A',BOIS:'B',UTEP:'M',SDSU:'S',CAL:'C',MIZ:'M',LIB:'LU'};
 function s3Norm(sd,m){const v2=sd.v>=2,d=clamp(sd.d|0||2,1,3),ft=Array.isArray(sd.ft)?sd.ft.slice():[];
   const n={sh:['bowl','horse','u','side'].includes(sd.sh)?sd.sh:'bowl',dF:d,dN:v2?clamp(sd.d2|0||1,1,3):d===3?3:Math.max(1,d-1),L:sd.L||'M',R:sd.R||'M',
     bd:sd.bd||'',bs:sd.bs||'',ft,sc:sd.sc||null,tf:sd.tf||'',gr:!!sd.gr,rf:!!sd.rf||ft.includes('dome'),cap:clamp(+sd.cap||40000,5000,120000),el:+sd.el||0,ct:sd.ct||'',op:+sd.op||0,
@@ -86,7 +86,8 @@ function s3Loft(B,pc,prof,segs,capA,capB,capCol){const N=pc.N,st=[];for(let i=0;
       const qa0=pc.at(u0,a0[0]),qb0=pc.at(u0,b0[0]),qa1=pc.at(u1,a1[0]),qb1=pc.at(u1,b1[0]);
       const dm=(a0[0]+b0[0])/2,s0=pc.L(dm)*u0,s1=pc.L(dm)*u1,nx=(qa0[2]+qa1[2])/2,nz=(qa0[3]+qa1[3])/2,want=[-nx*f[0],f[1],-nz*f[0]];
       let U=null;if(A.u){if(key==='fac'){const tw=S3FT.w,th=S3FT.h;U=[[s0/tw,a0[1]/th],[s1/tw,a1[1]/th],[s1/tw,b1[1]/th],[s0/tw,b0[1]/th]]}else if(key==='seatL')U=[[u0,0],[u1,0],[u1,1],[u0,1]];
-        else{const sc=key==='seat'?24:key==='rib'?22:8,rv=B.srv||1,vv=(p,a,b)=>key==='seat'?Math.max(1,Math.round(p.R[cv]))/rv:key==='glass'&&B.gl3?Math.max(1,Math.round(Math.abs(b[1]-a[1])/4.2)):1,v0=vv(p0,a0,b0),v1=vv(p1,a1,b1);U=[[s0/sc,0],[s1/sc,0],[s1/sc,v1],[s0/sc,v0]]}}
+        else{const sc=key==='seat'?B.ssc||24:key==='rib'?22:8,rv=B.srv||1,vv=(p,a,b)=>key==='seat'?Math.max(1,Math.round(p.R[cv]))/rv:key==='glass'&&B.gl3?Math.max(1,Math.round(Math.abs(b[1]-a[1])/4.2)):1,v0=vv(p0,a0,b0),v1=vv(p1,a1,b1),o=key==='seat'&&B.gl3?cv*.37:0;
+          U=[[s0/sc+o,0],[s1/sc+o,0],[s1/sc+o,v1],[s0/sc+o,v0]]}}
       s3Quad(A,W(qa0,a0[1]),W(qa1,a1[1]),W(qb1,b1[1]),W(qb0,b0[1]),col,U&&U[0],U&&U[1],U&&U[2],U&&U[3],want)}}
   for(const [on,u] of [[capA,0],[capB,1]]){if(!on)continue;const pr=st[u?N:0],pts=[];for(const p of pr.P){const l=pts[pts.length-1];if(!l||Math.abs(l.x-p[0])+Math.abs(l.y-p[1])>.01)pts.push(new THREE.Vector2(p[0],p[1]))}
     if(pts.length>2&&pts[0].distanceTo(pts[pts.length-1])<.01)pts.pop();if(pts.length<3)continue;let tri;try{tri=THREE.ShapeUtils.triangulateShape(pts,[])}catch(e){continue}
@@ -160,7 +161,7 @@ function s3Build(n,o,tx){
   const h=o.host,V3=!!n.m,M3=n.m,P=V3?s3Plan3(n):s3Plan(n),pf=P.pf,own=[],keep=x=>{own.push(x);return x},grp=new THREE.Group(),r=t3Rng(h.id*13+7);grp.name='stadium3d';
   const cl={conc:t3Col('#9a9ea5'),dark:t3Col('#2e333b'),under:t3Col('#3b4048'),fac:t3Col(n.cap>=60000?'#a3a7ad':'#999ea5'),fac2:t3Col('#5d636b'),grass:t3Col('#4b7f3a'),hedge:t3Col('#2c5b24'),stone:t3Col('#cfc3a6'),roof:t3Col('#dfe3e8'),pole:t3Col('#7d838c'),trk:t3Col('#2c4f2a')};
   if(V3){const e=M3.ext;Object.assign(cl,{fac:t3Col(shade(e.c,-.12)),trim:t3Col(e.t),band:t3Col('#2c3138'),fas:t3Col(shade(e.c,-.45)),berm:t3Col('#507f3d'),berm2:t3Col('#46743a')})}
-  const towers=[],B={st:s3Acc(false),near:s3Acc(false),seat:s3Acc(true),rib:s3Acc(true),glass:s3Acc(true),lp:s3Acc(true),fac:s3Acc(true),seatL:s3Acc(true),board:s3Acc(true),white:t3Col('#ffffff'),srv:V3?8:1,gl3:V3},tm={t0:performance.now()},glows=[],pyro=[],ext={x:0,z:0,h:0};
+  const towers=[],B={st:s3Acc(false),near:s3Acc(false),seat:s3Acc(true),rib:s3Acc(true),glass:s3Acc(true),lp:s3Acc(true),fac:s3Acc(true),seatL:s3Acc(true),board:s3Acc(true),white:t3Col('#ffffff'),srv:V3?8:1,gl3:V3,ssc:V3?(M3.seats.p==='sections'?48:32):24},tm={t0:performance.now()},glows=[],pyro=[],ext={x:0,z:0,h:0};
   const clip=[S3.clipA||(S3.clipA=new THREE.Plane(new THREE.Vector3(0,0,-1),1e6)),S3.clipB||(S3.clipB=new THREE.Plane(new THREE.Vector3(0,-1,.5).normalize(),1e6))];
   const mat=(M,cut)=>{if(cut!==false){M.clippingPlanes=clip;M.clipIntersection=true}return keep(M)};
   const M={st:mat(new THREE.MeshStandardMaterial({vertexColors:true,roughness:.9,metalness:0,side:THREE.DoubleSide}))};
@@ -249,10 +250,10 @@ function s3Build(n,o,tx){
   const cnp=p=>{if(!V3)return n.has('canopy')&&(p.id[0]==='F'||p.id[0]==='N'||n.sh==='bowl')&&!((p.id==='L'||p.id==='R')&&!rk(n[p.id]));const S=M3.sd;if(!S[p.id[0]]||S[p.id[0]].type!=='stand')return false;
     return p.id.length===1?S[p.id].canopy&&(p.id!=='L'&&p.id!=='R'||S[p.id].type==='stand'):S[p.id[0]].canopy&&S[p.id[1]].canopy};
   for(const p of pcs){if(!cnp(p))continue;
-    const cp=u=>{const s=p.prof(u),cw=Math.min(s.D*(V3?.7:.4),V3?52:19),y=s.H+5.5;return {P:[[s.D-1,y],[s.D-cw,y+cw*.14],[s.D-cw,y+cw*.14-.7],[s.D-1,y-.6]],R:[0,0,0]}};
+    const cp=u=>{const s=p.prof(u),cw=Math.min(s.D*(V3?.7:.4),V3?52:19),y=s.H+5.5;const k=V3?.05:.14;return {P:[[s.D-1,y],[s.D-cw,y+cw*k],[s.D-cw,y+cw*k-.7],[s.D-1,y-.6]],R:[0,0,0]}};
     s3Loft(B,p.pc,cp,[['st',t3Col('#b9bfc8'),S3UP],['st',t3Col('#e8ebef'),S3IN],['st',t3Col('#3b4048'),S3DN]],0,0,cl.dark);
     const L=p.pc.L(0),nc=Math.max(1,Math.round(L/30));for(let i=0;i<=nc;i++){const u=i/nc,s=p.prof(u),q=p.pc.at(u,s.D-1.2);s3Geo(B.st,s3Tpl('box'),s3MS(q[0],s.H+3.5,q[1],1,8,1),cl.pole)}
-    const nl=Math.max(2,Math.round(L/20));for(let i=0;i<nl;i++){const u=(i+.5)/nl,s=p.prof(u),cw=Math.min(s.D*(V3?.7:.4),V3?52:19),q=p.pc.at(u,s.D-cw+.5);glows.push(q[0],s.H+5.5+cw*.14-1,q[1],26,1,1,.96)}
+    const nl=Math.max(2,Math.round(L/20));for(let i=0;i<nl;i++){const u=(i+.5)/nl,s=p.prof(u),cw=Math.min(s.D*(V3?.7:.4),V3?52:19),q=p.pc.at(u,s.D-cw+.5);glows.push(q[0],s.H+5.5+cw*(V3?.05:.14)-1,q[1],26,1,1,.96)}
     ext.h=Math.max(ext.h,p.prof(.5).H+12)}
   /* ---- lights: a ring on the rim of big bowls, towers at the corners of the rest, under the roof in a dome ---- */
   const lt3=V3?M3.lights||(n.rf?'dome':Object.values(M3.sd).some(s=>s.canopy)?'canopy':n.cap>=50000?'rim':'towers'):'';

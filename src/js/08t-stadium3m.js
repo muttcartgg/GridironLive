@@ -105,11 +105,12 @@ function s3FacCv(M){const W=512,H=256,cv=document.createElement('canvas');cv.wid
     if(pc){g.fillStyle='rgba(0,0,0,.13)';for(let x=0;x<W;x+=W/6)g.fillRect(x,0,3,H);for(const s of [0,1]){rect(0,s*sh+sh*.3,W,sh*.26,'#2b333c');g.fillStyle='rgba(190,205,220,.22)';g.fillRect(0,s*sh+sh*.3,W,5)}rect(0,0,W,10,t);rect(0,sh-3,W,6,t)}
     else{for(let i=0;i<3;i++){rect(i*bw,0,14,H,shade(c,-.1));for(const s of [0,1])rect(i*bw+30,s*sh+sh*.36,bw-60,sh*.2,'#22272e')}rect(0,0,W,8,shade(c,.08));rect(0,sh-3,W,6,shade(c,-.15))}}
   return cv}
-function s3SeatCv3(M,h){const cv=document.createElement('canvas');cv.width=128;cv.height=128;const g=cv.getContext('2d'),p=M.seats.p;
+function s3SeatCv3(M,h){const p=M.seats.p,nc=p==='sections'?3:2,cv=document.createElement('canvas');cv.width=64*nc;cv.height=128;const g=cv.getContext('2d'),W=cv.width;
+  /* sections: two of every three sections in the first colour (a third colour takes the third), so the stands read as blocks, not candy stripes */
   let C=M.seats.c.slice();if(!C.length)C=[h.c1];if(C.length<2)C.push(p==='solid'||p==='letters'?C[0]:shade(C[0],lum(C[0])>.5?-.35:.4));
-  for(let row=0;row<8;row++)for(let half=0;half<2;half++){const i=p==='sections'?half:p==='stripes'?(row>>2):p==='checker'?(half+(row>>2))%2:0;g.fillStyle=C[i%C.length];g.fillRect(half*64,row*16,64,16)}
-  for(let row=0;row<8;row++){const y=row*16;g.fillStyle='rgba(255,255,255,.16)';g.fillRect(0,y+1,128,2);g.fillStyle='rgba(10,12,16,.5)';g.fillRect(0,y+10,128,6)}
-  g.fillStyle='rgba(20,22,26,.8)';g.fillRect(0,0,3,128);g.fillRect(64,0,3,128);return cv}
+  for(let row=0;row<8;row++)for(let col=0;col<nc;col++){const i=p==='sections'?(col<2?(C.length>2?col:0):C.length>2?2:1):p==='stripes'?(row>>2):p==='checker'?(col+(row>>2))%2:0;g.fillStyle=C[i%C.length];g.fillRect(col*64,row*16,64,16)}
+  for(let row=0;row<8;row++){const y=row*16;g.fillStyle='rgba(255,255,255,.16)';g.fillRect(0,y+1,W,2);g.fillStyle='rgba(10,12,16,.5)';g.fillRect(0,y+10,W,6)}
+  g.fillStyle='rgba(20,22,26,.8)';for(let col=0;col<nc;col++)g.fillRect(col*64,0,3,128);return cv}
 /* letters spelled in the seats of one deck: the canvas (rows × columns of seats) and the mask the crowd reads */
 function s3Letters(M,h,cols,rows){const cv=document.createElement('canvas'),W=Math.max(64,Math.min(1024,Math.round(cols))),Hh=Math.max(4,Math.round(rows));cv.width=W;cv.height=Hh*4;
   const g=cv.getContext('2d'),C=M.seats.c.length?M.seats.c:[h.c1,'#ffffff'],c0=C[0],c1=C[1]||(lum(c0)>.5?'#1a1a1a':'#f4f4f4');
@@ -213,7 +214,7 @@ function s3Box(A,x,y,z,sx,sy,sz,ry,col,k){const c=Math.cos(ry||0),s=Math.sin(ry|
   if(k!==1)for(let i=0;i<4;i++){const a=q[i],b=q[(i+1)%4];s3Quad(A,[a[0],y0,a[1]],[b[0],y0,b[1]],[b[0],y1,b[1]],[a[0],y1,a[1]],col,null,null,null,null,[(a[0]+b[0])/2-x,0,(a[1]+b[1])/2-z])}}
 /* ---------- a running track round the field (and the grass inside it) ---------- */
 function s3Track3(B){const A=B.st,cz=CEN,PI=Math.PI,red=t3Col('#a4523d'),wl=t3Col('#e9e2d6'),gr=t3Col('#3f7432'),S=46,N=24;
-  const at=(t,rr)=>{/* t 0..1 round a stadium shape: straights x 60±S, half circles of radius rr */const L=4*S+2*PI*rr,s=t*L;
+  const at=(t,r0)=>{/* t 0..1 round a stadium shape: straights x 60±S, half circles of radius rr */const rr=Math.max(r0,.01),L=4*S+2*PI*rr,s=Math.min(t,.99999)*L;
     if(s<2*S)return [60-S+s,cz-rr];if(s<2*S+PI*rr){const a=-PI/2+(s-2*S)/rr;return [60+S+Math.cos(a)*rr,cz+Math.sin(a)*rr]}if(s<4*S+PI*rr)return [60+S-(s-2*S-PI*rr),cz+rr];const a=PI/2+(s-4*S-PI*rr)/rr;return [60-S+Math.cos(a)*rr,cz+Math.sin(a)*rr]};
   const ring=(r0,r1,y,c,n)=>{for(let i=0;i<n;i++){const t0=i/n,t1=(i+1)/n,a=at(t0,r0),b=at(t1,r0),c2=at(t1,r1),d=at(t0,r1);s3Quad(A,[a[0],y,a[1]],[b[0],y,b[1]],[c2[0],y,c2[1]],[d[0],y,d[1]],c,null,null,null,null,[0,1,0])}};
   ring(0,40,-.03,gr,4*N);ring(40,50,.04,red,8*N);for(const rr of [42.5,45,47.5])ring(rr-.06,rr+.06,.05,wl,8*N)}
