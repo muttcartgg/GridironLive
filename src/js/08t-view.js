@@ -321,7 +321,7 @@ function g3Overlay2D(c,now){
     if(!gr){gr=c.createRadialGradient(W/2,H*.55,Math.min(W,H)*.35,W/2,H*.55,Math.hypot(W,H)*.62);gr.addColorStop(0,'rgba(0,0,8,0)');gr.addColorStop(.55,G3.env.stage==='night'?'rgba(0,2,12,.12)':'rgba(30,10,0,.05)');gr.addColorStop(1,G3.env.stage==='night'?'rgba(0,2,12,.8)':'rgba(30,10,0,.3)');G3.vig={w:W,h:H,st:G3.env.stage,g:gr}}
     c.fillStyle=gr;c.fillRect(0,0,W,H)}
   if(S.ts<.9){const a=(1-S.ts)*.9,bh=H*.07;c.fillStyle=`rgba(0,0,0,${a})`;c.fillRect(0,0,W,bh);c.fillRect(0,H-bh,W,bh)}
-  if(G3.est&&G3.est.t0){const e=G3.est,p=(performance.now()-e.t0)/e.dur,a=clamp(Math.min((p-.06)/.14,(1-p)/.1),0,1);if(a>0)g3Lower3(c,e,a)}
+  if(G3.est&&G3.est.t0&&G3.est.kind!=='final'){const e=G3.est,p=(performance.now()-e.t0)/e.dur,a=clamp(Math.min((p-.06)/.14,(1-p)/.1),0,1);if(a>0)g3Lower3(c,e,a)}
 }
 /* ---------- the establishing shot (before the opening kickoff) and the beauty shot (halftime, the final whistle) ----------
    an aerial orbit round the stadium (08t-stadium3d's extents; the generic bowl's otherwise) with a lower third: the venue,
